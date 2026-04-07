@@ -138,30 +138,28 @@
 <div class="page">
   <header class="site-header">
     <div class="header-row">
+      <div class="header-left">
+        <div class="tier-counts">
+        <span class="tier-label">Subscribers</span>
+        <div class="tier-pips">
+          <span class="tier-pip"><span class="pip-dot" style="background: #a7f3d0;"></span><span class="pip-name">Initiate</span><span class="pip-count">{tierCounts.initiate}</span></span>
+          <span class="tier-pip"><span class="pip-dot" style="background: #fbbf24;"></span><span class="pip-name">Hero</span><span class="pip-count">{tierCounts.hero}</span></span>
+          <span class="tier-pip"><span class="pip-dot" style="background: #f97316;"></span><span class="pip-name">Legend</span><span class="pip-count">{tierCounts.legend}</span></span>
+          </div>
+        </div>
+      </div>
       <h1 class="site-title">
         <img src="/icon.png" alt="" class="site-icon" />
         AllByte Studios
       </h1>
-      <div class="header-left">
-        <div class="tier-counts">
-          <span class="tier-label">Subscribers</span>
-          <div class="tier-pips">
-            <span class="tier-pip"><span class="pip-dot" style="background: #a7f3d0;"></span><span class="pip-name">Initiate</span><span class="pip-count">{tierCounts.initiate}</span></span>
-            <span class="tier-pip"><span class="pip-dot" style="background: #fbbf24;"></span><span class="pip-name">Hero</span><span class="pip-count">{tierCounts.hero}</span></span>
-            <span class="tier-pip"><span class="pip-dot" style="background: #f97316;"></span><span class="pip-name">Legend</span><span class="pip-count">{tierCounts.legend}</span></span>
-          </div>
-        </div>
-      </div>
       <div class="header-right">
-        <div class="login-area">
-          <a href="/subscribe/" class="header-btn subscribe-btn" onclick={handleSubscribeClick}><span>Subscribe</span><span>Donate</span></a>
-          {#if auth.currentUser}
-            <span class="username">{auth.currentUser.username}</span>
-            <button class="header-btn login-btn" onclick={logout}><span>Sign</span><span>Out</span></button>
-          {:else}
-            <button class="header-btn login-btn" onclick={() => { pendingAction = null; showLoginModal = true; }}><span>Log In</span><span>Sign Up</span></button>
-          {/if}
-        </div>
+        <a href="/subscribe/" class="header-btn subscribe-btn" onclick={handleSubscribeClick}><span>Subscribe</span><span>Donate</span></a>
+        {#if auth.currentUser}
+          <span class="username">{auth.currentUser.username}</span>
+          <button class="header-btn login-btn" onclick={logout}><span>Sign</span><span>Out</span></button>
+        {:else}
+          <button class="header-btn login-btn" onclick={() => { pendingAction = null; showLoginModal = true; }}><span>Log In</span><span>Sign Up</span></button>
+        {/if}
       </div>
     </div>
     <p class="site-tagline">Indie game studio, Devlog, Asset archive</p>
@@ -345,6 +343,29 @@
     gap: 0.75rem;
   }
 
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    position: relative;
+  }
+
+  .header-left {
+    position: absolute;
+    left: 0;
+  }
+
+  .header-right {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
   .site-title {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 2.75rem;
@@ -361,25 +382,6 @@
     width: 3rem;
     height: 3rem;
     object-fit: contain;
-  }
-
-  .header-row {
-    width: 100%;
-    max-width: 1200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .header-left {
-    position: absolute;
-    left: 0;
-  }
-
-  .header-right {
-    position: absolute;
-    right: 0;
   }
 
   .tier-counts {
@@ -426,13 +428,6 @@
     color: rgba(224, 231, 255, 0.6);
   }
 
-  .login-area {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
 
   .subscribe-btn {
     color: #fbbf24;
@@ -1020,5 +1015,37 @@
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 0.9rem;
     color: rgba(224, 231, 255, 0.4);
+  }
+
+  @media (max-width: 768px) {
+    .header-row {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .header-left,
+    .header-right {
+      position: static;
+    }
+
+    .header-right {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .site-title {
+      font-size: 2rem;
+    }
+
+    .demo-actions {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .demo-actions .steam-btn {
+      position: static;
+      transform: none;
+    }
   }
 </style>

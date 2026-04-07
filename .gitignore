@@ -38,3 +38,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Local game asset staging (duplicates of public/assets/)
+gamedev_assets/

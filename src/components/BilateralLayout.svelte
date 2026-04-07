@@ -83,7 +83,7 @@
         {/if}
       </div>
     </div>
-    <p class="site-tagline">Indie game studio, devlog, and web archive.</p>
+    <p class="site-tagline">Indie game studio, Devlog, Asset archive</p>
   </header>
 
   {#if showLoginModal}

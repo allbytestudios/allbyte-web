@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   integrations: [svelte()],
+  trailingSlash: "always",
   vite: {
     plugins: [tailwindcss()],
   },

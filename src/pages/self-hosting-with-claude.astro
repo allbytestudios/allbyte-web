@@ -27,6 +27,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
               <li><a href="#costs">Costs & Protection</a></li>
               <li><a href="#infrastructure">Infrastructure & Deploy</a></li>
               <li><a href="#cache-strategy">Cache Strategy</a></li>
+              <li><a href="#asset-pipeline">Asset Pipeline</a></li>
             </ul>
           </li>
           <li><a href="#lessons-learned">Lessons Learned</a></li>
@@ -41,7 +42,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
         <h3 id="my-tools">My Tools</h3>
         <ul>
-          <li><strong>Claude Pro</strong> — AI pair-programmer via Claude Code (Anthropic's CLI). Writes the code, sets up infrastructure, debugs deploy issues, and built this document. Same setup I use for <a href="/godot-and-claude">Godot game dev</a>. I don't count the subscription as a hosting cost since I'm already paying for it for game development.</li>
+          <li><strong>Claude Pro</strong> — AI pair-programmer via Claude Code (Anthropic's CLI). Writes the code, sets up infrastructure, debugs deploy issues, and built this document. Same setup I use for <a href="/godot-and-claude/">Godot game dev</a>. I don't count the subscription as a hosting cost since I'm already paying for it for game development.</li>
           <li><strong>AWS account</strong> — S3, CloudFront, Route 53, ACM, CloudFormation, Lambda. Everything runs here.</li>
           <li><strong>My PC</strong> — Windows 11, Node.js, npm, AWS CLI, GitHub CLI. All development and deploys happen from one machine.</li>
         </ul>
@@ -148,6 +149,12 @@ GitHub Actions (OIDC auth)
         <h3 id="cache-strategy">Cache Strategy</h3>
         <p>Static assets (JS, CSS, images, fonts) get <code>max-age=31536000, immutable</code> — cached forever. Astro hashes filenames, so new deploys automatically get new URLs.</p>
         <p>HTML files get <code>max-age=0, must-revalidate</code> — always revalidated so users see the latest content immediately after a deploy.</p>
+        <h3 id="asset-pipeline">Asset Pipeline</h3>
+        <p>The site pulls game assets directly from the Godot project on my local machine. A Node.js sync script (<code>scripts/sync-assets.js</code>) reads a config file (<code>scripts/asset-manifest.json</code>) and copies music, fonts, sprites, and backgrounds into the web project.</p>
+        <p>For music, it deduplicates across formats — Godot has both <code>.ogg</code> and <code>.mp3</code> versions of tracks, so the script picks the preferred format and skips duplicates. Temporary placeholder music and Godot <code>.import</code> files are excluded automatically.</p>
+        <p>Sprites are the interesting part. The game stores character animations as horizontal sprite sheets — a single PNG with all frames side by side. A Python script (<code>scripts/spritesheet-to-gif.py</code>) splits these sheets into individual frames and assembles them into animated GIFs, scaled up with nearest-neighbor interpolation to keep the pixel art crisp. Each character's animations (idle, walk, attack, cast, etc.) become separate GIFs for the web.</p>
+        <p>The manifest is fully configurable — I pick which characters, which animations, the scale factor, and frame duration per character. Characters can be flagged as <code>hidden</code> for unreleased content. Everything outputs to <code>public/assets/</code> with JSON indexes that the Astro pages consume at build time.</p>
+        <p>The generated files are committed to git since CI doesn't have access to the Godot project. Locally I run <code>npm run sync</code> to refresh, then push.</p>
       </section>
 
       <!-- 3. Lessons Learned -->

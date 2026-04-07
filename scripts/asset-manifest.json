@@ -5,7 +5,7 @@
   "music": {
     "sourceDir": "Music",
     "preferFormat": "ogg",
-    "exclude": ["TemporaryMusic/**", "*.flp", "*.mp3"]
+    "exclude": ["TemporaryMusic/**", "*.flp", "*.mp3", "*.import"]
   },
   "fonts": {
     "files": [
@@ -13,12 +13,101 @@
     ]
   },
   "sprites": {
-    "files": [
-      "Sprites/Allies/Elias/IdleDown.png",
-      "Sprites/Allies/Falmri/IdleDown.png",
-      "Sprites/Allies/Mia/IdleDown.png",
-      "Sprites/Enemies/slime/IdleDown.png"
-    ]
+    "files": []
+  },
+  "spriteGifs": {
+    "Elias": {
+      "sourceDir": "Sprites/Allies/Elias",
+      "scale": 3,
+      "frameDuration": 150,
+      "category": "ally",
+      "sheets": [
+        "IdleDown", "IdleRight", "IdleUp", "IdleUpLeft", "IdleDownRight",
+        "Down", "Right", "Up", "UpLeft", "DownRight",
+        "AttackDownRight", "AttackUpLeft",
+        "SweepAttackDownRight", "SweepAttackUpLeft",
+        "SmiteLineDownRight", "SmiteLineUpLeft",
+        "BattleIdleDownRight", "BattleIdleUpLeft",
+        "BattleChargeRight",
+        "Casting", "Victory", "Dead"
+      ]
+    },
+    "Falmri": {
+      "sourceDir": "Sprites/Allies/Falmri",
+      "scale": 3,
+      "frameDuration": 150,
+      "category": "ally",
+      "sheets": [
+        "IdleDown", "IdleRight", "IdleUp", "IdleUpLeft", "IdleDownRight", "IdleUpRight",
+        "Down", "Right", "Up", "UpLeft", "DownRight", "UpRight",
+        "AttackDownRight", "AttackUpLeft",
+        "BattleIdleDown", "BattleIdleDownRight", "BattleIdleRight",
+        "Casting", "Victory", "Dead"
+      ]
+    },
+    "Mia": {
+      "sourceDir": "Sprites/Allies/Mia",
+      "scale": 3,
+      "frameDuration": 150,
+      "category": "ally",
+      "hidden": true,
+      "sheets": []
+    },
+    "slime": {
+      "sourceDir": "Sprites/Enemies/slime",
+      "scale": 4,
+      "frameDuration": 150,
+      "category": "enemy",
+      "sheets": [
+        "IdleDown", "IdleRight", "IdleUp",
+        "Down", "Right", "Up",
+        "BattleIdleDownRight", "BattleIdleUpLeft",
+        "SlapDownRight", "SlapUpLeft"
+      ]
+    },
+    "motherSlime": {
+      "sourceDir": "Sprites/Enemies/motherSlime",
+      "scale": 3,
+      "frameDuration": 150,
+      "category": "boss",
+      "sheets": [
+        "IdleDown", "IdleRight", "IdleUp",
+        "Down", "Right", "Up",
+        "BattleIdleDownRight", "BattleIdleUpLeft",
+        "SlapDownRight", "SlapUpLeft"
+      ]
+    },
+    "eastwood": {
+      "sourceDir": "Sprites/Enemies/eastwood",
+      "scale": 4,
+      "frameDuration": 150,
+      "category": "enemy",
+      "sheets": [
+        "IdleDown", "IdleRight", "IdleUp",
+        "Down", "Right", "Up",
+        "AttackDownRight", "AttackUpLeft"
+      ]
+    },
+    "spiter": {
+      "sourceDir": "Sprites/Enemies/spiter",
+      "scale": 3,
+      "frameDuration": 150,
+      "category": "enemy",
+      "sheets": [
+        "IdleDown", "IdleRight", "IdleUp",
+        "AcidAttack_DownRight", "AcidAttack_UpLeft"
+      ]
+    },
+    "vepir": {
+      "sourceDir": "Sprites/Enemies/vepir",
+      "scale": 3,
+      "frameDuration": 150,
+      "category": "enemy",
+      "sheets": [
+        "IdleDown", "IdleRight", "IdleUp",
+        "Down", "Right", "Up"
+      ]
+    }
   },
   "backgrounds": {
     "files": [

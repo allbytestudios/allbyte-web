@@ -1,6 +1,7 @@
 <script>
   import EnginePanel from "./EnginePanel.svelte";
   import HeartPanel from "./HeartPanel.svelte";
+  import gameVersion from "../data/game-version.json";
   let isMobile = $state(false);
   let showLoginModal = $state(false);
   let loginMode = $state("signin");
@@ -146,7 +147,7 @@
   {/if}
 
   <div class="demo-section">
-  <div class="demo-row" onmouseenter={onDemoEnter} onmouseleave={onDemoLeave} onclick={(e) => { if (!e.target.closest('.steam-btn')) window.location.href = '/play'; }} style="cursor: pointer;">
+  <div class="demo-row" onmouseenter={onDemoEnter} onmouseleave={onDemoLeave} onclick={(e) => { if (!e.target.closest('.steam-btn')) window.location.href = '/play/'; }} style="cursor: pointer;">
     <div class="demo-link">
       <div class="demo-banner">
         <img src={demoHovered ? "/ChroniclesOfNesisTitle.gif" : "/ChroniclesOfNesisTitle-still.png"} alt="The Chronicles of Nesis Demo" class="demo-gif" />
@@ -154,7 +155,7 @@
       </div>
     </div>
     <div class="demo-actions">
-      <span class="demo-cta">Play Now (No Download) &#8594;</span>
+      <span class="demo-cta">Play Now v{gameVersion.version} (No Download) &#8594;</span>
       <a href="https://store.steampowered.com/app/3900010/The_Chronicles_of_Nesis/" class="steam-btn" target="_blank" rel="noopener noreferrer">
         <svg class="steam-icon" viewBox="0 0 256 259" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M127.779 0C57.852 0 .469 55.394.013 124.609L68.95 153.16a35.615 35.615 0 0 1 20.15-6.213l30.15-43.635v-.613c0-26.36 21.457-47.817 47.818-47.817 26.36 0 47.818 21.457 47.818 47.817 0 26.361-21.457 47.818-47.818 47.818h-1.105l-42.926 30.658a35.796 35.796 0 0 1-35.638 37.149 35.87 35.87 0 0 1-34.992-28.333L1.592 168.53C17.2 220.124 65.89 258.18 123.578 258.18c70.692 0 128.003-57.31 128.003-128.003C251.581 59.487 198.47 0 127.779 0zM80.36 208.09l-15.082-6.232a26.887 26.887 0 0 0 14.49 14.088 26.941 26.941 0 0 0 35.26-14.468 26.796 26.796 0 0 0 .001-20.624 26.864 26.864 0 0 0-14.467-14.467l15.594 6.446a21.556 21.556 0 0 1-11.392 41.29 21.56 21.56 0 0 1-24.404-6.033zm114.007-57.39c0-17.568-14.29-31.858-31.858-31.858-17.569 0-31.858 14.29-31.858 31.858 0 17.569 14.29 31.858 31.858 31.858 17.569 0 31.858-14.29 31.858-31.858zm-55.737-.098c0-13.19 10.706-23.896 23.897-23.896 13.19 0 23.896 10.706 23.896 23.896 0 13.19-10.706 23.897-23.896 23.897-13.191 0-23.897-10.706-23.897-23.897z"/></svg>
         Wishlist on Steam &#8594;
@@ -168,15 +169,15 @@
     <div class="mobile-panel engine-bg">
       <h2 class="panel-title engine-title"><span class="terminal-prompt">$</span> Game Dev<br/><span class="panel-sub">(built with AI)</span></h2>
       <div class="mobile-links">
-        <a href="/devlog" class="link-card engine-card" onmouseenter={playCursor}>
+        <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
           <h3>Devlog <span class="cursor-arrow"></span></h3>
           <p>Technical post-mortems and development updates.</p>
         </a>
-        <a href="/godot-and-claude" class="link-card engine-card" onmouseenter={playCursor}>
+        <a href="/godot-and-claude/" class="link-card engine-card" onmouseenter={playCursor}>
           <h3>Godot &amp; Claude <span class="cursor-arrow"></span></h3>
           <p>My local setup and how I do gamedev with Godot &amp; Claude.</p>
         </a>
-        <a href="/self-hosting-with-claude" class="link-card engine-card" onmouseenter={playCursor}>
+        <a href="/self-hosting-with-claude/" class="link-card engine-card" onmouseenter={playCursor}>
           <h3>Self-Hosting with Claude <span class="cursor-arrow"></span></h3>
           <p>AI-assisted self-hosted game, subscription, and infra.</p>
         </a>
@@ -187,15 +188,15 @@
       <h2 class="panel-title heart-title">Game Assets<br/><span class="panel-sub">(made without AI)</span></h2>
       <img src="/Flourish.png" alt="" class="flourish flourish-right" />
       <div class="mobile-links">
-        <a href="/music" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
+        <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
           <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>Original compositions for The Chronicles of Nesis.</p>
         </a>
-        <a href="/artwork" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
+        <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
           <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>Sprites, pre-rendered backgrounds.</p>
         </a>
-        <a href="/fonts" class="link-card heart-card" onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
+        <a href="/fonts/" class="link-card heart-card" onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
           <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>A custom typeface designed for The Chronicles of Nesis.</p>
         </a>
@@ -214,39 +215,39 @@
       </div>
 
       <div class="cell engine-bg">
-        <a href="/devlog" class="link-card engine-card" onmouseenter={playCursor}>
+        <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
           <h3>Devlog <span class="cursor-arrow"></span></h3>
           <p>Technical post-mortems and development updates.</p>
         </a>
       </div>
       <div class="cell heart-bg">
-        <a href="/music" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
+        <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
           <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>Original compositions for The Chronicles of Nesis.</p>
         </a>
       </div>
 
       <div class="cell engine-bg">
-        <a href="/godot-and-claude" class="link-card engine-card" onmouseenter={playCursor}>
+        <a href="/godot-and-claude/" class="link-card engine-card" onmouseenter={playCursor}>
           <h3>Godot &amp; Claude <span class="cursor-arrow"></span></h3>
           <p>My local setup and how I do gamedev with Godot &amp; Claude.</p>
         </a>
       </div>
       <div class="cell heart-bg">
-        <a href="/artwork" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
+        <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
           <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>Sprites, pre-rendered backgrounds.</p>
         </a>
       </div>
 
       <div class="cell engine-bg">
-        <a href="/self-hosting-with-claude" class="link-card engine-card" onmouseenter={playCursor}>
+        <a href="/self-hosting-with-claude/" class="link-card engine-card" onmouseenter={playCursor}>
           <h3>Self-Hosting with Claude <span class="cursor-arrow"></span></h3>
           <p>AI-assisted self-hosted game, subscription, and infra.</p>
         </a>
       </div>
       <div class="cell heart-bg">
-        <a href="/fonts" class="link-card heart-card" onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
+        <a href="/fonts/" class="link-card heart-card" onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
           <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>A custom typeface designed for The Chronicles of Nesis.</p>
         </a>

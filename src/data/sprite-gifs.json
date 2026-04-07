@@ -1,0 +1,387 @@
+[
+  {
+    "character": "Elias",
+    "animation": "IdleDown",
+    "file": "/assets/sprites/Elias_IdleDown.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "IdleRight",
+    "file": "/assets/sprites/Elias_IdleRight.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "IdleUp",
+    "file": "/assets/sprites/Elias_IdleUp.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "IdleUpLeft",
+    "file": "/assets/sprites/Elias_IdleUpLeft.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "IdleDownRight",
+    "file": "/assets/sprites/Elias_IdleDownRight.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "Down",
+    "file": "/assets/sprites/Elias_Down.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "Right",
+    "file": "/assets/sprites/Elias_Right.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "Up",
+    "file": "/assets/sprites/Elias_Up.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "UpLeft",
+    "file": "/assets/sprites/Elias_UpLeft.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "DownRight",
+    "file": "/assets/sprites/Elias_DownRight.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "AttackDownRight",
+    "file": "/assets/sprites/Elias_AttackDownRight.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "AttackUpLeft",
+    "file": "/assets/sprites/Elias_AttackUpLeft.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "SweepAttackDownRight",
+    "file": "/assets/sprites/Elias_SweepAttackDownRight.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "SweepAttackUpLeft",
+    "file": "/assets/sprites/Elias_SweepAttackUpLeft.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "SmiteLineDownRight",
+    "file": "/assets/sprites/Elias_SmiteLineDownRight.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "SmiteLineUpLeft",
+    "file": "/assets/sprites/Elias_SmiteLineUpLeft.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "BattleIdleDownRight",
+    "file": "/assets/sprites/Elias_BattleIdleDownRight.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "BattleIdleUpLeft",
+    "file": "/assets/sprites/Elias_BattleIdleUpLeft.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "BattleChargeRight",
+    "file": "/assets/sprites/Elias_BattleChargeRight.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "Casting",
+    "file": "/assets/sprites/Elias_Casting.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "Victory",
+    "file": "/assets/sprites/Elias_Victory.gif"
+  },
+  {
+    "character": "Elias",
+    "animation": "Dead",
+    "file": "/assets/sprites/Elias_Dead.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "IdleDown",
+    "file": "/assets/sprites/Falmri_IdleDown.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "IdleRight",
+    "file": "/assets/sprites/Falmri_IdleRight.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "IdleUp",
+    "file": "/assets/sprites/Falmri_IdleUp.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "IdleUpLeft",
+    "file": "/assets/sprites/Falmri_IdleUpLeft.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "IdleDownRight",
+    "file": "/assets/sprites/Falmri_IdleDownRight.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "IdleUpRight",
+    "file": "/assets/sprites/Falmri_IdleUpRight.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "Down",
+    "file": "/assets/sprites/Falmri_Down.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "Right",
+    "file": "/assets/sprites/Falmri_Right.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "Up",
+    "file": "/assets/sprites/Falmri_Up.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "UpLeft",
+    "file": "/assets/sprites/Falmri_UpLeft.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "DownRight",
+    "file": "/assets/sprites/Falmri_DownRight.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "UpRight",
+    "file": "/assets/sprites/Falmri_UpRight.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "AttackDownRight",
+    "file": "/assets/sprites/Falmri_AttackDownRight.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "AttackUpLeft",
+    "file": "/assets/sprites/Falmri_AttackUpLeft.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "BattleIdleDown",
+    "file": "/assets/sprites/Falmri_BattleIdleDown.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "BattleIdleDownRight",
+    "file": "/assets/sprites/Falmri_BattleIdleDownRight.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "BattleIdleRight",
+    "file": "/assets/sprites/Falmri_BattleIdleRight.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "Casting",
+    "file": "/assets/sprites/Falmri_Casting.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "Victory",
+    "file": "/assets/sprites/Falmri_Victory.gif"
+  },
+  {
+    "character": "Falmri",
+    "animation": "Dead",
+    "file": "/assets/sprites/Falmri_Dead.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "IdleDown",
+    "file": "/assets/sprites/slime_IdleDown.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "IdleRight",
+    "file": "/assets/sprites/slime_IdleRight.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "IdleUp",
+    "file": "/assets/sprites/slime_IdleUp.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "Down",
+    "file": "/assets/sprites/slime_Down.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "Right",
+    "file": "/assets/sprites/slime_Right.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "Up",
+    "file": "/assets/sprites/slime_Up.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "BattleIdleDownRight",
+    "file": "/assets/sprites/slime_BattleIdleDownRight.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "BattleIdleUpLeft",
+    "file": "/assets/sprites/slime_BattleIdleUpLeft.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "SlapDownRight",
+    "file": "/assets/sprites/slime_SlapDownRight.gif"
+  },
+  {
+    "character": "slime",
+    "animation": "SlapUpLeft",
+    "file": "/assets/sprites/slime_SlapUpLeft.gif"
+  },
+  {
+    "character": "motherSlime",
+    "animation": "IdleDown",
+    "file": "/assets/sprites/motherSlime_IdleDown.gif"
+  },
+  {
+    "character": "motherSlime",
+    "animation": "IdleRight",
+    "file": "/assets/sprites/motherSlime_IdleRight.gif"
+  },
+  {
+    "character": "motherSlime",
+    "animation": "IdleUp",
+    "file": "/assets/sprites/motherSlime_IdleUp.gif"
+  },
+  {
+    "character": "motherSlime",
+    "animation": "Down",
+    "file": "/assets/sprites/motherSlime_Down.gif"
+  },
+  {
+    "character": "motherSlime",
+    "animation": "Right",
+    "file": "/assets/sprites/motherSlime_Right.gif"
+  },
+  {
+    "character": "motherSlime",
+    "animation": "Up",
+    "file": "/assets/sprites/motherSlime_Up.gif"
+  },
+  {
+    "character": "motherSlime",
+    "animation": "SlapDownRight",
+    "file": "/assets/sprites/motherSlime_SlapDownRight.gif"
+  },
+  {
+    "character": "motherSlime",
+    "animation": "SlapUpLeft",
+    "file": "/assets/sprites/motherSlime_SlapUpLeft.gif"
+  },
+  {
+    "character": "eastwood",
+    "animation": "IdleDown",
+    "file": "/assets/sprites/eastwood_IdleDown.gif"
+  },
+  {
+    "character": "eastwood",
+    "animation": "IdleRight",
+    "file": "/assets/sprites/eastwood_IdleRight.gif"
+  },
+  {
+    "character": "eastwood",
+    "animation": "IdleUp",
+    "file": "/assets/sprites/eastwood_IdleUp.gif"
+  },
+  {
+    "character": "eastwood",
+    "animation": "Down",
+    "file": "/assets/sprites/eastwood_Down.gif"
+  },
+  {
+    "character": "eastwood",
+    "animation": "Right",
+    "file": "/assets/sprites/eastwood_Right.gif"
+  },
+  {
+    "character": "eastwood",
+    "animation": "Up",
+    "file": "/assets/sprites/eastwood_Up.gif"
+  },
+  {
+    "character": "eastwood",
+    "animation": "AttackDownRight",
+    "file": "/assets/sprites/eastwood_AttackDownRight.gif"
+  },
+  {
+    "character": "eastwood",
+    "animation": "AttackUpLeft",
+    "file": "/assets/sprites/eastwood_AttackUpLeft.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "IdleDown",
+    "file": "/assets/sprites/spiter_IdleDown.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "IdleRight",
+    "file": "/assets/sprites/spiter_IdleRight.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "IdleUp",
+    "file": "/assets/sprites/spiter_IdleUp.gif"
+  },
+  {
+    "character": "vepir",
+    "animation": "IdleDown",
+    "file": "/assets/sprites/vepir_IdleDown.gif"
+  },
+  {
+    "character": "vepir",
+    "animation": "IdleRight",
+    "file": "/assets/sprites/vepir_IdleRight.gif"
+  },
+  {
+    "character": "vepir",
+    "animation": "IdleUp",
+    "file": "/assets/sprites/vepir_IdleUp.gif"
+  },
+  {
+    "character": "vepir",
+    "animation": "Down",
+    "file": "/assets/sprites/vepir_Down.gif"
+  },
+  {
+    "character": "vepir",
+    "animation": "Right",
+    "file": "/assets/sprites/vepir_Right.gif"
+  },
+  {
+    "character": "vepir",
+    "animation": "Up",
+    "file": "/assets/sprites/vepir_Up.gif"
+  }
+]

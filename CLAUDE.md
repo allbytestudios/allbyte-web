@@ -12,10 +12,18 @@ Web portal for AllByte Studios, an indie game studio building a fantasy tactical
 
 ## Commands
 ```bash
-npm run dev       # Start dev server (localhost:4321)
-npm run build     # Production build → dist/
-npm run preview   # Preview production build locally
+npm run sync                          # Pull assets from Godot project
+python scripts/spritesheet-to-gif.py  # Convert sprite sheets to animated GIFs
+npm run dev                           # Start dev server (localhost:4321)
+npm run build                         # Sync + production build → dist/
+npm run preview                       # Preview production build locally
 ```
+
+## Asset Sync
+Game assets are pulled from the local Godot project (`TacticalTestDev`) via `scripts/sync-assets.js`.
+Configuration in `scripts/asset-manifest.json`. Sprite sheets converted to GIFs via `scripts/spritesheet-to-gif.py`.
+Generated data: `src/data/game-version.json`, `src/data/asset-index.json`, `src/data/sprite-gifs.json`.
+All generated files committed to git (CI has no Godot access).
 
 ## Architecture
 

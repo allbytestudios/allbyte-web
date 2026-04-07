@@ -353,6 +353,49 @@ Hover effects (gif playback, audio, cursor/sword animations) are desktop-only ex
 
 ---
 
+## Asset Sync Pipeline
+
+A local script pulls game data from the Godot project into the web portal.
+
+### Setup
+The Godot project path and all asset selections are configured in `scripts/asset-manifest.json`:
+- **Version**: extracted from `Autoload/World.gd` via regex, written to `src/data/game-version.json`
+- **Music**: syncs from `Music/` dir, prefers `.ogg`, excludes `TemporaryMusic/`, `.flp`, `.mp3`, `.import`
+- **Fonts**: cherry-picked files list
+- **Sprite GIFs**: converts horizontal sprite sheets to animated GIFs via `scripts/spritesheet-to-gif.py`
+  - Configurable per-character: source dir, scale factor, frame duration, category (ally/enemy/boss)
+  - `hidden: true` flag for unreleased characters (Mia)
+- **Backgrounds**: cherry-picked files list
+
+### Commands
+```bash
+npm run sync                    # Sync music, fonts, sprites (static), backgrounds
+python scripts/spritesheet-to-gif.py  # Convert sprite sheets to animated GIFs
+npm run build                   # Runs sync automatically before Astro build
+```
+
+### Output
+- `public/assets/music/` — deduplicated game music (.ogg)
+- `public/assets/fonts/` — game fonts
+- `public/assets/sprites/` — animated GIFs from sprite sheets
+- `public/assets/backgrounds/` — cherry-picked backgrounds
+- `src/data/game-version.json` — `{"version": "0.4.1"}`
+- `src/data/asset-index.json` — full index of synced assets
+- `src/data/sprite-gifs.json` — index of generated sprite GIFs with character/animation metadata
+
+### Adding assets
+1. Edit `scripts/asset-manifest.json`
+2. For sprites: add sheet names to the character's `sheets` array
+3. For backgrounds: add Godot-relative paths to `backgrounds.files`
+4. Run `npm run sync` and `python scripts/spritesheet-to-gif.py`
+5. Commit the generated files (CI doesn't have access to the Godot project)
+
+### Notes
+- Generated files are committed to git so CI can build without the Godot project
+- The sync script exits gracefully if the Godot project isn't found (CI builds)
+- Sprite sheets are assumed to be horizontal strips of square frames (width/height determines frame count)
+- Scale factor controls pixel art upscaling (3x for allies, 4x for small enemies)
+
 ## Roadmap (Future Sections)
 
 Sections to be added as features are implemented:

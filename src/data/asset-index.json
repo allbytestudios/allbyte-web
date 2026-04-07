@@ -1,6 +1,6 @@
 {
   "version": "0.4.1",
-  "syncedAt": "2026-04-07T18:26:56.251Z",
+  "syncedAt": "2026-04-07T21:09:50.082Z",
   "music": [
     {
       "name": "Anthem2",
@@ -43,10 +43,6 @@
       "file": "/assets/music/Laria.ogg"
     },
     {
-      "name": "rest_zapsplat_music_angela_paulson_floating_001",
-      "file": "/assets/music/rest_zapsplat_music_angela_paulson_floating_001.ogg"
-    },
-    {
       "name": "Sleep",
       "file": "/assets/music/Sleep.ogg"
     },
@@ -61,24 +57,7 @@
       "file": "/assets/fonts/ModernGoth.otf"
     }
   ],
-  "sprites": [
-    {
-      "name": "Elias - IdleDown",
-      "file": "/assets/sprites/Elias_IdleDown.png"
-    },
-    {
-      "name": "Falmri - IdleDown",
-      "file": "/assets/sprites/Falmri_IdleDown.png"
-    },
-    {
-      "name": "Mia - IdleDown",
-      "file": "/assets/sprites/Mia_IdleDown.png"
-    },
-    {
-      "name": "slime - IdleDown",
-      "file": "/assets/sprites/slime_IdleDown.png"
-    }
-  ],
+  "sprites": [],
   "backgrounds": [
     {
       "name": "MainSquare",

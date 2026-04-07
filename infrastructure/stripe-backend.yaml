@@ -1,0 +1,902 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AllByte Studios backend (Auth + Stripe + API Gateway + Lambda + DynamoDB)
+
+Parameters:
+  StripePriceInitiate:
+    Type: String
+    Default: price_1TJfoPL0A07AB3XunnJwtSwi
+  StripePriceHero:
+    Type: String
+    Default: price_1TJfoQL0A07AB3XuczyqJc99
+  StripePriceLegend:
+    Type: String
+    Default: price_1TJfoQL0A07AB3Xu9WXvyUvs
+  StripePriceDonate5:
+    Type: String
+    Default: price_1TJfoRL0A07AB3XuzHlal9l6
+  StripePriceDonate10:
+    Type: String
+    Default: price_1TJfoRL0A07AB3XulyU6BbL0
+  StripePriceDonate25:
+    Type: String
+    Default: price_1TJfoSL0A07AB3XuKo0Mea0w
+  SiteDomain:
+    Type: String
+    Default: https://allbyte.studio
+
+Resources:
+  # --- DynamoDB Tables ---
+  SubscriptionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: allbyte-studio-subscriptions
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: customerId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: customerId
+          KeyType: HASH
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: allbyte-studio-users
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: email-index
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # --- IAM Role for Lambdas ---
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: allbyte-studio-stripe-lambda
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: BackendPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt SubscriptionsTable.Arn
+                  - !GetAtt UsersTable.Arn
+                  - !Sub "${UsersTable.Arn}/index/*"
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:ListSecrets
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:allbyte-studio/*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
+
+  # --- Lambda: Auth Signup ---
+  SignupFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-auth-signup
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import uuid
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "POST,OPTIONS",
+          }
+
+          def get_jwt_secret():
+              sm = boto3.client("secretsmanager")
+              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+
+          def hash_password(password, salt=None):
+              if salt is None:
+                  salt = os.urandom(32)
+              dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 600000)
+              return base64.b64encode(salt).decode() + ":" + base64.b64encode(dk).decode()
+
+          def sign_jwt(payload, secret):
+              header = base64.urlsafe_b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).rstrip(b"=").decode()
+              body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+              sig_input = f"{header}.{body}"
+              sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              return f"{header}.{body}.{sig}"
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              body = json.loads(event.get("body", "{}"))
+              email = body.get("email", "").strip().lower()
+              password = body.get("password", "")
+              username = body.get("username", "").strip()
+
+              if not email or "@" not in email:
+                  return err(400, "Valid email required")
+              if len(password) < 8:
+                  return err(400, "Password must be at least 8 characters")
+              if not username:
+                  return err(400, "Username required")
+
+              # Check if email already exists
+              resp = users.query(
+                  IndexName="email-index",
+                  KeyConditionExpression="email = :e",
+                  ExpressionAttributeValues={":e": email},
+              )
+              if resp.get("Items"):
+                  return err(409, "Email already registered")
+
+              user_id = str(uuid.uuid4())
+              pw_hash = hash_password(password)
+              now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+              users.put_item(Item={
+                  "userId": user_id,
+                  "email": email,
+                  "username": username,
+                  "passwordHash": pw_hash,
+                  "createdAt": now,
+              })
+
+              jwt_secret = get_jwt_secret()
+              token = sign_jwt({
+                  "sub": user_id,
+                  "email": email,
+                  "username": username,
+                  "exp": int(time.time()) + 7 * 86400,
+              }, jwt_secret)
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({
+                      "token": token,
+                      "user": {"userId": user_id, "email": email, "username": username},
+                  }),
+              }
+
+  # --- Lambda: Auth Login ---
+  LoginFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-auth-login
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+          SITE_DOMAIN: !Ref SiteDomain
+          PRICE_INITIATE: !Ref StripePriceInitiate
+          PRICE_HERO: !Ref StripePriceHero
+          PRICE_LEGEND: !Ref StripePriceLegend
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+          subs = boto3.resource("dynamodb").Table(os.environ["SUBSCRIPTIONS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "POST,OPTIONS",
+          }
+
+          def get_jwt_secret():
+              sm = boto3.client("secretsmanager")
+              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+
+          def verify_password(password, stored):
+              salt_b64, hash_b64 = stored.split(":")
+              salt = base64.b64decode(salt_b64)
+              expected = base64.b64decode(hash_b64)
+              dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 600000)
+              return hmac.compare_digest(dk, expected)
+
+          def sign_jwt(payload, secret):
+              header = base64.urlsafe_b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).rstrip(b"=").decode()
+              body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+              sig_input = f"{header}.{body}"
+              sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              return f"{header}.{body}.{sig}"
+
+          def get_tier(stripe_customer_id):
+              if not stripe_customer_id:
+                  return None
+              price_to_tier = {
+                  os.environ["PRICE_INITIATE"]: "initiate",
+                  os.environ["PRICE_HERO"]: "hero",
+                  os.environ["PRICE_LEGEND"]: "legend",
+              }
+              try:
+                  resp = subs.get_item(Key={"customerId": stripe_customer_id})
+                  item = resp.get("Item", {})
+                  if item.get("status") == "active":
+                      return price_to_tier.get(item.get("priceId"))
+              except Exception:
+                  pass
+              return None
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              body = json.loads(event.get("body", "{}"))
+              email = body.get("email", "").strip().lower()
+              password = body.get("password", "")
+
+              if not email or not password:
+                  return err(400, "Email and password required")
+
+              resp = users.query(
+                  IndexName="email-index",
+                  KeyConditionExpression="email = :e",
+                  ExpressionAttributeValues={":e": email},
+              )
+              items = resp.get("Items", [])
+              if not items:
+                  return err(401, "Invalid email or password")
+
+              user = items[0]
+              if not verify_password(password, user["passwordHash"]):
+                  return err(401, "Invalid email or password")
+
+              tier = get_tier(user.get("stripeCustomerId"))
+              jwt_secret = get_jwt_secret()
+              token = sign_jwt({
+                  "sub": user["userId"],
+                  "email": user["email"],
+                  "username": user["username"],
+                  "exp": int(time.time()) + 7 * 86400,
+              }, jwt_secret)
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({
+                      "token": token,
+                      "user": {
+                          "userId": user["userId"],
+                          "email": user["email"],
+                          "username": user["username"],
+                          "tier": tier,
+                          "stripeCustomerId": user.get("stripeCustomerId"),
+                      },
+                  }),
+              }
+
+  # --- Lambda: Auth Me (verify token, get profile) ---
+  MeFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-auth-me
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+          SITE_DOMAIN: !Ref SiteDomain
+          PRICE_INITIATE: !Ref StripePriceInitiate
+          PRICE_HERO: !Ref StripePriceHero
+          PRICE_LEGEND: !Ref StripePriceLegend
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+          subs = boto3.resource("dynamodb").Table(os.environ["SUBSCRIPTIONS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "GET,OPTIONS",
+          }
+
+          def get_jwt_secret():
+              sm = boto3.client("secretsmanager")
+              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              # Decode payload (add padding)
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def get_tier(stripe_customer_id):
+              if not stripe_customer_id:
+                  return None
+              price_to_tier = {
+                  os.environ["PRICE_INITIATE"]: "initiate",
+                  os.environ["PRICE_HERO"]: "hero",
+                  os.environ["PRICE_LEGEND"]: "legend",
+              }
+              try:
+                  resp = subs.get_item(Key={"customerId": stripe_customer_id})
+                  item = resp.get("Item", {})
+                  if item.get("status") == "active":
+                      return price_to_tier.get(item.get("priceId"))
+              except Exception:
+                  pass
+              return None
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              auth = event.get("headers", {}).get("authorization", "")
+              if not auth.startswith("Bearer "):
+                  return err(401, "No token provided")
+
+              token = auth[7:]
+              jwt_secret = get_jwt_secret()
+              payload = verify_jwt(token, jwt_secret)
+              if not payload:
+                  return err(401, "Invalid or expired token")
+
+              resp = users.get_item(Key={"userId": payload["sub"]})
+              user = resp.get("Item")
+              if not user:
+                  return err(401, "User not found")
+
+              tier = get_tier(user.get("stripeCustomerId"))
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({
+                      "user": {
+                          "userId": user["userId"],
+                          "email": user["email"],
+                          "username": user["username"],
+                          "tier": tier,
+                          "stripeCustomerId": user.get("stripeCustomerId"),
+                      },
+                  }),
+              }
+
+  # --- Lambda: Create Checkout Session ---
+  CreateCheckoutFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-create-checkout
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          STRIPE_SECRET_ARN: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:allbyte-studio/stripe-secret-key"
+          SITE_DOMAIN: !Ref SiteDomain
+          USERS_TABLE: !Ref UsersTable
+          PRICE_INITIATE: !Ref StripePriceInitiate
+          PRICE_HERO: !Ref StripePriceHero
+          PRICE_LEGEND: !Ref StripePriceLegend
+          PRICE_DONATE_5: !Ref StripePriceDonate5
+          PRICE_DONATE_10: !Ref StripePriceDonate10
+          PRICE_DONATE_25: !Ref StripePriceDonate25
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import urllib.request
+          import urllib.parse
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "POST,OPTIONS",
+          }
+
+          def get_stripe_key():
+              sm = boto3.client("secretsmanager")
+              resp = sm.list_secrets(Filters=[{"Key": "name", "Values": ["allbyte-studio/stripe-secret-key"]}])
+              secret_arn = resp["SecretList"][0]["ARN"]
+              return sm.get_secret_value(SecretId=secret_arn)["SecretString"]
+
+          def get_jwt_secret():
+              sm = boto3.client("secretsmanager")
+              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def stripe_post(path, data, api_key):
+              body = urllib.parse.urlencode(data, doseq=True).encode()
+              req = urllib.request.Request(
+                  f"https://api.stripe.com/v1/{path}",
+                  data=body,
+                  headers={"Authorization": f"Bearer {api_key}"},
+                  method="POST",
+              )
+              resp = urllib.request.urlopen(req)
+              return json.loads(resp.read())
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              body = json.loads(event.get("body", "{}"))
+              tier = body.get("tier")
+              domain = os.environ["SITE_DOMAIN"]
+              api_key = get_stripe_key()
+
+              price_map = {
+                  "initiate": os.environ["PRICE_INITIATE"],
+                  "hero": os.environ["PRICE_HERO"],
+                  "legend": os.environ["PRICE_LEGEND"],
+                  "donate_5": os.environ["PRICE_DONATE_5"],
+                  "donate_10": os.environ["PRICE_DONATE_10"],
+                  "donate_25": os.environ["PRICE_DONATE_25"],
+              }
+
+              price_id = price_map.get(tier)
+              if not price_id:
+                  return err(400, f"Unknown tier: {tier}")
+
+              is_subscription = tier in ("initiate", "hero", "legend")
+
+              # For subscriptions, require auth and link to Stripe customer
+              stripe_customer_id = None
+              if is_subscription:
+                  auth = event.get("headers", {}).get("authorization", "")
+                  if not auth.startswith("Bearer "):
+                      return err(401, "Login required for subscriptions")
+                  jwt_secret = get_jwt_secret()
+                  payload = verify_jwt(auth[7:], jwt_secret)
+                  if not payload:
+                      return err(401, "Invalid or expired token")
+
+                  # Get or create Stripe customer
+                  user_resp = users.get_item(Key={"userId": payload["sub"]})
+                  user = user_resp.get("Item")
+                  if not user:
+                      return err(401, "User not found")
+
+                  stripe_customer_id = user.get("stripeCustomerId")
+                  if not stripe_customer_id:
+                      customer = stripe_post("customers", {
+                          "email": user["email"],
+                          "metadata[userId]": user["userId"],
+                      }, api_key)
+                      stripe_customer_id = customer["id"]
+                      users.update_item(
+                          Key={"userId": user["userId"]},
+                          UpdateExpression="SET stripeCustomerId = :c",
+                          ExpressionAttributeValues={":c": stripe_customer_id},
+                      )
+
+              params = {
+                  "line_items[0][price]": price_id,
+                  "line_items[0][quantity]": "1",
+                  "mode": "subscription" if is_subscription else "payment",
+                  "success_url": f"{domain}/subscribe/?success=true",
+                  "cancel_url": f"{domain}/subscribe/",
+              }
+
+              if stripe_customer_id:
+                  params["customer"] = stripe_customer_id
+
+              session = stripe_post("checkout/sessions", params, api_key)
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({"url": session["url"]}),
+              }
+
+  # --- Lambda: Stripe Webhook ---
+  WebhookFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-stripe-webhook
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SubscriptionsTable
+          STRIPE_SECRET_ARN: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:allbyte-studio/stripe-secret-key"
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+
+          table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
+
+          def handler(event, context):
+              body = json.loads(event.get("body", "{}"))
+              event_type = body.get("type", "")
+              obj = body.get("data", {}).get("object", {})
+
+              if event_type == "checkout.session.completed":
+                  customer_id = obj.get("customer")
+                  subscription_id = obj.get("subscription")
+                  mode = obj.get("mode")
+
+                  if mode == "subscription" and customer_id and subscription_id:
+                      table.put_item(Item={
+                          "customerId": customer_id,
+                          "subscriptionId": subscription_id,
+                          "status": "active",
+                          "email": obj.get("customer_details", {}).get("email", ""),
+                      })
+
+                  elif mode == "payment":
+                      table.put_item(Item={
+                          "customerId": obj.get("payment_intent", "donation_" + context.aws_request_id),
+                          "type": "donation",
+                          "amount": obj.get("amount_total", 0),
+                          "status": "completed",
+                          "email": obj.get("customer_details", {}).get("email", ""),
+                      })
+
+              elif event_type in ("customer.subscription.updated", "customer.subscription.deleted"):
+                  customer_id = obj.get("customer")
+                  status = obj.get("status", "")
+                  price_id = ""
+                  items = obj.get("items", {}).get("data", [])
+                  if items:
+                      price_id = items[0].get("price", {}).get("id", "")
+
+                  if customer_id:
+                      table.update_item(
+                          Key={"customerId": customer_id},
+                          UpdateExpression="SET #s = :s, priceId = :p",
+                          ExpressionAttributeNames={"#s": "status"},
+                          ExpressionAttributeValues={
+                              ":s": status,
+                              ":p": price_id,
+                          },
+                      )
+
+              return {"statusCode": 200, "body": "ok"}
+
+  # --- Lambda: Get Subscriber Counts ---
+  GetCountsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-get-counts
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref SubscriptionsTable
+          PRICE_INITIATE: !Ref StripePriceInitiate
+          PRICE_HERO: !Ref StripePriceHero
+          PRICE_LEGEND: !Ref StripePriceLegend
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+
+          CORS = {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Allow-Methods": "GET,OPTIONS",
+          }
+
+          table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              price_to_tier = {
+                  os.environ["PRICE_INITIATE"]: "initiate",
+                  os.environ["PRICE_HERO"]: "hero",
+                  os.environ["PRICE_LEGEND"]: "legend",
+              }
+
+              counts = {"initiate": 0, "hero": 0, "legend": 0}
+
+              resp = table.scan(
+                  FilterExpression="#s = :active AND attribute_exists(priceId)",
+                  ExpressionAttributeNames={"#s": "status"},
+                  ExpressionAttributeValues={":active": "active"},
+              )
+
+              for item in resp.get("Items", []):
+                  tier = price_to_tier.get(item.get("priceId", ""))
+                  if tier:
+                      counts[tier] += 1
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps(counts),
+              }
+
+  # --- API Gateway ---
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: allbyte-studio-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref SiteDomain
+          - "http://localhost:4321"
+        AllowMethods:
+          - POST
+          - GET
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: "$default"
+      AutoDeploy: true
+
+  # Auth routes
+  SignupIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt SignupFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  SignupRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /auth/signup"
+      Target: !Sub "integrations/${SignupIntegration}"
+
+  SignupPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SignupFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  LoginIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt LoginFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  LoginRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /auth/login"
+      Target: !Sub "integrations/${LoginIntegration}"
+
+  LoginPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LoginFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  MeIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt MeFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  MeRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /auth/me"
+      Target: !Sub "integrations/${MeIntegration}"
+
+  MePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref MeFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Checkout route
+  CheckoutIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt CreateCheckoutFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  CheckoutRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /checkout"
+      Target: !Sub "integrations/${CheckoutIntegration}"
+
+  CheckoutPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CreateCheckoutFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Webhook route
+  WebhookIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt WebhookFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  WebhookRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /webhook"
+      Target: !Sub "integrations/${WebhookIntegration}"
+
+  WebhookPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref WebhookFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Counts route
+  CountsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt GetCountsFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  CountsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /counts"
+      Target: !Sub "integrations/${CountsIntegration}"
+
+  CountsPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref GetCountsFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+Outputs:
+  ApiUrl:
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  UsersTableName:
+    Value: !Ref UsersTable
+  SubscriptionsTableName:
+    Value: !Ref SubscriptionsTable
+  WebhookUrl:
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/webhook"

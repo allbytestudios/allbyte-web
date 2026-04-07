@@ -8,13 +8,14 @@ import os
 import sys
 import json
 import struct
+import hashlib
 from PIL import Image
 
-def sheet_to_gif(src_path, dest_path, frame_duration=150, scale=3):
+def sheet_to_gif(src_path, dest_path, frame_duration=150, scale=3, frame_width=None):
     """Convert a horizontal sprite sheet to an animated GIF."""
     sheet = Image.open(src_path).convert("RGBA")
     h = sheet.size[1]
-    frame_w = h  # Square frames
+    frame_w = frame_width if frame_width else h  # Default: square frames
     n_frames = sheet.size[0] // frame_w
 
     if n_frames < 1:
@@ -66,16 +67,27 @@ def process_manifest():
         sheets = config.get("sheets", [])
 
         print(f"\n{char_name}:")
+        frame_widths = config.get("frameWidths", {})
+        seen_hashes = {}  # hash -> first animation name
+
         for sheet_name in sheets:
             src = os.path.join(char_dir, f"{sheet_name}.png")
             if not os.path.exists(src):
                 print(f"  Skip: {sheet_name}.png not found")
                 continue
 
+            # Dedup: skip if source file is identical to one already processed
+            src_hash = hashlib.md5(open(src, "rb").read()).hexdigest()
+            if src_hash in seen_hashes:
+                print(f"  Skip: {sheet_name}.png (duplicate of {seen_hashes[src_hash]})")
+                continue
+            seen_hashes[src_hash] = sheet_name
+
             dest_name = f"{char_name}_{sheet_name}.gif"
             dest = os.path.join(out_dir, dest_name)
+            fw_override = frame_widths.get(sheet_name)
 
-            if sheet_to_gif(src, dest, frame_duration=duration, scale=scale):
+            if sheet_to_gif(src, dest, frame_duration=duration, scale=scale, frame_width=fw_override):
                 print(f"  {sheet_name}.png -> {dest_name}")
                 results.append({
                     "character": char_name,

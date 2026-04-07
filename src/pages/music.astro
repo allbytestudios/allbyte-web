@@ -1,0 +1,267 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import assetIndex from "../data/asset-index.json";
+
+const title = "Music — AllByte Studios";
+const description = "Original compositions for The Chronicles of Nesis, handcrafted by AllByte.";
+
+// Clean up track names for display
+function formatTrackName(name: string): string {
+  return name
+    .replace(/([A-Z])/g, " $1")
+    .replace(/(\d+)/g, " $1")
+    .replace(/_/g, " ")
+    .replace(/^rest zapsplat.*/, "Rest Theme")
+    .trim();
+}
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="page">
+    <header class="page-header">
+      <img src="/Flourish.png" alt="" class="flourish flourish-left" />
+      <img src="/Flourish.png" alt="" class="flourish flourish-right" />
+      <a href="/" class="back-link">&larr; Back</a>
+      <h1 class="page-title">Music</h1>
+      <p class="page-sub">Original compositions for The Chronicles of Nesis</p>
+      <p class="page-note">(made without AI)</p>
+    </header>
+
+    <main class="content">
+      <div class="volume-control">
+        <label class="volume-label" for="master-volume">Volume</label>
+        <input type="range" id="master-volume" class="volume-slider" min="0" max="100" value="70" />
+      </div>
+      <div class="track-list">
+        {assetIndex.music.map((track, i) => (
+          <div class="track-card">
+            <div class="track-info">
+              <span class="track-number">{String(i + 1).padStart(2, "0")}</span>
+              <span class="track-name">{formatTrackName(track.name)}</span>
+            </div>
+            <audio controls preload="metadata" class="track-audio">
+              <source src={track.file} type="audio/ogg" />
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        ))}
+
+        <!-- Locked tracks -->
+        <div class="track-card locked-card">
+          <div class="track-info">
+            <span class="track-number">??</span>
+            <span class="track-name locked-name">&#128274; More tracks coming soon</span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="page-footer">
+      <a href="/" class="back-link">&larr; Back to AllByte Studios</a>
+    </footer>
+  </div>
+  <script>
+    const slider = document.getElementById("master-volume") as HTMLInputElement;
+    const tracks = document.querySelectorAll<HTMLAudioElement>(".track-audio");
+
+    function setVolume(v: number) {
+      tracks.forEach(a => a.volume = v);
+    }
+
+    setVolume(0.7);
+    slider.addEventListener("input", () => setVolume(Number(slider.value) / 100));
+
+    tracks.forEach(audio => {
+      audio.addEventListener("play", () => {
+        tracks.forEach(other => { if (other !== audio) other.pause(); });
+      });
+    });
+  </script>
+</BaseLayout>
+
+<style is:global>
+  .page {
+    min-height: 100dvh;
+    background: #ddd5b8;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-header {
+    background: #cec08a;
+    text-align: center;
+    padding: 1rem 1rem 0.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .back-link {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    color: #5a4d38;
+    text-decoration: none;
+    transition: color 0.2s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .back-link:hover {
+    color: #2a2218;
+  }
+
+  .flourish {
+    position: absolute;
+    top: 0.5rem;
+    width: 14rem;
+    height: auto;
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+
+  .flourish-left {
+    left: 0.5rem;
+  }
+
+  .flourish-right {
+    right: 0.5rem;
+    transform: scaleX(-1);
+  }
+
+  .page-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2.75rem;
+    font-weight: 600;
+    color: #2a2218;
+    margin: 0.5rem 0 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-sub {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+    color: #5a4d38;
+    margin: 0.25rem 0 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-note {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.85rem;
+    color: #8a7a58;
+    margin: 0.25rem 0 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .content {
+    flex: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .volume-control {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .volume-label {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    color: #2a2218;
+    flex-shrink: 0;
+  }
+
+  .volume-slider {
+    width: 160px;
+    accent-color: #5a4d38;
+    cursor: pointer;
+  }
+
+  .track-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .track-card {
+    background: #dbd0a0;
+    border: 2px solid #7a6e52;
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .track-info {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .track-number {
+    font-family: "Courier New", monospace;
+    font-size: 0.9rem;
+    color: #8a7a58;
+    flex-shrink: 0;
+  }
+
+  .track-name {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.25rem;
+    color: #2a2218;
+  }
+
+  .track-audio {
+    flex-shrink: 0;
+    height: 36px;
+    max-width: 300px;
+    width: 100%;
+  }
+
+  .locked-card {
+    opacity: 0.6;
+    border-style: dashed;
+  }
+
+  .locked-name {
+    color: #8a7a58;
+    font-style: italic;
+  }
+
+  .page-footer {
+    background: #cec08a;
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .flourish {
+      width: 8rem;
+    }
+
+    .page-title {
+      font-size: 2rem;
+    }
+
+    .track-card {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .track-audio {
+      max-width: 100%;
+    }
+  }
+</style>

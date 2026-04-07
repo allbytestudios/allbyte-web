@@ -71,16 +71,6 @@
   },
   {
     "character": "Elias",
-    "animation": "SmiteLineDownRight",
-    "file": "/assets/sprites/Elias_SmiteLineDownRight.gif"
-  },
-  {
-    "character": "Elias",
-    "animation": "SmiteLineUpLeft",
-    "file": "/assets/sprites/Elias_SmiteLineUpLeft.gif"
-  },
-  {
-    "character": "Elias",
     "animation": "BattleIdleDownRight",
     "file": "/assets/sprites/Elias_BattleIdleDownRight.gif"
   },
@@ -181,21 +171,6 @@
   },
   {
     "character": "Falmri",
-    "animation": "BattleIdleDown",
-    "file": "/assets/sprites/Falmri_BattleIdleDown.gif"
-  },
-  {
-    "character": "Falmri",
-    "animation": "BattleIdleDownRight",
-    "file": "/assets/sprites/Falmri_BattleIdleDownRight.gif"
-  },
-  {
-    "character": "Falmri",
-    "animation": "BattleIdleRight",
-    "file": "/assets/sprites/Falmri_BattleIdleRight.gif"
-  },
-  {
-    "character": "Falmri",
     "animation": "Casting",
     "file": "/assets/sprites/Falmri_Casting.gif"
   },
@@ -216,41 +191,6 @@
   },
   {
     "character": "slime",
-    "animation": "IdleRight",
-    "file": "/assets/sprites/slime_IdleRight.gif"
-  },
-  {
-    "character": "slime",
-    "animation": "IdleUp",
-    "file": "/assets/sprites/slime_IdleUp.gif"
-  },
-  {
-    "character": "slime",
-    "animation": "Down",
-    "file": "/assets/sprites/slime_Down.gif"
-  },
-  {
-    "character": "slime",
-    "animation": "Right",
-    "file": "/assets/sprites/slime_Right.gif"
-  },
-  {
-    "character": "slime",
-    "animation": "Up",
-    "file": "/assets/sprites/slime_Up.gif"
-  },
-  {
-    "character": "slime",
-    "animation": "BattleIdleDownRight",
-    "file": "/assets/sprites/slime_BattleIdleDownRight.gif"
-  },
-  {
-    "character": "slime",
-    "animation": "BattleIdleUpLeft",
-    "file": "/assets/sprites/slime_BattleIdleUpLeft.gif"
-  },
-  {
-    "character": "slime",
     "animation": "SlapDownRight",
     "file": "/assets/sprites/slime_SlapDownRight.gif"
   },
@@ -260,44 +200,64 @@
     "file": "/assets/sprites/slime_SlapUpLeft.gif"
   },
   {
-    "character": "motherSlime",
+    "character": "spiting",
     "animation": "IdleDown",
-    "file": "/assets/sprites/motherSlime_IdleDown.gif"
+    "file": "/assets/sprites/spiting_IdleDown.gif"
   },
   {
-    "character": "motherSlime",
-    "animation": "IdleRight",
-    "file": "/assets/sprites/motherSlime_IdleRight.gif"
+    "character": "spiting",
+    "animation": "IdleDownRight",
+    "file": "/assets/sprites/spiting_IdleDownRight.gif"
   },
   {
-    "character": "motherSlime",
-    "animation": "IdleUp",
-    "file": "/assets/sprites/motherSlime_IdleUp.gif"
+    "character": "spiting",
+    "animation": "IdleUpLeft",
+    "file": "/assets/sprites/spiting_IdleUpLeft.gif"
   },
   {
-    "character": "motherSlime",
+    "character": "spiting",
     "animation": "Down",
-    "file": "/assets/sprites/motherSlime_Down.gif"
+    "file": "/assets/sprites/spiting_Down.gif"
   },
   {
-    "character": "motherSlime",
-    "animation": "Right",
-    "file": "/assets/sprites/motherSlime_Right.gif"
+    "character": "spiting",
+    "animation": "DownRight",
+    "file": "/assets/sprites/spiting_DownRight.gif"
   },
   {
-    "character": "motherSlime",
-    "animation": "Up",
-    "file": "/assets/sprites/motherSlime_Up.gif"
+    "character": "spiting",
+    "animation": "UpLeft",
+    "file": "/assets/sprites/spiting_UpLeft.gif"
   },
   {
-    "character": "motherSlime",
-    "animation": "SlapDownRight",
-    "file": "/assets/sprites/motherSlime_SlapDownRight.gif"
+    "character": "spiting",
+    "animation": "AttackDownRight",
+    "file": "/assets/sprites/spiting_AttackDownRight.gif"
   },
   {
-    "character": "motherSlime",
-    "animation": "SlapUpLeft",
-    "file": "/assets/sprites/motherSlime_SlapUpLeft.gif"
+    "character": "spiting",
+    "animation": "AttackUpLeft",
+    "file": "/assets/sprites/spiting_AttackUpLeft.gif"
+  },
+  {
+    "character": "spiting",
+    "animation": "AcidAttack_DownRight",
+    "file": "/assets/sprites/spiting_AcidAttack_DownRight.gif"
+  },
+  {
+    "character": "spiting",
+    "animation": "AcidAttack_UpLeft",
+    "file": "/assets/sprites/spiting_AcidAttack_UpLeft.gif"
+  },
+  {
+    "character": "spiting",
+    "animation": "StingAttack_DownRight",
+    "file": "/assets/sprites/spiting_StingAttack_DownRight.gif"
+  },
+  {
+    "character": "spiting",
+    "animation": "StingAttack_UpLeft",
+    "file": "/assets/sprites/spiting_StingAttack_UpLeft.gif"
   },
   {
     "character": "eastwood",
@@ -313,21 +273,6 @@
     "character": "eastwood",
     "animation": "IdleUp",
     "file": "/assets/sprites/eastwood_IdleUp.gif"
-  },
-  {
-    "character": "eastwood",
-    "animation": "Down",
-    "file": "/assets/sprites/eastwood_Down.gif"
-  },
-  {
-    "character": "eastwood",
-    "animation": "Right",
-    "file": "/assets/sprites/eastwood_Right.gif"
-  },
-  {
-    "character": "eastwood",
-    "animation": "Up",
-    "file": "/assets/sprites/eastwood_Up.gif"
   },
   {
     "character": "eastwood",
@@ -355,33 +300,63 @@
     "file": "/assets/sprites/spiter_IdleUp.gif"
   },
   {
+    "character": "spiter",
+    "animation": "IdleUpLeft",
+    "file": "/assets/sprites/spiter_IdleUpLeft.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "IdleDownRight",
+    "file": "/assets/sprites/spiter_IdleDownRight.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "Down",
+    "file": "/assets/sprites/spiter_Down.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "Right",
+    "file": "/assets/sprites/spiter_Right.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "Up",
+    "file": "/assets/sprites/spiter_Up.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "UpLeft",
+    "file": "/assets/sprites/spiter_UpLeft.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "DownRight",
+    "file": "/assets/sprites/spiter_DownRight.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "AttackDownRight",
+    "file": "/assets/sprites/spiter_AttackDownRight.gif"
+  },
+  {
+    "character": "spiter",
+    "animation": "AttackUpLeft",
+    "file": "/assets/sprites/spiter_AttackUpLeft.gif"
+  },
+  {
     "character": "vepir",
     "animation": "IdleDown",
     "file": "/assets/sprites/vepir_IdleDown.gif"
   },
   {
     "character": "vepir",
-    "animation": "IdleRight",
-    "file": "/assets/sprites/vepir_IdleRight.gif"
+    "animation": "AttackDownRight",
+    "file": "/assets/sprites/vepir_AttackDownRight.gif"
   },
   {
     "character": "vepir",
-    "animation": "IdleUp",
-    "file": "/assets/sprites/vepir_IdleUp.gif"
-  },
-  {
-    "character": "vepir",
-    "animation": "Down",
-    "file": "/assets/sprites/vepir_Down.gif"
-  },
-  {
-    "character": "vepir",
-    "animation": "Right",
-    "file": "/assets/sprites/vepir_Right.gif"
-  },
-  {
-    "character": "vepir",
-    "animation": "Up",
-    "file": "/assets/sprites/vepir_Up.gif"
+    "animation": "Feeding",
+    "file": "/assets/sprites/vepir_Feeding.gif"
   }
 ]

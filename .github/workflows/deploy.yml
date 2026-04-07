@@ -39,9 +39,20 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          # Sync everything first
+          # Sync site build, but preserve game assets uploaded separately
           aws s3 sync dist/ s3://${{ secrets.AWS_S3_BUCKET }} \
-            --delete
+            --delete \
+            --exclude "assets/*" \
+            --exclude "Anthem2.mp3" \
+            --exclude "cursor-move.wav" \
+            --exclude "ChroniclesOfNesisTitle.gif" \
+            --exclude "ChroniclesOfNesisTitle-still.png" \
+            --exclude "ChroniclesOfNesisTitleName.png" \
+            --exclude "BattleChargeRight.gif" \
+            --exclude "BattleChargeRight-still.png" \
+            --exclude "Flourish.png" \
+            --exclude "leftSword.png" \
+            --exclude "verticalSwordTHIN.png"
 
           # Override cache headers for HTML files (must revalidate)
           aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }} s3://${{ secrets.AWS_S3_BUCKET }} \

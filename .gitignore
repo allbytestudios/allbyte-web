@@ -15,6 +15,20 @@ node_modules/
 .env.*
 !.env.example
 
+# Game assets (synced from Godot project via npm run sync)
+# Run `npm run sync` and `python scripts/spritesheet-to-gif.py` to regenerate
+public/assets/
+public/Anthem2.mp3
+public/cursor-move.wav
+public/ChroniclesOfNesisTitle.gif
+public/ChroniclesOfNesisTitle-still.png
+public/ChroniclesOfNesisTitleName.png
+public/BattleChargeRight.gif
+public/BattleChargeRight-still.png
+public/Flourish.png
+public/leftSword.png
+public/verticalSwordTHIN.png
+
 # OS
 .DS_Store
 Thumbs.db

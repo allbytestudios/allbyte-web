@@ -355,46 +355,95 @@ Hover effects (gif playback, audio, cursor/sword animations) are desktop-only ex
 
 ## Asset Sync Pipeline
 
-A local script pulls game data from the Godot project into the web portal.
+Game assets are **not committed to git** — they're pulled from the local Godot project and pushed to S3 separately. This keeps handcrafted art out of the public repo while still serving it via CloudFront.
+
+### How it works
+
+```
+Godot Project (local)
+    |
+    v
+npm run sync                    # Pull assets to public/assets/
+python scripts/spritesheet-to-gif.py  # Convert sprite sheets to GIFs
+    |
+    v
+public/assets/ (local only, gitignored)
+    |
+    v
+npm run push-assets             # Upload to S3 bucket
+    |
+    v
+S3 Bucket → CloudFront CDN     # Served at same paths (e.g., /assets/music/...)
+```
+
+CI deploys only the site build (HTML/CSS/JS). The `--delete` flag in CI excludes asset paths so it never removes assets that were uploaded separately.
 
 ### Setup
 The Godot project path and all asset selections are configured in `scripts/asset-manifest.json`:
 - **Version**: extracted from `Autoload/World.gd` via regex, written to `src/data/game-version.json`
-- **Music**: syncs from `Music/` dir, prefers `.ogg`, excludes `TemporaryMusic/`, `.flp`, `.mp3`, `.import`
+- **Music**: syncs from `Music/` dir, prefers `.ogg`, excludes `TemporaryMusic/`, `.flp`, `.mp3`, `.import`, third-party tracks
 - **Fonts**: cherry-picked files list
 - **Sprite GIFs**: converts horizontal sprite sheets to animated GIFs via `scripts/spritesheet-to-gif.py`
   - Configurable per-character: source dir, scale factor, frame duration, category (ally/enemy/boss)
-  - `hidden: true` flag for unreleased characters (Mia)
+  - `hidden: true` flag for unreleased characters
+  - `frameWidths` overrides for non-square frames (e.g., casting animations)
+  - Automatic dedup: skips sprite sheets with identical content within a character
 - **Backgrounds**: cherry-picked files list
 
 ### Commands
 ```bash
-npm run sync                    # Sync music, fonts, sprites (static), backgrounds
+npm run sync                          # Pull assets from Godot project
 python scripts/spritesheet-to-gif.py  # Convert sprite sheets to animated GIFs
-npm run build                   # Runs sync automatically before Astro build
+npm run push-assets                   # Upload assets to S3 (requires AWS CLI)
+npm run dev                           # Start dev server (assets served from local public/)
+npm run build                         # Runs sync automatically before Astro build
 ```
 
-### Output
+### Local output (gitignored)
 - `public/assets/music/` — deduplicated game music (.ogg)
 - `public/assets/fonts/` — game fonts
 - `public/assets/sprites/` — animated GIFs from sprite sheets
 - `public/assets/backgrounds/` — cherry-picked backgrounds
+- Root-level files: demo GIF, title images, sword icons, audio SFX
+
+### Tracked metadata (committed to git)
 - `src/data/game-version.json` — `{"version": "0.4.1"}`
-- `src/data/asset-index.json` — full index of synced assets
+- `src/data/asset-index.json` — full index of synced assets (paths, names)
 - `src/data/sprite-gifs.json` — index of generated sprite GIFs with character/animation metadata
+
+These JSON files contain only file paths and metadata — no actual asset data. CI uses them to build pages that reference the S3-hosted assets.
 
 ### Adding assets
 1. Edit `scripts/asset-manifest.json`
 2. For sprites: add sheet names to the character's `sheets` array
 3. For backgrounds: add Godot-relative paths to `backgrounds.files`
 4. Run `npm run sync` and `python scripts/spritesheet-to-gif.py`
-5. Commit the generated files (CI doesn't have access to the Godot project)
+5. Run `npm run push-assets` to upload to S3
+6. Commit the updated JSON index files
+
+### Deploying assets
+```bash
+# First time or after adding new assets:
+npm run sync
+python scripts/spritesheet-to-gif.py
+npm run push-assets
+
+# The push-assets script:
+# - Syncs public/assets/ to s3://allbyte.studio-site/assets/ with immutable cache headers
+# - Uploads root-level game files (GIFs, PNGs, audio) individually
+# - Uses --delete within assets/ so removed assets are cleaned up
+# - Requires AWS_S3_BUCKET env var or defaults to allbyte.studio-site
+```
+
+### CI/CD interaction
+- CI runs `npm run build` which calls `sync-assets.js` — this exits gracefully if the Godot project isn't found
+- CI deploys `dist/` to S3 with `--delete` but **excludes asset paths** so it never removes separately-uploaded assets
+- Assets and site builds are independent — you can update assets without redeploying the site and vice versa
 
 ### Notes
-- Generated files are committed to git so CI can build without the Godot project
-- The sync script exits gracefully if the Godot project isn't found (CI builds)
-- Sprite sheets are assumed to be horizontal strips of square frames (width/height determines frame count)
+- Sprite sheets are assumed to be horizontal strips; frame width defaults to image height (square frames) unless overridden via `frameWidths`
 - Scale factor controls pixel art upscaling (3x for allies, 4x for small enemies)
+- The `push-assets` script sets `Cache-Control: public, max-age=31536000, immutable` — asset URLs are stable so this is safe
 
 ## Roadmap (Future Sections)
 

@@ -1,0 +1,355 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "Font — AllByte Studios";
+const description = "ModernGoth — a custom typeface designed for The Chronicles of Nesis.";
+
+const sampleText = "The Chronicles of Nesis";
+const alphabet = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z";
+const alphabetLower = "a b c d e f g h i j k l m n o p q r s t u v w x y z";
+const numbers = "0 1 2 3 4 5 6 7 8 9";
+const symbols = "! @ # $ % & * ( ) - + = [ ] { } : ; \" ' , . ? /";
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="page">
+    <header class="page-header">
+      <img src="/Flourish.png" alt="" class="flourish flourish-left" />
+      <img src="/Flourish.png" alt="" class="flourish flourish-right" />
+      <a href="/" class="back-link">&larr; Back</a>
+      <h1 class="page-title">ModernGoth</h1>
+      <p class="page-sub">A custom typeface designed for The Chronicles of Nesis</p>
+      <p class="page-note">(made without AI)</p>
+    </header>
+
+    <main class="content">
+      <div class="font-showcase">
+        <div class="showcase-card hero-card">
+          <h2 class="font-name">ModernGoth</h2>
+          <p class="hero-sample">{sampleText}</p>
+        </div>
+
+        <div class="showcase-card">
+          <h3 class="card-title">Character Map</h3>
+          <p class="char-row">{alphabet}</p>
+          <p class="char-row">{alphabetLower}</p>
+          <p class="char-row">{numbers}</p>
+          <p class="char-row symbols">{symbols}</p>
+        </div>
+
+        <div class="showcase-card">
+          <h3 class="card-title">Sizes</h3>
+          <p class="size-sample" style="font-size: 3rem;">AllByte Studios</p>
+          <p class="size-sample" style="font-size: 2rem;">The Chronicles of Nesis</p>
+          <p class="size-sample" style="font-size: 1.5rem;">A tactical turn-based RPG</p>
+          <p class="size-sample" style="font-size: 1.15rem;">Hand-crafted in Godot 3.5 by a solo developer</p>
+          <p class="size-sample" style="font-size: 0.9rem;">Where engineering meets artistry — AI accelerates the code, every asset is crafted by hand</p>
+        </div>
+
+        <div class="showcase-card">
+          <h3 class="card-title">In-Game Usage</h3>
+          <div class="usage-examples">
+            <div class="usage-item">
+              <span class="usage-label">Title Screen</span>
+              <span class="usage-sample title-usage">The Chronicles of Nesis</span>
+            </div>
+            <div class="usage-item">
+              <span class="usage-label">Menu Items</span>
+              <span class="usage-sample menu-usage">New Game &middot; Continue &middot; Settings</span>
+            </div>
+            <div class="usage-item">
+              <span class="usage-label">Dialogue</span>
+              <span class="usage-sample dialogue-usage">"The ruins hold more than dust and stone..."</span>
+            </div>
+            <div class="usage-item">
+              <span class="usage-label">UI Labels</span>
+              <span class="usage-sample ui-usage">HP: 42 / 50 &nbsp; MP: 18 / 30 &nbsp; Level 7</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download -->
+        <div class="showcase-card download-card">
+          <h3 class="card-title">Download</h3>
+          <div class="download-row">
+            <div class="download-item locked-download">
+              <span class="file-icon">&#128274;</span>
+              <div class="file-info">
+                <span class="file-name">ModernGoth.otf</span>
+                <span class="file-meta">OpenType Font — Subscribers only</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="page-footer">
+      <a href="/" class="back-link">&larr; Back to AllByte Studios</a>
+    </footer>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .page {
+    min-height: 100dvh;
+    background: #ddd5b8;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-header {
+    background: #cec08a;
+    text-align: center;
+    padding: 1rem 1rem 0.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .back-link {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    color: #5a4d38;
+    text-decoration: none;
+    transition: color 0.2s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .back-link:hover {
+    color: #2a2218;
+  }
+
+  .flourish {
+    position: absolute;
+    top: 0.5rem;
+    width: 14rem;
+    height: auto;
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+
+  .flourish-left {
+    left: 0.5rem;
+  }
+
+  .flourish-right {
+    right: 0.5rem;
+    transform: scaleX(-1);
+  }
+
+  .page-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2.75rem;
+    font-weight: 600;
+    color: #2a2218;
+    margin: 0.5rem 0 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-sub {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+    color: #5a4d38;
+    margin: 0.25rem 0 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-note {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.85rem;
+    color: #8a7a58;
+    margin: 0.25rem 0 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .content {
+    flex: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .font-showcase {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .showcase-card {
+    background: #dbd0a0;
+    border: 2px solid #7a6e52;
+    border-radius: 4px;
+    padding: 1.5rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .hero-card {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+  }
+
+  .font-name {
+    font-family: "Courier New", monospace;
+    font-size: 0.9rem;
+    color: #8a7a58;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin: 0 0 1rem;
+  }
+
+  .hero-sample {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 3rem;
+    color: #2a2218;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .card-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.25rem;
+    color: #5a4d38;
+    margin: 0 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #8a7d60;
+  }
+
+  .char-row {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.5rem;
+    color: #2a2218;
+    margin: 0.5rem 0;
+    letter-spacing: 0.15em;
+    line-height: 1.6;
+  }
+
+  .symbols {
+    font-size: 1.25rem;
+  }
+
+  .size-sample {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    color: #2a2218;
+    margin: 0.75rem 0;
+    line-height: 1.3;
+  }
+
+  .usage-examples {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .usage-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .usage-label {
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    color: #8a7a58;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .usage-sample {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    color: #2a2218;
+  }
+
+  .title-usage {
+    font-size: 2rem;
+  }
+
+  .menu-usage {
+    font-size: 1.35rem;
+    color: #5a4d38;
+  }
+
+  .dialogue-usage {
+    font-size: 1.15rem;
+    font-style: italic;
+  }
+
+  .ui-usage {
+    font-size: 1rem;
+    color: #5a4d38;
+  }
+
+  .download-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .download-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .locked-download {
+    opacity: 0.5;
+    filter: grayscale(0.4);
+    cursor: not-allowed;
+  }
+
+  .file-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .file-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .file-name {
+    font-family: "Courier New", monospace;
+    font-size: 1rem;
+    color: #2a2218;
+  }
+
+  .file-meta {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.85rem;
+    color: #8a7a58;
+    font-style: italic;
+  }
+
+  .page-footer {
+    background: #cec08a;
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .flourish {
+      width: 8rem;
+    }
+
+    .page-title {
+      font-size: 2rem;
+    }
+
+    .hero-sample {
+      font-size: 2rem;
+    }
+
+    .char-row {
+      font-size: 1.15rem;
+    }
+  }
+</style>

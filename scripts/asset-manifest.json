@@ -5,7 +5,8 @@
   "music": {
     "sourceDir": "Music",
     "preferFormat": "ogg",
-    "exclude": ["TemporaryMusic/**", "*.flp", "*.mp3", "*.import"]
+    "exclude": ["TemporaryMusic/**", "*.flp", "*.mp3", "*.import", "rest_zapsplat*"],
+    "_note": "rest_zapsplat is a third-party track, not original — do not include"
   },
   "fonts": {
     "files": [
@@ -26,11 +27,14 @@
         "Down", "Right", "Up", "UpLeft", "DownRight",
         "AttackDownRight", "AttackUpLeft",
         "SweepAttackDownRight", "SweepAttackUpLeft",
-        "SmiteLineDownRight", "SmiteLineUpLeft",
         "BattleIdleDownRight", "BattleIdleUpLeft",
         "BattleChargeRight",
         "Casting", "Victory", "Dead"
-      ]
+      ],
+      "frameWidths": {
+        "Casting": 44,
+        "BattleChargeRight": 65
+      }
     },
     "Falmri": {
       "sourceDir": "Sprites/Allies/Falmri",
@@ -70,11 +74,21 @@
       "scale": 3,
       "frameDuration": 150,
       "category": "boss",
+      "hidden": true,
+      "sheets": []
+    },
+    "spiting": {
+      "sourceDir": "Sprites/Enemies/spiting",
+      "scale": 3,
+      "frameDuration": 150,
+      "category": "boss",
       "sheets": [
-        "IdleDown", "IdleRight", "IdleUp",
-        "Down", "Right", "Up",
+        "IdleDown", "IdleDownRight", "IdleUpLeft",
+        "Down", "DownRight", "UpLeft",
         "BattleIdleDownRight", "BattleIdleUpLeft",
-        "SlapDownRight", "SlapUpLeft"
+        "AttackDownRight", "AttackUpLeft",
+        "AcidAttack_DownRight", "AcidAttack_UpLeft",
+        "StingAttack_DownRight", "StingAttack_UpLeft"
       ]
     },
     "eastwood": {
@@ -94,8 +108,10 @@
       "frameDuration": 150,
       "category": "enemy",
       "sheets": [
-        "IdleDown", "IdleRight", "IdleUp",
-        "AcidAttack_DownRight", "AcidAttack_UpLeft"
+        "IdleDown", "IdleRight", "IdleUp", "IdleUpLeft", "IdleDownRight",
+        "Down", "Right", "Up", "UpLeft", "DownRight",
+        "BattleIdleDownRight", "BattleIdleUpLeft",
+        "AttackDownRight", "AttackUpLeft"
       ]
     },
     "vepir": {
@@ -104,8 +120,10 @@
       "frameDuration": 150,
       "category": "enemy",
       "sheets": [
-        "IdleDown", "IdleRight", "IdleUp",
-        "Down", "Right", "Up"
+        "IdleDown", "IdleRight", "IdleUp", "IdleUpLeft", "IdleDownRight",
+        "Down", "Right", "Up", "UpLeft", "DownRight",
+        "AttackDownRight",
+        "Feeding"
       ]
     }
   },

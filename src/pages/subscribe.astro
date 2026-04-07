@@ -1,0 +1,443 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "Subscribe — AllByte Studios";
+const description = "Support AllByte Studios and unlock nightly builds, assets, server saves, and more.";
+
+const tiers = [
+  {
+    name: "Initiate",
+    price: 3,
+    color: "#a7f3d0",
+    features: [
+      "Nightly demo builds",
+      "Discord server access",
+    ],
+  },
+  {
+    name: "Hero",
+    price: 7,
+    color: "#fbbf24",
+    features: [
+      "Everything in Initiate",
+      "All game assets unlocked",
+      "Server-managed save files",
+    ],
+  },
+  {
+    name: "Legend",
+    price: 15,
+    color: "#f97316",
+    features: [
+      "Everything in Hero",
+      "Private Discord channel for gameplay requests",
+      "Direct input on game design & priorities",
+      "Name in credits",
+    ],
+  },
+];
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="page">
+    <header class="page-header">
+      <a href="/" class="back-link">&larr; Back</a>
+      <h1 class="page-title">Support the Studio</h1>
+      <p class="page-sub">Help build The Chronicles of Nesis and get exclusive access</p>
+    </header>
+
+    <main class="content">
+      <div class="tiers">
+        {tiers.map(tier => (
+          <div class:list={["tier-card", { featured: tier.featured }]} style={`--tier-color: ${tier.color}`}>
+            {tier.featured && <span class="featured-badge">Most Popular</span>}
+            <h2 class="tier-name">{tier.name}</h2>
+            <div class="tier-price">
+              <span class="price-amount">${tier.price}</span>
+              <span class="price-period">/month</span>
+            </div>
+            <ul class="tier-features">
+              {tier.features.map(f => (
+                <li>{f}</li>
+              ))}
+            </ul>
+            <button class="tier-btn" data-tier={tier.name.toLowerCase()}>Subscribe</button>
+          </div>
+        ))}
+      </div>
+
+      <div class="donate-section">
+        <h2 class="donate-title">One-Time Donation</h2>
+        <p class="donate-sub">Not ready to subscribe? A one-time contribution helps just as much.</p>
+        <div class="donate-options">
+          <button class="donate-btn" data-tier="donate_5">$5</button>
+          <button class="donate-btn" data-tier="donate_10">$10</button>
+          <button class="donate-btn" data-tier="donate_25">$25</button>
+        </div>
+      </div>
+
+      <div class="faq-section">
+        <h2 class="faq-title">How it works</h2>
+        <div class="faq-grid">
+          <div class="faq-item">
+            <h3>When do I get access?</h3>
+            <p>Immediately after subscribing. Nightly builds and asset downloads unlock right away.</p>
+          </div>
+          <div class="faq-item">
+            <h3>Can I change tiers?</h3>
+            <p>Upgrade or downgrade anytime. Changes take effect on your next billing cycle.</p>
+          </div>
+          <div class="faq-item">
+            <h3>What are server-managed saves?</h3>
+            <p>Your game progress syncs to the cloud. Play on any device, never lose a save.</p>
+          </div>
+          <div class="faq-item">
+            <h3>What's the Legend Discord channel?</h3>
+            <p>All subscribers get Discord access, but Legends get a private channel to request gameplay features, vote on priorities, and directly shape the game's direction.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="page-footer">
+      <a href="/" class="back-link">&larr; Back to AllByte Studios</a>
+    </footer>
+  </div>
+  <script>
+    const API = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";
+
+    document.querySelectorAll("[data-tier]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const tier = (btn as HTMLElement).dataset.tier;
+        btn.textContent = "Loading...";
+        (btn as HTMLButtonElement).disabled = true;
+        try {
+          const resp = await fetch(`${API}/checkout`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tier }),
+          });
+          const data = await resp.json();
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            alert("Something went wrong. Please try again.");
+          }
+        } catch {
+          alert("Could not connect to payment server.");
+        } finally {
+          btn.textContent = btn.classList.contains("donate-btn")
+            ? `$${(btn as HTMLElement).dataset.tier?.split("_")[1]}`
+            : "Subscribe";
+          (btn as HTMLButtonElement).disabled = false;
+        }
+      });
+    });
+
+    // Show success message if redirected back
+    if (new URLSearchParams(window.location.search).get("success") === "true") {
+      const banner = document.createElement("div");
+      banner.className = "success-banner";
+      banner.textContent = "Thank you for your support!";
+      document.querySelector(".content")?.prepend(banner);
+    }
+  </script>
+</BaseLayout>
+
+<style is:global>
+  .page {
+    min-height: 100dvh;
+    background: #0d1117;
+    display: flex;
+    flex-direction: column;
+    color: #e0e7ff;
+  }
+
+  .page-header {
+    background: #1a1e26;
+    text-align: center;
+    padding: 1.5rem 1rem 1rem;
+  }
+
+  .back-link {
+    font-family: "Courier New", monospace;
+    font-size: 1rem;
+    color: #a7f3d0;
+    text-decoration: none;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+  }
+
+  .back-link:hover {
+    opacity: 1;
+  }
+
+  .page-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #e0e7ff;
+    margin: 0.75rem 0 0.25rem;
+  }
+
+  .page-sub {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    color: rgba(224, 231, 255, 0.5);
+    margin: 0;
+  }
+
+  .content {
+    flex: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .tiers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .tier-card {
+    background: #1a1e26;
+    border: 1px solid rgba(224, 231, 255, 0.1);
+    border-radius: 6px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .tier-card:hover {
+    border-color: var(--tier-color);
+  }
+
+  .tier-card.featured {
+    border-color: var(--tier-color);
+    box-shadow: 0 0 24px rgba(251, 191, 36, 0.1);
+    transform: scale(1.03);
+  }
+
+  .featured-badge {
+    position: absolute;
+    top: -0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--tier-color);
+    color: #0d1117;
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .tier-name {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.75rem;
+    color: var(--tier-color);
+    margin: 0 0 0.75rem;
+  }
+
+  .tier-price {
+    margin-bottom: 1.5rem;
+  }
+
+  .price-amount {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2.5rem;
+    color: #e0e7ff;
+  }
+
+  .price-period {
+    font-family: "Courier New", monospace;
+    font-size: 0.9rem;
+    color: rgba(224, 231, 255, 0.4);
+  }
+
+  .tier-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    text-align: left;
+  }
+
+  .tier-features li {
+    font-family: "Courier New", monospace;
+    font-size: 0.9rem;
+    color: rgba(224, 231, 255, 0.7);
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(224, 231, 255, 0.05);
+  }
+
+  .tier-features li::before {
+    content: "✓ ";
+    color: var(--tier-color);
+    font-weight: 700;
+  }
+
+  .tier-btn {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    width: 100%;
+    padding: 0.7rem;
+    border: 1px solid var(--tier-color);
+    background: transparent;
+    color: var(--tier-color);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .tier-btn:hover:not(:disabled) {
+    background: var(--tier-color);
+    color: #0d1117;
+  }
+
+  .tier-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+  }
+
+  .success-banner {
+    background: rgba(167, 243, 208, 0.15);
+    border: 1px solid #a7f3d0;
+    color: #a7f3d0;
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+    text-align: center;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+  }
+
+  .donate-section {
+    margin-top: 3rem;
+    text-align: center;
+    padding: 2rem;
+    background: #1a1e26;
+    border: 1px solid rgba(224, 231, 255, 0.08);
+    border-radius: 6px;
+  }
+
+  .donate-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.5rem;
+    color: #e0e7ff;
+    margin: 0 0 0.5rem;
+  }
+
+  .donate-sub {
+    font-family: "Courier New", monospace;
+    font-size: 0.85rem;
+    color: rgba(224, 231, 255, 0.5);
+    margin: 0 0 1.25rem;
+  }
+
+  .donate-options {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+
+  .donate-btn {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    padding: 0.6rem 1.5rem;
+    border: 1px solid rgba(167, 243, 208, 0.3);
+    background: transparent;
+    color: #a7f3d0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .donate-btn:hover:not(:disabled) {
+    background: rgba(167, 243, 208, 0.1);
+    border-color: #a7f3d0;
+  }
+
+  .donate-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+  }
+
+  .donate-custom {
+    border-style: dashed;
+  }
+
+  .faq-section {
+    margin-top: 3rem;
+  }
+
+  .faq-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.75rem;
+    color: #e0e7ff;
+    margin: 0 0 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(224, 231, 255, 0.1);
+  }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .faq-item {
+    background: #1a1e26;
+    border: 1px solid rgba(224, 231, 255, 0.08);
+    border-radius: 4px;
+    padding: 1.25rem;
+  }
+
+  .faq-item h3 {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    color: #a7f3d0;
+    margin: 0 0 0.5rem;
+  }
+
+  .faq-item p {
+    font-family: "Courier New", monospace;
+    font-size: 0.85rem;
+    color: rgba(224, 231, 255, 0.6);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .page-footer {
+    background: #1a1e26;
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .tiers {
+      grid-template-columns: 1fr;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .tier-card.featured {
+      transform: none;
+    }
+
+    .faq-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .page-title {
+      font-size: 2rem;
+    }
+  }
+</style>

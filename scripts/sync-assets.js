@@ -53,7 +53,8 @@ function walkMusic(dir, relPath = "") {
     const ext = extname(entry).toLowerCase();
     const excluded = manifest.music.exclude.some((pattern) => {
       if (pattern.startsWith("*.")) return ext === pattern.replace("*", "");
-      return false;
+      if (pattern.endsWith("*")) return entry.startsWith(pattern.replace("*", ""));
+      return entry === pattern;
     });
     if (excluded) continue;
 

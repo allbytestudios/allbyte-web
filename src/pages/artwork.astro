@@ -1,0 +1,510 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import spriteGifs from "../data/sprite-gifs.json";
+import manifest from "../../scripts/asset-manifest.json";
+
+const title = "Artwork — AllByte Studios";
+const description = "Hand-crafted sprites, animations, and backgrounds from The Chronicles of Nesis.";
+
+// Group sprites by character
+const byCharacter: Record<string, { animation: string; file: string }[]> = {};
+for (const sprite of spriteGifs) {
+  if (!byCharacter[sprite.character]) byCharacter[sprite.character] = [];
+  byCharacter[sprite.character].push({ animation: sprite.animation, file: sprite.file });
+}
+
+// Get category info from manifest
+const characterMeta: Record<string, { category: string; hidden?: boolean }> = {};
+for (const [name, config] of Object.entries(manifest.spriteGifs)) {
+  characterMeta[name] = { category: (config as any).category, hidden: (config as any).hidden };
+}
+
+const allies = Object.entries(byCharacter).filter(([name]) => characterMeta[name]?.category === "ally" && !characterMeta[name]?.hidden);
+const enemies = Object.entries(byCharacter).filter(([name]) => characterMeta[name]?.category === "enemy" && !characterMeta[name]?.hidden);
+const bosses = Object.entries(byCharacter).filter(([name]) => characterMeta[name]?.category === "boss" && !characterMeta[name]?.hidden);
+
+// Hidden characters — show as mystery placeholders
+const hiddenAllies = Object.entries(characterMeta).filter(([, m]) => m.category === "ally" && m.hidden);
+const hiddenBosses = Object.entries(characterMeta).filter(([, m]) => m.category === "boss" && m.hidden);
+
+// Locked animations per character (abilities not yet shown)
+const lockedAnimations: Record<string, string[]> = {
+  "Elias": ["Smite Line", "Smite Line (alt)"],
+};
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="page">
+    <header class="page-header">
+      <img src="/Flourish.png" alt="" class="flourish flourish-left" />
+      <img src="/Flourish.png" alt="" class="flourish flourish-right" />
+      <a href="/" class="back-link">&larr; Back</a>
+      <h1 class="page-title">Artwork</h1>
+      <p class="page-sub">Hand-crafted sprites, animations, and pre-rendered backgrounds</p>
+      <p class="page-note">(made without AI)</p>
+    </header>
+
+    <main class="content">
+      <!-- Allies -->
+      <section class="category-section">
+        <h2 class="category-title">Allies</h2>
+        <div class="characters">
+          {allies.map(([name, sprites]) => (
+            <div class="character-card">
+              <h3 class="character-name">{name}</h3>
+              <div class="sprite-showcase">
+                <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
+              </div>
+              <div class="sprite-grid">
+                {sprites.map(s => (
+                  <div class="sprite-cell">
+                    <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
+                    <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
+                  </div>
+                ))}
+                {(lockedAnimations[name] || []).map(label => (
+                  <div class="sprite-cell locked-cell">
+                    <div class="locked-sprite-small">&#128274;</div>
+                    <span class="sprite-label">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {hiddenAllies.map(([name]) => (
+            <div class="character-card mystery-card">
+              <h3 class="character-name">???</h3>
+              <div class="sprite-showcase">
+                <div class="mystery-sprite">?</div>
+              </div>
+              <p class="mystery-text">This ally hasn't been revealed yet.</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Enemies -->
+      <section class="category-section">
+        <h2 class="category-title">Enemies</h2>
+        <div class="characters characters-masonry">
+          {enemies.map(([name, sprites]) => (
+            <div class="character-card">
+              <h3 class="character-name">{name}</h3>
+              <div class="sprite-showcase">
+                <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
+              </div>
+              <div class="sprite-grid">
+                {sprites.map(s => (
+                  <div class="sprite-cell">
+                    <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
+                    <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <!-- Locked enemy placeholder -->
+          <div class="character-card locked-card">
+            <h3 class="character-name">???</h3>
+            <div class="sprite-showcase">
+              <div class="locked-sprite">&#128274;</div>
+            </div>
+            <p class="locked-text">More enemies coming soon.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bosses -->
+      <section class="category-section">
+        <h2 class="category-title">Bosses</h2>
+        <div class="characters">
+          {bosses.map(([name, sprites]) => (
+            <div class="character-card">
+              <h3 class="character-name">{name}</h3>
+              <div class="sprite-showcase">
+                <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
+              </div>
+              <div class="sprite-grid">
+                {sprites.map(s => (
+                  <div class="sprite-cell">
+                    <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
+                    <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <!-- Locked boss placeholder -->
+          <div class="character-card locked-card">
+            <h3 class="character-name">???</h3>
+            <div class="sprite-showcase">
+              <div class="locked-sprite">&#128274;</div>
+            </div>
+            <p class="locked-text">More bosses to discover.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Backgrounds -->
+      <section class="category-section">
+        <h2 class="category-title">Backgrounds</h2>
+        <p class="section-note">Screenshots of fully composed scenes — coming soon.</p>
+        <div class="bg-grid">
+          <div class="bg-card locked-card">
+            <div class="locked-bg">&#128274;</div>
+            <span class="bg-label">Laria — Main Square</span>
+          </div>
+          <div class="bg-card locked-card">
+            <div class="locked-bg">&#128274;</div>
+            <span class="bg-label">Dwarven Ruins</span>
+          </div>
+          <div class="bg-card locked-card">
+            <div class="locked-bg">&#128274;</div>
+            <span class="bg-label">More locations to discover</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <a href="/" class="back-link">&larr; Back to AllByte Studios</a>
+    </footer>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .page {
+    min-height: 100dvh;
+    background: #ddd5b8;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .page-header {
+    background: #cec08a;
+    text-align: center;
+    padding: 1rem 1rem 0.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .back-link {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    color: #5a4d38;
+    text-decoration: none;
+    transition: color 0.2s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .back-link:hover {
+    color: #2a2218;
+  }
+
+  .flourish {
+    position: absolute;
+    top: 0.5rem;
+    width: 14rem;
+    height: auto;
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+
+  .flourish-left {
+    left: 0.5rem;
+  }
+
+  .flourish-right {
+    right: 0.5rem;
+    transform: scaleX(-1);
+  }
+
+  .page-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2.75rem;
+    font-weight: 600;
+    color: #2a2218;
+    margin: 0.5rem 0 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-sub {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+    color: #5a4d38;
+    margin: 0.25rem 0 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-note {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.85rem;
+    color: #8a7a58;
+    margin: 0.25rem 0 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .content {
+    flex: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .category-section {
+    margin-bottom: 3rem;
+  }
+
+  .category-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2rem;
+    color: #2a2218;
+    margin: 0 0 1.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #8a7d60;
+  }
+
+  .section-note {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1rem;
+    color: #8a7a58;
+    font-style: italic;
+    margin: -0.75rem 0 1.25rem;
+  }
+
+  .characters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .character-card {
+    background: #dbd0a0;
+    border: 2px solid #7a6e52;
+    border-radius: 4px;
+    padding: 1.25rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
+    flex: 1;
+    min-width: 280px;
+    max-width: 560px;
+  }
+
+  .character-name {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.5rem;
+    color: #2a2218;
+    margin: 0 0 0.75rem;
+    text-transform: capitalize;
+  }
+
+  .sprite-showcase {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    min-height: 140px;
+  }
+
+  .sprite-hero {
+    height: 128px;
+    width: auto;
+    image-rendering: pixelated;
+  }
+
+  .sprite-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .sprite-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 3px;
+    transition: background 0.2s;
+    min-height: 100px;
+  }
+
+  .sprite-cell:hover {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  .sprite-gif {
+    max-width: 96px;
+    max-height: 96px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  .sprite-label {
+    display: block;
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.7rem;
+    color: #5a4d38;
+    margin-top: 0.25rem;
+    line-height: 1.2;
+  }
+
+  .characters-masonry {
+    display: block;
+    columns: 2;
+    column-gap: 1.5rem;
+  }
+
+  .characters-masonry .character-card,
+  .characters-masonry .locked-card {
+    break-inside: avoid;
+    margin-bottom: 1.5rem;
+    flex: none;
+    min-width: unset;
+    max-width: unset;
+  }
+
+  .locked-cell {
+    opacity: 0.5;
+    border: 1px dashed #8a7d60;
+  }
+
+  .locked-sprite-small {
+    font-size: 2rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: grayscale(0.5);
+  }
+
+  /* Mystery / Hidden cards */
+  .mystery-card {
+    opacity: 0.7;
+    border-style: dashed;
+  }
+
+  .mystery-sprite {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 4rem;
+    color: #8a7a58;
+    height: 128px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mystery-text {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.95rem;
+    color: #8a7a58;
+    text-align: center;
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* Locked cards */
+  .locked-card {
+    opacity: 0.6;
+    border-style: dashed;
+  }
+
+  .locked-sprite {
+    font-size: 3rem;
+    height: 128px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: grayscale(0.5);
+  }
+
+  .locked-text {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.95rem;
+    color: #8a7a58;
+    text-align: center;
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* Backgrounds */
+  .bg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .bg-card {
+    background: #dbd0a0;
+    border: 2px solid #7a6e52;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .bg-label {
+    display: block;
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1rem;
+    color: #2a2218;
+    padding: 0.75rem;
+    text-align: center;
+  }
+
+  .locked-bg {
+    font-size: 3rem;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: grayscale(0.5);
+  }
+
+  .page-footer {
+    background: #cec08a;
+    text-align: center;
+    padding: 1.5rem 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .character-card {
+      min-width: 100%;
+    }
+
+    .characters-masonry {
+      columns: 1;
+    }
+
+    .sprite-grid {
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    }
+
+    .flourish {
+      width: 8rem;
+    }
+
+    .page-title {
+      font-size: 2rem;
+    }
+
+    .bg-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

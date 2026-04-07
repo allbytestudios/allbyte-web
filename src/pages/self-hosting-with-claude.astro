@@ -150,11 +150,22 @@ GitHub Actions (OIDC auth)
         <p>Static assets (JS, CSS, images, fonts) get <code>max-age=31536000, immutable</code> — cached forever. Astro hashes filenames, so new deploys automatically get new URLs.</p>
         <p>HTML files get <code>max-age=0, must-revalidate</code> — always revalidated so users see the latest content immediately after a deploy.</p>
         <h3 id="asset-pipeline">Asset Pipeline</h3>
-        <p>The site pulls game assets directly from the Godot project on my local machine. A Node.js sync script (<code>scripts/sync-assets.js</code>) reads a config file (<code>scripts/asset-manifest.json</code>) and copies music, fonts, sprites, and backgrounds into the web project.</p>
-        <p>For music, it deduplicates across formats — Godot has both <code>.ogg</code> and <code>.mp3</code> versions of tracks, so the script picks the preferred format and skips duplicates. Temporary placeholder music and Godot <code>.import</code> files are excluded automatically.</p>
-        <p>Sprites are the interesting part. The game stores character animations as horizontal sprite sheets — a single PNG with all frames side by side. A Python script (<code>scripts/spritesheet-to-gif.py</code>) splits these sheets into individual frames and assembles them into animated GIFs, scaled up with nearest-neighbor interpolation to keep the pixel art crisp. Each character's animations (idle, walk, attack, cast, etc.) become separate GIFs for the web.</p>
-        <p>The manifest is fully configurable — I pick which characters, which animations, the scale factor, and frame duration per character. Characters can be flagged as <code>hidden</code> for unreleased content. Everything outputs to <code>public/assets/</code> with JSON indexes that the Astro pages consume at build time.</p>
-        <p>The generated files are committed to git since CI doesn't have access to the Godot project. Locally I run <code>npm run sync</code> to refresh, then push.</p>
+        <p>Game assets (music, sprites, fonts, backgrounds) are <strong>not committed to git</strong>. All art is handcrafted and I don't want it easily ripped from a public repo. Instead, assets are synced locally from the Godot project and pushed directly to S3.</p>
+
+        <p>The workflow is three steps:</p>
+        <ol>
+          <li><code>npm run sync</code> — pulls assets from the local Godot project into <code>public/assets/</code> (gitignored)</li>
+          <li><code>python scripts/spritesheet-to-gif.py</code> — converts sprite sheets to animated GIFs</li>
+          <li><code>npm run push-assets</code> — uploads everything to S3 with immutable cache headers</li>
+        </ol>
+
+        <p>The CI deploy only syncs the site build (HTML/CSS/JS) and explicitly excludes asset paths from its <code>--delete</code> flag, so assets uploaded separately are never removed.</p>
+
+        <p>A Node.js sync script (<code>scripts/sync-assets.js</code>) reads a manifest (<code>scripts/asset-manifest.json</code>) and handles music dedup (prefers <code>.ogg</code>, skips format duplicates), font and background copying, and version extraction from the Godot source.</p>
+
+        <p>Sprites are the interesting part. The game stores character animations as horizontal sprite sheets — a single PNG with all frames side by side. A Python script splits these into individual frames and assembles animated GIFs, scaled up with nearest-neighbor interpolation to keep pixel art crisp. The script auto-deduplicates identical sprites within a character and supports per-sheet frame width overrides for non-square animations (like casting poses). Characters can be flagged as <code>hidden</code> for unreleased content.</p>
+
+        <p>Only JSON metadata indexes are committed to git — file paths and character data that the Astro pages consume at build time. The actual binary assets live only on S3, served through the same CloudFront distribution at the same URL paths.</p>
       </section>
 
       <!-- 3. Lessons Learned -->
@@ -235,10 +246,9 @@ GitHub Actions (OIDC auth)
   }
 
   .article-header .subtitle {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     color: rgba(224, 231, 255, 0.6);
-    line-height: 1.6;
+    line-height: 1.8;
     margin: 0 0 0.75rem;
   }
 

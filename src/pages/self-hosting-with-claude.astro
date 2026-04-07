@@ -181,6 +181,10 @@ GitHub Actions (OIDC auth)
             <h3>ACM certs must be in us-east-1</h3>
             <p>CloudFront only uses certificates from <code>us-east-1</code>, regardless of where your other resources are. Deploy the whole stack there.</p>
           </div>
+          <div class="lesson">
+            <h3>CloudFront doesn't serve index.html for subdirectories</h3>
+            <p>S3's <code>DefaultRootObject</code> only works for the root path <code>/</code>. A request to <code>/self-hosting-with-claude/</code> returns a 403 because S3 doesn't know to look for <code>index.html</code> inside that prefix. The fix is a CloudFront Function that rewrites URIs — appending <code>index.html</code> to paths ending in <code>/</code> or paths without a file extension. Without this, every subpage silently falls back to the homepage via the error page config.</p>
+          </div>
         </div>
       </section>
 

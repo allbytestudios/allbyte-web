@@ -60,6 +60,27 @@ Resources:
         - Key: Name
           Value: !Sub "${DomainName}-cert"
 
+  # --- CloudFront Function: rewrite /path/ to /path/index.html ---
+  IndexRewriteFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: allbyte-studio-index-rewrite
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Append index.html to directory requests
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var uri = request.uri;
+          if (uri.endsWith('/')) {
+            request.uri += 'index.html';
+          } else if (!uri.includes('.')) {
+            request.uri += '/index.html';
+          }
+          return request;
+        }
+
   # --- CloudFront Origin Access Control ---
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
@@ -96,6 +117,9 @@ Resources:
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
           Compress: true
           ResponseHeadersPolicyId: !Ref ResponseHeadersPolicy
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt IndexRewriteFunction.FunctionARN
         CustomErrorResponses:
           - ErrorCode: 404
             ResponseCode: 200

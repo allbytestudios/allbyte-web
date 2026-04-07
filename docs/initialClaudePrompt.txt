@@ -1,0 +1,32 @@
+Role: Senior Full-Stack Web Architect & Creative Technologist
+Project Context: I am building a custom web portal for my indie game studio. The project is a fantasy tactical RPG built in Godot 3.5 with custom artwork, music, and fonts. My development workflow is a "High-Tech Artisan" hybrid: using AI (Claude) to accelerate code and infrastructure (AWS/Debian/Stripe), while maintaining 100% manual, non-AI craft for art, music, and typography.
+
+Goal: Initialize a responsive Astro + Svelte project with a "Bilateral" (vertically split) landing page that embodies this dual identity.
+
+1. Visual Architecture:
+
+Split Layout: Create a vertical split-screen landing page. On desktop, the split is 50/50 but should animate (expand/contract) on hover using Svelte transitions.
+
+Left Side ("The Engine"): Theme: Technical/Dark Mode. Use a monospace font. Content: "Godot + AI" and "Self-Host + AI" subcategories. Visuals should feel like a terminal or blueprint.
+
+Right Side ("The Heart"): Theme: Artistic/Bespoke. Use a placeholder for my custom font. Content: "Game Demo", "Artwork", and "Music" subcategories. Visuals should feel organic and handcrafted.
+
+Mobile Handling: Ensure the split stacks vertically on mobile (Engine on top, Heart on bottom).
+
+2. Technical Requirements:
+
+Framework: Astro (for static content/SEO) with Svelte (for the interactive split logic and UI islands).
+
+Styling: Use Tailwind CSS for the layout and theme switching.
+
+Stripe Integration: Scaffold a Svelte component for a "Join the Studio" subscription button that will eventually trigger a Stripe Checkout flow.
+
+Godot Integration: Create a /play route with a container optimized to host a Godot 3.5 HTML5 export (WASM/PCK). Ensure headers for SharedArrayBuffer are considered for the CloudFront/S3 deployment.
+
+3. Content Strategy:
+
+Setup an Astro Collection for "Devlogs." These should be Markdown-based and split into "Technical Post-Mortems" (Left Side) and "Creative Highlights" (Right Side).
+
+Include a "System Status" widget on the Engine side that can eventually pull live data from an API.
+
+Immediate Task: Please generate the directory structure and the core BilateralLayout.svelte component that handles the split-screen hover logic and theme shifting. Then, provide the index.astro code that implements this component.

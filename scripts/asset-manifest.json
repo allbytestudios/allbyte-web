@@ -1,0 +1,29 @@
+{
+  "godotProject": "C:/Users/drew/Documents/GitHub/TacticalTestDev",
+  "versionFile": "Autoload/World.gd",
+  "versionRegex": "var version := \"(.+?)\"",
+  "music": {
+    "sourceDir": "Music",
+    "preferFormat": "ogg",
+    "exclude": ["TemporaryMusic/**", "*.flp", "*.mp3"]
+  },
+  "fonts": {
+    "files": [
+      "GUI/Fonts/ModernGoth.otf"
+    ]
+  },
+  "sprites": {
+    "files": [
+      "Sprites/Allies/Elias/IdleDown.png",
+      "Sprites/Allies/Falmri/IdleDown.png",
+      "Sprites/Allies/Mia/IdleDown.png",
+      "Sprites/Enemies/slime/IdleDown.png"
+    ]
+  },
+  "backgrounds": {
+    "files": [
+      "World/Backgrounds/Laria/MainSquare.png",
+      "World/Backgrounds/DwarvenRuin/DwarvenRuinMap.png"
+    ]
+  }
+}

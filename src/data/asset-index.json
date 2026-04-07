@@ -1,0 +1,156 @@
+{
+  "version": "0.4.1",
+  "syncedAt": "2026-04-07T18:14:54.853Z",
+  "music": [
+    {
+      "name": "Anthem2.mp3",
+      "file": "/assets/music/Anthem2.mp3.import"
+    },
+    {
+      "name": "Anthem2",
+      "file": "/assets/music/Anthem2.ogg"
+    },
+    {
+      "name": "Anthem2.ogg",
+      "file": "/assets/music/Anthem2.ogg.import"
+    },
+    {
+      "name": "Anthem3",
+      "file": "/assets/music/Anthem3.ogg"
+    },
+    {
+      "name": "Anthem3.ogg",
+      "file": "/assets/music/Anthem3.ogg.import"
+    },
+    {
+      "name": "Anthem4",
+      "file": "/assets/music/Anthem4.ogg"
+    },
+    {
+      "name": "Anthem4.ogg",
+      "file": "/assets/music/Anthem4.ogg.import"
+    },
+    {
+      "name": "BattleTheme",
+      "file": "/assets/music/BattleTheme.ogg"
+    },
+    {
+      "name": "BattleTheme.ogg",
+      "file": "/assets/music/BattleTheme.ogg.import"
+    },
+    {
+      "name": "Dungeon",
+      "file": "/assets/music/Dungeon.ogg"
+    },
+    {
+      "name": "Dungeon.ogg",
+      "file": "/assets/music/Dungeon.ogg.import"
+    },
+    {
+      "name": "DwarvenRuins",
+      "file": "/assets/music/DwarvenRuins.ogg"
+    },
+    {
+      "name": "DwarvenRuins.ogg",
+      "file": "/assets/music/DwarvenRuins.ogg.import"
+    },
+    {
+      "name": "GameOver",
+      "file": "/assets/music/GameOver.ogg"
+    },
+    {
+      "name": "GameOver.ogg",
+      "file": "/assets/music/GameOver.ogg.import"
+    },
+    {
+      "name": "HerosSong.mp3",
+      "file": "/assets/music/HerosSong.mp3.import"
+    },
+    {
+      "name": "HerosSong",
+      "file": "/assets/music/HerosSong.ogg"
+    },
+    {
+      "name": "HerosSong.ogg",
+      "file": "/assets/music/HerosSong.ogg.import"
+    },
+    {
+      "name": "ImpendingConclusion.mp3",
+      "file": "/assets/music/ImpendingConclusion.mp3.import"
+    },
+    {
+      "name": "ImpendingConclusion",
+      "file": "/assets/music/ImpendingConclusion.ogg"
+    },
+    {
+      "name": "ImpendingConclusion.ogg",
+      "file": "/assets/music/ImpendingConclusion.ogg.import"
+    },
+    {
+      "name": "Laria",
+      "file": "/assets/music/Laria.ogg"
+    },
+    {
+      "name": "Laria.ogg",
+      "file": "/assets/music/Laria.ogg.import"
+    },
+    {
+      "name": "rest_zapsplat_music_angela_paulson_floating_001",
+      "file": "/assets/music/rest_zapsplat_music_angela_paulson_floating_001.ogg"
+    },
+    {
+      "name": "rest_zapsplat_music_angela_paulson_floating_001.ogg",
+      "file": "/assets/music/rest_zapsplat_music_angela_paulson_floating_001.ogg.import"
+    },
+    {
+      "name": "Sleep",
+      "file": "/assets/music/Sleep.ogg"
+    },
+    {
+      "name": "Sleep.ogg",
+      "file": "/assets/music/Sleep.ogg.import"
+    },
+    {
+      "name": "Victory",
+      "file": "/assets/music/Victory.ogg"
+    },
+    {
+      "name": "Victory.ogg",
+      "file": "/assets/music/Victory.ogg.import"
+    }
+  ],
+  "fonts": [
+    {
+      "name": "ModernGoth",
+      "file": "/assets/fonts/ModernGoth.otf"
+    }
+  ],
+  "sprites": [
+    {
+      "name": "Elias - IdleDown",
+      "file": "/assets/sprites/Elias_IdleDown.png"
+    },
+    {
+      "name": "Falmri - IdleDown",
+      "file": "/assets/sprites/Falmri_IdleDown.png"
+    },
+    {
+      "name": "Mia - IdleDown",
+      "file": "/assets/sprites/Mia_IdleDown.png"
+    },
+    {
+      "name": "slime - IdleDown",
+      "file": "/assets/sprites/slime_IdleDown.png"
+    }
+  ],
+  "backgrounds": [
+    {
+      "name": "MainSquare",
+      "file": "/assets/backgrounds/MainSquare.png"
+    },
+    {
+      "name": "DwarvenRuinMap",
+      "file": "/assets/backgrounds/DwarvenRuinMap.png"
+    }
+  ]
+}

@@ -1,0 +1,443 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Self-Hosting with Claude — AllByte Studios">
+  <main class="article">
+    <nav class="article-nav">
+      <a href="/">&larr; Back to Studio</a>
+    </nav>
+
+    <article class="content">
+      <header class="article-header">
+        <h1>Self-Hosting with Claude</h1>
+        <p class="subtitle">How I deployed a static site to AWS for under $1/month (minus Claude expense) — using Claude as the AI pair-programmer.</p>
+        <p class="reference">You can reference my setup here: <a href="https://github.com/allbytestudios/allbyte-web" target="_blank" rel="noopener noreferrer">github.com/allbytestudios/allbyte-web</a></p>
+        <time>April 2026</time>
+      </header>
+
+      <nav class="toc">
+        <ol>
+          <li><a href="#the-setup">The Setup</a>
+            <ul><li><a href="#my-tools">My Tools</a></li></ul>
+          </li>
+          <li><a href="#technical-details">Technical Details</a>
+            <ul>
+              <li><a href="#architecture">Architecture & Stack</a></li>
+              <li><a href="#costs">Costs & Protection</a></li>
+              <li><a href="#infrastructure">Infrastructure & Deploy</a></li>
+              <li><a href="#cache-strategy">Cache Strategy</a></li>
+            </ul>
+          </li>
+          <li><a href="#lessons-learned">Lessons Learned</a></li>
+        </ol>
+      </nav>
+
+      <!-- 1. The Setup -->
+      <section id="the-setup">
+        <h2>1. The Setup</h2>
+        <p>This site runs on a fully automated pipeline: I push code to GitHub, and it's live on <strong>allbyte.studio</strong> within 30 seconds. No servers to manage, no containers to orchestrate. Just static files on a CDN.</p>
+        <p>The entire infrastructure — AWS resources, CI/CD pipeline, DNS, certificates — was built in a single conversation with Claude Code. The same conversation that built the site also set up the hosting, debugged the deploy failures, and even generated this blog post documenting the process. That's the workflow: I describe what I want, Claude writes the code, I review and iterate, and we keep going.</p>
+
+        <h3 id="my-tools">My Tools</h3>
+        <ul>
+          <li><strong>Claude Pro</strong> — AI pair-programmer via Claude Code (Anthropic's CLI). Writes the code, sets up infrastructure, debugs deploy issues, and built this document. Same setup I use for <a href="/godot-and-claude">Godot game dev</a>. I don't count the subscription as a hosting cost since I'm already paying for it for game development.</li>
+          <li><strong>AWS account</strong> — S3, CloudFront, Route 53, ACM, CloudFormation, Lambda. Everything runs here.</li>
+          <li><strong>My PC</strong> — Windows 11, Node.js, npm, AWS CLI, GitHub CLI. All development and deploys happen from one machine.</li>
+        </ul>
+      </section>
+
+      <!-- 2. Technical Details -->
+      <section id="technical-details">
+        <h2>2. Technical Details</h2>
+
+        <h3 id="architecture">Architecture & Stack</h3>
+        <div class="diagram">
+          <pre>{`GitHub (push to main)
+       │
+       ▼
+GitHub Actions (OIDC auth)
+       │
+       ▼
+  npm ci && npm run build
+       │
+       ▼
+  aws s3 sync → S3 Bucket
+       │
+       ▼
+  CloudFront CDN (HTTPS)
+       │
+       ▼
+  allbyte.studio`}</pre>
+        </div>
+        <ul>
+          <li><strong>Astro 6</strong> — Static site generator with content collections for devlogs</li>
+          <li><strong>Svelte 5</strong> — Interactive UI (hover effects, audio, login modal)</li>
+          <li><strong>Tailwind CSS v4</strong> — Styling via Vite plugin</li>
+          <li><strong>AWS S3 + CloudFront</strong> — Hosting and CDN</li>
+          <li><strong>GitHub Actions + OIDC</strong> — CI/CD with no stored secrets</li>
+          <li><strong>CloudFormation</strong> — Infrastructure as code (single template)</li>
+        </ul>
+
+        <h3 id="costs">Costs & Protection</h3>
+        <p>For a low-traffic site, the monthly bill looks like this:</p>
+        <table>
+          <thead>
+            <tr><th>Service</th><th>Monthly Cost</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>S3 (static hosting)</td><td>~$0.02</td></tr>
+            <tr><td>CloudFront CDN</td><td>~$0.00–0.50</td></tr>
+            <tr><td>ACM Certificate (HTTPS)</td><td>Free</td></tr>
+            <tr><td>Route 53 (DNS)</td><td>$0.50/zone</td></tr>
+            <tr><td>GitHub Actions (CI/CD)</td><td>Free</td></tr>
+            <tr><td>Cost protection (Budget + Lambda)</td><td>Free</td></tr>
+            <tr class="total"><td>Total</td><td>~$0.50–1.00/mo</td></tr>
+          </tbody>
+        </table>
+        <p>CloudFront includes 1TB free transfer for the first year. After that, it's $0.085/GB — still negligible for a low-traffic site.</p>
+        <p>The scariest part of self-hosting on AWS isn't the setup — it's the fear of a surprise bill. If someone decides to DDoS the site or a bot hammers the CDN, CloudFront charges by the request. So I built an automatic kill switch.</p>
+        <p>A monthly AWS Budget watches my spend. At <strong>80% ($20)</strong>, I get an email warning. At <strong>100% ($25)</strong>, a Lambda function automatically disables the CloudFront distribution — the site goes down instead of racking up charges. I get an email notification either way.</p>
+        <p>CloudFront includes <strong>AWS Shield Standard</strong> for free, which handles common layer 3/4 DDoS attacks. For anything more sophisticated, you'd add AWS WAF (~$6/mo), but I figure for my low-traffic site the auto-shutoff is good enough.</p>
+        <p>To re-enable after a shutoff: flip the distribution back to Enabled in the CloudFront console. Total cost of the protection: $0 (Lambda free tier, SNS free tier, Budgets are free).</p>
+
+        <h3 id="infrastructure">Infrastructure & Deploy</h3>
+        <p>I registered <strong>allbyte.studio</strong> through Route 53, as suggested by Gemini. This allows DNS validation for the SSL cert to happen automatically — Claude added the CNAME records via the AWS CLI in seconds. Since Route 53 is already inside AWS, I can use native ALIAS records instead of CNAMEs, and everything — domain, DNS, certificate, CDN — lives under one account with one bill. Finally, if I'd used Squarespace, Namecheap, or GoDaddy, every DNS change would've been a context switch to a different UI with different terminology.</p>
+
+        <p>Everything lives in one CloudFormation template (<code>infrastructure/cloudformation.yaml</code>). A single command provisions:</p>
+        <ol>
+          <li><strong>S3 Bucket</strong> — Private, no public access. CloudFront reads via Origin Access Control.</li>
+          <li><strong>CloudFront Distribution</strong> — HTTPS, HTTP/2+3, caching, error page routing.</li>
+          <li><strong>ACM Certificate</strong> — Free SSL for the domain + www. DNS-validated automatically.</li>
+          <li><strong>Response Headers Policy</strong> — Injects <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Embedder-Policy</code> headers globally. Required for Godot's SharedArrayBuffer.</li>
+          <li><strong>GitHub OIDC Provider + IAM Role</strong> — GitHub Actions authenticates via federation. No AWS access keys stored anywhere.</li>
+        </ol>
+        <div class="code-block">
+          <pre><code>{`aws cloudformation deploy \\
+  --template-file infrastructure/cloudformation.yaml \\
+  --stack-name allbyte-studio-site \\
+  --capabilities CAPABILITY_NAMED_IAM \\
+  --region us-east-1`}</code></pre>
+        </div>
+
+        <p>Traditional CI/CD stores AWS access keys as GitHub secrets. Claude recommended OIDC federation instead, and it's better in every way:</p>
+        <table>
+          <thead>
+            <tr><th></th><th>OIDC</th><th>Access Keys</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Stored secrets</td><td>None</td><td>Key ID + Secret</td></tr>
+            <tr><td>Token lifetime</td><td>~1 hour</td><td>Until rotated</td></tr>
+            <tr><td>Rotation needed</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Scope</td><td>Locked to repo + branch</td><td>Wherever keys are used</td></tr>
+          </tbody>
+        </table>
+        <p>The IAM role's trust policy restricts access to only my specific repository on the <code>main</code> branch. Even if someone forks the repo, they can't assume the role.</p>
+
+        <p>Every push to <code>main</code> triggers a GitHub Actions workflow. I push, and 30 seconds later it's live. The workflow:</p>
+        <ol>
+          <li>Checks out the code</li>
+          <li>Installs dependencies (<code>npm ci</code>) with caching</li>
+          <li>Builds the static site (<code>npm run build</code>)</li>
+          <li>Authenticates to AWS via OIDC — no secrets needed</li>
+          <li>Syncs the <code>dist/</code> folder to S3</li>
+          <li>Invalidates the CloudFront cache</li>
+        </ol>
+        <p>Total deploy time: ~30 seconds from push to live.</p>
+
+        <h3 id="cache-strategy">Cache Strategy</h3>
+        <p>Static assets (JS, CSS, images, fonts) get <code>max-age=31536000, immutable</code> — cached forever. Astro hashes filenames, so new deploys automatically get new URLs.</p>
+        <p>HTML files get <code>max-age=0, must-revalidate</code> — always revalidated so users see the latest content immediately after a deploy.</p>
+      </section>
+
+      <!-- 3. Lessons Learned -->
+      <section id="lessons-learned">
+        <h2>3. Lessons Learned</h2>
+        <div class="lessons">
+          <div class="lesson">
+            <h3>CloudFormation naming</h3>
+            <p>Resource names can't contain dots. <code>allbyte.studio-headers</code> fails; <code>allbyte-studio-headers</code> works. Cost us a rollback.</p>
+          </div>
+          <div class="lesson">
+            <h3>Astro 6 requires Node.js 22+</h3>
+            <p>First CI deploy failed because the workflow used Node 20. Check your framework's minimum version.</p>
+          </div>
+          <div class="lesson">
+            <h3>IAM permissions for S3 copy-in-place</h3>
+            <p>Updating cache headers on already-uploaded files requires <code>s3:GetObject</code> in addition to <code>PutObject</code>. The copy operation reads then writes.</p>
+          </div>
+          <div class="lesson">
+            <h3>Tailwind v4 + Astro + Svelte CSS variables</h3>
+            <p>CSS custom properties defined in a scoped Astro <code>&lt;style&gt;</code> block don't reach Svelte components. Use <code>&lt;style is:global&gt;</code> or hardcode values.</p>
+          </div>
+          <div class="lesson">
+            <h3>ACM certs must be in us-east-1</h3>
+            <p>CloudFront only uses certificates from <code>us-east-1</code>, regardless of where your other resources are. Deploy the whole stack there.</p>
+          </div>
+        </div>
+      </section>
+
+    </article>
+  </main>
+</BaseLayout>
+
+<style is:global>
+  .article {
+    background: #1a1e26;
+    color: #e0e7ff;
+    font-family: "Courier New", Courier, monospace;
+    min-height: 100dvh;
+    padding: 2rem 1rem;
+  }
+
+  .article-nav {
+    max-width: 760px;
+    margin: 0 auto 2rem;
+  }
+
+  .article-nav a {
+    color: #a7f3d0;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+
+  .article-nav a:hover {
+    text-decoration: underline;
+  }
+
+  .content {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .article-header {
+    margin-bottom: 3rem;
+    border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+    padding-bottom: 2rem;
+  }
+
+  .article-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #a7f3d0;
+    margin: 0 0 0.75rem;
+  }
+
+  .article-header .subtitle {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+    color: rgba(224, 231, 255, 0.6);
+    line-height: 1.6;
+    margin: 0 0 0.75rem;
+  }
+
+  .article-header .reference {
+    font-size: 0.95rem;
+    color: #eaeaea;
+    margin: 0 0 0.75rem;
+  }
+
+  .article-header .reference a {
+    color: #a7f3d0;
+  }
+
+  .article-header time {
+    font-size: 0.85rem;
+    color: rgba(224, 231, 255, 0.35);
+  }
+
+  /* Table of Contents */
+  .toc {
+    background: #12161c;
+    border: 1px solid rgba(167, 243, 208, 0.12);
+    border-radius: 4px;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .toc ol {
+    padding-left: 1.25rem;
+    margin: 0;
+  }
+
+  .toc ul {
+    padding-left: 1.25rem;
+    margin: 0;
+    list-style: none;
+  }
+
+  .toc > ol > li {
+    margin-bottom: 0.15rem;
+  }
+
+  .toc li {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #eaeaea;
+    margin-bottom: 0.1rem;
+  }
+
+  .toc ul li::before {
+    content: "—";
+    color: rgba(167, 243, 208, 0.3);
+    margin-right: 0.4rem;
+  }
+
+  .toc a {
+    color: #a7f3d0;
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    text-decoration: underline;
+  }
+
+  .content section {
+    margin-bottom: 2.5rem;
+  }
+
+  .content h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #a7f3d0;
+    margin: 0 0 1rem;
+  }
+
+  .content h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #a7f3d0;
+    margin: 2rem 0 0.75rem;
+    padding-top: 0.5rem;
+  }
+
+  .content p {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #eaeaea;
+    margin: 0 0 1rem;
+  }
+
+  .content strong {
+    color: #e0e7ff;
+  }
+
+  .content code {
+    background: rgba(167, 243, 208, 0.08);
+    color: #a7f3d0;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.85em;
+    border-radius: 2px;
+  }
+
+  .content a {
+    color: #a7f3d0;
+  }
+
+  .content a:hover {
+    text-decoration: underline;
+  }
+
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin: 0 0 1rem;
+  }
+
+  .content li {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #eaeaea;
+    margin-bottom: 0.4rem;
+  }
+
+  /* Tables */
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .content th {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 2px solid rgba(167, 243, 208, 0.2);
+    color: #a7f3d0;
+    font-weight: 600;
+  }
+
+  .content td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgba(167, 243, 208, 0.08);
+    color: #eaeaea;
+    font-size: 0.95rem;
+  }
+
+  .content tr.total td {
+    font-weight: 700;
+    color: #a7f3d0;
+    border-top: 2px solid rgba(167, 243, 208, 0.2);
+  }
+
+  /* Diagram */
+  .diagram {
+    background: #12161c;
+    border: 1px solid rgba(167, 243, 208, 0.12);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1rem 0 1.5rem;
+    overflow-x: auto;
+  }
+
+  .diagram pre {
+    margin: 0;
+    color: #a7f3d0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  /* Code blocks */
+  .code-block {
+    background: #12161c;
+    border: 1px solid rgba(167, 243, 208, 0.12);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 1.5rem;
+    overflow-x: auto;
+  }
+
+  .code-block pre {
+    margin: 0;
+  }
+
+  .code-block code {
+    background: none;
+    padding: 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #e0e7ff;
+  }
+
+  /* Lessons */
+  .lessons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .lesson {
+    background: #12161c;
+    border: 1px solid rgba(167, 243, 208, 0.12);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+  }
+
+  .lesson h3 {
+    margin: 0 0 0.5rem;
+  }
+
+  .lesson p {
+    margin: 0;
+  }
+
+</style>

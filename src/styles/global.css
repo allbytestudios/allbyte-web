@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* === Custom Font Placeholder === */
+@font-face {
+  font-family: "AllByteCustom";
+  src: url("/fonts/ModernGoth.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* === Theme Variables === */
+:root {
+  /* Engine Theme (Technical / Dark) — colorblind-safe cyan-mint */
+  --engine-bg: #050508;
+  --engine-bg-secondary: #0a0a0f;
+  --engine-text: #e0e7ff;
+  --engine-accent: #a7f3d0;
+  --engine-accent-dim: #6ee7b7;
+  --engine-border: rgba(167, 243, 208, 0.2);
+
+  /* Heart Theme — matching in-game menu UI */
+  --heart-bg: #cec08a;
+  --heart-bg-secondary: #c5b67e;
+  --heart-text: #2a2218;
+  --heart-accent: #3a3020;
+  --heart-accent-dim: #5a4d38;
+  --heart-gold: #8a7a58;
+  --heart-border: #8a7d60;
+  --heart-card-bg: #dbd0a0;
+  --heart-card-border: #7a6e52;
+}
+
+/* === Base Styles === */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === Utility Classes === */
+.font-custom {
+  font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+}
+

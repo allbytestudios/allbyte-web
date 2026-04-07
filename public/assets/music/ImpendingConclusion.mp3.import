@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/ImpendingConclusion.mp3-af6bc1d67c90d8da26ac5a70b9f8378d.mp3str"
+
+[deps]
+
+source_file="res://Music/ImpendingConclusion.mp3"
+dest_files=[ "res://.import/ImpendingConclusion.mp3-af6bc1d67c90d8da26ac5a70b9f8378d.mp3str" ]
+
+[params]
+
+loop=true
+loop_offset=0

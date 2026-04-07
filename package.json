@@ -1,0 +1,31 @@
+{
+  "name": "allbyte-web",
+  "version": "1.0.0",
+  "description": "AllByte Studios web portal",
+  "type": "module",
+  "scripts": {
+    "sync": "node scripts/sync-assets.js",
+    "dev": "astro dev",
+    "build": "node scripts/sync-assets.js && astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/allbytestudios/allbyte-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/allbytestudios/allbyte-web/issues"
+  },
+  "homepage": "https://github.com/allbytestudios/allbyte-web#readme",
+  "dependencies": {
+    "@astrojs/svelte": "^8.0.4",
+    "@tailwindcss/vite": "^4.2.2",
+    "astro": "^6.1.4",
+    "svelte": "^5.55.1",
+    "tailwindcss": "^4.2.2"
+  }
+}

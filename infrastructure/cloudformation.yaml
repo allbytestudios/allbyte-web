@@ -1,0 +1,330 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: AllByte Studios static site infrastructure (S3 + CloudFront + ACM + OIDC)
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: allbyte.studio
+  GitHubOrg:
+    Type: String
+    Default: allbytestudios
+  GitHubRepo:
+    Type: String
+    Default: allbyte-web
+  AlertEmail:
+    Type: String
+    Description: Email for billing alerts and auto-shutoff notifications
+  MonthlyBudgetLimit:
+    Type: Number
+    Default: 25
+    Description: Monthly spend threshold (USD) that triggers auto-shutoff
+
+Resources:
+  # --- S3 Bucket for static site ---
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${DomainName}-site"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AllowCloudFrontOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+  # --- ACM Certificate (must be in us-east-1 for CloudFront) ---
+  # NOTE: Deploy this stack in us-east-1, or create the cert separately
+  SiteCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      SubjectAlternativeNames:
+        - !Sub "www.${DomainName}"
+      ValidationMethod: DNS
+      Tags:
+        - Key: Name
+          Value: !Sub "${DomainName}-cert"
+
+  # --- CloudFront Origin Access Control ---
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: allbyte-studio-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # --- CloudFront Distribution ---
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        DefaultRootObject: index.html
+        Aliases:
+          - !Ref DomainName
+          - !Sub "www.${DomainName}"
+        ViewerCertificate:
+          AcmCertificateArn: !Ref SiteCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOAC
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+          Compress: true
+          ResponseHeadersPolicyId: !Ref ResponseHeadersPolicy
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 10
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+            ErrorCachingMinTTL: 10
+        HttpVersion: http2and3
+        PriceClass: PriceClass_100
+
+  # --- Response Headers (SharedArrayBuffer for Godot) ---
+  ResponseHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: allbyte-studio-headers
+        SecurityHeadersConfig:
+          ContentSecurityPolicy:
+            ContentSecurityPolicy: "frame-ancestors 'self'"
+            Override: false
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: true
+            Override: true
+            Preload: true
+        CustomHeadersConfig:
+          Items:
+            - Header: Cross-Origin-Opener-Policy
+              Value: same-origin
+              Override: true
+            - Header: Cross-Origin-Embedder-Policy
+              Value: require-corp
+              Override: true
+
+  # --- GitHub OIDC Provider ---
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  # --- IAM Role for GitHub Actions ---
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: allbyte-studio-github-deploy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOIDCProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubOrg}/${GitHubRepo}:ref:refs/heads/main"
+      Policies:
+        - PolicyName: DeployToS3AndCloudFront
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt SiteBucket.Arn
+                  - !Sub "${SiteBucket.Arn}/*"
+              - Effect: Allow
+                Action:
+                  - cloudfront:CreateInvalidation
+                Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+
+  # --- Cost Protection: Auto-shutoff ---
+  BillingAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: allbyte-studio-billing-alert
+
+  BillingAlertEmailSub:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref BillingAlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  ShutoffLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: allbyte-studio-shutoff-lambda
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DisableCloudFront
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudfront:GetDistributionConfig
+                  - cloudfront:UpdateDistribution
+                Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}"
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref BillingAlertTopic
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
+
+  ShutoffLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-cost-shutoff
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 30
+      Role: !GetAtt ShutoffLambdaRole.Arn
+      Environment:
+        Variables:
+          DISTRIBUTION_ID: !Ref CloudFrontDistribution
+          SNS_TOPIC_ARN: !Ref BillingAlertTopic
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+          import json
+
+          def handler(event, context):
+              cf = boto3.client('cloudfront')
+              sns = boto3.client('sns')
+              dist_id = os.environ['DISTRIBUTION_ID']
+              topic_arn = os.environ['SNS_TOPIC_ARN']
+
+              # Get current config
+              resp = cf.get_distribution_config(Id=dist_id)
+              config = resp['DistributionConfig']
+              etag = resp['ETag']
+
+              if config['Enabled']:
+                  config['Enabled'] = False
+                  cf.update_distribution(
+                      Id=dist_id,
+                      DistributionConfig=config,
+                      IfMatch=etag
+                  )
+                  msg = f"COST ALERT: CloudFront distribution {dist_id} has been DISABLED due to budget threshold breach. Re-enable manually in the AWS console when ready."
+              else:
+                  msg = f"Cost alert triggered but distribution {dist_id} was already disabled."
+
+              sns.publish(
+                  TopicArn=topic_arn,
+                  Subject='AllByte Studios - Site Auto-Disabled (Cost Protection)',
+                  Message=msg
+              )
+
+              return {'statusCode': 200, 'body': msg}
+
+  ShutoffLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ShutoffLambda
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref BillingAlertTopic
+
+  ShutoffLambdaSub:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref BillingAlertTopic
+      Protocol: lambda
+      Endpoint: !GetAtt ShutoffLambda.Arn
+
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: allbyte-studio-monthly
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetLimit
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: SNS
+              Address: !Ref BillingAlertTopic
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: SNS
+              Address: !Ref BillingAlertTopic
+
+Outputs:
+  BucketName:
+    Value: !Ref SiteBucket
+  DistributionId:
+    Value: !Ref CloudFrontDistribution
+  DistributionDomain:
+    Value: !GetAtt CloudFrontDistribution.DomainName
+  DeployRoleArn:
+    Value: !GetAtt GitHubActionsRole.Arn
+  CertificateArn:
+    Value: !Ref SiteCertificate
+  DNSRecords:
+    Value: !Sub "Create CNAME: ${DomainName} -> ${CloudFrontDistribution.DomainName} and www.${DomainName} -> ${CloudFrontDistribution.DomainName}"

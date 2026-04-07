@@ -1,0 +1,51 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import GodotEmbed from "../components/GodotEmbed.svelte";
+---
+
+<BaseLayout title="Play — AllByte Studios">
+  <main class="play-page">
+    <nav class="play-nav">
+      <a href="/">&larr; Back to Studio</a>
+    </nav>
+    <GodotEmbed client:load />
+  </main>
+</BaseLayout>
+
+<!--
+  SharedArrayBuffer Requirements:
+  For Godot 3.5 HTML5 exports to work, your hosting must serve these headers:
+    Cross-Origin-Opener-Policy: same-origin
+    Cross-Origin-Embedder-Policy: require-corp
+
+  Configure these in CloudFront response headers policy.
+-->
+
+<style>
+  .play-page {
+    background: #0a0e17;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .play-nav {
+    width: 100%;
+    max-width: 960px;
+    margin-bottom: 1rem;
+  }
+
+  .play-nav a {
+    color: #a7f3d0;
+    text-decoration: none;
+    font-family: "Courier New", monospace;
+    font-size: 0.875rem;
+  }
+
+  .play-nav a:hover {
+    text-decoration: underline;
+  }
+</style>

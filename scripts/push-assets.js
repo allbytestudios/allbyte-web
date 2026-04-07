@@ -42,6 +42,7 @@ const rootFiles = [
   "Flourish.png",
   "leftSword.png",
   "verticalSwordTHIN.png",
+  "fonts/ModernGoth.otf",
 ];
 
 console.log(`\nPushing game assets to s3://${bucket}\n`);

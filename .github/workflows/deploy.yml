@@ -52,7 +52,8 @@ jobs:
             --exclude "BattleChargeRight-still.png" \
             --exclude "Flourish.png" \
             --exclude "leftSword.png" \
-            --exclude "verticalSwordTHIN.png"
+            --exclude "verticalSwordTHIN.png" \
+            --exclude "fonts/ModernGoth.otf"
 
           # Override cache headers for HTML files (must revalidate)
           aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }} s3://${{ secrets.AWS_S3_BUCKET }} \

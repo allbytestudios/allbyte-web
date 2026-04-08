@@ -42,9 +42,13 @@ const tiers = [
 <BaseLayout title={title} description={description}>
   <div class="page">
     <header class="page-header">
-      <a href="/" class="back-link">&larr; Back</a>
-      <h1 class="page-title">Support the Studio</h1>
-      <p class="page-sub">Help build The Chronicles of Nesis and get exclusive access</p>
+      <div class="header-title-row">
+        <a href="/" class="back-link">&larr; Back</a>
+        <div class="header-center">
+          <h1 class="page-title">Support the Studio</h1>
+          <p class="page-sub">Help build The Chronicles of Nesis and get exclusive access</p>
+        </div>
+      </div>
     </header>
 
     <main class="content">
@@ -155,7 +159,22 @@ const tiers = [
   .page-header {
     background: #1a1e26;
     text-align: center;
-    padding: 1.5rem 1rem 1rem;
+    padding: 0.5rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .header-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .header-center {
+    text-align: center;
   }
 
   .back-link {
@@ -163,20 +182,26 @@ const tiers = [
     font-size: 1rem;
     color: #a7f3d0;
     text-decoration: none;
-    opacity: 0.6;
-    transition: opacity 0.2s;
+    background: rgba(167, 243, 208, 0.08);
+    border: 1px solid rgba(167, 243, 208, 0.2);
+    border-radius: 4px;
+    padding: 0.2rem 0.75rem;
+    transition: background 0.15s, border-color 0.15s;
+    position: absolute;
+    left: 1rem;
   }
 
   .back-link:hover {
-    opacity: 1;
+    background: rgba(167, 243, 208, 0.15);
+    border-color: rgba(167, 243, 208, 0.4);
   }
 
   .page-title {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 2.5rem;
+    font-size: 1.75rem;
     font-weight: 600;
     color: #e0e7ff;
-    margin: 0.75rem 0 0.25rem;
+    margin: 0;
   }
 
   .page-sub {
@@ -421,6 +446,18 @@ const tiers = [
   }
 
   @media (max-width: 768px) {
+    .page-sub { display: none; }
+
+    .page-title {
+      font-size: 1.3rem;
+      padding-left: 4.5rem;
+      padding-right: 4.5rem;
+    }
+
+    .back-link {
+      font-size: 1.1rem;
+    }
+
     .tiers {
       grid-template-columns: 1fr;
       max-width: 400px;

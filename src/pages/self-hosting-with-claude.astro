@@ -4,14 +4,15 @@ import Footer from "../components/Footer.astro";
 ---
 
 <BaseLayout title="Self-Hosting with Claude — AllByte Studios">
+  <div class="page-header">
+    <div class="header-title-row">
+      <a href="/" class="back-link">&larr; Back</a>
+      <h1 class="page-title">Self-Hosting with Claude</h1>
+    </div>
+  </div>
   <main class="article">
-    <nav class="article-nav">
-      <a href="/">&larr; Back to Studio</a>
-    </nav>
-
     <article class="content">
       <header class="article-header">
-        <h1>Self-Hosting with Claude</h1>
         <p class="subtitle">How I deployed a static site to AWS for under $1/month (minus Claude expense) — using Claude as the AI pair-programmer.</p>
         <p class="reference">You can reference my setup here: <a href="https://github.com/allbytestudios/allbyte-web" target="_blank" rel="noopener noreferrer">github.com/allbytestudios/allbyte-web</a></p>
         <time>April 2026</time>
@@ -206,27 +207,64 @@ GitHub Actions (OIDC auth)
 </BaseLayout>
 
 <style is:global>
+  .page-header {
+    background: #1a1e26;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .header-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .back-link {
+    color: #a7f3d0;
+    text-decoration: none;
+    font-size: 1rem;
+    font-family: "Courier New", monospace;
+    background: rgba(167, 243, 208, 0.08);
+    border: 1px solid rgba(167, 243, 208, 0.2);
+    border-radius: 4px;
+    padding: 0.2rem 0.75rem;
+    transition: background 0.15s, border-color 0.15s;
+    position: absolute;
+    left: 1rem;
+  }
+
+  .back-link:hover {
+    background: rgba(167, 243, 208, 0.15);
+    border-color: rgba(167, 243, 208, 0.4);
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #a7f3d0;
+    margin: 0;
+    font-family: "Courier New", monospace;
+    padding-left: 6rem;
+    padding-right: 6rem;
+  }
+
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 1rem;
+    }
+  }
+
   .article {
     background: #1a1e26;
     color: #e0e7ff;
     font-family: "Courier New", Courier, monospace;
     min-height: 100dvh;
-    padding: 2rem 1rem;
-  }
-
-  .article-nav {
-    max-width: 760px;
-    margin: 0 auto 2rem;
-  }
-
-  .article-nav a {
-    color: #a7f3d0;
-    text-decoration: none;
-    font-size: 0.9rem;
-  }
-
-  .article-nav a:hover {
-    text-decoration: underline;
+    padding: 0 1rem 2rem;
   }
 
   .content {
@@ -238,13 +276,7 @@ GitHub Actions (OIDC auth)
     margin-bottom: 3rem;
     border-bottom: 1px solid rgba(167, 243, 208, 0.15);
     padding-bottom: 2rem;
-  }
-
-  .article-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #a7f3d0;
-    margin: 0 0 0.75rem;
+    padding-top: 2rem;
   }
 
   .article-header .subtitle {

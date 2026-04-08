@@ -23,9 +23,10 @@ function formatTrackName(name: string): string {
       <img src="/Flourish.png" alt="" class="flourish flourish-left" />
       <img src="/Flourish.png" alt="" class="flourish flourish-right" />
       <a href="/" class="back-link">&larr; Back</a>
-      <h1 class="page-title">Music</h1>
-      <p class="page-sub">Original compositions for The Chronicles of Nesis</p>
-      <p class="page-note">(made without AI)</p>
+      <div class="header-text">
+        <h1 class="page-title">Music</h1>
+        <p class="page-sub">Original compositions for The Chronicles of Nesis</p>
+      </div>
     </header>
 
     <main class="content">
@@ -108,70 +109,70 @@ function formatTrackName(name: string): string {
 
   .page-header {
     background: #cec08a;
-    text-align: center;
-    padding: 1rem 1rem 0.75rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .back-link {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.1rem;
-    color: #5a4d38;
-    text-decoration: none;
-    transition: color 0.2s;
-    position: relative;
-    z-index: 1;
-  }
-
-  .back-link:hover {
-    color: #2a2218;
+    padding: 0.4rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: clip;
   }
 
   .flourish {
     position: absolute;
-    top: 0.5rem;
-    width: 14rem;
-    height: auto;
+    top: 0;
+    height: 100%;
+    width: auto;
     pointer-events: none;
     image-rendering: pixelated;
   }
 
-  .flourish-left {
-    left: 0.5rem;
+  .flourish-left { left: 0; }
+  .flourish-right { right: 0; transform: scaleX(-1); }
+
+  .back-link {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.2rem;
+    color: #5a4d38;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid #7a6e52;
+    border-radius: 4px;
+    padding: 0.2rem 0.75rem;
+    transition: background 0.15s, color 0.15s;
+    position: absolute;
+    left: 3.5rem;
+    z-index: 2;
   }
 
-  .flourish-right {
-    right: 0.5rem;
-    transform: scaleX(-1);
+  .back-link:hover {
+    color: #2a2218;
+    background: rgba(255, 255, 255, 0.45);
+  }
+
+  .header-text {
+    text-align: center;
+    z-index: 1;
+    padding-left: 6rem;
+    padding-right: 6rem;
   }
 
   .page-title {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 2.75rem;
+    font-size: 1.75rem;
     font-weight: 600;
     color: #2a2218;
-    margin: 0.5rem 0 0;
-    position: relative;
-    z-index: 1;
+    margin: 0;
   }
 
   .page-sub {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.15rem;
-    color: #5a4d38;
-    margin: 0.25rem 0 0;
-    position: relative;
-    z-index: 1;
-  }
-
-  .page-note {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 0.85rem;
-    color: #8a7a58;
-    margin: 0.25rem 0 0;
-    position: relative;
-    z-index: 1;
+    color: #5a4d38;
+    margin: 0;
+    line-height: 1.2;
   }
 
   .content {
@@ -291,8 +292,16 @@ function formatTrackName(name: string): string {
       width: 8rem;
     }
 
+    .page-sub { display: none; }
+
     .page-title {
-      font-size: 2rem;
+      font-size: 1.3rem;
+      padding-left: 4.5rem;
+      padding-right: 4.5rem;
+    }
+
+    .back-link {
+      font-size: 1.1rem;
     }
 
     .track-card {

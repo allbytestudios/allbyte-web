@@ -7,7 +7,7 @@ import GodotEmbed from "../components/GodotEmbed.svelte";
 <BaseLayout title="Play — AllByte Studios">
   <main class="play-page">
     <nav class="play-nav">
-      <a href="/">&larr; Back to Studio</a>
+      <a href="/" class="back-link">&larr; Back</a>
     </nav>
     <GodotEmbed client:load />
   </main>
@@ -35,19 +35,30 @@ import GodotEmbed from "../components/GodotEmbed.svelte";
   }
 
   .play-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
     width: 100%;
-    max-width: 960px;
+    background: #0a0e17;
+    padding: 0.4rem 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     margin-bottom: 1rem;
   }
 
-  .play-nav a {
+  .play-nav .back-link {
     color: #a7f3d0;
     text-decoration: none;
     font-family: "Courier New", monospace;
-    font-size: 0.875rem;
+    font-size: 1rem;
+    background: rgba(167, 243, 208, 0.08);
+    border: 1px solid rgba(167, 243, 208, 0.2);
+    border-radius: 4px;
+    padding: 0.2rem 0.75rem;
+    transition: background 0.15s, border-color 0.15s;
   }
 
-  .play-nav a:hover {
-    text-decoration: underline;
+  .play-nav .back-link:hover {
+    background: rgba(167, 243, 208, 0.15);
+    border-color: rgba(167, 243, 208, 0.4);
   }
 </style>

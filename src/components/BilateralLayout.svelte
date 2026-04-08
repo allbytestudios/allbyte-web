@@ -142,9 +142,9 @@
         <div class="tier-counts">
         <span class="tier-label">Subscribers</span>
         <div class="tier-pips">
-          <span class="tier-pip"><span class="pip-dot" style="background: #a7f3d0;"></span><span class="pip-name">Initiate</span><span class="pip-count">{tierCounts.initiate}</span></span>
-          <span class="tier-pip"><span class="pip-dot" style="background: #fbbf24;"></span><span class="pip-name">Hero</span><span class="pip-count">{tierCounts.hero}</span></span>
-          <span class="tier-pip"><span class="pip-dot" style="background: #f97316;"></span><span class="pip-name">Legend</span><span class="pip-count">{tierCounts.legend}</span></span>
+          <span class="tier-pip" style="--tier-color: #a7f3d0;"><img src="/tier-initiate.png" alt="" class="tier-icon" /><span class="pip-name">Initiate</span><span class="pip-count">{tierCounts.initiate}</span></span>
+          <span class="tier-pip" style="--tier-color: #fbbf24;"><img src="/tier-hero.png" alt="" class="tier-icon" /><span class="pip-name">Hero</span><span class="pip-count">{tierCounts.hero}</span></span>
+          <span class="tier-pip" style="--tier-color: #f97316;"><img src="/tier-legend.png" alt="" class="tier-icon" /><span class="pip-name">Legend</span><span class="pip-count">{tierCounts.legend}</span></span>
           </div>
         </div>
       </div>
@@ -162,7 +162,10 @@
           {/if}
         </div>
         {#if auth.currentUser}
-          <span class="username">{auth.currentUser.username}</span>
+          <span class="username">
+            <img src={auth.currentUser.tier === "legend" ? "/tier-legend.png" : auth.currentUser.tier === "hero" ? "/tier-hero.png" : auth.currentUser.tier === "initiate" ? "/tier-initiate.png" : "/tier-none.png"} alt="" class="user-tier-icon" />
+            {auth.currentUser.username}
+          </span>
         {/if}
       </div>
     </div>
@@ -234,24 +237,7 @@
   </div>
 
   {#if isMobile}
-    <!-- Mobile: stacked groups -->
-    <div class="mobile-panel engine-bg">
-      <h2 class="panel-title engine-title"><span class="terminal-prompt">$</span> Game Dev<br/><span class="panel-sub">(built with AI)</span></h2>
-      <div class="mobile-links">
-        <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
-          <h3>Devlog <span class="cursor-arrow"></span></h3>
-          <p>Technical post-mortems and development updates.</p>
-        </a>
-        <a href="/godot-and-claude/" class="link-card engine-card" onmouseenter={playCursor}>
-          <h3>Godot &amp; Claude <span class="cursor-arrow"></span></h3>
-          <p>My local setup and how I do gamedev with Godot &amp; Claude.</p>
-        </a>
-        <a href="/self-hosting-with-claude/" class="link-card engine-card" onmouseenter={playCursor}>
-          <h3>Self-Hosting with Claude <span class="cursor-arrow"></span></h3>
-          <p>AI-assisted self-hosted game, subscription, and infra.</p>
-        </a>
-      </div>
-    </div>
+    <!-- Mobile: stacked groups (Heart/Assets first) -->
     <div class="mobile-panel heart-bg" style="position: relative;">
       <img src="/Flourish.png" alt="" class="flourish flourish-left" />
       <h2 class="panel-title heart-title">Game Assets<br/><span class="panel-sub">(made without AI)</span></h2>
@@ -268,6 +254,23 @@
         <a href="/fonts/" class="link-card heart-card" onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
           <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>A custom typeface designed for The Chronicles of Nesis.</p>
+        </a>
+      </div>
+    </div>
+    <div class="mobile-panel engine-bg">
+      <h2 class="panel-title engine-title"><span class="terminal-prompt">$</span> Game Dev<br/><span class="panel-sub">(built with AI)</span></h2>
+      <div class="mobile-links">
+        <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
+          <h3>Devlog <span class="cursor-arrow"></span></h3>
+          <p>Technical post-mortems and development updates.</p>
+        </a>
+        <a href="/godot-and-claude/" class="link-card engine-card" onmouseenter={playCursor}>
+          <h3>Godot &amp; Claude <span class="cursor-arrow"></span></h3>
+          <p>My local setup and how I do gamedev with Godot &amp; Claude.</p>
+        </a>
+        <a href="/self-hosting-with-claude/" class="link-card engine-card" onmouseenter={playCursor}>
+          <h3>Self-Hosting with Claude <span class="cursor-arrow"></span></h3>
+          <p>AI-assisted self-hosted game, subscription, and infra.</p>
         </a>
       </div>
     </div>
@@ -341,7 +344,7 @@
   .site-header {
     background: #1e2a3a;
     text-align: center;
-    padding: 2rem 1rem 0.5rem;
+    padding: 2.5rem 1rem 0.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -393,45 +396,50 @@
   .tier-counts {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.15rem;
   }
 
   .tier-label {
-    font-family: "Courier New", monospace;
-    font-size: 0.65rem;
-    color: rgba(224, 231, 255, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.85rem;
+    color: rgba(224, 231, 255, 0.5);
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(224, 231, 255, 0.15);
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
   }
 
   .tier-pips {
     display: flex;
-    gap: 0.6rem;
+    flex-direction: column;
+    gap: 0.2rem;
   }
 
   .tier-pip {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.4rem;
   }
 
-  .pip-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
+  .tier-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    image-rendering: pixelated;
+    object-fit: contain;
     flex-shrink: 0;
   }
 
   .pip-name {
-    font-family: "Courier New", monospace;
-    font-size: 0.65rem;
-    color: rgba(224, 231, 255, 0.4);
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.4rem;
+    color: var(--tier-color);
   }
 
   .pip-count {
-    font-family: "Courier New", monospace;
-    font-size: 0.7rem;
-    color: rgba(224, 231, 255, 0.6);
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.4rem;
+    color: rgba(224, 231, 255, 0.7);
+    margin-left: auto;
   }
 
 
@@ -452,10 +460,19 @@
   }
 
   .username {
-    font-family: "Courier New", monospace;
-    font-size: 0.75rem;
-    color: var(--engine-accent);
-    opacity: 0.8;
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+    color: #e0e7ff;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .user-tier-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    image-rendering: pixelated;
+    object-fit: contain;
   }
 
   .header-btn {
@@ -1064,6 +1081,29 @@
 
     .site-title {
       font-size: 2rem;
+    }
+
+    .tier-counts {
+      align-items: center;
+    }
+
+    .tier-pips {
+      flex-direction: row;
+      gap: 2.5rem;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .tier-pip {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.15rem 0.35rem;
+    }
+
+    .pip-count {
+      width: 100%;
+      text-align: center;
+      margin-left: 0;
     }
 
     .demo-actions {

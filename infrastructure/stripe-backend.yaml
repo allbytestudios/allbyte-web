@@ -816,9 +816,7 @@ Resources:
           def get_stripe_key():
               if "stripe" not in _cache:
                   sm = boto3.client("secretsmanager")
-                  resp = sm.list_secrets(Filters=[{"Key": "name", "Values": ["allbyte-studio/stripe-secret-key"]}])
-                  secret_arn = resp["SecretList"][0]["ARN"]
-                  _cache["stripe"] = sm.get_secret_value(SecretId=secret_arn)["SecretString"]
+                  _cache["stripe"] = sm.get_secret_value(SecretId="allbyte-studio/stripe-secret-key")["SecretString"]
               return _cache["stripe"]
           def get_jwt_secret():
               if "jwt" not in _cache:

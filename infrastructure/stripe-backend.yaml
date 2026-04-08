@@ -445,6 +445,313 @@ Resources:
                   }),
               }
 
+  # --- Lambda: OAuth Start (redirect to provider) ---
+  OAuthStartFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-oauth-start
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import urllib.parse
+          import boto3
+
+          PROVIDERS = {
+              "google": {
+                  "secret_name": "allbyte-studio/google-oauth",
+                  "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
+                  "scope": "openid email profile",
+              },
+              "discord": {
+                  "secret_name": "allbyte-studio/discord-oauth",
+                  "auth_url": "https://discord.com/api/oauth2/authorize",
+                  "scope": "identify email",
+              },
+          }
+
+          def get_secret(name):
+              sm = boto3.client("secretsmanager")
+              raw = sm.get_secret_value(SecretId=name)["SecretString"].strip().strip("{}")
+              parts = {}
+              for pair in raw.split(","):
+                  key, _, value = pair.partition(":")
+                  parts[key.strip()] = value.strip()
+              return {"client_id": parts["client_id"], "client_secret": parts["client_secret"]}
+
+          def get_jwt_secret():
+              sm = boto3.client("secretsmanager")
+              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+
+          def make_state(jwt_secret):
+              ts = hex(int(time.time()))[2:]
+              sig = hmac.new(jwt_secret.encode(), ts.encode(), hashlib.sha256).hexdigest()[:32]
+              return f"{ts}.{sig}"
+
+          def handler(event, context):
+              provider = event.get("pathParameters", {}).get("provider", "")
+              if provider not in PROVIDERS:
+                  return {"statusCode": 400, "body": json.dumps({"error": "Unknown provider"})}
+
+              cfg = PROVIDERS[provider]
+              creds = get_secret(cfg["secret_name"])
+              jwt_secret = get_jwt_secret()
+
+              domain = event["requestContext"]["domainName"]
+              redirect_uri = f"https://{domain}/auth/oauth/{provider}/callback"
+
+              state = make_state(jwt_secret)
+
+              params = {
+                  "client_id": creds["client_id"],
+                  "redirect_uri": redirect_uri,
+                  "response_type": "code",
+                  "scope": cfg["scope"],
+                  "state": state,
+              }
+              if provider == "google":
+                  params["access_type"] = "offline"
+                  params["prompt"] = "consent"
+              elif provider == "discord":
+                  params["prompt"] = "consent"
+
+              url = f"{cfg['auth_url']}?{urllib.parse.urlencode(params)}"
+
+              return {
+                  "statusCode": 302,
+                  "headers": {"Location": url},
+              }
+
+  # --- Lambda: OAuth Callback (exchange code, create/link user) ---
+  OAuthCallbackFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-oauth-callback
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+          SITE_DOMAIN: !Ref SiteDomain
+          PRICE_INITIATE: !Ref StripePriceInitiate
+          PRICE_HERO: !Ref StripePriceHero
+          PRICE_LEGEND: !Ref StripePriceLegend
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import uuid
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import urllib.request
+          import urllib.parse
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+          subs = boto3.resource("dynamodb").Table(os.environ["SUBSCRIPTIONS_TABLE"])
+          site = os.environ["SITE_DOMAIN"]
+
+          PROVIDERS = {
+              "google": {
+                  "secret_name": "allbyte-studio/google-oauth",
+                  "token_url": "https://oauth2.googleapis.com/token",
+                  "userinfo_url": "https://www.googleapis.com/oauth2/v2/userinfo",
+              },
+              "discord": {
+                  "secret_name": "allbyte-studio/discord-oauth",
+                  "token_url": "https://discord.com/api/oauth2/token",
+                  "userinfo_url": "https://discord.com/api/users/@me",
+              },
+          }
+
+          def get_secret(name):
+              sm = boto3.client("secretsmanager")
+              raw = sm.get_secret_value(SecretId=name)["SecretString"].strip().strip("{}")
+              parts = {}
+              for pair in raw.split(","):
+                  key, _, value = pair.partition(":")
+                  parts[key.strip()] = value.strip()
+              return {"client_id": parts["client_id"], "client_secret": parts["client_secret"]}
+
+          def get_jwt_secret():
+              sm = boto3.client("secretsmanager")
+              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+
+          def verify_state(state, jwt_secret):
+              parts = state.split(".")
+              if len(parts) != 2:
+                  return False
+              ts_hex, sig = parts
+              expected = hmac.new(jwt_secret.encode(), ts_hex.encode(), hashlib.sha256).hexdigest()[:32]
+              if not hmac.compare_digest(sig, expected):
+                  return False
+              ts = int(ts_hex, 16)
+              if abs(time.time() - ts) > 600:
+                  return False
+              return True
+
+          def sign_jwt(payload, secret):
+              header = base64.urlsafe_b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).rstrip(b"=").decode()
+              body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+              sig_input = f"{header}.{body}"
+              sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              return f"{header}.{body}.{sig}"
+
+          def http_post_form(url, data, headers=None):
+              body = urllib.parse.urlencode(data).encode()
+              req = urllib.request.Request(url, data=body, method="POST")
+              req.add_header("Content-Type", "application/x-www-form-urlencoded")
+              if headers:
+                  for k, v in headers.items():
+                      req.add_header(k, v)
+              resp = urllib.request.urlopen(req)
+              return json.loads(resp.read())
+
+          def http_get_json(url, token):
+              req = urllib.request.Request(url)
+              req.add_header("Authorization", f"Bearer {token}")
+              resp = urllib.request.urlopen(req)
+              return json.loads(resp.read())
+
+          def get_tier(stripe_customer_id):
+              if not stripe_customer_id:
+                  return None
+              price_to_tier = {
+                  os.environ["PRICE_INITIATE"]: "initiate",
+                  os.environ["PRICE_HERO"]: "hero",
+                  os.environ["PRICE_LEGEND"]: "legend",
+              }
+              try:
+                  resp = subs.get_item(Key={"customerId": stripe_customer_id})
+                  item = resp.get("Item", {})
+                  if item.get("status") == "active":
+                      return price_to_tier.get(item.get("priceId"))
+              except Exception:
+                  pass
+              return None
+
+          def redirect_error(msg):
+              return {"statusCode": 302, "headers": {"Location": f"{site}/#auth_error={urllib.parse.quote(msg)}"}}
+
+          def handler(event, context):
+              provider = event.get("pathParameters", {}).get("provider", "")
+              if provider not in PROVIDERS:
+                  return redirect_error("Unknown provider")
+
+              qs = event.get("queryStringParameters") or {}
+              code = qs.get("code")
+              state = qs.get("state", "")
+
+              if not code:
+                  error_desc = qs.get("error_description", qs.get("error", "Authorization denied"))
+                  return redirect_error(error_desc)
+
+              jwt_secret = get_jwt_secret()
+              if not verify_state(state, jwt_secret):
+                  return redirect_error("Invalid state parameter")
+
+              cfg = PROVIDERS[provider]
+              creds = get_secret(cfg["secret_name"])
+              domain = event["requestContext"]["domainName"]
+              redirect_uri = f"https://{domain}/auth/oauth/{provider}/callback"
+
+              # Exchange code for access token
+              try:
+                  token_data = http_post_form(cfg["token_url"], {
+                      "client_id": creds["client_id"],
+                      "client_secret": creds["client_secret"],
+                      "code": code,
+                      "redirect_uri": redirect_uri,
+                      "grant_type": "authorization_code",
+                  })
+              except Exception as e:
+                  return redirect_error(f"Token exchange failed: {e}")
+
+              access_token = token_data.get("access_token")
+              if not access_token:
+                  return redirect_error("No access token received")
+
+              # Fetch user profile
+              try:
+                  profile = http_get_json(cfg["userinfo_url"], access_token)
+              except Exception as e:
+                  return redirect_error(f"Failed to fetch profile: {e}")
+
+              # Extract email and name
+              if provider == "google":
+                  email = profile.get("email", "").strip().lower()
+                  display_name = profile.get("name", email.split("@")[0])
+                  oauth_id = profile.get("id", "")
+              elif provider == "discord":
+                  email = profile.get("email", "").strip().lower()
+                  if not profile.get("verified", False):
+                      return redirect_error("Discord email not verified")
+                  display_name = profile.get("global_name") or profile.get("username", "")
+                  oauth_id = profile.get("id", "")
+
+              if not email:
+                  return redirect_error("No email provided by provider")
+
+              # Find or create user
+              resp = users.query(
+                  IndexName="email-index",
+                  KeyConditionExpression="email = :e",
+                  ExpressionAttributeValues={":e": email},
+              )
+              items = resp.get("Items", [])
+
+              if items:
+                  user = items[0]
+                  # Link OAuth to existing account
+                  users.update_item(
+                      Key={"userId": user["userId"]},
+                      UpdateExpression="SET oauthProvider = :p, oauthId = :oid",
+                      ExpressionAttributeValues={":p": provider, ":oid": oauth_id},
+                  )
+              else:
+                  user_id = str(uuid.uuid4())
+                  now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                  user = {
+                      "userId": user_id,
+                      "email": email,
+                      "username": display_name,
+                      "oauthProvider": provider,
+                      "oauthId": oauth_id,
+                      "createdAt": now,
+                  }
+                  users.put_item(Item=user)
+
+              tier = get_tier(user.get("stripeCustomerId"))
+              token = sign_jwt({
+                  "sub": user["userId"],
+                  "email": user["email"],
+                  "username": user.get("username", ""),
+                  "exp": int(time.time()) + 7 * 86400,
+              }, jwt_secret)
+
+              return {
+                  "statusCode": 302,
+                  "headers": {"Location": f"{site}/#token={token}"},
+              }
+
   # --- Lambda: Create Checkout Session ---
   CreateCheckoutFunction:
     Type: AWS::Lambda::Function
@@ -815,6 +1122,53 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref MeFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # OAuth routes
+  OAuthStartIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt OAuthStartFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  OAuthStartRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /auth/oauth/{provider}"
+      Target: !Sub "integrations/${OAuthStartIntegration}"
+
+  OAuthStartPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref OAuthStartFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  OAuthCallbackIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt OAuthCallbackFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  OAuthCallbackRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /auth/oauth/{provider}/callback"
+      Target: !Sub "integrations/${OAuthCallbackIntegration}"
+
+  OAuthCallbackPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref OAuthCallbackFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"

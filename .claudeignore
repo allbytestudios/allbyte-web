@@ -1,0 +1,17 @@
+# Secrets and credentials
+.env
+.env.*
+credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*secret*key*
+*service*account*.json
+
+# Private keys and certificates
+id_rsa
+id_ed25519
+*.pub

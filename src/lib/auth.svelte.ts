@@ -16,7 +16,23 @@ class AuthStore {
 
 export const auth = new AuthStore();
 
+export function oauthLogin(provider: "google" | "discord") {
+  window.location.href = `${API}/auth/oauth/${provider}`;
+}
+
 export async function initAuth() {
+  // Check for OAuth callback token in URL hash
+  const hash = window.location.hash;
+  if (hash) {
+    const params = new URLSearchParams(hash.substring(1));
+    const oauthToken = params.get("token");
+    // Clear hash from URL immediately
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    if (oauthToken) {
+      localStorage.setItem("allbyte_token", oauthToken);
+    }
+  }
+
   const token = localStorage.getItem("allbyte_token");
   if (!token) {
     auth.authReady = true;
@@ -37,6 +53,17 @@ export async function initAuth() {
     // API unreachable
   }
   auth.authReady = true;
+
+  // Handle pending action from OAuth redirect
+  if (auth.currentUser) {
+    const pending = sessionStorage.getItem("allbyte_pending_action");
+    if (pending) {
+      sessionStorage.removeItem("allbyte_pending_action");
+      if (pending === "subscribe") {
+        window.location.href = "/subscribe/";
+      }
+    }
+  }
 }
 
 export async function login(email: string, password: string): Promise<string | null> {

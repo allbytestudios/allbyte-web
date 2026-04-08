@@ -153,12 +153,16 @@
         AllByte Studios
       </h1>
       <div class="header-right">
-        <a href="/subscribe/" class="header-btn subscribe-btn" onclick={handleSubscribeClick}><span>Subscribe</span><span>Donate</span></a>
+        <div class="header-right-buttons">
+          <a href="/subscribe/" class="header-btn subscribe-btn" onclick={handleSubscribeClick}><span>Subscribe</span><span>Donate</span></a>
+          {#if auth.currentUser}
+            <button class="header-btn login-btn" onclick={logout}><span>Sign</span><span>Out</span></button>
+          {:else}
+            <button class="header-btn login-btn" onclick={() => { pendingAction = null; showLoginModal = true; }}><span>Log In</span><span>Sign Up</span></button>
+          {/if}
+        </div>
         {#if auth.currentUser}
           <span class="username">{auth.currentUser.username}</span>
-          <button class="header-btn login-btn" onclick={logout}><span>Sign</span><span>Out</span></button>
-        {:else}
-          <button class="header-btn login-btn" onclick={() => { pendingAction = null; showLoginModal = true; }}><span>Log In</span><span>Sign Up</span></button>
         {/if}
       </div>
     </div>
@@ -363,8 +367,9 @@
     position: absolute;
     right: 0;
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
   }
 
   .site-title {
@@ -440,10 +445,17 @@
     border-color: rgba(167, 243, 208, 0.3);
   }
 
+  .header-right-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
   .username {
     font-family: "Courier New", monospace;
-    font-size: 0.9rem;
+    font-size: 0.75rem;
     color: var(--engine-accent);
+    opacity: 0.8;
   }
 
   .header-btn {

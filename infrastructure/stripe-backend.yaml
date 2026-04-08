@@ -133,9 +133,12 @@ Resources:
               "Access-Control-Allow-Methods": "POST,OPTIONS",
           }
 
+          _cache = {}
           def get_jwt_secret():
-              sm = boto3.client("secretsmanager")
-              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
 
           def hash_password(password, salt=None):
               if salt is None:
@@ -245,9 +248,12 @@ Resources:
               "Access-Control-Allow-Methods": "POST,OPTIONS",
           }
 
+          _cache = {}
           def get_jwt_secret():
-              sm = boto3.client("secretsmanager")
-              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
 
           def verify_password(password, stored):
               salt_b64, hash_b64 = stored.split(":")
@@ -369,9 +375,12 @@ Resources:
               "Access-Control-Allow-Methods": "GET,OPTIONS",
           }
 
+          _cache = {}
           def get_jwt_secret():
-              sm = boto3.client("secretsmanager")
-              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
 
           def verify_jwt(token, secret):
               parts = token.split(".")
@@ -482,17 +491,22 @@ Resources:
           }
 
           def get_secret(name):
-              sm = boto3.client("secretsmanager")
-              raw = sm.get_secret_value(SecretId=name)["SecretString"].strip().strip("{}")
-              parts = {}
-              for pair in raw.split(","):
-                  key, _, value = pair.partition(":")
-                  parts[key.strip()] = value.strip()
-              return {"client_id": parts["client_id"], "client_secret": parts["client_secret"]}
+              if name not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  raw = sm.get_secret_value(SecretId=name)["SecretString"].strip().strip("{}")
+                  parts = {}
+                  for pair in raw.split(","):
+                      key, _, value = pair.partition(":")
+                      parts[key.strip()] = value.strip()
+                  _cache[name] = {"client_id": parts["client_id"], "client_secret": parts["client_secret"]}
+              return _cache[name]
 
+          _cache = {}
           def get_jwt_secret():
-              sm = boto3.client("secretsmanager")
-              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
 
           def make_state(jwt_secret):
               ts = hex(int(time.time()))[2:]
@@ -581,17 +595,22 @@ Resources:
           }
 
           def get_secret(name):
-              sm = boto3.client("secretsmanager")
-              raw = sm.get_secret_value(SecretId=name)["SecretString"].strip().strip("{}")
-              parts = {}
-              for pair in raw.split(","):
-                  key, _, value = pair.partition(":")
-                  parts[key.strip()] = value.strip()
-              return {"client_id": parts["client_id"], "client_secret": parts["client_secret"]}
+              if name not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  raw = sm.get_secret_value(SecretId=name)["SecretString"].strip().strip("{}")
+                  parts = {}
+                  for pair in raw.split(","):
+                      key, _, value = pair.partition(":")
+                      parts[key.strip()] = value.strip()
+                  _cache[name] = {"client_id": parts["client_id"], "client_secret": parts["client_secret"]}
+              return _cache[name]
 
+          _cache = {}
           def get_jwt_secret():
-              sm = boto3.client("secretsmanager")
-              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
 
           def verify_state(state, jwt_secret):
               parts = state.split(".")
@@ -792,15 +811,20 @@ Resources:
               "Access-Control-Allow-Methods": "POST,OPTIONS",
           }
 
-          def get_stripe_key():
-              sm = boto3.client("secretsmanager")
-              resp = sm.list_secrets(Filters=[{"Key": "name", "Values": ["allbyte-studio/stripe-secret-key"]}])
-              secret_arn = resp["SecretList"][0]["ARN"]
-              return sm.get_secret_value(SecretId=secret_arn)["SecretString"]
+          _cache = {}
 
+          def get_stripe_key():
+              if "stripe" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  resp = sm.list_secrets(Filters=[{"Key": "name", "Values": ["allbyte-studio/stripe-secret-key"]}])
+                  secret_arn = resp["SecretList"][0]["ARN"]
+                  _cache["stripe"] = sm.get_secret_value(SecretId=secret_arn)["SecretString"]
+              return _cache["stripe"]
           def get_jwt_secret():
-              sm = boto3.client("secretsmanager")
-              return sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
 
           def verify_jwt(token, secret):
               parts = token.split(".")
@@ -921,12 +945,46 @@ Resources:
         ZipFile: |
           import json
           import os
+          import hmac
+          import hashlib
+          import time
           import boto3
 
           table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
+          _webhook_secret_cache = {}
+
+          def get_webhook_secret():
+              if "key" not in _webhook_secret_cache:
+                  sm = boto3.client("secretsmanager")
+                  _webhook_secret_cache["key"] = sm.get_secret_value(
+                      SecretId="allbyte-studio/stripe-webhook-secret"
+                  )["SecretString"]
+              return _webhook_secret_cache["key"]
+
+          def verify_stripe_signature(payload, sig_header, secret):
+              pairs = dict(p.split("=", 1) for p in sig_header.split(",") if "=" in p)
+              timestamp = pairs.get("t", "")
+              expected_sig = pairs.get("v1", "")
+              if not timestamp or not expected_sig:
+                  return False
+              # Reject events older than 5 minutes
+              if abs(time.time() - int(timestamp)) > 300:
+                  return False
+              signed_payload = f"{timestamp}.{payload}"
+              computed = hmac.new(
+                  secret.encode(), signed_payload.encode(), hashlib.sha256
+              ).hexdigest()
+              return hmac.compare_digest(computed, expected_sig)
 
           def handler(event, context):
-              body = json.loads(event.get("body", "{}"))
+              raw_body = event.get("body", "")
+              sig_header = event.get("headers", {}).get("stripe-signature", "")
+
+              webhook_secret = get_webhook_secret()
+              if not verify_stripe_signature(raw_body, sig_header, webhook_secret):
+                  return {"statusCode": 400, "body": "Invalid signature"}
+
+              body = json.loads(raw_body)
               event_type = body.get("type", "")
               obj = body.get("data", {}).get("object", {})
 
@@ -1055,6 +1113,9 @@ Resources:
       ApiId: !Ref HttpApi
       StageName: "$default"
       AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 10
 
   # Auth routes
   SignupIntegration:

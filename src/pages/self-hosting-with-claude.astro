@@ -13,8 +13,7 @@ import Footer from "../components/Footer.astro";
   <main class="article">
     <article class="content">
       <header class="article-header">
-        <p class="subtitle">How I deployed a static site to AWS for under $1/month (minus Claude expense) — using Claude as the AI pair-programmer.</p>
-        <p class="reference">You can reference my setup here: <a href="https://github.com/allbytestudios/allbyte-web" target="_blank" rel="noopener noreferrer">github.com/allbytestudios/allbyte-web</a></p>
+        <p class="summary">How I deployed a static site to AWS for under $5/month (minus Claude expense) — using Claude as the AI pair-programmer. You can reference my setup on <a href="https://github.com/allbytestudios/allbyte-web" target="_blank" rel="noopener noreferrer">GitHub</a>, or read <a href="/devlog/patreon-vs-self-hosting/">why we're doing this instead of using Patreon</a>.</p>
         <time>April 2026</time>
       </header>
 
@@ -23,13 +22,32 @@ import Footer from "../components/Footer.astro";
           <li><a href="#the-setup">The Setup</a>
             <ul><li><a href="#my-tools">My Tools</a></li></ul>
           </li>
-          <li><a href="#technical-details">Technical Details</a>
+          <li><a href="#infrastructure">Infrastructure</a>
             <ul>
-              <li><a href="#architecture">Architecture & Stack</a></li>
-              <li><a href="#costs">Costs & Protection</a></li>
-              <li><a href="#infrastructure">Infrastructure & Deploy</a></li>
+              <li><a href="#stack">Stack</a></li>
+              <li><a href="#aws-resources">AWS Resources</a></li>
+              <li><a href="#cicd">CI/CD & Deploy</a></li>
               <li><a href="#cache-strategy">Cache Strategy</a></li>
-              <li><a href="#asset-pipeline">Asset Pipeline</a></li>
+            </ul>
+          </li>
+          <li><a href="#costs">Costs & Protection</a></li>
+          <li><a href="#claude-security">Claude & Security</a>
+            <ul>
+              <li><a href="#claudeignore">.claudeignore</a></li>
+              <li><a href="#secrets-management">Secrets Management</a></li>
+            </ul>
+          </li>
+          <li><a href="#authentication">Authentication</a>
+            <ul>
+              <li><a href="#auth-stack">The Auth Stack</a></li>
+              <li><a href="#oauth">OAuth (Google & Discord)</a></li>
+              <li><a href="#stripe-integration">Stripe Integration</a></li>
+            </ul>
+          </li>
+          <li><a href="#game-dev-integration">Game Dev Integration</a>
+            <ul>
+              <li><a href="#asset-sync">Asset Sync</a></li>
+              <li><a href="#sprite-conversion">Sprite Conversion</a></li>
             </ul>
           </li>
           <li><a href="#lessons-learned">Lessons Learned</a></li>
@@ -45,16 +63,29 @@ import Footer from "../components/Footer.astro";
         <h3 id="my-tools">My Tools</h3>
         <ul>
           <li><strong>Claude Pro</strong> — AI pair-programmer via Claude Code (Anthropic's CLI). Writes the code, sets up infrastructure, debugs deploy issues, and built this document. Same setup I use for <a href="/godot-and-claude/">Godot game dev</a>. I don't count the subscription as a hosting cost since I'm already paying for it for game development.</li>
-          <li><strong>AWS account</strong> — S3, CloudFront, Route 53, ACM, CloudFormation, Lambda. Everything runs here.</li>
+          <li><strong>AWS account</strong> — S3, CloudFront, Route 53, ACM, CloudFormation, Lambda, DynamoDB, API Gateway. Everything runs here.</li>
+          <li><strong>Google Cloud Console</strong> — OAuth 2.0 credentials for Google Sign-In. Free.</li>
+          <li><strong>Discord Developer Portal</strong> — OAuth2 app for Discord Sign-In. Free.</li>
+          <li><strong>Stripe</strong> — Payment processing for subscriptions and donations. No monthly fee, 2.9% + 30&#162; per transaction.</li>
           <li><strong>My PC</strong> — Windows 11, Node.js, npm, AWS CLI, GitHub CLI. All development and deploys happen from one machine.</li>
         </ul>
       </section>
 
-      <!-- 2. Technical Details -->
-      <section id="technical-details">
-        <h2>2. Technical Details</h2>
+      <!-- 2. Infrastructure -->
+      <section id="infrastructure">
+        <h2>2. Infrastructure</h2>
 
-        <h3 id="architecture">Architecture & Stack</h3>
+        <h3 id="stack">Stack</h3>
+        <ul>
+          <li><strong>Astro 6</strong> — Static site generator with content collections for devlogs</li>
+          <li><strong>Svelte 5</strong> — Interactive UI (hover effects, audio, login modal)</li>
+          <li><strong>Tailwind CSS v4</strong> — Styling via Vite plugin</li>
+          <li><strong>AWS S3 + CloudFront</strong> — Hosting and CDN</li>
+          <li><strong>GitHub Actions + OIDC</strong> — CI/CD with no stored secrets</li>
+          <li><strong>CloudFormation</strong> — Infrastructure as code</li>
+        </ul>
+
+        <h3 id="aws-resources">AWS Resources</h3>
         <div class="diagram">
           <pre>{`GitHub (push to main)
        │
@@ -73,41 +104,9 @@ GitHub Actions (OIDC auth)
        ▼
   allbyte.studio`}</pre>
         </div>
-        <ul>
-          <li><strong>Astro 6</strong> — Static site generator with content collections for devlogs</li>
-          <li><strong>Svelte 5</strong> — Interactive UI (hover effects, audio, login modal)</li>
-          <li><strong>Tailwind CSS v4</strong> — Styling via Vite plugin</li>
-          <li><strong>AWS S3 + CloudFront</strong> — Hosting and CDN</li>
-          <li><strong>GitHub Actions + OIDC</strong> — CI/CD with no stored secrets</li>
-          <li><strong>CloudFormation</strong> — Infrastructure as code (single template)</li>
-        </ul>
+        <p>I registered <strong>allbyte.studio</strong> through Route 53, as suggested by Gemini. This allows DNS validation for the SSL cert to happen automatically — Claude added the CNAME records via the AWS CLI in seconds. Since Route 53 is already inside AWS, I can use native ALIAS records instead of CNAMEs, and everything — domain, DNS, certificate, CDN — lives under one account with one bill.</p>
 
-        <h3 id="costs">Costs & Protection</h3>
-        <p>For a low-traffic site, the monthly bill looks like this:</p>
-        <table>
-          <thead>
-            <tr><th>Service</th><th>Monthly Cost</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>S3 (static hosting)</td><td>~$0.02</td></tr>
-            <tr><td>CloudFront CDN</td><td>~$0.00–0.50</td></tr>
-            <tr><td>ACM Certificate (HTTPS)</td><td>Free</td></tr>
-            <tr><td>Route 53 (DNS)</td><td>$0.50/zone</td></tr>
-            <tr><td>GitHub Actions (CI/CD)</td><td>Free</td></tr>
-            <tr><td>Cost protection (Budget + Lambda)</td><td>Free</td></tr>
-            <tr class="total"><td>Total</td><td>~$0.50–1.00/mo</td></tr>
-          </tbody>
-        </table>
-        <p>CloudFront includes 1TB free transfer for the first year. After that, it's $0.085/GB — still negligible for a low-traffic site.</p>
-        <p>The scariest part of self-hosting on AWS isn't the setup — it's the fear of a surprise bill. If someone decides to DDoS the site or a bot hammers the CDN, CloudFront charges by the request. So I built an automatic kill switch.</p>
-        <p>A monthly AWS Budget watches my spend. At <strong>80% ($20)</strong>, I get an email warning. At <strong>100% ($25)</strong>, a Lambda function automatically disables the CloudFront distribution — the site goes down instead of racking up charges. I get an email notification either way.</p>
-        <p>CloudFront includes <strong>AWS Shield Standard</strong> for free, which handles common layer 3/4 DDoS attacks. For anything more sophisticated, you'd add AWS WAF (~$6/mo), but I figure for my low-traffic site the auto-shutoff is good enough.</p>
-        <p>To re-enable after a shutoff: flip the distribution back to Enabled in the CloudFront console. Total cost of the protection: $0 (Lambda free tier, SNS free tier, Budgets are free).</p>
-
-        <h3 id="infrastructure">Infrastructure & Deploy</h3>
-        <p>I registered <strong>allbyte.studio</strong> through Route 53, as suggested by Gemini. This allows DNS validation for the SSL cert to happen automatically — Claude added the CNAME records via the AWS CLI in seconds. Since Route 53 is already inside AWS, I can use native ALIAS records instead of CNAMEs, and everything — domain, DNS, certificate, CDN — lives under one account with one bill. Finally, if I'd used Squarespace, Namecheap, or GoDaddy, every DNS change would've been a context switch to a different UI with different terminology.</p>
-
-        <p>Everything lives in one CloudFormation template (<code>infrastructure/cloudformation.yaml</code>). A single command provisions:</p>
+        <p>Everything lives in two CloudFormation templates. The frontend (<code>infrastructure/cloudformation.yaml</code>) provisions:</p>
         <ol>
           <li><strong>S3 Bucket</strong> — Private, no public access. CloudFront reads via Origin Access Control.</li>
           <li><strong>CloudFront Distribution</strong> — HTTPS, HTTP/2+3, caching, error page routing.</li>
@@ -115,14 +114,10 @@ GitHub Actions (OIDC auth)
           <li><strong>Response Headers Policy</strong> — Injects <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Embedder-Policy</code> headers globally. Required for Godot's SharedArrayBuffer.</li>
           <li><strong>GitHub OIDC Provider + IAM Role</strong> — GitHub Actions authenticates via federation. No AWS access keys stored anywhere.</li>
         </ol>
-        <div class="code-block">
-          <pre><code>{`aws cloudformation deploy \\
-  --template-file infrastructure/cloudformation.yaml \\
-  --stack-name allbyte-studio-site \\
-  --capabilities CAPABILITY_NAMED_IAM \\
-  --region us-east-1`}</code></pre>
-        </div>
 
+        <p>The backend (<code>infrastructure/stripe-backend.yaml</code>) provisions Lambda functions, DynamoDB tables, and API Gateway — covered in the <a href="#authentication">Authentication</a> section.</p>
+
+        <h3 id="cicd">CI/CD & Deploy</h3>
         <p>Traditional CI/CD stores AWS access keys as GitHub secrets. Claude recommended OIDC federation instead, and it's better in every way:</p>
         <table>
           <thead>
@@ -151,28 +146,150 @@ GitHub Actions (OIDC auth)
         <h3 id="cache-strategy">Cache Strategy</h3>
         <p>Static assets (JS, CSS, images, fonts) get <code>max-age=31536000, immutable</code> — cached forever. Astro hashes filenames, so new deploys automatically get new URLs.</p>
         <p>HTML files get <code>max-age=0, must-revalidate</code> — always revalidated so users see the latest content immediately after a deploy.</p>
-        <h3 id="asset-pipeline">Asset Pipeline</h3>
-        <p>Game assets (music, sprites, fonts, backgrounds) are <strong>not committed to git</strong>. All art is handcrafted and I don't want it easily ripped from a public repo. Instead, assets are synced locally from the Godot project and pushed directly to S3.</p>
+      </section>
 
+      <!-- 3. Costs & Protection -->
+      <section id="costs">
+        <h2>3. Costs & Protection</h2>
+        <p>For a low-traffic site, the monthly bill looks like this:</p>
+        <table>
+          <thead>
+            <tr><th>Service</th><th>Monthly Cost</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>S3 (static hosting)</td><td>~$0.02</td></tr>
+            <tr><td>CloudFront CDN</td><td>~$0.00–0.50</td></tr>
+            <tr><td>ACM Certificate (HTTPS)</td><td>Free</td></tr>
+            <tr><td>Route 53 (DNS)</td><td>$0.50/zone</td></tr>
+            <tr><td>Lambda (auth + backend)</td><td>Free tier</td></tr>
+            <tr><td>DynamoDB (user/subscription data)</td><td>Free tier</td></tr>
+            <tr><td>API Gateway</td><td>Free tier (first 12 months)</td></tr>
+            <tr><td>Google OAuth</td><td>Free</td></tr>
+            <tr><td>Discord OAuth</td><td>Free</td></tr>
+            <tr><td>Stripe</td><td>2.9% + 30&#162;/txn</td></tr>
+            <tr><td>GitHub Actions (CI/CD)</td><td>Free</td></tr>
+            <tr><td>Secrets Manager (5 secrets)</td><td>~$2.00</td></tr>
+            <tr><td>Cost protection (Budget + Lambda)</td><td>Free</td></tr>
+            <tr class="total"><td>Total (before transactions)</td><td>&lt;$5/mo</td></tr>
+          </tbody>
+        </table>
+        <p>CloudFront includes 1TB free transfer for the first year. After that, it's $0.085/GB — still negligible for a low-traffic site.</p>
+        <p>The scariest part of self-hosting on AWS isn't the setup — it's the fear of a surprise bill. If someone decides to DDoS the site or a bot hammers the CDN, CloudFront charges by the request. So I built an automatic kill switch.</p>
+        <p>A monthly AWS Budget watches my spend. At <strong>80% ($20)</strong>, I get an email warning. At <strong>100% ($25)</strong>, a Lambda function automatically disables the CloudFront distribution — the site goes down instead of racking up charges. I get an email notification either way.</p>
+        <p>CloudFront includes <strong>AWS Shield Standard</strong> for free, which handles common layer 3/4 DDoS attacks. For anything more sophisticated, you'd add AWS WAF (~$6/mo), but I figure for my low-traffic site the auto-shutoff is good enough.</p>
+        <p>To re-enable after a shutoff: flip the distribution back to Enabled in the CloudFront console. Total cost of the protection: $0 (Lambda free tier, SNS free tier, Budgets are free).</p>
+      </section>
+
+      <!-- 4. Claude & Security -->
+      <section id="claude-security">
+        <h2>4. Claude & Security</h2>
+        <p>Claude Code is the AI pair-programmer behind all of this — it wrote the CloudFormation templates, the Lambda functions, the OAuth flow, the CI/CD pipeline, and this document. But working with AI on infrastructure requires a clear security boundary.</p>
+
+        <p>The core rule: <strong>secrets never flow through Claude.</strong> No reading <code>.env</code> files, no fetching values from Secrets Manager, no pasting credentials into chat. When a task requires creating or updating secrets, Claude provides the exact command and I run it myself.</p>
+
+        <p>This isn't paranoia — it's practical hygiene. AI tools process context through external systems. Even if nothing is logged or retained, the principle is simple: secrets belong in the developer's terminal, not in an AI conversation.</p>
+
+        <h3 id="claudeignore">.claudeignore</h3>
+        <p>Claude Code supports a <code>.claudeignore</code> file (like <code>.gitignore</code>) that prevents it from reading specified files. Ours blocks anything that could contain secrets:</p>
+        <div class="code-block">
+          <pre><code>{`.aws/
+.git/
+.env
+.env.*
+credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*secret*key*
+*service*account*.json
+id_rsa
+id_ed25519
+*.pub`}</code></pre>
+        </div>
+        <p>This is a hard boundary. Even if Claude is asked to debug a secret-related error, it asks the developer to inspect the value and describe the issue.</p>
+
+        <h3 id="secrets-management">Secrets Management</h3>
+        <p>All secrets live in <strong>AWS Secrets Manager</strong> under the <code>allbyte-studio/</code> prefix:</p>
+        <ul>
+          <li><code>allbyte-studio/jwt-secret</code> — HS256 signing key for JWT tokens</li>
+          <li><code>allbyte-studio/stripe-secret-key</code> — Stripe API secret</li>
+          <li><code>allbyte-studio/google-oauth</code> — Google OAuth client credentials</li>
+          <li><code>allbyte-studio/discord-oauth</code> — Discord OAuth client credentials</li>
+          <li><code>allbyte-studio/stripe-webhook-secret</code> — Stripe webhook signing secret (<code>whsec_</code>)</li>
+        </ul>
+        <p>Lambda functions fetch these at runtime via the IAM role. Secrets are cached in Lambda memory between warm invocations to reduce latency and API calls. Environment variables reference ARNs for lookup, never the secret values themselves.</p>
+        <p><strong>Key rotation protocol:</strong> If an AWS access key was ever exposed in an AI session (or any context you don't fully control), deactivate it immediately, create a new one, and reassign it via <code>aws configure</code>. We've done this once already — better safe than sorry.</p>
+        <p>For CI/CD, we avoid access keys entirely. GitHub Actions authenticates via <strong>OIDC federation</strong> — short-lived tokens scoped to our specific repo and branch. Nothing to rotate, nothing to store. See the <a href="#cicd">CI/CD section</a> for details.</p>
+      </section>
+
+      <!-- 5. Authentication -->
+      <section id="authentication">
+        <h2>5. Authentication</h2>
+
+        <h3 id="auth-stack">The Auth Stack</h3>
+        <p>The entire authentication backend lives in a single CloudFormation template (<code>infrastructure/stripe-backend.yaml</code>) as inline Python 3.12 Lambda functions. No frameworks, no Cognito, no third-party auth services. Eight Lambda functions behind an API Gateway V2 HTTP API:</p>
+        <ul>
+          <li><strong>Signup</strong> — Email/password registration with PBKDF2-HMAC-SHA256 hashing (600k iterations)</li>
+          <li><strong>Login</strong> — Email/password authentication, returns JWT</li>
+          <li><strong>Me</strong> — Token verification, returns user profile with subscription tier</li>
+          <li><strong>OAuth Start</strong> — Redirects to Google/Discord authorization</li>
+          <li><strong>OAuth Callback</strong> — Exchanges auth code, creates/links user, returns JWT</li>
+          <li><strong>Checkout</strong> — Creates Stripe Checkout sessions for subscriptions and donations</li>
+          <li><strong>Webhook</strong> — Processes Stripe events with signature verification</li>
+          <li><strong>Counts</strong> — Public endpoint returning subscriber tier counts</li>
+        </ul>
+        <p>User data lives in DynamoDB (<code>allbyte-studio-users</code>) with a Global Secondary Index on email for lookups. JWT tokens are HS256-signed with a 7-day expiry, stored in <code>localStorage</code> on the client.</p>
+
+        <h3 id="oauth">OAuth (Google & Discord)</h3>
+        <p>Nobody wants to create yet another account with yet another password. OAuth lets users sign in with accounts they already have.</p>
+        <p>The challenge: our frontend is a static site on S3. There's no server to handle OAuth callbacks, and the browser can't securely exchange auth codes — that requires a client secret. The solution: route the entire flow through API Gateway.</p>
+        <ol>
+          <li>User clicks "Google" or "Discord" in the login modal</li>
+          <li>Browser redirects to our API (<code>GET /auth/oauth/&#123;provider&#125;</code>)</li>
+          <li>Lambda reads the client ID from Secrets Manager, generates a stateless CSRF <code>state</code> parameter (HMAC-signed timestamp), and returns a 302 redirect to the provider</li>
+          <li>User authorizes on Google/Discord</li>
+          <li>Provider redirects to our callback (<code>GET /auth/oauth/&#123;provider&#125;/callback</code>)</li>
+          <li>Lambda exchanges the code for an access token, fetches the user's profile (email, display name)</li>
+          <li>Finds the user by email in DynamoDB — if they exist, links the OAuth provider to the existing account. If not, creates a new user.</li>
+          <li>Signs a JWT and redirects to <code>allbyte.studio/#token=&#123;jwt&#125;</code></li>
+          <li>Frontend reads the token from the URL hash, stores it in <code>localStorage</code>, and clears the hash</li>
+        </ol>
+        <p>Account linking works by email: if someone signs up with email/password and later clicks "Sign in with Google" using the same email, they get the same account. OAuth-only users have no password hash, so email/password login naturally rejects them.</p>
+        <p><strong>Tradeoffs to note:</strong> Linking by email trusts the provider's email verification. Google emails are reliable, and we check Discord's <code>verified</code> flag. However, linking overwrites the previous OAuth provider — if a user signs in with Google, then later with Discord (same email), the Google link is replaced. A future improvement would support multiple providers per account.</p>
+
+        <h3 id="stripe-integration">Stripe Integration</h3>
+        <p>Authenticated users can subscribe to one of three tiers (Initiate, Hero, Legend) or make one-time donations. The checkout flow creates a Stripe Checkout session tied to the user's Stripe customer ID. A webhook Lambda processes subscription events and updates the DynamoDB subscriptions table.</p>
+        <p>Stripe is still being fully integrated — we'll expand this section as the subscription system matures.</p>
+      </section>
+
+      <!-- 6. Game Dev Integration -->
+      <section id="game-dev-integration">
+        <h2>6. Game Dev Integration</h2>
+        <p>The web portal isn't just a marketing page — it's a live window into the game. Music, sprites, and backgrounds are pulled directly from the Godot project and served through the site. This section covers how game assets flow from the development environment to the web.</p>
+
+        <h3 id="asset-sync">Asset Sync</h3>
+        <p>Game assets (music, sprites, fonts, backgrounds) are <strong>not committed to git</strong>. All art is handcrafted and I don't want it easily ripped from a public repo. Instead, assets are synced locally from the Godot project and pushed directly to S3.</p>
         <p>The workflow is three steps:</p>
         <ol>
           <li><code>npm run sync</code> — pulls assets from the local Godot project into <code>public/assets/</code> (gitignored)</li>
           <li><code>python scripts/spritesheet-to-gif.py</code> — converts sprite sheets to animated GIFs</li>
           <li><code>npm run push-assets</code> — uploads everything to S3 with immutable cache headers</li>
         </ol>
-
-        <p>The CI deploy only syncs the site build (HTML/CSS/JS) and explicitly excludes asset paths from its <code>--delete</code> flag, so assets uploaded separately are never removed.</p>
-
         <p>A Node.js sync script (<code>scripts/sync-assets.js</code>) reads a manifest (<code>scripts/asset-manifest.json</code>) and handles music dedup (prefers <code>.ogg</code>, skips format duplicates), font and background copying, and version extraction from the Godot source.</p>
+        <p>The CI deploy only syncs the site build (HTML/CSS/JS) and explicitly excludes asset paths from its <code>--delete</code> flag, so assets uploaded separately are never removed. Only JSON metadata indexes are committed to git — file paths and character data that the Astro pages consume at build time.</p>
 
-        <p>Sprites are the interesting part. The game stores character animations as horizontal sprite sheets — a single PNG with all frames side by side. A Python script splits these into individual frames and assembles animated GIFs, scaled up with nearest-neighbor interpolation to keep pixel art crisp. The script auto-deduplicates identical sprites within a character and supports per-sheet frame width overrides for non-square animations (like casting poses). Characters can be flagged as <code>hidden</code> for unreleased content.</p>
-
-        <p>Only JSON metadata indexes are committed to git — file paths and character data that the Astro pages consume at build time. The actual binary assets live only on S3, served through the same CloudFront distribution at the same URL paths.</p>
+        <h3 id="sprite-conversion">Sprite Conversion</h3>
+        <p>Sprites are the interesting part. The game stores character animations as horizontal sprite sheets — a single PNG with all frames side by side. A Python script splits these into individual frames and assembles animated GIFs, scaled up with nearest-neighbor interpolation to keep pixel art crisp.</p>
+        <p>The script auto-deduplicates identical sprites within a character and supports per-sheet frame width overrides for non-square animations (like casting poses). Characters can be flagged as <code>hidden</code> for unreleased content.</p>
+        <p>This pipeline will grow as the devlog system is fully built out — eventually, game updates will automatically surface new content on the site.</p>
       </section>
 
-      <!-- 3. Lessons Learned -->
+      <!-- 7. Lessons Learned -->
       <section id="lessons-learned">
-        <h2>3. Lessons Learned</h2>
+        <h2>7. Lessons Learned</h2>
         <div class="lessons">
           <div class="lesson">
             <h3>CloudFormation naming</h3>
@@ -197,6 +314,18 @@ GitHub Actions (OIDC auth)
           <div class="lesson">
             <h3>CloudFront doesn't serve index.html for subdirectories</h3>
             <p>S3's <code>DefaultRootObject</code> only works for the root path <code>/</code>. A request to <code>/self-hosting-with-claude/</code> returns a 403 because S3 doesn't know to look for <code>index.html</code> inside that prefix. The fix is a CloudFront Function that rewrites URIs — appending <code>index.html</code> to paths ending in <code>/</code> or paths without a file extension. Without this, every subpage silently falls back to the homepage via the error page config.</p>
+          </div>
+          <div class="lesson">
+            <h3>JSON strings in AWS CLI on Windows</h3>
+            <p>Bash on Windows (Git Bash) mangles JSON inside <code>--secret-string</code> arguments — single quotes, double quotes, escaped quotes, nothing works reliably. We solved this by using a simple pipe-delimited format (<code>client_id|client_secret</code>) and parsing it in the Lambda. When working with AWS CLI on Windows, avoid nested JSON in string arguments or write to a file and use <code>file://</code>.</p>
+          </div>
+          <div class="lesson">
+            <h3>CloudFormation stack naming matters</h3>
+            <p>We deployed to <code>allbyte-studio-backend</code> when the existing stack was <code>allbyte-studio-stripe</code>. The <code>ResourceExistenceCheck</code> error was cryptic — it tried to create resources that already existed under a different stack. Always check <code>aws cloudformation list-stacks</code> before deploying to a new stack name.</p>
+          </div>
+          <div class="lesson">
+            <h3>Stateless CSRF for OAuth</h3>
+            <p>Instead of storing OAuth state in a database or session, we sign a timestamp with HMAC-SHA256 using our existing JWT secret. The callback verifies the signature and checks that the timestamp is within 10 minutes. Zero additional infrastructure for CSRF protection.</p>
           </div>
         </div>
       </section>
@@ -279,20 +408,14 @@ GitHub Actions (OIDC auth)
     padding-top: 2rem;
   }
 
-  .article-header .subtitle {
+  .article-header .summary {
     font-size: 1.05rem;
     color: rgba(224, 231, 255, 0.6);
     line-height: 1.8;
     margin: 0 0 0.75rem;
   }
 
-  .article-header .reference {
-    font-size: 0.95rem;
-    color: #eaeaea;
-    margin: 0 0 0.75rem;
-  }
-
-  .article-header .reference a {
+  .article-header .summary a {
     color: #a7f3d0;
   }
 

@@ -112,6 +112,7 @@ All backend infrastructure is defined in `infrastructure/stripe-backend.yaml` as
 **OAuth Secrets** (Secrets Manager):
 - `allbyte-studio/google-oauth` — `{"client_id": "...", "client_secret": "..."}`
 - `allbyte-studio/discord-oauth` — `{"client_id": "...", "client_secret": "..."}`
+- `allbyte-studio/stripe-webhook-secret` — Stripe webhook signing secret (`whsec_...`)
 
 **OAuth redirect URIs** (must match provider app config):
 - Google: `https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/oauth/google/callback`

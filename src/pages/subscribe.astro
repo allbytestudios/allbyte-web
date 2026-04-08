@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Footer from "../components/Footer.astro";
 
 const title = "Subscribe — AllByte Studios";
 const description = "Support AllByte Studios and unlock nightly builds, assets, server saves, and more.";
@@ -99,9 +100,7 @@ const tiers = [
       </div>
     </main>
 
-    <footer class="page-footer">
-      <a href="/" class="back-link">&larr; Back to AllByte Studios</a>
-    </footer>
+    <Footer theme="engine" />
   </div>
   <script>
     const API = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";

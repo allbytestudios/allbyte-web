@@ -31,7 +31,7 @@
     anthemAudio.loop = true;
     anthemAudio.volume = 0.7;
     cursorAudio = new Audio("/cursor-move.wav");
-    cursorAudio.volume = 0.35;
+    cursorAudio.volume = 0.21;
     // Play and immediately pause to unlock both
     anthemAudio.play().then(() => anthemAudio.pause()).catch(() => {});
     cursorAudio.play().then(() => { cursorAudio.pause(); cursorAudio.currentTime = 0; }).catch(() => {});
@@ -51,8 +51,8 @@
 
     return () => {
       window.removeEventListener("resize", checkMobile);
-      if (anthemAudio) { anthemAudio.pause(); anthemAudio = null; }
-      if (cursorAudio) { cursorAudio.pause(); cursorAudio = null; }
+      if (anthemAudio) { anthemAudio.pause(); }
+      if (cursorAudio) { cursorAudio.pause(); }
     };
   });
 
@@ -113,7 +113,7 @@
 
   function onDemoEnter() {
     demoHovered = true;
-    if (anthemAudio && audioReady) {
+    if (anthemAudio && audioReady && !window.__musicPlayerPlaying) {
       anthemAudio.currentTime = 0;
       anthemAudio.play().catch(() => {});
     }
@@ -321,7 +321,8 @@
   {/if}
 
   <footer class="site-footer">
-    &copy; 2026 AllByte Studios
+    <a href="mailto:allbytestudios@gmail.com" class="footer-contact">allbytestudios@gmail.com</a>
+    <span>&copy; 2026 AllByte Studios</span>
   </footer>
 </div>
 
@@ -430,13 +431,13 @@
 
 
   .subscribe-btn {
-    color: #fbbf24;
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    color: #e0e7ff;
+    border: 1px solid rgba(167, 243, 208, 0.15);
   }
 
   .subscribe-btn:hover {
     background: #1a2332;
-    border-color: #fbbf24;
+    border-color: rgba(167, 243, 208, 0.3);
   }
 
   .username {
@@ -992,6 +993,7 @@
   }
 
   .heart-card p {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.15rem;
     color: var(--heart-text);
     opacity: 0.9;
@@ -1015,6 +1017,21 @@
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 0.9rem;
     color: rgba(224, 231, 255, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: center;
+  }
+
+  .footer-contact {
+    font-size: 0.85rem;
+    color: rgba(167, 243, 208, 0.5);
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .footer-contact:hover {
+    color: rgba(167, 243, 208, 0.8);
   }
 
   @media (max-width: 768px) {

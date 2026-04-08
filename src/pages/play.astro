@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Footer from "../components/Footer.astro";
 import GodotEmbed from "../components/GodotEmbed.svelte";
 ---
 
@@ -10,6 +11,7 @@ import GodotEmbed from "../components/GodotEmbed.svelte";
     </nav>
     <GodotEmbed client:load />
   </main>
+  <Footer theme="engine" />
 </BaseLayout>
 
 <!--

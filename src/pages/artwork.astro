@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Footer from "../components/Footer.astro";
 import spriteGifs from "../data/sprite-gifs.json";
 import manifest from "../../scripts/asset-manifest.json";
 
@@ -169,9 +170,7 @@ const lockedAnimations: Record<string, string[]> = {
       </section>
     </main>
 
-    <footer class="page-footer">
-      <a href="/" class="back-link">&larr; Back to AllByte Studios</a>
-    </footer>
+    <Footer theme="heart" />
   </div>
 </BaseLayout>
 

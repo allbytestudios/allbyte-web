@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import Footer from "../components/Footer.astro";
 import assetIndex from "../data/asset-index.json";
 
 const title = "Music — AllByte Studios";
@@ -28,22 +29,15 @@ function formatTrackName(name: string): string {
     </header>
 
     <main class="content">
-      <div class="volume-control">
-        <label class="volume-label" for="master-volume">Volume</label>
-        <input type="range" id="master-volume" class="volume-slider" min="0" max="100" value="70" />
-      </div>
       <div class="track-list">
         {assetIndex.music.map((track, i) => (
-          <div class="track-card">
+          <button class="track-card track-btn" data-index={i}>
             <div class="track-info">
               <span class="track-number">{String(i + 1).padStart(2, "0")}</span>
               <span class="track-name">{formatTrackName(track.name)}</span>
             </div>
-            <audio controls preload="metadata" class="track-audio">
-              <source src={track.file} type="audio/ogg" />
-              Your browser does not support the audio element.
-            </audio>
-          </div>
+            <span class="play-hint"><span class="hint-play">&#9654; Play</span><span class="hint-active">&#9654; Now Playing</span></span>
+          </button>
         ))}
 
         <!-- Locked tracks -->
@@ -56,26 +50,51 @@ function formatTrackName(name: string): string {
       </div>
     </main>
 
-    <footer class="page-footer">
-      <a href="/" class="back-link">&larr; Back to AllByte Studios</a>
-    </footer>
+    <Footer theme="heart" />
   </div>
   <script>
-    const slider = document.getElementById("master-volume") as HTMLInputElement;
-    const tracks = document.querySelectorAll<HTMLAudioElement>(".track-audio");
+    import assetIndex from "../data/asset-index.json";
 
-    function setVolume(v: number) {
-      tracks.forEach(a => a.volume = v);
+    const trackButtons = document.querySelectorAll<HTMLButtonElement>(".track-btn");
+
+    // Load all tracks into the global player on first click
+    let loaded = false;
+    function ensureLoaded(index: number) {
+      if (!loaded) {
+        window.dispatchEvent(new CustomEvent("music-player:load", {
+          detail: { tracks: assetIndex.music, index }
+        }));
+        loaded = true;
+      } else {
+        window.dispatchEvent(new CustomEvent("music-player:play", {
+          detail: { index }
+        }));
+      }
     }
 
-    setVolume(0.7);
-    slider.addEventListener("input", () => setVolume(Number(slider.value) / 100));
+    function highlightActive(index: number) {
+      trackButtons.forEach(btn => {
+        btn.classList.toggle("active", Number(btn.dataset.index) === index);
+      });
+    }
 
-    tracks.forEach(audio => {
-      audio.addEventListener("play", () => {
-        tracks.forEach(other => { if (other !== audio) other.pause(); });
+    trackButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const index = Number(btn.dataset.index);
+        ensureLoaded(index);
+        highlightActive(index);
       });
     });
+
+    // Sync highlight when player changes track (e.g. next/prev from mini player)
+    window.addEventListener("music-player:track-changed", ((e: CustomEvent) => {
+      highlightActive(e.detail.index);
+    }) as EventListener);
+
+    // Highlight on load if player is already playing
+    if (window.__musicPlayerPlaying && window.__musicPlayerIndex != null) {
+      highlightActive(window.__musicPlayerIndex);
+    }
   </script>
 </BaseLayout>
 
@@ -164,26 +183,6 @@ function formatTrackName(name: string): string {
     box-sizing: border-box;
   }
 
-  .volume-control {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .volume-label {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.1rem;
-    color: #2a2218;
-    flex-shrink: 0;
-  }
-
-  .volume-slider {
-    width: 160px;
-    accent-color: #5a4d38;
-    cursor: pointer;
-  }
-
   .track-list {
     display: flex;
     flex-direction: column;
@@ -223,11 +222,52 @@ function formatTrackName(name: string): string {
     color: #2a2218;
   }
 
-  .track-audio {
-    flex-shrink: 0;
-    height: 36px;
-    max-width: 300px;
+  .track-btn {
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
     width: 100%;
+    text-align: left;
+    font: inherit;
+  }
+
+  .track-btn:hover {
+    background: #cec08a;
+    border-color: #5a4d38;
+  }
+
+  .track-btn.active {
+    background: #cec08a;
+    border-color: #5a4d38;
+    box-shadow: inset 3px 0 0 #5a4d38;
+  }
+
+  .track-btn.active .play-hint {
+    opacity: 1;
+  }
+
+  .hint-active {
+    display: none;
+  }
+
+  .track-btn.active .hint-play {
+    display: none;
+  }
+
+  .track-btn.active .hint-active {
+    display: inline;
+  }
+
+  .play-hint {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.9rem;
+    color: #5a4d38;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .track-btn:hover .play-hint {
+    opacity: 1;
   }
 
   .locked-card {
@@ -258,10 +298,6 @@ function formatTrackName(name: string): string {
     .track-card {
       flex-direction: column;
       align-items: stretch;
-    }
-
-    .track-audio {
-      max-width: 100%;
     }
   }
 </style>

@@ -1,4 +1,7 @@
 ---
+import { ClientRouter } from "astro:transitions";
+import MusicPlayer from "../components/MusicPlayer.svelte";
+
 interface Props {
   title?: string;
   description?: string;
@@ -19,9 +22,13 @@ const {
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/png" href="/icon.png" />
     <title>{title}</title>
+    <ClientRouter />
   </head>
   <body>
     <slot />
+    <div transition:persist="music-player">
+      <MusicPlayer client:load />
+    </div>
   </body>
 </html>
 

@@ -115,9 +115,12 @@ const tiers = [
         btn.textContent = "Loading...";
         (btn as HTMLButtonElement).disabled = true;
         try {
+          const authToken = localStorage.getItem("allbyte_token");
+          const headers: Record<string, string> = { "Content-Type": "application/json" };
+          if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
           const resp = await fetch(`${API}/checkout`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({ tier }),
           });
           const data = await resp.json();

@@ -994,12 +994,23 @@ Resources:
                   mode = obj.get("mode")
 
                   if mode == "subscription" and customer_id and subscription_id:
-                      table.put_item(Item={
+                      item = {
                           "customerId": customer_id,
                           "subscriptionId": subscription_id,
                           "status": "active",
                           "email": obj.get("customer_details", {}).get("email", ""),
-                      })
+                      }
+                      # Extract priceId from line items if available
+                      line_items = obj.get("display_items") or []
+                      if not line_items:
+                          line_items = obj.get("line_items", {}).get("data", [])
+                      if line_items:
+                          price = line_items[0].get("price", {})
+                          if isinstance(price, dict):
+                              item["priceId"] = price.get("id", "")
+                          elif isinstance(price, str):
+                              item["priceId"] = price
+                      table.put_item(Item=item)
 
                   elif mode == "payment":
                       table.put_item(Item={

@@ -476,11 +476,12 @@
 
   .username {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.15rem;
+    font-size: 1.4rem;
     color: #e0e7ff;
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    margin-top: 1rem;
   }
 
   .user-tier-icon {
@@ -848,6 +849,7 @@
   .mobile-links {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 1rem;
     width: 100%;
     max-width: 95%;

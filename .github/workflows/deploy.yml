@@ -83,13 +83,13 @@ jobs:
           fi
           echo "PASS: Homepage returned 200"
 
-          # Test self-hosting page
+          # Test self-hosting redirect
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://allbyte.studio/self-hosting-with-claude/)
-          if [ "$STATUS" != "200" ]; then
-            echo "FAIL: Self-hosting page returned $STATUS"
+          if [ "$STATUS" != "301" ]; then
+            echo "FAIL: Self-hosting redirect returned $STATUS (expected 301)"
             exit 1
           fi
-          echo "PASS: Self-hosting page returned 200"
+          echo "PASS: Self-hosting redirect returned 301"
 
           # Test play page
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://allbyte.studio/play/)

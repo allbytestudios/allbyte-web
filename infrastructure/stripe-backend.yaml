@@ -665,7 +665,7 @@ Resources:
                   token = make_unsubscribe_token(user_id, secret)
                   unsub_url = f"https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/unsubscribe?token={token}"
 
-                  body = f"""{title}
+                  text_body = f"""{title}
           {description}
 
           Read it here: {url}
@@ -674,13 +674,36 @@ Resources:
           You're receiving this because you opted into {label} updates on allbyte.studio.
           Unsubscribe: {unsub_url}"""
 
+                  html_body = f"""<!DOCTYPE html>
+          <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="margin:0;padding:0;background-color:#12161c;font-family:Georgia,'Times New Roman',serif;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#12161c;">
+          <tr><td align="center" style="padding:24px 16px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+          <tr><td style="padding:20px 28px 16px;border-bottom:1px solid rgba(167,243,208,0.15);">
+          <span style="font-size:22px;color:#a7f3d0;letter-spacing:0.04em;">AllByte Studios</span>
+          </td></tr>
+          <tr><td style="padding:28px 28px 32px;">
+          <h2 style="margin:0 0 12px;font-size:20px;color:#a7f3d0;">{title}</h2>
+          <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#e0e7ff;">{description}</p>
+          <a href="{url}" style="display:inline-block;padding:10px 24px;background-color:rgba(167,243,208,0.1);color:#a7f3d0;text-decoration:none;border:1px solid rgba(167,243,208,0.3);border-radius:4px;font-size:16px;">Read it here &rarr;</a>
+          </td></tr>
+          <tr><td style="padding:16px 28px;border-top:1px solid rgba(167,243,208,0.08);">
+          <p style="margin:0;font-size:12px;color:rgba(224,231,255,0.4);line-height:1.5;">You opted into {label} updates on allbyte.studio.<br>
+          <a href="{unsub_url}" style="color:rgba(167,243,208,0.5);text-decoration:underline;">Unsubscribe</a></p>
+          </td></tr>
+          </table></td></tr></table></body></html>"""
+
                   try:
                       ses.send_email(
                           Source=FROM,
                           Destination={"ToAddresses": [email]},
                           Message={
-                              "Subject": {"Data": f"New on AllByte Studios: {title}"},
-                              "Body": {"Text": {"Data": body}},
+                              "Subject": {"Data": f"New post: {title}"},
+                              "Body": {
+                                  "Text": {"Data": text_body},
+                                  "Html": {"Data": html_body},
+                              },
                           },
                           Tags=[{"Name": "category", "Value": category}],
                       )

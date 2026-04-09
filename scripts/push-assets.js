@@ -43,6 +43,8 @@ const rootFiles = [
   "leftSword.png",
   "verticalSwordTHIN.png",
   "fonts/ModernGoth.otf",
+  "tier-initiate.png",
+  "tier-none.png",
 ];
 
 console.log(`\nPushing game assets to s3://${bucket}\n`);
@@ -52,8 +54,7 @@ if (existsSync(join(publicDir, "assets"))) {
   run(
     `aws s3 sync "${join(publicDir, "assets")}" s3://${bucket}/assets ` +
       `--region ${region} ` +
-      `--cache-control "public, max-age=31536000, immutable" ` +
-      `--delete`
+      `--cache-control "public, max-age=31536000, immutable"`
   );
 } else {
   console.log("No public/assets/ directory found. Run `npm run sync` first.");

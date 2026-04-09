@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-Web portal for AllByte Studios, an indie game studio building a fantasy tactical RPG in Godot 3.5. The site embodies a "High-Tech Artisan" dual identity: AI-assisted engineering + 100% handcrafted art, music, and typography.
+Web portal for AllByte Studios, an indie game studio building **The Chronicles of Nesis**, a fantasy tactical RPG in Godot 3.5. The site embodies a "High-Tech Artisan" dual identity: AI-assisted engineering + 100% handcrafted art, music, and typography.
 
 ## Tech Stack
 - **Framework:** Astro 6 (static SSG) + Svelte 5 (interactive islands)
@@ -20,6 +20,12 @@ npm run preview                       # Preview production build locally
 npm run sync                          # Pull assets from Godot project
 npm run push-assets                   # Upload generated assets to S3
 python scripts/spritesheet-to-gif.py  # Convert sprite sheets to animated GIFs
+
+# E2E tests (Playwright + pytest)
+pytest tests/e2e/                     # Run all E2E tests (headless, needs dev server running)
+pytest tests/e2e/test_devlog.py       # Run a single test file
+pytest tests/e2e/ --headed            # Run with visible browser
+BASE_URL=https://allbyte.studio pytest tests/e2e/  # Test against production
 ```
 
 ## Architecture
@@ -60,12 +66,18 @@ The `Footer.astro` component accepts a `theme` prop (`"engine"` | `"heart"`) to 
 - `/artwork` — Sprite gallery (Allies/Enemies/Bosses)
 - `/fonts` — ModernGoth typeface showcase
 - `/subscribe` — Subscription tiers + Stripe Checkout
-- `/self-hosting-with-claude` — Infrastructure article
-- `/devlog/` — Devlog posts (planned, schema defined)
+- `/devlog/` — Devlog hub with three sub-blogs:
+  - `/devlog/chronicles/` — Chronicles of Nesis game development
+  - `/devlog/godot-and-claude/` — Godot + AI pair-programming
+  - `/devlog/studio/` — Studio platform & infrastructure
+- `/devlog/[...slug]/` — Individual devlog posts (dynamic route)
 
 ### Content Collections
 - **Devlogs** (`src/content/devlogs/`): Markdown posts with frontmatter schema
-  - `category`: `"technical"` or `"creative"`
+  - `category`: `"technical"` | `"creative"`
+  - `devlog`: `"chronicles"` | `"godot-and-claude"` | `"studio"` — determines which sub-blog the post appears under
+  - `tags`: string array (optional)
+  - `heroImage`: string (optional)
   - See `src/content.config.ts` for full schema
 
 ### Asset Sync
@@ -150,8 +162,15 @@ aws cloudformation deploy \
 - Place Godot HTML5 export files in `public/godot/`
 - HTML files served with `max-age=0, must-revalidate`; versioned assets cached 1 year
 
+## E2E Tests
+Playwright-based E2E tests in `tests/e2e/` using pytest. The dev server must be running (`npm run dev`) before running tests. The `conftest.py` provides:
+- `page` fixture: fresh Playwright Chromium page per test (1280×960 viewport)
+- `mock_api` fixture: intercepts Lambda API calls with mock responses (auth, checkout, counts)
+- Auto-screenshots on failure saved to `tests/e2e/test_results/`
+
 ## Conventions
 - Art, music, and fonts are **never AI-generated** — they are handcrafted by AllByte
 - AI (Claude) is used for code, infrastructure, and automation
 - "AllByte" = the solo developer/owner; "AllByte Studios" = the studio name
 - Engine side = monospace/terminal aesthetic; Heart side = serif/organic aesthetic
+- All site copy and devlog posts use **first-person singular** ("I/my/me"), never "we/our/us" — AllByte is a solo developer

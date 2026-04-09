@@ -1,12 +1,13 @@
 ---
-title: "Why Build Our Own Site Instead of Using Patreon?"
-description: "An honest look at what we're giving up by self-hosting instead of using Patreon — and why we're trying it anyway."
-pubDate: 2026-04-08
+title: "Why Build My Own Site Instead of Using Patreon?"
+description: "An honest look at what I'm giving up by self-hosting instead of using Patreon — and why I'm trying it anyway."
+pubDate: 2026-04-08T00:03:00Z
 category: "technical"
+devlog: "studio"
 tags: ["business", "patreon", "self-hosting", "stripe", "indie"]
 ---
 
-This isn't a conclusion. It's a hypothesis. We're betting that self-hosting our own subscription platform is worth the tradeoff over Patreon — but we could be wrong, and it's important to lay that out honestly.
+This isn't a conclusion. It's a hypothesis. I'm betting that self-hosting my own subscription platform is worth the tradeoff over Patreon — but I could be wrong, and it's important to lay that out honestly.
 
 ## What Patreon Gives You for Free
 
@@ -36,35 +37,35 @@ But the cost isn't just money:
 
 ## What Self-Hosting Gives You
 
-Our setup costs roughly **under $5/month** for hosting (S3 + CloudFront + Route 53 + Lambda + Secrets Manager) plus **Stripe's 2.9% + 30¢ per transaction**. No platform fee on top.
+My setup costs roughly **under $5/month** for hosting (S3 + CloudFront + Route 53 + Lambda + Secrets Manager) plus **Stripe's 2.9% + 30¢ per transaction**. No platform fee on top.
 
-On that same $7/month subscription, we'd pay about **$0.50 in Stripe fees**. That's it. The difference is $0.56/subscriber/month — small at first, but it scales linearly.
+On that same $7/month subscription, I'd pay about **$0.50 in Stripe fees**. That's it. The difference is $0.56/subscriber/month — small at first, but it scales linearly.
 
 More importantly:
 
-- **Full ownership.** We own the subscriber data, the email list, the payment relationships. If we ever move platforms, we take everything with us.
-- **Creative control.** The site matches our brand exactly — the bilateral layout, the custom font, the engine/heart aesthetic. It's not a Patreon template.
-- **No platform dependency.** Nobody can change the rules on us. The site is static files on a CDN we control.
+- **Full ownership.** I own the subscriber data, the email list, the payment relationships. If I ever move platforms, I take everything with me.
+- **Creative control.** The site matches my brand exactly — the bilateral layout, the custom font, the engine/heart aesthetic. It's not a Patreon template.
+- **No platform dependency.** Nobody can change the rules on me. The site is static files on a CDN I control.
 
 ## What Self-Hosting Actually Costs (The Honest Part)
 
-Here's where we need to be critical of our own decision.
+Here's where I need to be critical of my own decision.
 
 ### Marketing Risk
 
-Nobody is going to stumble onto allbyte.studio. There's no Patreon browse page, no recommendation algorithm, no "creators you might like" sidebar. Every single subscriber has to be driven there through our own marketing — social media, Discord, word of mouth, gameplay clips. Patreon has a built-in audience. We have a domain name.
+Nobody is going to stumble onto allbyte.studio. There's no Patreon browse page, no recommendation algorithm, no "creators you might like" sidebar. Every single subscriber has to be driven there through my own marketing — social media, Discord, word of mouth, gameplay clips. Patreon has a built-in audience. I have a domain name.
 
 This is probably the biggest risk. A beautifully engineered site with zero traffic is worse than an ugly Patreon with 50 subscribers.
 
 ### Trust Risk
 
-"Support me on Patreon" is a sentence people understand. "Go to allbyte.studio and click Subscribe" is a harder sell. People trust known brands with their credit card numbers. A custom domain with a custom payment flow looks sketchy to anyone who's been on the internet long enough. We use Stripe Checkout (which people do recognize), but the path to get there is unfamiliar.
+"Support me on Patreon" is a sentence people understand. "Go to allbyte.studio and click Subscribe" is a harder sell. People trust known brands with their credit card numbers. A custom domain with a custom payment flow looks sketchy to anyone who's been on the internet long enough. I use Stripe Checkout (which people do recognize), but the path to get there is unfamiliar.
 
 ### Technical Risk
 
-Every bug is our bug. OAuth breaks at 2am? That's on us. Stripe webhook misses an event? We're digging through Lambda logs instead of making the game. CloudFront serves a stale page? Us again.
+Every bug is my bug. OAuth breaks at 2am? That's on me. Stripe webhook misses an event? I'm digging through Lambda logs instead of making the game. CloudFront serves a stale page? Me again.
 
-Patreon has an engineering team. We have Claude and a prayer.
+Patreon has an engineering team. I have Claude and a prayer.
 
 ### Opportunity Cost
 
@@ -82,11 +83,11 @@ What happens when we need:
 - Tax compliance across jurisdictions?
 - Failed payment retry logic?
 
-Patreon has solved all of these. We'd need to build each one or accept that we don't have it. Every missing feature is a reason someone doesn't subscribe.
+Patreon has solved all of these. I'd need to build each one or accept that I don't have it. Every missing feature is a reason someone doesn't subscribe.
 
 ## The Hypothesis
 
-We're betting that the combination of:
+I'm betting that the combination of:
 
 1. **Low hosting costs** (<$5/mo vs 8-12% of revenue)
 2. **Full data ownership** (subscriber list, payment history)
@@ -98,8 +99,8 @@ The third point is the key one. Five years ago, a solo developer self-hosting a 
 
 The infrastructure that used to be the hard part is now the fast part. The marketing and trust-building — which Patreon solves — is now the hard part.
 
-**This is unproven.** We could end up with a beautifully engineered ghost town and wish we'd just set up a Patreon page in 10 minutes. That's a real possibility, and we're going in with eyes open.
+**This is unproven.** I could end up with a beautifully engineered ghost town and wish I'd just set up a Patreon page in 10 minutes. That's a real possibility, and I'm going in with eyes open.
 
-But we want to try it. Worst case, we learn a lot and migrate to Patreon later with all the technical knowledge intact. Best case, we keep 100% of our revenue minus Stripe's cut and own everything.
+But I want to try it. Worst case, I learn a lot and migrate to Patreon later with all the technical knowledge intact. Best case, I keep 100% of my revenue minus Stripe's cut and own everything.
 
-We'll report back.
+I'll report back.

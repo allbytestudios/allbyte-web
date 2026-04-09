@@ -1,8 +1,22 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import BilateralLayout from "../components/BilateralLayout.svelte";
+import { getCollection } from "astro:content";
+import assetIndex from "../data/asset-index.json";
+import spriteGifs from "../data/sprite-gifs.json";
+
+const allPosts = await getCollection("devlogs");
+const devlogCounts = {
+  chronicles: allPosts.filter((p) => p.data.devlog === "chronicles").length,
+  "godot-and-claude": allPosts.filter((p) => p.data.devlog === "godot-and-claude").length,
+  studio: allPosts.filter((p) => p.data.devlog === "studio").length,
+};
+const artCounts = {
+  music: assetIndex.music.length,
+  artwork: new Set(spriteGifs.map((s: any) => s.character)).size,
+};
 ---
 
 <BaseLayout title="AllByte Studios">
-  <BilateralLayout client:load />
+  <BilateralLayout client:load devlogCounts={devlogCounts} artCounts={artCounts} />
 </BaseLayout>

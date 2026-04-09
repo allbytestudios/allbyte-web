@@ -14,6 +14,8 @@
   let musicHovered = $state(false);
   let fontHovered = $state(false);
 
+  let { devlogCounts = { chronicles: 0, "godot-and-claude": 0, studio: 0 }, artCounts = { music: 0, artwork: 0 } } = $props();
+
   let tierCounts = $state({ initiate: 0, hero: 0, legend: 0 });
 
   let anthemAudio;
@@ -219,7 +221,8 @@
   {/if}
 
   <div class="demo-section">
-  <div class="demo-row" onmouseenter={onDemoEnter} onmouseleave={onDemoLeave} onclick={(e) => { if (!e.target.closest('.steam-btn')) window.location.href = '/play/'; }} style="cursor: pointer;">
+  <div class="demo-row" style="position: relative;">
+    <div class="demo-overlay"><span>Coming Soon</span></div>
     <div class="demo-link">
       <div class="demo-banner">
         <img src={demoHovered ? "/ChroniclesOfNesisTitle.gif" : "/ChroniclesOfNesisTitle-still.png"} alt="The Chronicles of Nesis Demo" class="demo-gif" />
@@ -240,37 +243,43 @@
     <!-- Mobile: stacked groups (Heart/Assets first) -->
     <div class="mobile-panel heart-bg" style="position: relative;">
       <img src="/Flourish.png" alt="" class="flourish flourish-left" />
-      <h2 class="panel-title heart-title">Game Assets<br/><span class="panel-sub">(made without AI)</span></h2>
+      <h2 class="panel-title heart-title">Art<br/><span class="panel-sub">(made without AI)</span></h2>
       <img src="/Flourish.png" alt="" class="flourish flourish-right" />
       <div class="mobile-links">
         <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
           <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>Original compositions for The Chronicles of Nesis.</p>
+          <span class="entry-count heart-count">({artCounts.music} tracks)</span>
         </a>
         <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
           <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>Sprites, pre-rendered backgrounds.</p>
+          <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
         </a>
         <a href="/fonts/" class="link-card heart-card" onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
           <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>A custom typeface designed for The Chronicles of Nesis.</p>
+          <span class="entry-count heart-count">(1 typeface)</span>
         </a>
       </div>
     </div>
     <div class="mobile-panel engine-bg">
-      <h2 class="panel-title engine-title"><span class="terminal-prompt">$</span> Game Dev<br/><span class="panel-sub">(built with AI)</span></h2>
+      <h2 class="panel-title engine-title"><span class="terminal-prompt">$</span> Dev<br/><span class="panel-sub">(built with AI)</span></h2>
       <div class="mobile-links">
-        <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
-          <h3>Devlog <span class="cursor-arrow"></span></h3>
-          <p>Technical post-mortems and development updates.</p>
+        <a href="/devlog/chronicles/" class="link-card engine-card" onmouseenter={playCursor}>
+          <h3>Chronicles of Nesis <span class="cursor-arrow"></span></h3>
+          <p>Devlog of Chronicles of Nesis, a 90s style tactical RPG.</p>
+          <span class="entry-count">({devlogCounts.chronicles} {devlogCounts.chronicles === 1 ? "entry" : "entries"})</span>
         </a>
-        <a href="/godot-and-claude/" class="link-card engine-card" onmouseenter={playCursor}>
+        <a href="/devlog/godot-and-claude/" class="link-card engine-card" onmouseenter={playCursor}>
           <h3>Godot &amp; Claude <span class="cursor-arrow"></span></h3>
-          <p>My local setup and how I do gamedev with Godot &amp; Claude.</p>
+          <p>Devlog of Godot &amp; Claude local setup and feedback loop.</p>
+          <span class="entry-count">({devlogCounts["godot-and-claude"]} {devlogCounts["godot-and-claude"] === 1 ? "entry" : "entries"})</span>
         </a>
-        <a href="/self-hosting-with-claude/" class="link-card engine-card" onmouseenter={playCursor}>
-          <h3>Self-Hosting with Claude <span class="cursor-arrow"></span></h3>
-          <p>AI-assisted self-hosted game, subscription, and infra.</p>
+        <a href="/devlog/studio/" class="link-card engine-card" onmouseenter={playCursor}>
+          <h3>AllByte Studios <span class="cursor-arrow"></span></h3>
+          <p>Devlog of building AllByte studio web app with Claude.</p>
+          <span class="entry-count">({devlogCounts.studio} {devlogCounts.studio === 1 ? "entry" : "entries"})</span>
         </a>
       </div>
     </div>
@@ -278,50 +287,56 @@
     <!-- Desktop: shared grid -->
     <div class="bilateral-grid">
       <div class="cell engine-bg title-cell">
-        <h2 class="panel-title engine-title"><span class="terminal-prompt">$</span> Game Dev<br/><span class="panel-sub">(built with AI)</span></h2>
+        <h2 class="panel-title engine-title"><span class="terminal-prompt">$</span> Dev<br/><span class="panel-sub">(built with AI)</span></h2>
       </div>
       <div class="cell heart-bg title-cell heart-title-cell">
         <img src="/Flourish.png" alt="" class="flourish flourish-left" />
-        <h2 class="panel-title heart-title">Game Assets<br/><span class="panel-sub">(made without AI)</span></h2>
+        <h2 class="panel-title heart-title">Art<br/><span class="panel-sub">(made without AI)</span></h2>
         <img src="/Flourish.png" alt="" class="flourish flourish-right" />
       </div>
 
       <div class="cell engine-bg">
-        <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
-          <h3>Devlog <span class="cursor-arrow"></span></h3>
-          <p>Technical post-mortems and development updates.</p>
+        <a href="/devlog/chronicles/" class="link-card engine-card" onmouseenter={playCursor}>
+          <h3>Chronicles of Nesis <span class="cursor-arrow"></span></h3>
+          <p>Devlog of Chronicles of Nesis, a 90s style tactical RPG.</p>
+          <span class="entry-count">({devlogCounts.chronicles} {devlogCounts.chronicles === 1 ? "entry" : "entries"})</span>
         </a>
       </div>
       <div class="cell heart-bg">
         <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
           <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>Original compositions for The Chronicles of Nesis.</p>
+          <span class="entry-count heart-count">({artCounts.music} tracks)</span>
         </a>
       </div>
 
       <div class="cell engine-bg">
-        <a href="/godot-and-claude/" class="link-card engine-card" onmouseenter={playCursor}>
+        <a href="/devlog/godot-and-claude/" class="link-card engine-card" onmouseenter={playCursor}>
           <h3>Godot &amp; Claude <span class="cursor-arrow"></span></h3>
-          <p>My local setup and how I do gamedev with Godot &amp; Claude.</p>
+          <p>Devlog of Godot &amp; Claude local setup and feedback loop.</p>
+          <span class="entry-count">({devlogCounts["godot-and-claude"]} {devlogCounts["godot-and-claude"] === 1 ? "entry" : "entries"})</span>
         </a>
       </div>
       <div class="cell heart-bg">
         <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
           <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>Sprites, pre-rendered backgrounds.</p>
+          <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
         </a>
       </div>
 
       <div class="cell engine-bg">
-        <a href="/self-hosting-with-claude/" class="link-card engine-card" onmouseenter={playCursor}>
-          <h3>Self-Hosting with Claude <span class="cursor-arrow"></span></h3>
-          <p>AI-assisted self-hosted game, subscription, and infra.</p>
+        <a href="/devlog/studio/" class="link-card engine-card" onmouseenter={playCursor}>
+          <h3>AllByte Studios <span class="cursor-arrow"></span></h3>
+          <p>Devlog of building AllByte studio web app with Claude.</p>
+          <span class="entry-count">({devlogCounts.studio} {devlogCounts.studio === 1 ? "entry" : "entries"})</span>
         </a>
       </div>
       <div class="cell heart-bg">
         <a href="/fonts/" class="link-card heart-card" onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
           <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
           <p>A custom typeface designed for The Chronicles of Nesis.</p>
+          <span class="entry-count heart-count">(1 typeface)</span>
         </a>
       </div>
     </div>
@@ -703,6 +718,24 @@
     padding: 0 0 0.5rem;
   }
 
+  .demo-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 27, 36, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 4px;
+  }
+
+  .demo-overlay span {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2.5rem;
+    color: rgba(224, 231, 255, 0.4);
+    letter-spacing: 0.05em;
+  }
+
   .demo-row {
     background: #141b24;
     position: relative;
@@ -1019,6 +1052,22 @@
   .engine-card p {
     color: var(--engine-accent);
     opacity: 0.7;
+  }
+
+  .entry-count {
+    display: block;
+    text-align: right;
+    margin-top: 0.5rem;
+    font-family: "Courier New", monospace;
+    font-size: 1rem;
+    color: var(--engine-accent);
+    opacity: 0.5;
+  }
+
+  .heart-count {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    color: #2a2218;
+    opacity: 0.4;
   }
 
   .heart-card p {

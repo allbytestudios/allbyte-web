@@ -1,0 +1,47 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Footer from "../../../components/Footer.astro";
+import AiDisclaimer from "../../../components/AiDisclaimer.astro";
+import "../../../styles/devlog.css";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("devlogs"))
+  .filter((p) => p.data.devlog === "studio")
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout title="AllByte Studios DevLog — AllByte Studios" description="Building the studio's web platform, infrastructure, and business.">
+  <div class="page-header">
+    <div class="header-title-row">
+      <a href="/" class="back-link">&larr; Back</a>
+      <h1 class="page-title">AllByte Studios Devlog</h1>
+    </div>
+    <AiDisclaimer />
+  </div>
+  <main class="devlog-page">
+    <div class="devlog-list">
+    {posts.map((post) => (
+      <a href={`/devlog/${post.id}/`} class="devlog-card">
+        <div class="card-header">
+          <span class={`category-tag ${post.data.category}`}>{post.data.category}</span>
+          <time datetime={post.data.pubDate.toISOString()}>
+            {post.data.pubDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+          </time>
+        </div>
+        <h2>{post.data.title}</h2>
+        <p>{post.data.description}</p>
+        {post.data.tags.length > 0 && (
+          <div class="tags">
+            {post.data.tags.map((tag: string) => (
+              <span class="tag">{tag}</span>
+            ))}
+          </div>
+        )}
+      </a>
+    ))}
+    </div>
+    <p class="more-coming">More posts coming soon.</p>
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+

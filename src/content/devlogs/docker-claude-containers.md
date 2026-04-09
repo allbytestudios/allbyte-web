@@ -7,7 +7,7 @@ devlog: "godot-and-claude"
 tags: ["docker", "claude", "devops", "security", "containers"]
 ---
 
-Claude Code has a `--dangerously-skip-permissions` flag that lets it run without asking for approval on every file edit, shell command, and git operation. On a bare host machine, that's genuinely dangerous — it can touch anything your user account can. But inside a Docker container, the blast radius shrinks dramatically. This post covers how I set up isolated dev containers for Claude Code, and the issues I ran into getting auth and user permissions right.
+Claude Code has a `--dangerously-skip-permissions` flag that lets it run without asking for approval on every file edit, shell command, and git operation. On a bare host machine, that's genuinely dangerous — it can touch anything your user account can. But inside a Docker container, the blast radius shrinks dramatically.
 
 ## Why Containers
 
@@ -20,18 +20,11 @@ The security tradeoff is straightforward:
 - **Processes** — container isolation prevents interference with host services
 - **Source code** — this is the real risk; bind-mounted repos are read-write, so Claude can modify or delete actual files. Frequent git commits are the safety net here.
 
-For a dev workflow where Claude is editing code and running builds, this is a reasonable balance between autonomy and safety.
-
 ## The Setup
 
 I use a shared base image (`dev-base`) built on Ubuntu 24.04 with the common toolchain: Node.js 22, Python 3, Playwright with Chromium, and Claude Code itself. A virtual framebuffer (Xvfb) and noVNC lets me watch Playwright browser sessions from the host — useful for debugging headed test runs.
 
-Two services extend the base:
-
-- **tactical-dev** — adds Godot 3.6.2 headless and HTML5 export templates, mounts the game project
-- **allbyte-dev** — mounts the web project, runs the Astro dev server
-
-A `start.bat` script builds the images, starts the containers, and opens Windows Terminal tabs that exec into each container. A `stop.bat` tears them down while preserving named volumes.
+Two services extend the base: one adds Godot 3.6.2 headless with HTML5 export templates for the game project, the other mounts the web project and runs the Astro dev server. A `start.bat` script builds the images, starts the containers, and opens Windows Terminal tabs that exec into each container. A `stop.bat` tears them down while preserving named volumes.
 
 ## The Root User Problem
 
@@ -47,7 +40,7 @@ RUN useradd -m -s /bin/bash -G sudo dev \
 The entrypoint still runs as root (Xvfb and VNC need it), but the `start.bat` script execs into containers as the dev user:
 
 ```bat
-docker exec -it --user dev tactical-dev bash
+docker exec -it --user dev my-container bash
 ```
 
 This keeps interactive sessions unprivileged while background services run with the access they need.
@@ -67,6 +60,29 @@ fi
 ```
 
 Now the flow is: log in once with `claude login`, the OAuth token is saved to the volume, and it persists across stop/start cycles. The only time you'd need to re-authenticate is if you delete the volumes with `docker compose down -v`.
+
+## Memory: The Silent Container Killer
+
+After getting the containers running, I hit a frustrating issue almost immediately: containers would die within minutes of starting a Claude Code session. No crash logs in the container, no obvious errors — just an exit code 255 and everything gone. The Docker Desktop service itself had crashed, taking all containers with it.
+
+The root cause was Docker Desktop's default memory allocation. On my 16 GB Windows machine, Docker was configured with only **2 GB of RAM** and **1 GB of swap**. Claude Code is memory-hungry — a single session doing active code generation can easily consume several gigabytes. When the container hit the cgroup memory limit, the Linux kernel inside the WSL2 VM would OOM-kill processes, and in some cases the entire Docker Desktop service would crash.
+
+The fix involved three changes:
+
+1. **Docker Desktop settings** (`settings.json`) — bumped `memoryMiB` from 2048 to 8192 and `swapMiB` from 1024 to 4096
+2. **WSL config** (`~/.wslconfig`) — set explicit memory and swap limits so WSL doesn't throttle Docker:
+   ```ini
+   [wsl2]
+   memory=10GB
+   swap=4GB
+   ```
+3. **docker-compose.yml** — added `mem_limit: 8g` to the primary container and `restart: unless-stopped` so it auto-recovers from crashes
+
+After these changes, Docker reports ~9.7 GB available to containers, and a typical Claude Code session runs comfortably at under 1 GB with plenty of headroom for spikes.
+
+### Auth Token Invalidation
+
+One more gotcha I haven't fully figured out: when Docker Desktop crashes hard (exit code 255), the OAuth tokens saved in the named volume survive — but Claude Code still prompted me to re-authenticate after a crash recovery. The credentials file was there and looked valid, so I'm not sure what's happening. My best theory is the token gets invalidated server-side by Anthropic, but it could also be something about how the container restarts or how Claude Code validates cached tokens. Either way, it's a one-time re-auth and the new token persists going forward — just worth knowing so you don't waste time debugging the volume mounts when a simple `claude login` fixes it.
 
 ## The Result
 

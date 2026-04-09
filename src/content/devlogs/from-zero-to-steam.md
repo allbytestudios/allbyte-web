@@ -104,4 +104,4 @@ The Steam demo includes:
 - Controller support
 - Difficulty settings
 
-It's a vertical slice of what the full game will be. The combat works, the world feels alive, and there's enough content to show the vision.
+It's a vertical slice of what the full game will be.

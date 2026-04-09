@@ -7,7 +7,7 @@ devlog: "studio"
 tags: ["business", "patreon", "self-hosting", "stripe", "indie"]
 ---
 
-This isn't a conclusion. It's a hypothesis. I'm betting that self-hosting my own subscription platform is worth the tradeoff over Patreon — but I could be wrong, and it's important to lay that out honestly.
+This isn't a conclusion. It's a hypothesis. I'm betting that self-hosting my own subscription platform is worth the tradeoff over Patreon — but I could be wrong.
 
 ## What Patreon Gives You for Free
 
@@ -21,7 +21,7 @@ Beyond trust, Patreon provides:
 - **Community tools** — Posts, polls, DMs, tiers with gated content, Discord role integration. All built in.
 - **Legal and tax compliance** — VAT collection, sales tax handling, 1099 generation for US creators. This is genuinely complicated to do yourself.
 
-That's a lot of value. And for a solo indie dev trying to build a game, every one of those is a feature you'd either need to build or go without.
+That's a lot of value for a solo indie dev. Every one of those is a feature you'd need to build or go without.
 
 ## What Patreon Costs
 
@@ -47,19 +47,17 @@ More importantly:
 - **Creative control.** The site matches my brand exactly — the bilateral layout, the custom font, the engine/heart aesthetic. It's not a Patreon template.
 - **No platform dependency.** Nobody can change the rules on me. The site is static files on a CDN I control.
 
-## What Self-Hosting Actually Costs (The Honest Part)
-
-Here's where I need to be critical of my own decision.
+## What Self-Hosting Actually Costs
 
 ### Marketing Risk
 
 Nobody is going to stumble onto allbyte.studio. There's no Patreon browse page, no recommendation algorithm, no "creators you might like" sidebar. Every single subscriber has to be driven there through my own marketing — social media, Discord, word of mouth, gameplay clips. Patreon has a built-in audience. I have a domain name.
 
-This is probably the biggest risk. A beautifully engineered site with zero traffic is worse than an ugly Patreon with 50 subscribers.
+A beautifully engineered site with zero traffic is worse than an ugly Patreon with 50 subscribers.
 
 ### Trust Risk
 
-"Support me on Patreon" is a sentence people understand. "Go to allbyte.studio and click Subscribe" is a harder sell. People trust known brands with their credit card numbers. A custom domain with a custom payment flow looks sketchy to anyone who's been on the internet long enough. I use Stripe Checkout (which people do recognize), but the path to get there is unfamiliar.
+"Support me on Patreon" is a sentence people understand. "Go to allbyte.studio and click Subscribe" is a harder sell. A custom domain with a custom payment flow looks sketchy to anyone who's been on the internet long enough. I use Stripe Checkout (which people do recognize), but the path to get there is unfamiliar.
 
 ### Technical Risk
 
@@ -71,7 +69,7 @@ Patreon has an engineering team. I have Claude and a prayer.
 
 Every hour spent on infrastructure — building OAuth, debugging CloudFormation, writing this very analysis — is an hour not spent on the game. The whole point of AllByte Studios is to make a tactical RPG. Not a web platform.
 
-This is the trap: the infrastructure work is *interesting*, and it feels productive, but it's not the thing that matters. If the game isn't good, the website is irrelevant.
+The infrastructure work is *interesting* and feels productive, but if the game isn't good, the website is irrelevant.
 
 ### Unknown Unknowns
 
@@ -83,7 +81,7 @@ What happens when we need:
 - Tax compliance across jurisdictions?
 - Failed payment retry logic?
 
-Patreon has solved all of these. I'd need to build each one or accept that I don't have it. Every missing feature is a reason someone doesn't subscribe.
+Patreon has solved all of these. I'd need to build each one or accept that I don't have it.
 
 ## The Hypothesis
 
@@ -95,12 +93,8 @@ I'm betting that the combination of:
 
 ...will outweigh the marketing, trust, and maintenance overhead.
 
-The third point is the key one. Five years ago, a solo developer self-hosting a subscription platform would be absurd — the engineering cost alone would consume all your time. But with an AI pair-programmer that can write CloudFormation templates, debug OAuth flows, and set up CI/CD pipelines in a single conversation, the calculus changes.
+The third point is the key one. Five years ago, a solo developer self-hosting a subscription platform would be absurd. But with an AI pair-programmer that can write CloudFormation templates, debug OAuth flows, and set up CI/CD pipelines in a single conversation, the calculus changes. The infrastructure that used to be the hard part is now the fast part. The marketing and trust-building — which Patreon solves — is now the hard part.
 
-The infrastructure that used to be the hard part is now the fast part. The marketing and trust-building — which Patreon solves — is now the hard part.
-
-**This is unproven.** I could end up with a beautifully engineered ghost town and wish I'd just set up a Patreon page in 10 minutes. That's a real possibility, and I'm going in with eyes open.
-
-But I want to try it. Worst case, I learn a lot and migrate to Patreon later with all the technical knowledge intact. Best case, I keep 100% of my revenue minus Stripe's cut and own everything.
+**This is unproven.** I could end up with a beautifully engineered ghost town and wish I'd just set up a Patreon page in 10 minutes. Worst case, I learn a lot and migrate to Patreon later. Best case, I keep 100% of my revenue minus Stripe's cut and own everything.
 
 I'll report back.

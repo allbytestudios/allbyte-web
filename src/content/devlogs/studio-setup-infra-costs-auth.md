@@ -13,7 +13,7 @@ How I deployed a static site to AWS for under $5/month (minus Claude expense) �
 
 This site runs on a fully automated pipeline: I push code to GitHub, and it's live on **allbyte.studio** within 30 seconds. No servers to manage, no containers to orchestrate. Just static files on a CDN.
 
-The entire infrastructure — AWS resources, CI/CD pipeline, DNS, certificates — was built in a single conversation with Claude Code. The same conversation that built the site also set up the hosting, debugged the deploy failures, and even generated this blog post documenting the process.
+The entire infrastructure — AWS resources, CI/CD pipeline, DNS, certificates — was built in a single conversation with Claude Code.
 
 ### My Tools
 
@@ -191,7 +191,7 @@ User data lives in DynamoDB (`allbyte-studio-users`) with a Global Secondary Ind
 
 ### OAuth (Google & Discord)
 
-Nobody wants to create yet another account with yet another password. OAuth lets users sign in with accounts they already have.
+OAuth lets users sign in with accounts they already have.
 
 The challenge: the frontend is a static site on S3. There's no server to handle OAuth callbacks, and the browser can't securely exchange auth codes — that requires a client secret. The solution: route the entire flow through API Gateway.
 

@@ -52,7 +52,7 @@ jobs:
             --exclude "BattleChargeRight-still.png" \
             --exclude "Flourish.png" \
             --exclude "leftSword.png" \
-            --exclude "verticalSwordTHIN.png" \
+            --exclude "verticalSword.png" \
             --exclude "fonts/ModernGoth.otf"
 
           # Override cache headers for HTML files (must revalidate)

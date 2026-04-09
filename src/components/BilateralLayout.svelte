@@ -247,17 +247,17 @@
       <img src="/Flourish.png" alt="" class="flourish flourish-right" />
       <div class="mobile-links">
         <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
-          <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
+          <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
           <p>Original compositions for The Chronicles of Nesis.</p>
           <span class="entry-count heart-count">({artCounts.music} tracks)</span>
         </a>
         <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
-          <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
+          <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
           <p>Sprites, pre-rendered backgrounds.</p>
           <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
         </a>
         <a href="/fonts/" class="link-card heart-card" onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
-          <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
+          <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
           <p>A custom typeface designed for The Chronicles of Nesis.</p>
           <span class="entry-count heart-count">(1 typeface)</span>
         </a>
@@ -304,7 +304,7 @@
       </div>
       <div class="cell heart-bg">
         <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
-          <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
+          <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
           <p>Original compositions for The Chronicles of Nesis.</p>
           <span class="entry-count heart-count">({artCounts.music} tracks)</span>
         </a>
@@ -319,7 +319,7 @@
       </div>
       <div class="cell heart-bg">
         <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
-          <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
+          <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
           <p>Sprites, pre-rendered backgrounds.</p>
           <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
         </a>
@@ -334,7 +334,7 @@
       </div>
       <div class="cell heart-bg">
         <a href="/fonts/" class="link-card heart-card" onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
-          <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSwordTHIN.png"} alt="" class="sword-icon" /></h3>
+          <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
           <p>A custom typeface designed for The Chronicles of Nesis.</p>
           <span class="entry-count heart-count">(1 typeface)</span>
         </a>

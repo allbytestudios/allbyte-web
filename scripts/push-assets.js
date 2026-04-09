@@ -41,7 +41,7 @@ const rootFiles = [
   "BattleChargeRight-still.png",
   "Flourish.png",
   "leftSword.png",
-  "verticalSwordTHIN.png",
+  "verticalSword.png",
   "fonts/ModernGoth.otf",
   "tier-initiate.png",
   "tier-none.png",

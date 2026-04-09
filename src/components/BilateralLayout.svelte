@@ -387,7 +387,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.25rem;
+    gap: 0.75rem;
   }
 
   .site-title {
@@ -412,6 +412,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
+    min-width: 13.75rem;
   }
 
   .tier-label {
@@ -480,8 +481,9 @@
     color: #e0e7ff;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.4rem;
-    margin-top: 1rem;
+    align-self: stretch;
   }
 
   .user-tier-icon {
@@ -504,6 +506,7 @@
     text-align: center;
     display: flex;
     flex-direction: column;
+    min-width: 6.5rem;
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: unset;
   }

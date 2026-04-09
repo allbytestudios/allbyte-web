@@ -151,7 +151,7 @@ GitHub Actions (`.github/workflows/deploy.yml`): push to `main` triggers build +
 ```bash
 aws cloudformation deploy \
   --template-file infrastructure/stripe-backend.yaml \
-  --stack-name allbyte-studio-backend \
+  --stack-name allbyte-studio-stripe \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 

@@ -123,3 +123,36 @@ jobs:
           fi
 
           echo "All integration tests passed!"
+
+      - name: Notify subscribers of new content
+        run: |
+          NEW_POSTS=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- src/content/devlogs/ | grep '\.md$' || true)
+
+          if [ -z "$NEW_POSTS" ]; then
+            echo "No new devlog posts detected, skipping notifications."
+            exit 0
+          fi
+
+          for POST_FILE in $NEW_POSTS; do
+            if [ ! -f "$POST_FILE" ]; then
+              echo "Skipping deleted file: $POST_FILE"
+              continue
+            fi
+
+            TITLE=$(grep '^title:' "$POST_FILE" | sed 's/^title: *"\(.*\)"/\1/')
+            DESC=$(grep '^description:' "$POST_FILE" | sed 's/^description: *"\(.*\)"/\1/')
+            DEVLOG=$(grep '^devlog:' "$POST_FILE" | sed 's/^devlog: *"\(.*\)"/\1/')
+            SLUG=$(basename "$POST_FILE" .md)
+
+            echo "Notifying subscribers about: $TITLE (category: $DEVLOG)"
+
+            aws lambda invoke \
+              --function-name allbyte-studio-send-notification \
+              --payload "$(jq -n --arg t "$TITLE" --arg d "$DESC" --arg c "$DEVLOG" --arg s "$SLUG" \
+                '{category:$c,title:$t,description:$d,slug:$s,url:("https://allbyte.studio/devlog/"+$s+"/")}')" \
+              --cli-binary-format raw-in-base64-out \
+              /tmp/notify-response.json
+
+            cat /tmp/notify-response.json
+            echo ""
+          done

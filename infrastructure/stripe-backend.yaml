@@ -23,6 +23,9 @@ Parameters:
   SiteDomain:
     Type: String
     Default: https://allbyte.studio
+  FromEmail:
+    Type: String
+    Default: notifications@allbyte.studio
 
 Resources:
   # --- DynamoDB Tables ---
@@ -100,6 +103,12 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: "arn:aws:logs:*:*:*"
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource:
+                  - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/allbyte.studio"
 
   # --- Lambda: Auth Signup ---
   SignupFunction:
@@ -440,6 +449,10 @@ Resources:
 
               tier = get_tier(user.get("stripeCustomerId"))
 
+              prefs = user.get("notificationPreferences")
+              if prefs:
+                  prefs = {k: bool(v) for k, v in prefs.items()}
+
               return {
                   "statusCode": 200,
                   "headers": CORS,
@@ -450,8 +463,303 @@ Resources:
                           "username": user["username"],
                           "tier": tier,
                           "stripeCustomerId": user.get("stripeCustomerId"),
+                          "notificationPreferences": prefs,
                       },
                   }),
+              }
+
+  # --- Lambda: Notification Preferences ---
+  NotificationPrefsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-notification-prefs
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "PUT,OPTIONS",
+          }
+
+          VALID_KEYS = {"chronicles", "godot-and-claude", "studio", "music", "artwork", "fonts"}
+
+          _cache = {}
+          def get_jwt_secret():
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              auth = event.get("headers", {}).get("authorization", "")
+              if not auth.startswith("Bearer "):
+                  return err(401, "Login required")
+
+              payload = verify_jwt(auth[7:], get_jwt_secret())
+              if not payload:
+                  return err(401, "Invalid or expired token")
+
+              user_id = payload["sub"]
+
+              body = json.loads(event.get("body", "{}"))
+              preferences = body.get("preferences")
+
+              if preferences is None:
+                  users.update_item(
+                      Key={"userId": user_id},
+                      UpdateExpression="REMOVE notificationPreferences",
+                  )
+                  return {
+                      "statusCode": 200,
+                      "headers": CORS,
+                      "body": json.dumps({"preferences": None}),
+                  }
+
+              if not isinstance(preferences, dict):
+                  return err(400, "preferences must be an object or null")
+              if set(preferences.keys()) != VALID_KEYS:
+                  return err(400, f"preferences must contain exactly: {', '.join(sorted(VALID_KEYS))}")
+              if not all(isinstance(v, bool) for v in preferences.values()):
+                  return err(400, "All preference values must be boolean")
+
+              users.update_item(
+                  Key={"userId": user_id},
+                  UpdateExpression="SET notificationPreferences = :p",
+                  ExpressionAttributeValues={":p": preferences},
+              )
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({"preferences": preferences}),
+              }
+
+  # --- Lambda: Send Notification Email ---
+  SendNotificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-send-notification
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 60
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+          FROM_EMAIL: !Ref FromEmail
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+          ses = boto3.client("ses")
+          FROM = os.environ["FROM_EMAIL"]
+          SITE = os.environ["SITE_DOMAIN"]
+
+          _cache = {}
+          def get_jwt_secret():
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
+
+          def make_unsubscribe_token(user_id, secret):
+              expiry = int(time.time()) + 90 * 86400
+              data = f"{user_id}:{expiry}"
+              sig = hmac.new(secret.encode(), data.encode(), hashlib.sha256).hexdigest()
+              raw = f"{data}:{sig}"
+              return base64.urlsafe_b64encode(raw.encode()).decode()
+
+          CATEGORY_LABELS = {
+              "chronicles": "Chronicles of Nesis",
+              "godot-and-claude": "Godot & Claude",
+              "studio": "AllByte Studios",
+              "music": "Music",
+              "artwork": "Artwork",
+              "fonts": "Font",
+          }
+
+          def handler(event, context):
+              category = event.get("category", "")
+              title = event.get("title", "")
+              description = event.get("description", "")
+              url = event.get("url", "")
+
+              if not category or not title:
+                  return {"error": "category and title required"}
+
+              label = CATEGORY_LABELS.get(category, category)
+              secret = get_jwt_secret()
+
+              # Scan for users with this category preference enabled
+              result = users.scan(
+                  FilterExpression="attribute_exists(notificationPreferences) AND notificationPreferences.#cat = :t",
+                  ExpressionAttributeNames={"#cat": category},
+                  ExpressionAttributeValues={":t": True},
+              )
+              items = result.get("Items", [])
+              while result.get("LastEvaluatedKey"):
+                  result = users.scan(
+                      FilterExpression="attribute_exists(notificationPreferences) AND notificationPreferences.#cat = :t",
+                      ExpressionAttributeNames={"#cat": category},
+                      ExpressionAttributeValues={":t": True},
+                      ExclusiveStartKey=result["LastEvaluatedKey"],
+                  )
+                  items.extend(result.get("Items", []))
+
+              sent = 0
+              api_base = SITE.replace("https://", "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com")
+              for user in items:
+                  email = user.get("email")
+                  user_id = user.get("userId")
+                  if not email:
+                      continue
+
+                  token = make_unsubscribe_token(user_id, secret)
+                  unsub_url = f"https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/unsubscribe?token={token}"
+
+                  body = f"""{title}
+          {description}
+
+          Read it here: {url}
+
+          ---
+          You're receiving this because you opted into {label} updates on allbyte.studio.
+          Unsubscribe: {unsub_url}"""
+
+                  try:
+                      ses.send_email(
+                          Source=FROM,
+                          Destination={"ToAddresses": [email]},
+                          Message={
+                              "Subject": {"Data": f"New on AllByte Studios: {title}"},
+                              "Body": {"Text": {"Data": body}},
+                          },
+                          Tags=[{"Name": "category", "Value": category}],
+                      )
+                      sent += 1
+                  except Exception as e:
+                      print(f"Failed to send to {email}: {e}")
+
+              return {"sent": sent, "total_matched": len(items)}
+
+  # --- Lambda: Unsubscribe ---
+  UnsubscribeFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-unsubscribe
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import urllib.parse
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+          SITE = os.environ["SITE_DOMAIN"]
+
+          _cache = {}
+          def get_jwt_secret():
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
+
+          def handler(event, context):
+              qs = event.get("queryStringParameters") or {}
+              token_b64 = qs.get("token", "")
+
+              try:
+                  raw = base64.urlsafe_b64decode(token_b64.encode()).decode()
+                  parts = raw.split(":")
+                  if len(parts) != 3:
+                      raise ValueError("bad format")
+                  user_id, expiry_str, sig = parts
+                  expiry = int(expiry_str)
+
+                  secret = get_jwt_secret()
+                  expected = hmac.new(secret.encode(), f"{user_id}:{expiry_str}".encode(), hashlib.sha256).hexdigest()
+                  if not hmac.compare_digest(sig, expected):
+                      raise ValueError("bad sig")
+                  if time.time() > expiry:
+                      raise ValueError("expired")
+
+              except Exception:
+                  return {
+                      "statusCode": 302,
+                      "headers": {"Location": f"{SITE}/unsubscribed/?error=invalid"},
+                  }
+
+              try:
+                  users.update_item(
+                      Key={"userId": user_id},
+                      UpdateExpression="REMOVE notificationPreferences",
+                  )
+              except Exception:
+                  pass
+
+              return {
+                  "statusCode": 302,
+                  "headers": {"Location": f"{SITE}/unsubscribed/"},
               }
 
   # --- Lambda: OAuth Start (redirect to provider) ---
@@ -1111,6 +1419,7 @@ Resources:
         AllowMethods:
           - POST
           - GET
+          - PUT
           - OPTIONS
         AllowHeaders:
           - Content-Type
@@ -1287,6 +1596,54 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref WebhookFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Unsubscribe route
+  UnsubscribeIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt UnsubscribeFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  UnsubscribeRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /auth/unsubscribe"
+      Target: !Sub "integrations/${UnsubscribeIntegration}"
+
+  UnsubscribePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UnsubscribeFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Notification preferences route
+  NotificationPrefsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt NotificationPrefsFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  NotificationPrefsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "PUT /auth/notification-prefs"
+      Target: !Sub "integrations/${NotificationPrefsIntegration}"
+
+  NotificationPrefsPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref NotificationPrefsFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"

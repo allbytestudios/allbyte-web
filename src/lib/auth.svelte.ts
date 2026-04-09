@@ -6,6 +6,7 @@ export interface User {
   username: string;
   tier: string | null;
   stripeCustomerId: string | null;
+  notificationPreferences: Record<string, boolean> | null;
 }
 
 class AuthStore {
@@ -91,6 +92,29 @@ export async function signup(email: string, username: string, password: string):
   localStorage.setItem("allbyte_token", data.token);
   auth.authToken = data.token;
   auth.currentUser = data.user;
+  return null;
+}
+
+export async function saveNotificationPrefs(
+  preferences: Record<string, boolean> | null
+): Promise<string | null> {
+  const token = localStorage.getItem("allbyte_token");
+  if (!token) return "Not authenticated";
+  const resp = await fetch(`${API}/auth/notification-prefs`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ preferences }),
+  });
+  if (!resp.ok) {
+    const data = await resp.json();
+    return data.error || "Failed to save preferences";
+  }
+  if (auth.currentUser) {
+    auth.currentUser = { ...auth.currentUser, notificationPreferences: preferences };
+  }
   return null;
 }
 

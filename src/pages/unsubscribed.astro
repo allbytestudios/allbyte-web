@@ -1,0 +1,46 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<BaseLayout title="Unsubscribed — AllByte Studios">
+  <main class="unsub-page">
+    <h1>You've been unsubscribed</h1>
+    <p>You will no longer receive email notifications from AllByte Studios.</p>
+    <p>If this was a mistake, you can re-enable notifications from the <a href="/">home page</a>.</p>
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .unsub-page {
+    background: #1a1e26;
+    color: #e0e7ff;
+    font-family: "Courier New", Courier, monospace;
+    min-height: 80dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  h1 {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2rem;
+    color: #a7f3d0;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 1.1rem;
+    color: rgba(224, 231, 255, 0.7);
+    line-height: 1.6;
+    margin: 0.5rem 0;
+  }
+
+  a {
+    color: #a7f3d0;
+  }
+</style>

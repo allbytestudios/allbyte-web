@@ -7,7 +7,7 @@ import "../../../styles/devlog.css";
 import { getCollection } from "astro:content";
 
 const posts = (await getCollection("devlogs"))
-  .filter((p) => p.data.devlog === "studio")
+  .filter((p) => p.data.devlog === "studio" && !p.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 

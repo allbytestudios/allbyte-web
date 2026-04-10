@@ -43,6 +43,7 @@ jobs:
           aws s3 sync dist/ s3://${{ secrets.AWS_S3_BUCKET }} \
             --delete \
             --exclude "assets/*" \
+            --exclude "godot/*" \
             --exclude "Anthem2.mp3" \
             --exclude "cursor-move.wav" \
             --exclude "ChroniclesOfNesisTitle.gif" \

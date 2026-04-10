@@ -18,6 +18,15 @@ class SaveStore {
   lastSyncedAt = $state<number | null>(null);
   /** Whether the game has signaled allbyte:ready */
   gameReady = $state(false);
+  /** Wire protocol version reported by the game in its ready message. */
+  protocolVersion = $state<number | null>(null);
+  /** Number of save slots the game declares it supports (12 currently). */
+  maxSaveSlots = $state<number | null>(null);
+  /** Result of the most recent load-complete ack from the game. */
+  lastLoadResult = $state<{
+    acceptedSlots: number[];
+    rejectedSlots: { slot: number | string; reason: string }[];
+  } | null>(null);
   /** Last error message, if any */
   errorMessage = $state<string | null>(null);
 }
@@ -26,6 +35,8 @@ export const saves = new SaveStore();
 
 let iframeRef: HTMLIFrameElement | null = null;
 let pendingPushTimer: ReturnType<typeof setTimeout> | null = null;
+/** Messages queued while the game is still booting (before ready). */
+const preReadyQueue: any[] = [];
 
 /**
  * Initialize the save bridge: set up window message listener and remember the iframe ref.
@@ -36,11 +47,29 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null) {
   saves.gameReady = false;
   if (typeof window === "undefined") return;
   window.addEventListener("message", handleGameMessage);
+  // Test hook: expose state and a postMessage interceptor for Playwright tests
+  (window as any).__saves_test = {
+    store: saves,
+    getCurrent: () => saves.current,
+    getSyncStatus: () => saves.syncStatus,
+    getMaxSaveSlots: () => saves.maxSaveSlots,
+    getProtocolVersion: () => saves.protocolVersion,
+    getLastLoadResult: () => saves.lastLoadResult,
+    getErrorMessage: () => saves.errorMessage,
+    isGameReady: () => saves.gameReady,
+    getPreReadyQueueLength: () => preReadyQueue.length,
+    /** Sent messages from parent → game, captured for tests */
+    sentMessages: [] as any[],
+  };
 }
 
 export function teardownSaveBridge() {
   iframeRef = null;
   saves.gameReady = false;
+  saves.protocolVersion = null;
+  saves.maxSaveSlots = null;
+  saves.lastLoadResult = null;
+  preReadyQueue.length = 0;
   if (typeof window === "undefined") return;
   window.removeEventListener("message", handleGameMessage);
   if (pendingPushTimer) {
@@ -54,12 +83,23 @@ function handleGameMessage(e: MessageEvent) {
   if (!data || typeof data !== "object" || typeof data.type !== "string") return;
   if (!data.type.startsWith("allbyte:")) return;
 
-  // Optional source check: if we have an iframe ref, only accept messages from it
-  if (iframeRef && e.source !== iframeRef.contentWindow) return;
+  // Optional source check: if we have an iframe ref, only accept messages from it.
+  // Test bypass: window.__saves_test_skip_source_check === true allows tests to
+  // dispatch synthetic MessageEvents without setting up a real iframe source.
+  const testSkip = typeof window !== "undefined" && (window as any).__saves_test_skip_source_check === true;
+  if (!testSkip && iframeRef && e.source !== iframeRef.contentWindow) return;
 
   switch (data.type) {
     case "allbyte:ready":
       saves.gameReady = true;
+      if (typeof data.protocolVersion === "number") {
+        saves.protocolVersion = data.protocolVersion;
+      }
+      if (typeof data.maxSaveSlots === "number") {
+        saves.maxSaveSlots = data.maxSaveSlots;
+      }
+      // Drain any messages queued while we were waiting
+      flushPreReadyQueue();
       // On ready, request the current snapshot to populate our cache
       requestSavesFromGame();
       // For Hero/Legend, also pull from server and merge
@@ -87,20 +127,56 @@ function handleGameMessage(e: MessageEvent) {
         };
       }
       break;
+
+    case "allbyte:load-complete":
+      saves.lastLoadResult = {
+        acceptedSlots: Array.isArray(data.acceptedSlots) ? data.acceptedSlots : [],
+        rejectedSlots: Array.isArray(data.rejectedSlots) ? data.rejectedSlots : [],
+      };
+      if (saves.lastLoadResult.rejectedSlots.length > 0) {
+        const reasons = saves.lastLoadResult.rejectedSlots
+          .map((r) => `slot ${r.slot}: ${r.reason}`)
+          .join("; ");
+        saves.errorMessage = `Some saves were rejected: ${reasons}`;
+      }
+      break;
+  }
+}
+
+function flushPreReadyQueue() {
+  while (preReadyQueue.length > 0) {
+    const msg = preReadyQueue.shift();
+    if (msg) postToGame(msg);
   }
 }
 
 function postToGame(message: any) {
+  // Test hook: capture sent messages for inspection
+  if (typeof window !== "undefined" && (window as any).__saves_test) {
+    (window as any).__saves_test.sentMessages.push(message);
+  }
   if (!iframeRef || !iframeRef.contentWindow) return;
   iframeRef.contentWindow.postMessage(message, "*");
 }
 
+/**
+ * Send a message to the game, but queue it if the game hasn't signaled ready yet.
+ * The protocol contract requires we don't send request-saves or load-saves before ready.
+ */
+function postToGameWhenReady(message: any) {
+  if (saves.gameReady) {
+    postToGame(message);
+  } else {
+    preReadyQueue.push(message);
+  }
+}
+
 export function requestSavesFromGame() {
-  postToGame({ type: "allbyte:request-saves" });
+  postToGameWhenReady({ type: "allbyte:request-saves" });
 }
 
 export function loadSavesIntoGame(snapshot: Partial<SavesSnapshot>) {
-  postToGame({
+  postToGameWhenReady({
     type: "allbyte:load-saves",
     saves: snapshot.saves || {},
     options: snapshot.options,

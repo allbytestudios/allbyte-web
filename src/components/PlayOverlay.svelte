@@ -128,9 +128,10 @@
     border: 1px solid rgba(167, 243, 208, 0.25);
     border-radius: 4px;
     padding: 0.5rem 0.85rem;
-    min-height: 44px;
+    height: 44px;
     min-width: 44px;
-    display: inline-flex;
+    box-sizing: border-box;
+    display: flex;
     align-items: center;
     gap: 0.4rem;
     cursor: pointer;
@@ -172,7 +173,7 @@
     border-radius: 4px;
     padding: 0.4rem 0.7rem;
     min-height: 44px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     cursor: pointer;
     transition: all 0.2s;

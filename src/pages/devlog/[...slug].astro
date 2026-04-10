@@ -6,7 +6,9 @@ import PageHeader from "../../components/PageHeader.astro";
 import { getCollection, render } from "astro:content";
 
 export async function getStaticPaths() {
-  const posts = await getCollection("devlogs");
+  const posts = (await getCollection("devlogs")).filter(
+    (p) => !p.data.draft || import.meta.env.DEV
+  );
   return posts.map((post) => ({
     params: { slug: post.id },
     props: { post },

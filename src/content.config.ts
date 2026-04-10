@@ -12,6 +12,7 @@ const devlogs = defineCollection({
     devlog: z.enum(["chronicles", "godot-and-claude", "studio"]),
     tags: z.array(z.string()).default([]),
     heroImage: z.string().optional(),
+    draft: z.boolean().optional().default(false),
   }),
 });
 

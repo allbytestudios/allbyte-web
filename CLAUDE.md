@@ -174,3 +174,14 @@ Playwright-based E2E tests in `tests/e2e/` using pytest. The dev server must be 
 - "AllByte" = the solo developer/owner; "AllByte Studios" = the studio name
 - Engine side = monospace/terminal aesthetic; Heart side = serif/organic aesthetic
 - All site copy and devlog posts use **first-person singular** ("I/my/me"), never "we/our/us" — AllByte is a solo developer
+
+## Multi-Claude Coordination
+Two Claude instances work together on this project:
+- **App Claude** (you) — works in `allbyte-web/`, handles the Astro web app, backend Lambdas, infrastructure, and CI/CD
+- **CON Claude** — works in `/workspace/GameDev/ChroniclesOfNesis/` inside the docker container, handles the Godot game (`WebBootstrap/`, `Autoload/DAL.gd`, etc.)
+
+When signing notes or messages between the two, use these names explicitly (not "framework Claude" — that's ambiguous). Cross-Claude coordination files live in `C:\Users\drew\Desktop\GameDev\` (the host-side mount of `/workspace/GameDev/`):
+- `SAVE_SYNC_INTEGRATION.md` — postMessage protocol contract for save sync
+- `WEB_DEPLOY_QUESTIONS.md` — current Q&A about deploying the web export
+
+When you need to ping CON Claude for a question, leave a markdown file in that directory and (optionally) send a tmux message via `docker exec --user dev tactical-dev tmux send-keys -t 0 "[App Claude] ..."` followed by Enter to interrupt their session.

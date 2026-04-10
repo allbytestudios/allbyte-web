@@ -1,0 +1,249 @@
+---
+/**
+ * Standardized sticky page header with breadcrumbs (desktop) and back button (mobile).
+ *
+ * Props:
+ *   theme: "engine" | "heart" — color scheme matching the page
+ *   title: page title (visible as h1)
+ *   backHref: URL for the back/up navigation
+ *   backLabel: label for the back button (mobile) and last breadcrumb segment
+ *   breadcrumbs?: array of {href, label} for desktop trail (newest = current page, omit current)
+ *
+ * Mobile (<768px): single back button, 44x44 minimum touch target, title centered.
+ * Desktop (>=768px): breadcrumbs left-aligned (if provided), title centered, falls back to back button.
+ */
+interface Crumb {
+  href: string;
+  label: string;
+}
+
+interface Props {
+  theme?: "engine" | "heart";
+  title: string;
+  backHref: string;
+  backLabel?: string;
+  breadcrumbs?: Crumb[];
+}
+
+const {
+  theme = "engine",
+  title,
+  backHref,
+  backLabel = "Back",
+  breadcrumbs = [],
+} = Astro.props;
+---
+
+<header class={`page-header page-header-${theme}`}>
+  <div class="header-inner">
+    {breadcrumbs.length > 0 ? (
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          {breadcrumbs.map((crumb, i) => (
+            <li>
+              <a href={crumb.href}>{crumb.label}</a>
+              {i < breadcrumbs.length - 1 && <span class="separator" aria-hidden="true">›</span>}
+            </li>
+          ))}
+        </ol>
+      </nav>
+    ) : (
+      <a href={backHref} class="back-link-desktop">&larr; {backLabel}</a>
+    )}
+    <a href={backHref} class="back-link-mobile" aria-label={`Back to ${backLabel}`}>&larr;</a>
+    <h1 class="page-title">{title}</h1>
+    <div class="header-spacer"></div>
+  </div>
+  <slot />
+</header>
+
+<style>
+  .page-header {
+    text-align: center;
+    padding: 0.5rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .page-header-engine {
+    background: #1a1e26;
+  }
+
+  .page-header-heart {
+    background: var(--heart-bg-secondary, #c5b67e);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 44px;
+  }
+
+  /* Breadcrumbs (desktop) */
+  .breadcrumbs {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .breadcrumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-family: "Courier New", monospace;
+    font-size: 0.95rem;
+  }
+
+  .breadcrumbs li {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .page-header-engine .breadcrumbs a {
+    color: var(--engine-accent, #a7f3d0);
+  }
+
+  .page-header-heart .breadcrumbs a {
+    color: var(--heart-accent, #3a3020);
+  }
+
+  .breadcrumbs a {
+    text-decoration: none;
+    padding: 0.5rem 0.4rem;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+
+  .page-header-engine .breadcrumbs a:hover {
+    background: rgba(167, 243, 208, 0.1);
+  }
+
+  .page-header-heart .breadcrumbs a:hover {
+    background: rgba(58, 48, 32, 0.1);
+  }
+
+  .separator {
+    opacity: 0.5;
+  }
+
+  /* Desktop back link (used when no breadcrumbs given) */
+  .back-link-desktop {
+    flex: 0 0 auto;
+    text-decoration: none;
+    font-family: "Courier New", monospace;
+    font-size: 1rem;
+    padding: 0.5rem 0.85rem;
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .page-header-engine .back-link-desktop {
+    color: #a7f3d0;
+    background: rgba(167, 243, 208, 0.08);
+    border: 1px solid rgba(167, 243, 208, 0.25);
+  }
+
+  .page-header-engine .back-link-desktop:hover {
+    background: rgba(167, 243, 208, 0.18);
+    border-color: rgba(167, 243, 208, 0.5);
+  }
+
+  .page-header-heart .back-link-desktop {
+    color: var(--heart-accent, #3a3020);
+    background: rgba(58, 48, 32, 0.08);
+    border: 1px solid rgba(58, 48, 32, 0.3);
+  }
+
+  .page-header-heart .back-link-desktop:hover {
+    background: rgba(58, 48, 32, 0.15);
+    border-color: rgba(58, 48, 32, 0.55);
+  }
+
+  /* Mobile back link (icon only) — hidden by default */
+  .back-link-mobile {
+    display: none;
+    flex: 0 0 auto;
+    text-decoration: none;
+    font-family: "Courier New", monospace;
+    font-size: 1.4rem;
+    min-height: 44px;
+    min-width: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .page-header-engine .back-link-mobile {
+    color: #a7f3d0;
+    background: rgba(167, 243, 208, 0.08);
+    border: 1px solid rgba(167, 243, 208, 0.25);
+  }
+
+  .page-header-heart .back-link-mobile {
+    color: var(--heart-accent, #3a3020);
+    background: rgba(58, 48, 32, 0.08);
+    border: 1px solid rgba(58, 48, 32, 0.3);
+  }
+
+  /* Title */
+  .page-title {
+    flex: 1 1 auto;
+    margin: 0;
+    font-family: "Courier New", monospace;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page-header-engine .page-title {
+    color: #a7f3d0;
+  }
+
+  .page-header-heart .page-title {
+    color: var(--heart-accent, #3a3020);
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+  }
+
+  /* Spacer to balance the back button on the left and keep title centered */
+  .header-spacer {
+    flex: 0 0 auto;
+    min-width: 44px;
+  }
+
+  /* Mobile breakpoint */
+  @media (max-width: 768px) {
+    .breadcrumbs,
+    .back-link-desktop {
+      display: none;
+    }
+
+    .back-link-mobile {
+      display: inline-flex;
+    }
+
+    .page-title {
+      font-size: 1.1rem;
+    }
+  }
+</style>

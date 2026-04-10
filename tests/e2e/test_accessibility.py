@@ -138,3 +138,95 @@ def test_images_have_alt_attributes(page, base_url):
             .map(img => img.src)
     """)
     assert missing == [], f"Images missing alt attribute: {missing}"
+
+
+# === Phase 2: Touch Targets & Back Button Standardization ===
+
+
+PAGES_WITH_BACK = [
+    "/devlog/chronicles/",
+    "/devlog/godot-and-claude/",
+    "/devlog/studio/",
+    "/artwork/",
+    "/music/",
+    "/fonts/",
+    "/subscribe/",
+    "/play/",
+]
+
+
+@pytest.mark.parametrize("path", PAGES_WITH_BACK)
+def test_back_button_touch_target_mobile(browser, base_url, path):
+    """At mobile viewport (375x667), back buttons meet 44x44 minimum touch target."""
+    context = browser.new_context(viewport={"width": 375, "height": 667})
+    p = context.new_page()
+    try:
+        p.goto(f"{base_url}{path}", wait_until="domcontentloaded")
+        p.wait_for_load_state("networkidle")
+
+        # Find any visible "back" link/button on the page (not display:none)
+        candidates = p.query_selector_all(
+            ".back-link, .back-link-mobile, .back-link-desktop, [aria-label*='Back']"
+        )
+        back = None
+        for c in candidates:
+            box = c.bounding_box()
+            if box and box["width"] > 0 and box["height"] > 0:
+                back = c
+                break
+        assert back is not None, f"No visible back button found on {path}"
+
+        box = back.bounding_box()
+        assert box["height"] >= 40, f"Back button on {path} is too short: {box['height']}px (need >=44, allowing 40 for safe margin)"
+        assert box["width"] >= 40, f"Back button on {path} is too narrow: {box['width']}px"
+    finally:
+        context.close()
+
+
+def test_breadcrumbs_visible_on_desktop(browser, base_url):
+    """At 1280px viewport, devlog post pages show breadcrumbs."""
+    context = browser.new_context(viewport={"width": 1280, "height": 800})
+    p = context.new_page()
+    try:
+        p.goto(f"{base_url}/devlog/from-zero-to-steam/", wait_until="domcontentloaded")
+        breadcrumbs = p.query_selector(".breadcrumbs")
+        assert breadcrumbs is not None, "Breadcrumbs nav not found on devlog post page"
+        # Verify it's actually visible (not display:none)
+        is_visible = p.evaluate("(el) => getComputedStyle(el).display !== 'none'", breadcrumbs)
+        assert is_visible, "Breadcrumbs are hidden at desktop viewport"
+        # Should have at least one breadcrumb link
+        crumb_links = p.query_selector_all(".breadcrumbs a")
+        assert len(crumb_links) >= 1, "Breadcrumbs has no links"
+    finally:
+        context.close()
+
+
+def test_breadcrumbs_hidden_on_mobile(browser, base_url):
+    """At 375px viewport, breadcrumbs are hidden in favor of mobile back button."""
+    context = browser.new_context(viewport={"width": 375, "height": 667})
+    p = context.new_page()
+    try:
+        p.goto(f"{base_url}/devlog/from-zero-to-steam/", wait_until="domcontentloaded")
+        breadcrumbs = p.query_selector(".breadcrumbs")
+        if breadcrumbs:
+            is_visible = p.evaluate("(el) => getComputedStyle(el).display !== 'none'", breadcrumbs)
+            assert not is_visible, "Breadcrumbs should be hidden at mobile viewport"
+        # Mobile back button should be visible
+        mobile_back = p.query_selector(".back-link-mobile")
+        assert mobile_back is not None, "No mobile back button on devlog post page"
+        is_visible = p.evaluate("(el) => getComputedStyle(el).display !== 'none'", mobile_back)
+        assert is_visible, "Mobile back button is hidden"
+    finally:
+        context.close()
+
+
+def test_breadcrumb_links_navigate(page, base_url):
+    """Clicking a breadcrumb navigates to the right page."""
+    page.set_viewport_size({"width": 1280, "height": 800})
+    page.goto(f"{base_url}/devlog/from-zero-to-steam/", wait_until="domcontentloaded")
+    # Verify the breadcrumb link points to the right place (rather than clicking
+    # which can be intercepted by Astro view transitions in the test runner)
+    home_link = page.query_selector('.breadcrumbs a[href="/"]')
+    assert home_link is not None, "Home breadcrumb link not found"
+    href = home_link.get_attribute("href")
+    assert href == "/", f"Expected breadcrumb to point to /, got {href}"

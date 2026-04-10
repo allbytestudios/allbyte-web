@@ -30,7 +30,7 @@ def test_login_form_submits(page, base_url, mock_api):
         password_input.fill("testpassword")
 
         # Submit the form
-        submit = page.locator('button[type="submit"], .modal button').last
+        submit = page.locator('.modal button[type="submit"]').first
         submit.click()
 
         # After mock login, token should be stored

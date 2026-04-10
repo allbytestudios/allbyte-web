@@ -2,6 +2,7 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import Footer from "../../../components/Footer.astro";
 import AiDisclaimer from "../../../components/AiDisclaimer.astro";
+import PageHeader from "../../../components/PageHeader.astro";
 import "../../../styles/devlog.css";
 import { getCollection } from "astro:content";
 
@@ -11,13 +12,15 @@ const posts = (await getCollection("devlogs"))
 ---
 
 <BaseLayout title="Chronicles of Nesis DevLog — AllByte Studios" description="Development of The Chronicles of Nesis tactical RPG.">
-  <div class="page-header">
-    <div class="header-title-row">
-      <a href="/" class="back-link">&larr; Back</a>
-      <h1 class="page-title">Chronicles of Nesis Devlog</h1>
-    </div>
+  <PageHeader
+    theme="engine"
+    title="Chronicles of Nesis"
+    backHref="/"
+    backLabel="Home"
+    breadcrumbs={[{ href: "/", label: "Home" }]}
+  >
     <AiDisclaimer />
-  </div>
+  </PageHeader>
   <main class="devlog-page">
     <div class="devlog-list">
     {posts.map((post) => (

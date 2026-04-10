@@ -44,3 +44,8 @@ Thumbs.db
 
 # Local game asset staging (duplicates of public/assets/)
 gamedev_assets/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/

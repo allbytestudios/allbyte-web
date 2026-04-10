@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Footer from "../../components/Footer.astro";
 import AiDisclaimer from "../../components/AiDisclaimer.astro";
+import PageHeader from "../../components/PageHeader.astro";
 import { getCollection, render } from "astro:content";
 
 export async function getStaticPaths() {
@@ -15,23 +16,30 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content, headings } = await render(post);
 
-const devlogNames: Record<string, string> = {
-  chronicles: "Chronicles of Nesis Devlog",
-  "godot-and-claude": "Godot & Claude Devlog",
-  studio: "AllByte Studios Devlog",
+const devlogShortNames: Record<string, string> = {
+  chronicles: "Chronicles of Nesis",
+  "godot-and-claude": "Godot & Claude",
+  studio: "AllByte Studios",
 };
 const backHref = `/devlog/${post.data.devlog}/`;
-const backLabel = devlogNames[post.data.devlog] || "Devlog";
+const categoryLabel = devlogShortNames[post.data.devlog] || "Devlog";
+
+const breadcrumbs = [
+  { href: "/", label: "Home" },
+  { href: backHref, label: categoryLabel },
+];
 ---
 
 <BaseLayout title={`${post.data.title} — AllByte Studios`} description={post.data.description}>
-  <div class="page-header">
-    <div class="header-title-row">
-      <a href={backHref} class="back-link">&larr; Devlog</a>
-      <h1 class="page-title">{backLabel}</h1>
-    </div>
+  <PageHeader
+    theme="engine"
+    title={categoryLabel}
+    backHref={backHref}
+    backLabel={categoryLabel}
+    breadcrumbs={breadcrumbs}
+  >
     <AiDisclaimer />
-  </div>
+  </PageHeader>
   <main class="article">
     <article class="content">
       <header class="article-header">
@@ -71,58 +79,6 @@ const backLabel = devlogNames[post.data.devlog] || "Devlog";
 </BaseLayout>
 
 <style is:global>
-  .page-header {
-    background: #1a1e26;
-    text-align: center;
-    padding: 0.5rem 1rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  }
-
-  .header-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .back-link {
-    color: #a7f3d0;
-    text-decoration: none;
-    font-size: 1rem;
-    font-family: "Courier New", monospace;
-    background: rgba(167, 243, 208, 0.08);
-    border: 1px solid rgba(167, 243, 208, 0.2);
-    border-radius: 4px;
-    padding: 0.2rem 0.75rem;
-    transition: background 0.15s, border-color 0.15s;
-    position: absolute;
-    left: 1rem;
-  }
-
-  .back-link:hover {
-    background: rgba(167, 243, 208, 0.15);
-    border-color: rgba(167, 243, 208, 0.4);
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #a7f3d0;
-    margin: 0;
-    font-family: "Courier New", monospace;
-    padding-left: 6rem;
-    padding-right: 6rem;
-  }
-
-  @media (max-width: 768px) {
-    .page-title {
-      font-size: 1rem;
-    }
-  }
-
   .article {
     background: #1a1e26;
     color: #e0e7ff;

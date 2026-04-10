@@ -10,7 +10,9 @@ PAGES = [
     ("/fonts/", "fonts"),
     ("/subscribe/", "subscribe"),
     ("/self-hosting-with-claude/", "self-hosting"),
-    ("/devlog/", "devlog index"),
+    ("/devlog/chronicles/", "devlog chronicles"),
+    ("/devlog/godot-and-claude/", "devlog godot-and-claude"),
+    ("/devlog/studio/", "devlog studio"),
 ]
 
 

@@ -1,27 +1,26 @@
-"""Test devlog index and post pages."""
+"""Test devlog category and post pages."""
 
 
-def test_devlog_index_loads(page, base_url):
-    """Devlog index page shows hub cards."""
+def test_devlog_index_redirects_to_home(page, base_url):
+    """The /devlog/ hub now redirects to home, where the categories live."""
     page.goto(f"{base_url}/devlog/", wait_until="domcontentloaded")
-    cards = page.locator(".hub-card")
-    cards.first.wait_for(state="visible")
-    assert cards.count() >= 1, "Expected at least one devlog hub card"
+    # Should land on home (or follow the meta refresh redirect)
+    page.wait_for_timeout(500)
+    assert page.url.rstrip("/") == base_url.rstrip("/") or "/devlog/" not in page.url
 
 
-def test_devlog_hub_links(page, base_url):
-    """Hub cards link to devlog category pages."""
-    page.goto(f"{base_url}/devlog/", wait_until="domcontentloaded")
-    cards = page.locator(".hub-card")
-    cards.first.wait_for(state="visible")
+def test_devlog_category_links_from_home(page, base_url):
+    """Home page has links to all 3 devlog categories."""
+    page.goto(f"{base_url}/", wait_until="domcontentloaded")
+    page.wait_for_load_state("networkidle")
 
-    # Check that cards have href attributes pointing to devlog subpages
-    hrefs = []
-    for i in range(cards.count()):
-        href = cards.nth(i).get_attribute("href")
-        if href:
-            hrefs.append(href)
-    assert len(hrefs) >= 1, "Expected hub cards to have links"
+    chronicles = page.locator('a[href="/devlog/chronicles/"]').first
+    godot = page.locator('a[href="/devlog/godot-and-claude/"]').first
+    studio = page.locator('a[href="/devlog/studio/"]').first
+
+    assert chronicles.count() > 0, "Home should link to /devlog/chronicles/"
+    assert godot.count() > 0, "Home should link to /devlog/godot-and-claude/"
+    assert studio.count() > 0, "Home should link to /devlog/studio/"
 
 
 def test_devlog_post_renders_content(page, base_url):
@@ -29,10 +28,10 @@ def test_devlog_post_renders_content(page, base_url):
     # Navigate to a known post via the chronicles category
     page.goto(f"{base_url}/devlog/chronicles/", wait_until="domcontentloaded")
 
-    # If there are post links, click the first one
-    post_links = page.locator("a[href*='/devlog/']").all()
-    if len(post_links) > 1:
-        post_links[1].click()
+    # Click the first devlog post card (not header/breadcrumb links)
+    post_links = page.locator("a.devlog-card").all()
+    if len(post_links) > 0:
+        post_links[0].click()
         page.wait_for_load_state("domcontentloaded")
 
     # Check for article content or post content

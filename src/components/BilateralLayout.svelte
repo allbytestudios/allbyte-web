@@ -10,6 +10,27 @@
   let loginLoading = $state(false);
   let pendingAction = $state<string | null>(null);
   let demoHovered = $state(false);
+  let playMode = $state(false);
+  let gameUrl = $state("");
+
+  function launchGame() {
+    const isDev = window.location.hostname === "localhost";
+    gameUrl = isDev ? "http://localhost:8060/index.html" : "/godot/index.html";
+    playMode = true;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handlePlayKey);
+  }
+
+  function exitGame() {
+    playMode = false;
+    gameUrl = "";
+    document.body.style.overflow = "";
+    window.removeEventListener("keydown", handlePlayKey);
+  }
+
+  function handlePlayKey(e: KeyboardEvent) {
+    if (e.key === "Escape") exitGame();
+  }
   let artworkHovered = $state(false);
   let musicHovered = $state(false);
   let fontHovered = $state(false);
@@ -257,23 +278,34 @@
     </div>
   {/if}
 
-  <div class="demo-section">
-  <div class="demo-row" style="position: relative;">
-    <div class="demo-overlay"><span>Coming Soon</span></div>
-    <div class="demo-link">
-      <div class="demo-banner">
-        <img src={demoHovered ? "/ChroniclesOfNesisTitle.gif" : "/ChroniclesOfNesisTitle-still.png"} alt="The Chronicles of Nesis Demo" class="demo-gif" />
-        <img src="/ChroniclesOfNesisTitleName.png" alt="The Chronicles of Nesis" class="demo-title-overlay" />
+  <div class="demo-section" class:play-active={playMode}>
+  {#if playMode}
+    <div class="play-container">
+      <iframe
+        src={gameUrl}
+        title="The Chronicles of Nesis"
+        class="game-frame"
+        allow="cross-origin-isolated"
+      ></iframe>
+    </div>
+  {:else}
+    <div class="demo-row" style="position: relative;" onclick={launchGame}>
+      <div class="demo-overlay"><span>Coming Soon</span></div>
+      <div class="demo-link">
+        <div class="demo-banner">
+          <img src={demoHovered ? "/ChroniclesOfNesisTitle.gif" : "/ChroniclesOfNesisTitle-still.png"} alt="The Chronicles of Nesis Demo" class="demo-gif" />
+          <img src="/ChroniclesOfNesisTitleName.png" alt="The Chronicles of Nesis" class="demo-title-overlay" />
+        </div>
+      </div>
+      <div class="demo-actions">
+        <span class="demo-cta">Play Now v{gameVersion.version} (No Download) &#8594;</span>
+        <a href="https://store.steampowered.com/app/3900010/The_Chronicles_of_Nesis/" class="steam-btn" target="_blank" rel="noopener noreferrer" onclick={(e) => e.stopPropagation()}>
+          <svg class="steam-icon" viewBox="0 0 256 259" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M127.779 0C57.852 0 .469 55.394.013 124.609L68.95 153.16a35.615 35.615 0 0 1 20.15-6.213l30.15-43.635v-.613c0-26.36 21.457-47.817 47.818-47.817 26.36 0 47.818 21.457 47.818 47.817 0 26.361-21.457 47.818-47.818 47.818h-1.105l-42.926 30.658a35.796 35.796 0 0 1-35.638 37.149 35.87 35.87 0 0 1-34.992-28.333L1.592 168.53C17.2 220.124 65.89 258.18 123.578 258.18c70.692 0 128.003-57.31 128.003-128.003C251.581 59.487 198.47 0 127.779 0zM80.36 208.09l-15.082-6.232a26.887 26.887 0 0 0 14.49 14.088 26.941 26.941 0 0 0 35.26-14.468 26.796 26.796 0 0 0 .001-20.624 26.864 26.864 0 0 0-14.467-14.467l15.594 6.446a21.556 21.556 0 0 1-11.392 41.29 21.56 21.56 0 0 1-24.404-6.033zm114.007-57.39c0-17.568-14.29-31.858-31.858-31.858-17.569 0-31.858 14.29-31.858 31.858 0 17.569 14.29 31.858 31.858 31.858 17.569 0 31.858-14.29 31.858-31.858zm-55.737-.098c0-13.19 10.706-23.896 23.897-23.896 13.19 0 23.896 10.706 23.896 23.896 0 13.19-10.706 23.897-23.896 23.897-13.191 0-23.897-10.706-23.897-23.897z"/></svg>
+          Wishlist on Steam &#8594;
+        </a>
       </div>
     </div>
-    <div class="demo-actions">
-      <span class="demo-cta">Play Now v{gameVersion.version} (No Download) &#8594;</span>
-      <a href="https://store.steampowered.com/app/3900010/The_Chronicles_of_Nesis/" class="steam-btn" target="_blank" rel="noopener noreferrer">
-        <svg class="steam-icon" viewBox="0 0 256 259" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M127.779 0C57.852 0 .469 55.394.013 124.609L68.95 153.16a35.615 35.615 0 0 1 20.15-6.213l30.15-43.635v-.613c0-26.36 21.457-47.817 47.818-47.817 26.36 0 47.818 21.457 47.818 47.817 0 26.361-21.457 47.818-47.818 47.818h-1.105l-42.926 30.658a35.796 35.796 0 0 1-35.638 37.149 35.87 35.87 0 0 1-34.992-28.333L1.592 168.53C17.2 220.124 65.89 258.18 123.578 258.18c70.692 0 128.003-57.31 128.003-128.003C251.581 59.487 198.47 0 127.779 0zM80.36 208.09l-15.082-6.232a26.887 26.887 0 0 0 14.49 14.088 26.941 26.941 0 0 0 35.26-14.468 26.796 26.796 0 0 0 .001-20.624 26.864 26.864 0 0 0-14.467-14.467l15.594 6.446a21.556 21.556 0 0 1-11.392 41.29 21.56 21.56 0 0 1-24.404-6.033zm114.007-57.39c0-17.568-14.29-31.858-31.858-31.858-17.569 0-31.858 14.29-31.858 31.858 0 17.569 14.29 31.858 31.858 31.858 17.569 0 31.858-14.29 31.858-31.858zm-55.737-.098c0-13.19 10.706-23.896 23.897-23.896 13.19 0 23.896 10.706 23.896 23.896 0 13.19-10.706 23.897-23.896 23.897-13.191 0-23.897-10.706-23.897-23.897z"/></svg>
-        Wishlist on Steam &#8594;
-      </a>
-    </div>
-  </div>
+  {/if}
   </div>
 
   {#if auth.currentUser}
@@ -918,6 +950,44 @@
   .demo-section {
     background: #1e2a3a;
     padding: 0 0 0.5rem;
+    transition: all 0.4s ease;
+  }
+
+  .demo-section.play-active {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: #0a0e17;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: expand-in 0.8s ease;
+  }
+
+  @keyframes expand-in {
+    from {
+      opacity: 0;
+      transform: scale(0.7);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .play-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .game-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
   }
 
   .demo-overlay {

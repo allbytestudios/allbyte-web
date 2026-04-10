@@ -1,35 +1,61 @@
 <script>
   let loading = $state(true);
-  let progress = $state(0);
+  let error = $state("");
 
-  // TODO: Load Godot engine when actual export files are in /godot/
-  // The Godot HTML5 export will provide an engine loader script.
-  // Required HTTP headers for SharedArrayBuffer (configure in CloudFront):
-  //   Cross-Origin-Opener-Policy: same-origin
-  //   Cross-Origin-Embedder-Policy: require-corp
+  // In dev, load from the local CORS server (docker container on 8060)
+  // In prod, load from /godot/ (served by CloudFront with COOP/COEP headers)
+  let gameUrl = $state("/godot/index.html");
+
+  $effect(() => {
+    if (window.location.hostname === "localhost") {
+      gameUrl = "http://localhost:8060/index.html";
+    }
+  });
+
+  function onLoad() {
+    loading = false;
+  }
+
+  function onError() {
+    loading = false;
+    error = isDev
+      ? "Could not connect to game server. Is the CORS server running on port 8060?"
+      : "Game failed to load.";
+  }
 </script>
 
 <div class="godot-container">
   {#if loading}
     <div class="loading-screen">
       <div class="loading-title">AllByte Studios</div>
-      <div class="loading-subtitle">Preparing the world...</div>
+      <div class="loading-subtitle">Loading game...</div>
       <div class="progress-bar">
-        <div class="progress-fill" style="width: {progress}%"></div>
+        <div class="progress-fill" style="width: 30%"></div>
       </div>
-      <p class="loading-note">
-        Place your Godot 3.5 HTML5 export files in <code>/public/godot/</code>
-      </p>
     </div>
   {/if}
 
-  <canvas id="godot-canvas" class="game-canvas"></canvas>
+  {#if error}
+    <div class="loading-screen">
+      <div class="loading-title">AllByte Studios</div>
+      <p class="loading-note">{error}</p>
+    </div>
+  {:else}
+    <iframe
+      src={gameUrl}
+      title="The Chronicles of Nesis"
+      class="game-frame"
+      onload={onLoad}
+      onerror={onError}
+      allow="cross-origin-isolated"
+    ></iframe>
+  {/if}
 </div>
 
 <style>
   .godot-container {
     width: 100%;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 1270 / 920;
     max-height: 80vh;
     background: #0a0e17;
     position: relative;
@@ -79,17 +105,15 @@
 
   .loading-note {
     margin-top: 2rem;
-    font-size: 0.75rem;
-    opacity: 0.4;
+    font-size: 0.85rem;
+    opacity: 0.6;
+    color: #f87171;
   }
 
-  .loading-note code {
-    color: #a7f3d0;
-  }
-
-  .game-canvas {
+  .game-frame {
     width: 100%;
     height: 100%;
+    border: none;
     display: block;
   }
 </style>

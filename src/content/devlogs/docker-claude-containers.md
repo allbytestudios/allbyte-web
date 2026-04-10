@@ -82,7 +82,34 @@ After these changes, Docker reports ~9.7 GB available to containers, and a typic
 
 ### Auth Token Invalidation
 
-One more gotcha I haven't fully figured out: when Docker Desktop crashes hard (exit code 255), the OAuth tokens saved in the named volume survive — but Claude Code still prompted me to re-authenticate after a crash recovery. The credentials file was there and looked valid, so I'm not sure what's happening. My best theory is the token gets invalidated server-side by Anthropic, but it could also be something about how the container restarts or how Claude Code validates cached tokens. Either way, it's a one-time re-auth and the new token persists going forward — just worth knowing so you don't waste time debugging the volume mounts when a simple `claude login` fixes it.
+After thinking I had auth persistence solved with the volume mount, Claude Code kept asking me to re-authenticate every time the container restarted. The credentials file at `~/.claude/.credentials.json` was there, the OAuth token wasn't expired, and the file permissions were correct. It made no sense.
+
+The root cause: Claude Code splits its config across **two** locations:
+
+- `~/.claude/` — a directory containing `.credentials.json`, `settings.json`, sessions, history, etc.
+- `~/.claude.json` — a single file at the home root containing the OAuth account record (account UUID, organization, email, subscription info)
+
+I had only mounted `~/.claude/` as a persistent volume. The `.claude.json` file at the home root was getting wiped on every container restart, so even though the credentials token was still valid, Claude treated the install as fresh and prompted for login.
+
+The fix: in the entrypoint script, symlink `~/.claude.json` into the persisted `.claude/` directory so both pieces of state survive container restarts:
+
+```bash
+PERSISTED=/home/dev/.claude/_claude_json_persist
+LIVE=/home/dev/.claude.json
+if [ ! -L "$LIVE" ]; then
+    if [ -f "$LIVE" ] && [ ! -f "$PERSISTED" ]; then
+        cp "$LIVE" "$PERSISTED"
+    elif [ ! -f "$PERSISTED" ]; then
+        echo '{}' > "$PERSISTED"
+    fi
+    rm -f "$LIVE"
+    ln -s "$PERSISTED" "$LIVE"
+    chown -h dev:dev "$LIVE"
+    chown dev:dev "$PERSISTED"
+fi
+```
+
+After this, auth genuinely persists across restarts. The lesson: when you're persisting tool state, look for *all* the files the tool reads, not just the obvious config directory. A single missing file can make perfectly valid credentials look invalid.
 
 ## The Result
 

@@ -574,6 +574,168 @@ Resources:
                   "body": json.dumps({"preferences": preferences}),
               }
 
+  # --- Lambda: Save Sync (Hero/Legend tier game saves) ---
+  SaveSyncFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-save-sync
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SUBSCRIPTIONS_TABLE: !Ref SubscriptionsTable
+          SITE_DOMAIN: !Ref SiteDomain
+          PRICE_INITIATE: !Ref StripePriceInitiate
+          PRICE_HERO: !Ref StripePriceHero
+          PRICE_LEGEND: !Ref StripePriceLegend
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import datetime
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+          subs = boto3.resource("dynamodb").Table(os.environ["SUBSCRIPTIONS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "GET,PUT,DELETE,OPTIONS",
+          }
+
+          MAX_SAVE_BYTES = 250 * 1024  # 250KB
+
+          _cache = {}
+          def get_jwt_secret():
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def get_tier(stripe_customer_id):
+              if not stripe_customer_id:
+                  return None
+              price_to_tier = {
+                  os.environ["PRICE_INITIATE"]: "initiate",
+                  os.environ["PRICE_HERO"]: "hero",
+                  os.environ["PRICE_LEGEND"]: "legend",
+              }
+              try:
+                  resp = subs.get_item(Key={"customerId": stripe_customer_id})
+                  item = resp.get("Item", {})
+                  if item.get("status") == "active":
+                      return price_to_tier.get(item.get("priceId"))
+              except Exception:
+                  pass
+              return None
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          def handler(event, context):
+              method = event.get("requestContext", {}).get("http", {}).get("method", "")
+              if method == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              auth = event.get("headers", {}).get("authorization", "")
+              if not auth.startswith("Bearer "):
+                  return err(401, "Login required")
+
+              payload = verify_jwt(auth[7:], get_jwt_secret())
+              if not payload:
+                  return err(401, "Invalid or expired token")
+
+              user_id = payload["sub"]
+
+              # Look up user to check tier
+              user_resp = users.get_item(Key={"userId": user_id})
+              user = user_resp.get("Item")
+              if not user:
+                  return err(401, "User not found")
+
+              tier = get_tier(user.get("stripeCustomerId"))
+              if tier not in ("hero", "legend"):
+                  return err(403, "Save sync requires a Hero or Legend subscription")
+
+              if method == "GET":
+                  save_data = user.get("saveData")
+                  if not save_data:
+                      return {
+                          "statusCode": 404,
+                          "headers": CORS,
+                          "body": json.dumps({"error": "No saved data"}),
+                      }
+                  return {
+                      "statusCode": 200,
+                      "headers": CORS,
+                      "body": json.dumps({
+                          "saves": save_data,
+                          "updatedAt": user.get("saveDataUpdatedAt"),
+                      }),
+                  }
+
+              if method == "PUT":
+                  body = json.loads(event.get("body", "{}"))
+                  saves_blob = body.get("saves")
+                  if not isinstance(saves_blob, str):
+                      return err(400, "saves must be a JSON-encoded string")
+                  if len(saves_blob.encode("utf-8")) > MAX_SAVE_BYTES:
+                      return err(413, f"Save data exceeds maximum size of {MAX_SAVE_BYTES} bytes")
+                  # Validate it parses as JSON (don't validate schema)
+                  try:
+                      json.loads(saves_blob)
+                  except Exception:
+                      return err(400, "saves must be valid JSON")
+
+                  now = datetime.datetime.utcnow().isoformat() + "Z"
+                  users.update_item(
+                      Key={"userId": user_id},
+                      UpdateExpression="SET saveData = :s, saveDataUpdatedAt = :t",
+                      ExpressionAttributeValues={":s": saves_blob, ":t": now},
+                  )
+                  return {
+                      "statusCode": 200,
+                      "headers": CORS,
+                      "body": json.dumps({"updatedAt": now}),
+                  }
+
+              if method == "DELETE":
+                  users.update_item(
+                      Key={"userId": user_id},
+                      UpdateExpression="REMOVE saveData, saveDataUpdatedAt",
+                  )
+                  return {
+                      "statusCode": 200,
+                      "headers": CORS,
+                      "body": json.dumps({"deleted": True}),
+                  }
+
+              return err(405, f"Method {method} not allowed")
+
   # --- Lambda: Send Notification Email ---
   SendNotificationFunction:
     Type: AWS::Lambda::Function
@@ -1443,6 +1605,7 @@ Resources:
           - POST
           - GET
           - PUT
+          - DELETE
           - OPTIONS
         AllowHeaders:
           - Content-Type
@@ -1643,6 +1806,44 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref UnsubscribeFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Save sync routes (Hero/Legend)
+  SaveSyncIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt SaveSyncFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  SaveSyncGetRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /saves"
+      Target: !Sub "integrations/${SaveSyncIntegration}"
+
+  SaveSyncPutRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "PUT /saves"
+      Target: !Sub "integrations/${SaveSyncIntegration}"
+
+  SaveSyncDeleteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "DELETE /saves"
+      Target: !Sub "integrations/${SaveSyncIntegration}"
+
+  SaveSyncPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SaveSyncFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"

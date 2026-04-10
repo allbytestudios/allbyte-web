@@ -1,8 +1,10 @@
 <script lang="ts">
   import EnginePanel from "./EnginePanel.svelte";
   import HeartPanel from "./HeartPanel.svelte";
+  import PlayOverlay from "./PlayOverlay.svelte";
   import gameVersion from "../data/game-version.json";
   import { auth, initAuth, login, signup, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
+  import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   let isMobile = $state(false);
   let showLoginModal = $state(false);
   let loginMode = $state("signin");
@@ -65,6 +67,7 @@
   let demoHovered = $state(false);
   let playMode = $state(false);
   let gameUrl = $state("");
+  let gameIframe = $state<HTMLIFrameElement | null>(null);
 
   function launchGame() {
     const isDev = window.location.hostname === "localhost";
@@ -79,7 +82,16 @@
     gameUrl = "";
     document.body.style.overflow = "";
     window.removeEventListener("keydown", handlePlayKey);
+    teardownSaveBridge();
+    gameIframe = null;
   }
+
+  // Wire up the save bridge once the iframe is mounted
+  $effect(() => {
+    if (playMode && gameIframe) {
+      initSaveBridge(gameIframe);
+    }
+  });
 
   function handlePlayKey(e: KeyboardEvent) {
     if (e.key === "Escape") exitGame();
@@ -342,11 +354,13 @@
   <div class="demo-section" class:play-active={playMode}>
   {#if playMode}
     <div class="play-container">
+      <PlayOverlay onExit={exitGame} />
       <iframe
         src={gameUrl}
         title="The Chronicles of Nesis"
         class="game-frame"
         allow="cross-origin-isolated"
+        bind:this={gameIframe}
       ></iframe>
     </div>
   {:else}
@@ -1068,7 +1082,8 @@
 
   .game-frame {
     width: 100%;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     border: none;
     display: block;
   }

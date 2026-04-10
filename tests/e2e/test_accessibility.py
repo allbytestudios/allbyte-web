@@ -209,13 +209,14 @@ def test_breadcrumbs_hidden_on_mobile(browser, base_url):
         p.goto(f"{base_url}/devlog/from-zero-to-steam/", wait_until="domcontentloaded")
         breadcrumbs = p.query_selector(".breadcrumbs")
         if breadcrumbs:
-            is_visible = p.evaluate("(el) => getComputedStyle(el).display !== 'none'", breadcrumbs)
-            assert not is_visible, "Breadcrumbs should be hidden at mobile viewport"
-        # Mobile back button should be visible
+            # Check if any ancestor has display:none (breadcrumbs are inside .header-nav-desktop)
+            box = breadcrumbs.bounding_box()
+            assert box is None or box["width"] == 0, "Breadcrumbs should be hidden at mobile viewport"
+        # Mobile back button should be visible (has a bounding box)
         mobile_back = p.query_selector(".back-link-mobile")
         assert mobile_back is not None, "No mobile back button on devlog post page"
-        is_visible = p.evaluate("(el) => getComputedStyle(el).display !== 'none'", mobile_back)
-        assert is_visible, "Mobile back button is hidden"
+        box = mobile_back.bounding_box()
+        assert box is not None and box["width"] > 0, "Mobile back button is hidden"
     finally:
         context.close()
 

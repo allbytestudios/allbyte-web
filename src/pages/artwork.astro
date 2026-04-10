@@ -44,6 +44,7 @@ const lockedAnimations: Record<string, string[]> = {
         <h1 class="page-title">Artwork</h1>
         <p class="page-sub">Hand-crafted sprites, animations, and backgrounds</p>
       </div>
+      <div class="header-spacer" aria-hidden="true"></div>
     </header>
 
     <main class="content">
@@ -192,8 +193,15 @@ const lockedAnimations: Record<string, string[]> = {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     overflow: clip;
+    min-height: 56px;
+  }
+
+  .header-spacer {
+    flex: 0 0 auto;
+    width: 44px;
   }
 
   .flourish {
@@ -223,8 +231,7 @@ const lockedAnimations: Record<string, string[]> = {
     align-items: center;
     justify-content: center;
     transition: background 0.15s, color 0.15s;
-    position: absolute;
-    left: 3.5rem;
+    flex: 0 0 auto;
     z-index: 2;
   }
 
@@ -236,8 +243,8 @@ const lockedAnimations: Record<string, string[]> = {
   .header-text {
     text-align: center;
     z-index: 1;
-    padding-left: 6rem;
-    padding-right: 6rem;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .page-title {
@@ -494,14 +501,8 @@ const lockedAnimations: Record<string, string[]> = {
       font-size: 1.4rem;
     }
 
-    .header-text {
-      padding-left: 4rem;
-      padding-right: 4rem;
-    }
-
     .back-link {
       font-size: 1rem;
-      left: 1rem;
       padding: 0.4rem 0.7rem;
     }
 

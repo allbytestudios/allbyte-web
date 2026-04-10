@@ -17,9 +17,9 @@ const { post } = Astro.props;
 const { Content, headings } = await render(post);
 
 const devlogShortNames: Record<string, string> = {
-  chronicles: "Chronicles of Nesis",
-  "godot-and-claude": "Godot & Claude",
-  studio: "AllByte Studios",
+  chronicles: "Chronicles of Nesis Devlog",
+  "godot-and-claude": "Godot & Claude Devlog",
+  studio: "AllByte Studios Devlog",
 };
 const backHref = `/devlog/${post.data.devlog}/`;
 const categoryLabel = devlogShortNames[post.data.devlog] || "Devlog";
@@ -33,7 +33,7 @@ const breadcrumbs = [
 <BaseLayout title={`${post.data.title} — AllByte Studios`} description={post.data.description}>
   <PageHeader
     theme="engine"
-    title={categoryLabel}
+    title={post.data.title}
     backHref={backHref}
     backLabel={categoryLabel}
     breadcrumbs={breadcrumbs}
@@ -49,7 +49,6 @@ const breadcrumbs = [
             {post.data.pubDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
           </time>
         </div>
-        <h2 class="post-title">{post.data.title}</h2>
         <p class="subtitle">{post.data.description}</p>
         {post.data.tags.length > 0 && (
           <div class="tags">

@@ -27,6 +27,7 @@ function formatTrackName(name: string): string {
         <h1 class="page-title">Music</h1>
         <p class="page-sub">Original compositions for The Chronicles of Nesis</p>
       </div>
+      <div class="header-spacer" aria-hidden="true"></div>
     </header>
 
     <main class="content">
@@ -116,8 +117,10 @@ function formatTrackName(name: string): string {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     overflow: clip;
+    min-height: 56px;
   }
 
   .flourish {
@@ -147,8 +150,7 @@ function formatTrackName(name: string): string {
     align-items: center;
     justify-content: center;
     transition: background 0.15s, color 0.15s;
-    position: absolute;
-    left: 3.5rem;
+    flex: 0 0 auto;
     z-index: 2;
   }
 
@@ -160,8 +162,8 @@ function formatTrackName(name: string): string {
   .header-text {
     text-align: center;
     z-index: 1;
-    padding-left: 6rem;
-    padding-right: 6rem;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .page-title {
@@ -294,7 +296,7 @@ function formatTrackName(name: string): string {
 
   @media (max-width: 768px) {
     .flourish {
-      width: 6rem;
+      width: 4rem;
     }
 
     .page-sub { display: none; }
@@ -303,20 +305,27 @@ function formatTrackName(name: string): string {
       font-size: 1.4rem;
     }
 
-    .header-text {
-      padding-left: 4rem;
-      padding-right: 4rem;
-    }
-
     .back-link {
       font-size: 1rem;
-      left: 1rem;
       padding: 0.4rem 0.7rem;
     }
 
     .track-card {
-      flex-direction: column;
-      align-items: stretch;
+      padding: 0.6rem 0.9rem;
+      gap: 0.5rem;
     }
+
+    .track-name {
+      font-size: 1.1rem;
+    }
+
+    .play-hint {
+      display: none;
+    }
+  }
+
+  .header-spacer {
+    flex: 0 0 auto;
+    width: 44px;
   }
 </style>

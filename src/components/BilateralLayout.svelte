@@ -425,7 +425,7 @@
       <div class="mobile-links">
         <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("chronicles")}>
           <a href="/devlog/chronicles/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>Chronicles of Nesis <span class="cursor-arrow"></span></h3>
+            <h3>Chronicles of Nesis Devlog <span class="cursor-arrow"></span></h3>
             <p>Devlog of Chronicles of Nesis, a 90s style tactical RPG.</p>
             <span class="entry-count">({devlogCounts.chronicles} {devlogCounts.chronicles === 1 ? "entry" : "entries"})</span>
           </a>
@@ -433,7 +433,7 @@
         </div>
         <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("godot-and-claude")}>
           <a href="/devlog/godot-and-claude/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>Godot &amp; Claude <span class="cursor-arrow"></span></h3>
+            <h3>Godot &amp; Claude Devlog <span class="cursor-arrow"></span></h3>
             <p>Devlog of Godot &amp; Claude local setup and feedback loop.</p>
             <span class="entry-count">({devlogCounts["godot-and-claude"]} {devlogCounts["godot-and-claude"] === 1 ? "entry" : "entries"})</span>
           </a>
@@ -441,7 +441,7 @@
         </div>
         <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("studio")}>
           <a href="/devlog/studio/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>AllByte Studios <span class="cursor-arrow"></span></h3>
+            <h3>AllByte Studios Devlog <span class="cursor-arrow"></span></h3>
             <p>Devlog of building AllByte studio web app with Claude.</p>
             <span class="entry-count">({devlogCounts.studio} {devlogCounts.studio === 1 ? "entry" : "entries"})</span>
           </a>
@@ -464,7 +464,7 @@
       <div class="cell engine-bg">
         <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("chronicles")}>
           <a href="/devlog/chronicles/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>Chronicles of Nesis <span class="cursor-arrow"></span></h3>
+            <h3>Chronicles of Nesis Devlog <span class="cursor-arrow"></span></h3>
             <p>Devlog of Chronicles of Nesis, a 90s style tactical RPG.</p>
             <span class="entry-count">({devlogCounts.chronicles} {devlogCounts.chronicles === 1 ? "entry" : "entries"})</span>
           </a>
@@ -485,7 +485,7 @@
       <div class="cell engine-bg">
         <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("godot-and-claude")}>
           <a href="/devlog/godot-and-claude/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>Godot &amp; Claude <span class="cursor-arrow"></span></h3>
+            <h3>Godot &amp; Claude Devlog <span class="cursor-arrow"></span></h3>
             <p>Devlog of Godot &amp; Claude local setup and feedback loop.</p>
             <span class="entry-count">({devlogCounts["godot-and-claude"]} {devlogCounts["godot-and-claude"] === 1 ? "entry" : "entries"})</span>
           </a>
@@ -506,7 +506,7 @@
       <div class="cell engine-bg">
         <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("studio")}>
           <a href="/devlog/studio/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>AllByte Studios <span class="cursor-arrow"></span></h3>
+            <h3>AllByte Studios Devlog <span class="cursor-arrow"></span></h3>
             <p>Devlog of building AllByte studio web app with Claude.</p>
             <span class="entry-count">({devlogCounts.studio} {devlogCounts.studio === 1 ? "entry" : "entries"})</span>
           </a>

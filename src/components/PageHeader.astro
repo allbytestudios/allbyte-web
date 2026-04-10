@@ -23,6 +23,8 @@ interface Props {
   backHref: string;
   backLabel?: string;
   breadcrumbs?: Crumb[];
+  /** When true, hide the title on desktop (use when title duplicates the last breadcrumb). */
+  hideTitleOnDesktop?: boolean;
 }
 
 const {
@@ -31,18 +33,27 @@ const {
   backHref,
   backLabel = "Back",
   breadcrumbs = [],
+  hideTitleOnDesktop = false,
 } = Astro.props;
 ---
 
 <header class={`page-header page-header-${theme}`}>
-  <div class="header-inner">
+  <!-- Desktop: stacked rows (nav, title, slot). Mobile: single row with back+title side-by-side. -->
+  <div class="header-row-mobile">
+    <a href={backHref} class="back-link-mobile" aria-label={`Back to ${backLabel}`}>&larr;</a>
+    <h1 class="page-title page-title-mobile">{title}</h1>
+    <div class="header-spacer-mobile" aria-hidden="true"></div>
+  </div>
+  <div class="header-nav-desktop">
     {breadcrumbs.length > 0 ? (
       <nav class="breadcrumbs" aria-label="Breadcrumb">
         <ol>
           {breadcrumbs.map((crumb, i) => (
             <li>
-              <a href={crumb.href}>{crumb.label}</a>
-              {i < breadcrumbs.length - 1 && <span class="separator" aria-hidden="true">›</span>}
+              <a href={crumb.href}>
+                {crumb.label === "Home" && <span class="home-icon" aria-hidden="true">⌂ </span>}{crumb.label}
+              </a>
+              {i < breadcrumbs.length - 1 && <span class="separator" aria-hidden="true">/</span>}
             </li>
           ))}
         </ol>
@@ -50,11 +61,13 @@ const {
     ) : (
       <a href={backHref} class="back-link-desktop">&larr; {backLabel}</a>
     )}
-    <a href={backHref} class="back-link-mobile" aria-label={`Back to ${backLabel}`}>&larr;</a>
-    <h1 class="page-title">{title}</h1>
-    <div class="header-spacer"></div>
   </div>
-  <slot />
+  {!hideTitleOnDesktop && (
+    <h1 class="page-title page-title-desktop">{title}</h1>
+  )}
+  <div class="header-slot">
+    <slot />
+  </div>
 </header>
 
 <style>
@@ -75,20 +88,35 @@ const {
     background: var(--heart-bg-secondary, #c5b67e);
   }
 
-  .header-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
+  /* === Desktop: stacked layout === */
+  .header-row-mobile {
+    display: none;
+  }
+
+  .header-nav-desktop {
     max-width: 1200px;
     margin: 0 auto;
-    min-height: 44px;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .page-title-desktop {
+    text-align: center;
+    margin-top: 0.1rem;
   }
 
   /* Breadcrumbs (desktop) */
   .breadcrumbs {
     flex: 0 1 auto;
     min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .home-icon {
+    font-size: 1.1em;
+    line-height: 0;
+    vertical-align: -0.05em;
   }
 
   .breadcrumbs ol {
@@ -100,7 +128,7 @@ const {
     padding: 0;
     margin: 0;
     font-family: "Courier New", monospace;
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   .breadcrumbs li {
@@ -119,24 +147,46 @@ const {
 
   .breadcrumbs a {
     text-decoration: none;
-    padding: 0.5rem 0.4rem;
-    min-height: 44px;
+    padding: 0.25rem 0.5rem;
     display: inline-flex;
     align-items: center;
     border-radius: 4px;
     transition: background 0.15s;
   }
 
+  .page-header-engine .breadcrumbs a {
+    background: rgba(167, 243, 208, 0.06);
+    border: 1px solid rgba(167, 243, 208, 0.18);
+  }
+
   .page-header-engine .breadcrumbs a:hover {
-    background: rgba(167, 243, 208, 0.1);
+    background: rgba(167, 243, 208, 0.18);
+    border-color: rgba(167, 243, 208, 0.4);
+  }
+
+  .page-header-heart .breadcrumbs a {
+    background: rgba(58, 48, 32, 0.06);
+    border: 1px solid rgba(58, 48, 32, 0.2);
   }
 
   .page-header-heart .breadcrumbs a:hover {
-    background: rgba(58, 48, 32, 0.1);
+    background: rgba(58, 48, 32, 0.15);
+    border-color: rgba(58, 48, 32, 0.4);
   }
 
   .separator {
-    opacity: 0.5;
+    opacity: 0.7;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0 0.15rem;
+  }
+
+  .page-header-engine .separator {
+    color: rgba(167, 243, 208, 0.6);
+  }
+
+  .page-header-heart .separator {
+    color: rgba(58, 48, 32, 0.6);
   }
 
   /* Desktop back link (used when no breadcrumbs given) */
@@ -176,15 +226,15 @@ const {
     border-color: rgba(58, 48, 32, 0.55);
   }
 
-  /* Mobile back link (icon only) — hidden by default */
+  /* Mobile back link (icon only) — visibility controlled by parent .header-row-mobile */
   .back-link-mobile {
-    display: none;
     flex: 0 0 auto;
     text-decoration: none;
     font-family: "Courier New", monospace;
     font-size: 1.4rem;
     min-height: 44px;
     min-width: 44px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 4px;
@@ -208,12 +258,20 @@ const {
     flex: 1 1 auto;
     margin: 0;
     font-family: "Courier New", monospace;
-    font-size: 1.25rem;
+    font-size: 1.6rem;
     font-weight: 700;
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    letter-spacing: 0.01em;
+  }
+
+  /* When breadcrumbs are present, hide the redundant title on desktop
+     (breadcrumbs already show context). Title still appears on mobile
+     where breadcrumbs are hidden. */
+  .page-title-mobile-only {
+    display: none;
   }
 
   .page-header-engine .page-title {
@@ -231,19 +289,37 @@ const {
     min-width: 44px;
   }
 
+  .header-spacer-mobile {
+    flex: 0 0 auto;
+    width: 44px;
+  }
+
   /* Mobile breakpoint */
   @media (max-width: 768px) {
-    .breadcrumbs,
-    .back-link-desktop {
+    .header-nav-desktop,
+    .page-title-desktop {
       display: none;
     }
 
-    .back-link-mobile {
-      display: inline-flex;
+    .header-row-mobile {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      min-height: 44px;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
     .page-title {
-      font-size: 1.1rem;
+      font-size: 1.2rem;
+    }
+  }
+
+  /* On desktop, hide the mobile-only title rendering */
+  @media (min-width: 769px) {
+    .page-title-mobile {
+      display: none;
     }
   }
 </style>

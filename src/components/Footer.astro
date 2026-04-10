@@ -16,7 +16,7 @@ const { theme = "engine" } = Astro.props;
     text-align: center;
     padding: 1.5rem 1rem;
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
@@ -25,37 +25,37 @@ const { theme = "engine" } = Astro.props;
 
   .site-footer--engine {
     background: #1e2a3a;
-    color: rgba(224, 231, 255, 0.4);
+    color: rgba(224, 231, 255, 0.7);
   }
 
   .site-footer--heart {
     background: #cec08a;
-    color: #5a4d38;
+    color: #2a2218;
   }
 
   .footer-contact {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     text-decoration: none;
     transition: opacity 0.2s;
   }
 
   .site-footer--engine .footer-contact {
-    color: rgba(167, 243, 208, 0.5);
+    color: rgba(167, 243, 208, 0.85);
   }
 
   .site-footer--engine .footer-contact:hover {
-    color: rgba(167, 243, 208, 0.8);
+    color: #a7f3d0;
   }
 
   .site-footer--heart .footer-contact {
-    color: #5a4d38;
-  }
-
-  .site-footer--heart .footer-contact:hover {
     color: #2a2218;
   }
 
+  .site-footer--heart .footer-contact:hover {
+    color: #000;
+  }
+
   .footer-copyright {
-    font-size: 0.8rem;
+    font-size: 0.875rem;
   }
 </style>

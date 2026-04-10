@@ -231,3 +231,81 @@ def test_breadcrumb_links_navigate(page, base_url):
     assert home_link is not None, "Home breadcrumb link not found"
     href = home_link.get_attribute("href")
     assert href == "/", f"Expected breadcrumb to point to /, got {href}"
+
+
+# === Phase 3: Font Sizes & Heading Hierarchy ===
+
+
+PAGES_FOR_FONTS = [
+    "/",
+    "/devlog/chronicles/",
+    "/devlog/from-zero-to-steam/",
+    "/artwork/",
+    "/music/",
+    "/fonts/",
+    "/subscribe/",
+]
+
+
+@pytest.mark.parametrize("path", PAGES_FOR_FONTS)
+def test_no_text_below_12px(page, base_url, path):
+    """Body text shouldn't render below 12px (~0.75rem). Captions/badges OK above 11px."""
+    page.goto(f"{base_url}{path}", wait_until="domcontentloaded")
+    page.wait_for_load_state("networkidle")
+
+    # Find any visible text element with computed font-size below 12px
+    too_small = page.evaluate("""
+        () => {
+            const tooSmall = [];
+            const all = document.querySelectorAll('p, span, time, a, li, h1, h2, h3, h4, h5, h6, button, label, input');
+            for (const el of all) {
+                if (!el.offsetWidth && !el.offsetHeight) continue;  // hidden
+                const fontSize = parseFloat(getComputedStyle(el).fontSize);
+                if (fontSize < 12 && el.textContent.trim()) {
+                    tooSmall.push({
+                        tag: el.tagName,
+                        cls: el.className,
+                        size: fontSize,
+                        text: el.textContent.trim().slice(0, 40),
+                    });
+                }
+            }
+            return tooSmall;
+        }
+    """)
+    assert too_small == [], f"Text below 12px on {path}: {too_small}"
+
+
+@pytest.mark.parametrize("path", ["/", "/devlog/chronicles/", "/devlog/from-zero-to-steam/", "/artwork/", "/subscribe/"])
+def test_heading_hierarchy(page, base_url, path):
+    """Headings should not skip levels (e.g., h1 → h3)."""
+    page.goto(f"{base_url}{path}", wait_until="domcontentloaded")
+    page.wait_for_load_state("networkidle")
+
+    headings = page.evaluate("""
+        () => Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'))
+            .map(h => parseInt(h.tagName[1]))
+    """)
+    # Verify no level is skipped (each next level is at most prev+1)
+    prev = 0
+    for level in headings:
+        assert level <= prev + 1 or prev == 0, \
+            f"Heading hierarchy skip on {path}: went from h{prev} to h{level}. Headings: {headings}"
+        prev = level
+
+
+def test_no_horizontal_scroll_mobile(browser, base_url):
+    """Pages should not have horizontal scroll on mobile viewport."""
+    context = browser.new_context(viewport={"width": 375, "height": 667})
+    p = context.new_page()
+    try:
+        for path in ["/", "/devlog/chronicles/", "/devlog/from-zero-to-steam/", "/music/", "/subscribe/"]:
+            p.goto(f"{base_url}{path}", wait_until="domcontentloaded")
+            p.wait_for_load_state("networkidle")
+            scroll_width = p.evaluate("document.documentElement.scrollWidth")
+            client_width = p.evaluate("document.documentElement.clientWidth")
+            # Allow 2px tolerance for sub-pixel rendering
+            assert scroll_width <= client_width + 2, \
+                f"Horizontal scroll on {path}: scrollWidth={scroll_width}, clientWidth={client_width}"
+    finally:
+        context.close()

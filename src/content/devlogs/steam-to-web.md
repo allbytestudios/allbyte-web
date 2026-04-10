@@ -1,5 +1,5 @@
 ---
-title: "Steam to Web: The Day Job Meets the Dream"
+title: "From Steam to Web: The Day Job Meets the Dream"
 description: "Why I'm spending my evenings building enterprise-grade infrastructure around a tactical RPG — and the moment I realized it might actually work."
 pubDate: 2026-04-10T23:00:00Z
 category: "technical"
@@ -40,7 +40,7 @@ Both of those are things AI can also help with. But not for free. They each dema
 
 ["Zero to Steam"](/devlog/from-zero-to-steam/) was the first chapter — four years of grinding the game itself into a shape worth shipping. Combat, isometric grids, dialogue, save system, controller support, the whole 90s tactical RPG vocabulary. The endgame of that era was the demo on Steam.
 
-"Steam to Web" is the conclusion I came to after wracking my head on a different question: *OK, AI can write my code now — what do I actually do with that?* It started as "well, I have four years of a passion project sitting here, how do I aim AI at it?" Which became "I know what I'd need to make AI useful at this scale — a validation loop, fast enough to keep up with how fast the code is generated." Which became "the validation loop needs Playwright, but Playwright lives in browsers, and heavy browser games are notoriously difficult to build." And then — wait. "Difficult to build" was where I started… Claude.
+"From Steam to Web" is the conclusion I came to after wracking my head on a different question: *OK, AI can write my code now — what do I actually do with that?* It started as "well, I have four years of a passion project sitting here, how do I aim AI at it?" Which became "I know what I'd need to make AI useful at this scale — a validation loop, fast enough to keep up with how fast the code is generated." Which became "the validation loop needs Playwright, but Playwright lives in browsers, and heavy browser games are notoriously difficult to build." And then — wait. "Difficult to build" was where I started… Claude.
 
 Chronicles of Nesis is the test case because it's four years of a codebase I care about, and because Godot exports to browser — which means Playwright can drive it. The open question is whether the practices that scale a large-scale system scale *down* to one person. I don't know yet. That's the experiment.
 

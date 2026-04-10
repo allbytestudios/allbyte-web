@@ -9,6 +9,59 @@
   let loginError = $state("");
   let loginLoading = $state(false);
   let pendingAction = $state<string | null>(null);
+  let modalEl = $state<HTMLDivElement | null>(null);
+  let lastFocusedTrigger: HTMLElement | null = null;
+
+  function openLoginModal(e?: Event) {
+    pendingAction = null;
+    lastFocusedTrigger = (e?.currentTarget as HTMLElement) || (document.activeElement as HTMLElement);
+    showLoginModal = true;
+  }
+
+  function closeLoginModal() {
+    showLoginModal = false;
+    if (lastFocusedTrigger) {
+      setTimeout(() => lastFocusedTrigger?.focus(), 0);
+    }
+  }
+
+  $effect(() => {
+    if (!showLoginModal || !modalEl) return;
+    // Move focus to first focusable element in modal
+    setTimeout(() => {
+      const first = modalEl?.querySelector<HTMLElement>(
+        'input, button, [tabindex]:not([tabindex="-1"])'
+      );
+      first?.focus();
+    }, 0);
+
+    function handleKey(e: KeyboardEvent) {
+      if (!modalEl) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeLoginModal();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = Array.from(
+        modalEl.querySelectorAll<HTMLElement>(
+          'input:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  });
   let demoHovered = $state(false);
   let playMode = $state(false);
   let gameUrl = $state("");
@@ -119,6 +172,7 @@
   function handleSubscribeClick(e: Event) {
     if (!auth.currentUser) {
       e.preventDefault();
+      lastFocusedTrigger = e.currentTarget as HTMLElement;
       pendingAction = "subscribe";
       showLoginModal = true;
     }
@@ -218,7 +272,7 @@
           {#if auth.currentUser}
             <button class="header-btn login-btn" onclick={logout}><span>Sign</span><span>Out</span></button>
           {:else}
-            <button class="header-btn login-btn" onclick={() => { pendingAction = null; showLoginModal = true; }}><span>Log In</span><span>Sign Up</span></button>
+            <button class="header-btn login-btn" onclick={openLoginModal}><span>Log In</span><span>Sign Up</span></button>
           {/if}
         </div>
         {#if auth.currentUser}
@@ -233,31 +287,38 @@
   </header>
 
   {#if showLoginModal}
-    <div class="modal-overlay" onclick={() => showLoginModal = false}>
-      <div class="modal" onclick={(e) => e.stopPropagation()}>
-        <button class="modal-close" onclick={() => showLoginModal = false}>&times;</button>
+    <div class="modal-overlay" onclick={closeLoginModal} role="presentation">
+      <div class="modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="login-modal-title" bind:this={modalEl}>
+        <h2 id="login-modal-title" class="visually-hidden">{loginMode === "signin" ? "Sign In" : "Create Account"}</h2>
+        <button class="modal-close" onclick={closeLoginModal} aria-label="Close login dialog">&times;</button>
 
-        <div class="modal-tabs">
-          <button class="modal-tab" class:active={loginMode === "signin"} onclick={() => loginMode = "signin"}>Sign In</button>
-          <button class="modal-tab" class:active={loginMode === "signup"} onclick={() => loginMode = "signup"}>Create Account</button>
+        <div class="modal-tabs" role="tablist">
+          <button class="modal-tab" class:active={loginMode === "signin"} onclick={() => loginMode = "signin"} role="tab" aria-selected={loginMode === "signin"}>Sign In</button>
+          <button class="modal-tab" class:active={loginMode === "signup"} onclick={() => loginMode = "signup"} role="tab" aria-selected={loginMode === "signup"}>Create Account</button>
         </div>
 
         {#if loginError}
-          <p class="login-error">{loginError}</p>
+          <p class="login-error" role="alert">{loginError}</p>
         {/if}
 
         {#if loginMode === "signin"}
           <form class="login-form" onsubmit={handleLogin}>
-            <input type="email" name="email" placeholder="Email" class="login-input" required />
-            <input type="password" name="password" placeholder="Password" class="login-input" required />
+            <label for="signin-email" class="login-label">Email</label>
+            <input id="signin-email" type="email" name="email" placeholder="you@example.com" class="login-input" required autocomplete="email" />
+            <label for="signin-password" class="login-label">Password</label>
+            <input id="signin-password" type="password" name="password" placeholder="Your password" class="login-input" required autocomplete="current-password" />
             <button type="submit" class="submit-btn" disabled={loginLoading}>{loginLoading ? "Signing in..." : "Sign In"}</button>
           </form>
         {:else}
           <form class="login-form" onsubmit={handleSignup}>
-            <input type="email" name="email" placeholder="Email" class="login-input" required />
-            <input type="text" name="username" placeholder="Username" class="login-input" required />
-            <input type="password" name="password" placeholder="Password (min 8 characters)" class="login-input" required minlength="8" />
-            <input type="password" name="confirm" placeholder="Confirm Password" class="login-input" required />
+            <label for="signup-email" class="login-label">Email</label>
+            <input id="signup-email" type="email" name="email" placeholder="you@example.com" class="login-input" required autocomplete="email" />
+            <label for="signup-username" class="login-label">Username</label>
+            <input id="signup-username" type="text" name="username" placeholder="Choose a username" class="login-input" required autocomplete="username" />
+            <label for="signup-password" class="login-label">Password</label>
+            <input id="signup-password" type="password" name="password" placeholder="Min 8 characters" class="login-input" required minlength="8" autocomplete="new-password" />
+            <label for="signup-confirm" class="login-label">Confirm Password</label>
+            <input id="signup-confirm" type="password" name="confirm" placeholder="Re-enter password" class="login-input" required autocomplete="new-password" />
             <button type="submit" class="submit-btn" disabled={loginLoading}>{loginLoading ? "Creating account..." : "Create Account"}</button>
           </form>
         {/if}
@@ -815,7 +876,7 @@
     border: none;
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.15rem;
-    color: rgba(224, 231, 255, 0.4);
+    color: rgba(224, 231, 255, 0.65);
     padding: 0.75rem 0;
     cursor: pointer;
     transition: all 0.2s;
@@ -845,23 +906,45 @@
     gap: 0.75rem;
   }
 
+  .login-label {
+    font-family: "Courier New", monospace;
+    font-size: 0.85rem;
+    color: rgba(224, 231, 255, 0.85);
+    margin-bottom: -0.4rem;
+  }
+
   .login-input {
     font-family: "Courier New", monospace;
     font-size: 0.95rem;
     padding: 0.6rem 0.75rem;
+    min-height: 44px;
     background: #0d1117;
-    border: 1px solid rgba(167, 243, 208, 0.15);
+    border: 1px solid rgba(167, 243, 208, 0.3);
     color: #e0e7ff;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
-  .login-input:focus {
+  .login-input:focus,
+  .login-input:focus-visible {
     border-color: var(--engine-accent);
+    box-shadow: 0 0 0 2px rgba(167, 243, 208, 0.3);
   }
 
   .login-input::placeholder {
-    color: rgba(224, 231, 255, 0.3);
+    color: rgba(224, 231, 255, 0.45);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .submit-btn {
@@ -884,7 +967,7 @@
     text-align: center;
     margin: 1.25rem 0;
     position: relative;
-    color: rgba(224, 231, 255, 0.3);
+    color: rgba(224, 231, 255, 0.65);
     font-size: 0.85rem;
   }
 
@@ -1367,7 +1450,7 @@
     padding: 1.5rem 1rem;
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 0.9rem;
-    color: rgba(224, 231, 255, 0.4);
+    color: rgba(224, 231, 255, 0.65);
     display: flex;
     flex-direction: column;
     gap: 0.25rem;

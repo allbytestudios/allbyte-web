@@ -44,8 +44,36 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* === Accessibility: Focus Indicators === */
+/* Visible focus ring for keyboard users on all interactive elements.
+   Uses :focus-visible so mouse clicks don't show the ring. */
+*:focus-visible {
+  outline: 2px solid var(--engine-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Heart-themed pages get a darker focus ring for contrast against light bg */
+.heart-bg *:focus-visible,
+.heart-card:focus-visible,
+[class*="heart"]:focus-visible {
+  outline-color: var(--heart-accent);
+}
+
 /* === Utility Classes === */
 .font-custom {
   font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 

@@ -145,6 +145,28 @@ export interface RecentFinish {
   finished_at: string;
 }
 
+export type AgentRole = "main" | "subagent" | string;
+export type AgentStatus = "active" | "idle" | "stale" | string;
+
+export interface AgentEntry {
+  agent_id: string;
+  role: AgentRole;
+  label: string;
+  started_at?: string | null;
+  last_heartbeat?: string | null;
+  current_task?: string | null;
+  tier_focus?: string | null;
+  status: AgentStatus;
+}
+
+export interface AgentRoster {
+  count_live: number;
+  count_stale: number;
+  by_role: Record<string, number>;
+  by_tier: Record<string, number>;
+  roster: AgentEntry[];
+}
+
 export interface TestRunStatus {
   schema_version: number;
   state: "idle" | "running" | "finished" | "aborted";
@@ -154,6 +176,8 @@ export interface TestRunStatus {
   workers: WorkerLane[];
   progress: RunProgress | null;
   recent_finishes: RecentFinish[];
+  /** Optional — live CON agent roster. Only present after the plugin writes it. */
+  agents?: AgentRoster | null;
 }
 
 // --- schema guard ---

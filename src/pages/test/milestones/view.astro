@@ -1,0 +1,22 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Footer from "../../../components/Footer.astro";
+import MilestoneDetailApp from "../../../components/MilestoneDetailApp.svelte";
+---
+
+<BaseLayout
+  title="Milestone — AllByte Studios"
+  description="Release milestone detail from the Chronicles of Nesis test dashboard."
+>
+  <main class="mview-page">
+    <MilestoneDetailApp client:only="svelte" />
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .mview-page {
+    background: #0a0e17;
+    min-height: calc(100vh - 160px);
+  }
+</style>

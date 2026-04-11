@@ -133,6 +133,7 @@ for (const file of rootFiles) {
 const chroniclesRoot =
   process.env.CHRONICLES_DIR || "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis";
 const chroniclesIndex = join(chroniclesRoot, "test_index.json");
+const chroniclesRoadmap = join(chroniclesRoot, "test_roadmap.json");
 const chroniclesResults = join(chroniclesRoot, "test_results");
 if (existsSync(chroniclesIndex)) {
   run(
@@ -142,6 +143,15 @@ if (existsSync(chroniclesIndex)) {
       `--content-type "application/json"`
   );
   invalidationPaths.add("/test-snapshot/test_index.json");
+  if (existsSync(chroniclesRoadmap)) {
+    run(
+      `aws s3 cp "${chroniclesRoadmap}" s3://${bucket}/test-snapshot/test_roadmap.json ` +
+        `--region ${region} ` +
+        `--cache-control "public, max-age=30, must-revalidate" ` +
+        `--content-type "application/json"`
+    );
+    invalidationPaths.add("/test-snapshot/test_roadmap.json");
+  }
   if (existsSync(chroniclesResults)) {
     // Sync test_results/ — screenshots, logs, status snapshot. Short cache so
     // the client picks up fresh status.json within a minute of upload.

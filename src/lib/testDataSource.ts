@@ -7,6 +7,8 @@
 
 import type { TestIndex, TestRunStatus } from "./testIndex";
 import { assertSupportedSchema } from "./testIndex";
+import type { TestingRoadmap } from "./testingRoadmap";
+import { assertSupportedRoadmapSchema } from "./testingRoadmap";
 
 export const TEST_DATA_BASE = import.meta.env.DEV ? "/test-data" : "/test-snapshot";
 
@@ -45,4 +47,25 @@ export async function fetchStatus(signal?: AbortSignal): Promise<TestRunStatus |
     throw new Error(`test_run_status.json fetch failed: ${res.status}`);
   }
   return (await res.json()) as TestRunStatus;
+}
+
+/**
+ * Fetch the testing roadmap. Returns null if the file doesn't exist (roadmap
+ * hasn't been emitted yet or the dashboard is running against a dataset that
+ * predates it). Any other error throws.
+ */
+export async function fetchRoadmap(
+  signal?: AbortSignal
+): Promise<TestingRoadmap | null> {
+  const res = await fetch(`${TEST_DATA_BASE}/test_roadmap.json`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`test_roadmap.json fetch failed: ${res.status}`);
+  }
+  const data = (await res.json()) as TestingRoadmap;
+  assertSupportedRoadmapSchema(data);
+  return data;
 }

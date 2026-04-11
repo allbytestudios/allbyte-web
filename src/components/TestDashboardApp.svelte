@@ -1,13 +1,17 @@
 <script lang="ts">
   import type { TestIndex, TestRunStatus, RunnerTier } from "../lib/testIndex";
+  import type { TestingRoadmap } from "../lib/testingRoadmap";
   import { TIER_META, buildLeafTree } from "../lib/testIndex";
-  import { fetchIndex, fetchStatus } from "../lib/testDataSource";
+  import { fetchIndex, fetchStatus, fetchRoadmap } from "../lib/testDataSource";
   import TestLeafNode from "./TestLeafNode.svelte";
   import TestStatusCard from "./TestStatusCard.svelte";
+  import MilestoneStrip from "./MilestoneStrip.svelte";
+  import BlockerPanel from "./BlockerPanel.svelte";
   import { onMount, onDestroy } from "svelte";
 
   let index = $state<TestIndex | null>(null);
   let status = $state<TestRunStatus | null>(null);
+  let roadmap = $state<TestingRoadmap | null>(null);
   let loadError = $state<string | null>(null);
 
   // UI state
@@ -63,6 +67,14 @@
     }
   }
 
+  async function loadRoadmap() {
+    try {
+      roadmap = await fetchRoadmap();
+    } catch {
+      // Non-fatal: milestone strip hides itself
+    }
+  }
+
   function scheduleStatus() {
     if (pollTimer) clearTimeout(pollTimer);
     // Tighten to 500ms during an active run; otherwise 2s foreground / 30s background
@@ -82,12 +94,14 @@
     if (indexTimer) clearTimeout(indexTimer);
     indexTimer = setTimeout(async () => {
       await loadIndex();
+      await loadRoadmap();
       scheduleIndex();
     }, 30000);
   }
 
   onMount(() => {
     loadIndex();
+    loadRoadmap();
     loadStatus().then(() => {
       scheduleStatus();
     });
@@ -156,6 +170,12 @@
 
     <!-- Live run status card (only renders if status file exists) -->
     <TestStatusCard {status} />
+
+    <!-- Milestone strip (only renders if roadmap file exists) -->
+    <MilestoneStrip {roadmap} {index} />
+
+    <!-- Blocker panel (only renders if known_blockers[] is non-empty) -->
+    <BlockerPanel {roadmap} />
 
     <!-- Filter bar -->
     <div class="filters">

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TestRunStatus } from "../lib/testIndex";
+  import type { TestRunStatus, AgentEntry } from "../lib/testIndex";
   import { formatRelativeTime, formatDurationMs } from "../lib/testIndex";
 
   interface Props {
@@ -16,6 +16,14 @@
     const r = Math.round(s - m * 60);
     return `${m}m ${r}s`;
   });
+
+  let roster = $derived(status?.agents?.roster ?? []);
+  let agentCount = $derived(status?.agents?.count_live ?? 0);
+
+  function agentHeartbeatLabel(a: AgentEntry): string {
+    if (!a.last_heartbeat) return "";
+    return formatRelativeTime(a.last_heartbeat);
+  }
 </script>
 
 {#if status}
@@ -57,6 +65,35 @@
               <span class="completed">{w.tests_completed} done</span>
               {#if w.last_outcome}
                 <span class="last last-{w.last_outcome}">{w.last_outcome}</span>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
+      {#if roster.length > 0}
+        <div class="agents">
+          <div class="agents-header">
+            <span class="agents-label">CON agents ({agentCount} live)</span>
+            {#if status.agents?.by_tier}
+              {#each Object.entries(status.agents.by_tier) as [tier, count]}
+                <span class="tier-pill">{tier}: {count}</span>
+              {/each}
+            {/if}
+          </div>
+          {#each roster as agent (agent.agent_id)}
+            <div class="agent-lane agent-{agent.status}">
+              <span class="agent-role role-{agent.role}">{agent.role}</span>
+              <span class="agent-label">{agent.label}</span>
+              {#if agent.current_task}
+                <span class="agent-task">→ {agent.current_task}</span>
+              {:else}
+                <span class="agent-task idle">(no task)</span>
+              {/if}
+              {#if agent.tier_focus}
+                <span class="agent-tier">{agent.tier_focus}</span>
+              {/if}
+              {#if agent.last_heartbeat}
+                <span class="agent-hb" title={agent.last_heartbeat}>♥ {agentHeartbeatLabel(agent)}</span>
               {/if}
             </div>
           {/each}
@@ -208,4 +245,90 @@
   .last-passed { color: #a7f3d0; background: rgba(167, 243, 208, 0.1); }
   .last-failed { color: #fca5a5; background: rgba(248, 113, 113, 0.1); }
   .last-xfailed { color: #fcd34d; background: rgba(251, 191, 36, 0.1); }
+
+  /* CON agents roster */
+  .agents {
+    margin-top: 0.6rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed rgba(167, 243, 208, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .agents-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.2rem;
+  }
+  .agents-label {
+    font-size: 0.72rem;
+    color: #a7f3d0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .tier-pill {
+    font-size: 0.65rem;
+    color: #9ca3af;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.05rem 0.35rem;
+    border-radius: 2px;
+  }
+  .agent-lane {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto auto;
+    gap: 0.55rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 3px;
+    font-size: 0.75rem;
+    align-items: center;
+  }
+  .agent-lane.agent-active {
+    background: rgba(167, 243, 208, 0.05);
+  }
+  .agent-lane.agent-stale {
+    opacity: 0.55;
+  }
+  .agent-role {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.05rem 0.4rem;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .role-main {
+    color: #fcd34d;
+    background: rgba(251, 191, 36, 0.12);
+  }
+  .role-subagent {
+    color: #a7f3d0;
+    background: rgba(167, 243, 208, 0.1);
+  }
+  .agent-label {
+    color: #e5e7eb;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .agent-task {
+    color: #d1d5db;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .agent-task.idle { color: #6b7280; font-style: italic; }
+  .agent-tier {
+    font-size: 0.65rem;
+    color: #9ca3af;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.05rem 0.35rem;
+    border-radius: 2px;
+  }
+  .agent-hb {
+    font-size: 0.68rem;
+    color: #6b7280;
+    cursor: help;
+  }
 </style>

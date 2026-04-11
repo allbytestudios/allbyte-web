@@ -17,7 +17,9 @@
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${y}-${m}-${day} ${hh}:${mm}`;
   })();
 
   let testSuiteEnabled = $derived(isTierAtLeast(auth.currentUser, "hero"));
@@ -389,12 +391,6 @@
     </div>
   {:else}
     <div class="demo-row" style="position: relative;" onclick={launchGame}>
-      {#if buildDateLabel}
-        <span class="build-date" title={`Built ${buildDateLabel}`}>
-          <span class="build-label">BUILD</span>
-          <span class="build-value">{buildDateLabel}</span>
-        </span>
-      {/if}
       <div class="overlay-badges">
         <MilestoneBadge />
         <TestSuitePill
@@ -411,6 +407,9 @@
         </div>
       </div>
       <div class="demo-actions">
+        {#if buildDateLabel}
+          <span class="build-date" title={`Built ${buildDateLabel}`}>Built {buildDateLabel}</span>
+        {/if}
         <span class="demo-cta">Play Now v{gameVersion.version} (No Download) &#8594;</span>
         <a href="https://store.steampowered.com/app/3900010/The_Chronicles_of_Nesis/" class="steam-btn" target="_blank" rel="noopener noreferrer" onclick={(e) => e.stopPropagation()}>
           <svg class="steam-icon" viewBox="0 0 256 259" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M127.779 0C57.852 0 .469 55.394.013 124.609L68.95 153.16a35.615 35.615 0 0 1 20.15-6.213l30.15-43.635v-.613c0-26.36 21.457-47.817 47.818-47.817 26.36 0 47.818 21.457 47.818 47.817 0 26.361-21.457 47.818-47.818 47.818h-1.105l-42.926 30.658a35.796 35.796 0 0 1-35.638 37.149 35.87 35.87 0 0 1-34.992-28.333L1.592 168.53C17.2 220.124 65.89 258.18 123.578 258.18c70.692 0 128.003-57.31 128.003-128.003C251.581 59.487 198.47 0 127.779 0zM80.36 208.09l-15.082-6.232a26.887 26.887 0 0 0 14.49 14.088 26.941 26.941 0 0 0 35.26-14.468 26.796 26.796 0 0 0 .001-20.624 26.864 26.864 0 0 0-14.467-14.467l15.594 6.446a21.556 21.556 0 0 1-11.392 41.29 21.56 21.56 0 0 1-24.404-6.033zm114.007-57.39c0-17.568-14.29-31.858-31.858-31.858-17.569 0-31.858 14.29-31.858 31.858 0 17.569 14.29 31.858 31.858 31.858 17.569 0 31.858-14.29 31.858-31.858zm-55.737-.098c0-13.19 10.706-23.896 23.897-23.896 13.19 0 23.896 10.706 23.896 23.896 0 13.19-10.706 23.897-23.896 23.897-13.191 0-23.897-10.706-23.897-23.897z"/></svg>
@@ -1144,36 +1143,20 @@
     letter-spacing: 0.05em;
   }
 
-  /* Top-left build date label — small, informational, matches the overlay-
-     badges aesthetic on the right side. */
+  /* Build date label — bottom-left of the demo-actions row, mirrored
+     from the Steam wishlist button on the right. Same font + color as
+     the Play Now CTA so they read as a matched pair. */
   .build-date {
     position: absolute;
-    top: 0.6rem;
-    left: 0.6rem;
-    z-index: 20;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.6rem;
-    background: rgba(10, 14, 23, 0.92);
-    border: 1px solid rgba(167, 243, 208, 0.25);
-    border-radius: 4px;
-    font-family: "Courier New", monospace;
-    font-size: 0.75rem;
-    color: #e5e7eb;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    color: var(--engine-accent);
+    letter-spacing: 0.02em;
     cursor: help;
-  }
-  .build-label {
-    color: #6b7280;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    font-size: 0.75rem;
-  }
-  .build-value {
-    color: #a7f3d0;
-    font-weight: 600;
+    white-space: nowrap;
   }
 
   /* Thin overlay badges in the top-right of the demo button */

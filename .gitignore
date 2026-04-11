@@ -32,6 +32,10 @@ public/fonts/ModernGoth.otf
 public/tier-initiate.png
 public/tier-none.png
 
+# Godot HTML5 export (uploaded to S3 separately via `npm run push-assets`)
+public/godot/*
+!public/godot/.gitkeep
+
 # OS
 .DS_Store
 Thumbs.db

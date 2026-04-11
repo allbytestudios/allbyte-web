@@ -70,8 +70,7 @@
   let gameIframe = $state<HTMLIFrameElement | null>(null);
 
   function launchGame() {
-    const isDev = window.location.hostname === "localhost";
-    gameUrl = isDev ? "http://localhost:8060/index.html" : "/godot/index.html";
+    gameUrl = "/godot/index.html";
     playMode = true;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handlePlayKey);

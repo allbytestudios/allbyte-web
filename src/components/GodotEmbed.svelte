@@ -2,15 +2,9 @@
   let loading = $state(true);
   let error = $state("");
 
-  // In dev, load from the local CORS server (docker container on 8060)
-  // In prod, load from /godot/ (served by CloudFront with COOP/COEP headers)
+  // Served from /godot/ in both dev and prod. Astro dev sets the required
+  // COOP/COEP headers via vite.server.headers; CloudFront sets them in prod.
   let gameUrl = $state("/godot/index.html");
-
-  $effect(() => {
-    if (window.location.hostname === "localhost") {
-      gameUrl = "http://localhost:8060/index.html";
-    }
-  });
 
   function onLoad() {
     loading = false;
@@ -18,9 +12,7 @@
 
   function onError() {
     loading = false;
-    error = isDev
-      ? "Could not connect to game server. Is the CORS server running on port 8060?"
-      : "Game failed to load.";
+    error = "Game failed to load.";
   }
 </script>
 

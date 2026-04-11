@@ -1,0 +1,22 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Footer from "../../components/Footer.astro";
+import TestDetailApp from "../../components/TestDetailApp.svelte";
+---
+
+<BaseLayout
+  title="Test Detail — AllByte Studios"
+  description="Details for a single test from the Chronicles of Nesis test suite."
+>
+  <main class="view-page">
+    <TestDetailApp client:only="svelte" />
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .view-page {
+    background: #0a0e17;
+    min-height: calc(100vh - 160px);
+  }
+</style>

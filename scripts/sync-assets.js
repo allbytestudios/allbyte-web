@@ -16,14 +16,55 @@ if (!existsSync(godot)) {
   process.exit(0);
 }
 
-// --- 1. Extract game version ---
-const versionSource = readFileSync(join(godot, manifest.versionFile), "utf-8");
-const versionMatch = versionSource.match(new RegExp(manifest.versionRegex));
-const version = versionMatch ? versionMatch[1] : "unknown";
-console.log(`Version: ${version}`);
+// --- 1. Extract game version + build date ---
+// Prefer the Chronicles project (where CON Claude actively bumps the version
+// on each web build). Fall back to the legacy TacticalTestDev godotProject.
+let version = "unknown";
+let buildDate = null;
+
+function readVersionFrom(projectPath, versionFile, versionRegex) {
+  const abs = join(projectPath, versionFile);
+  if (!existsSync(abs)) return null;
+  const src = readFileSync(abs, "utf-8");
+  const m = src.match(new RegExp(versionRegex));
+  return m ? m[1] : null;
+}
+
+if (manifest.chroniclesProject && existsSync(manifest.chroniclesProject)) {
+  const v = readVersionFrom(
+    manifest.chroniclesProject,
+    manifest.chroniclesVersionFile || manifest.versionFile,
+    manifest.versionRegex
+  );
+  if (v) {
+    version = v;
+    console.log(`Version (chronicles): ${version}`);
+  }
+  // Build date from the mtime of the web export file, if present.
+  if (manifest.chroniclesWebExportFile) {
+    const exportPath = join(manifest.chroniclesProject, manifest.chroniclesWebExportFile);
+    if (existsSync(exportPath)) {
+      buildDate = statSync(exportPath).mtime.toISOString();
+      console.log(`Build date: ${buildDate} (${manifest.chroniclesWebExportFile})`);
+    } else {
+      console.log(`No web export at ${exportPath}, build date will be null.`);
+    }
+  }
+}
+
+if (version === "unknown") {
+  const v = readVersionFrom(godot, manifest.versionFile, manifest.versionRegex);
+  if (v) {
+    version = v;
+    console.log(`Version (fallback): ${version}`);
+  }
+}
 
 mkdirSync(join(ROOT, "src/data"), { recursive: true });
-writeFileSync(join(ROOT, "src/data/game-version.json"), JSON.stringify({ version }, null, 2));
+writeFileSync(
+  join(ROOT, "src/data/game-version.json"),
+  JSON.stringify({ version, buildDate }, null, 2)
+);
 
 // --- 2. Sync music ---
 const musicDir = join(godot, manifest.music.sourceDir);

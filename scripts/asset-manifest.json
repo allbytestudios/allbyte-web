@@ -2,6 +2,10 @@
   "godotProject": "C:/Users/drew/Documents/GitHub/TacticalTestDev",
   "versionFile": "Autoload/World.gd",
   "versionRegex": "var version := \"(.+?)\"",
+  "_chroniclesNote": "CON Claude bumps the version in Chronicles of Nesis; sync reads from here first and falls back to godotProject if missing.",
+  "chroniclesProject": "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis",
+  "chroniclesVersionFile": "Autoload/World.gd",
+  "chroniclesWebExportFile": "WebBootstrap/export/index.pck",
   "music": {
     "sourceDir": "Music",
     "preferFormat": "ogg",

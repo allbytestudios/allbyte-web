@@ -9,6 +9,17 @@
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   import { isTierAtLeast, isAdmin } from "../lib/tier";
 
+  const buildDateLabel = (() => {
+    const raw = (gameVersion as { buildDate?: string | null }).buildDate;
+    if (!raw) return null;
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  })();
+
   let testSuiteEnabled = $derived(isTierAtLeast(auth.currentUser, "hero"));
   let testSuiteTooltip = $derived.by(() => {
     if (!auth.currentUser) {
@@ -378,6 +389,12 @@
     </div>
   {:else}
     <div class="demo-row" style="position: relative;" onclick={launchGame}>
+      {#if buildDateLabel}
+        <span class="build-date" title={`Built ${buildDateLabel}`}>
+          <span class="build-label">BUILD</span>
+          <span class="build-value">{buildDateLabel}</span>
+        </span>
+      {/if}
       <div class="overlay-badges">
         <MilestoneBadge />
         <TestSuitePill
@@ -1125,6 +1142,38 @@
     font-size: 2.5rem;
     color: rgba(224, 231, 255, 0.4);
     letter-spacing: 0.05em;
+  }
+
+  /* Top-left build date label — small, informational, matches the overlay-
+     badges aesthetic on the right side. */
+  .build-date {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    background: rgba(10, 14, 23, 0.92);
+    border: 1px solid rgba(167, 243, 208, 0.25);
+    border-radius: 4px;
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    color: #e5e7eb;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    cursor: help;
+  }
+  .build-label {
+    color: #6b7280;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    font-size: 0.75rem;
+  }
+  .build-value {
+    color: #a7f3d0;
+    font-weight: 600;
   }
 
   /* Thin overlay badges in the top-right of the demo button */

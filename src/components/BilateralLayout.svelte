@@ -1172,23 +1172,21 @@
   }
   /* TestSuitePill styles live in TestSuitePill.svelte itself. */
 
-  /* Mobile / narrow: pop the badges OUT of the demo row so they sit ABOVE it
-     side-by-side, clearing the demo button's title / Coming Soon / Play Now
-     centerline. The .demo-row reserves vertical space so the absolute-positioned
-     overlay doesn't collide with whatever sits above the demo-section. */
+  /* Mobile / narrow: drop the absolute positioning entirely. The badges
+     flow naturally at the TOP of .demo-row as a side-by-side row, pushing
+     the demo image down inside the row instead of floating above where
+     they'd collide with the header (sign-in buttons, etc). The .demo-overlay
+     "Coming Soon" still covers the image because it's absolute inset:0,
+     but the badges sit above it via z-index. */
   @media (max-width: 900px) {
-    .demo-row {
-      margin-top: 5rem;
-    }
     .overlay-badges {
-      top: auto;
-      right: 0.75rem;
-      left: 0.75rem;
-      bottom: calc(100% + 0.5rem);
+      position: static;
       flex-direction: row;
       align-items: stretch;
       justify-content: center;
       gap: 0.5rem;
+      padding: 0.55rem 0.55rem 0.25rem;
+      width: auto;
     }
     .overlay-badges > :global(*) {
       flex: 1 1 0;

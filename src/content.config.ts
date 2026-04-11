@@ -8,7 +8,7 @@ const devlogs = defineCollection({
     title: z.string(),
     description: z.string(),
     pubDate: z.coerce.date(),
-    category: z.enum(["technical", "creative"]),
+    category: z.enum(["engineering", "workflow", "strategy", "narrative", "craft"]),
     devlog: z.enum(["chronicles", "godot-and-claude", "studio"]),
     tags: z.array(z.string()).default([]),
     heroImage: z.string().optional(),

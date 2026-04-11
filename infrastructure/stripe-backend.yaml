@@ -26,6 +26,10 @@ Parameters:
   FromEmail:
     Type: String
     Default: notifications@allbyte.studio
+  InitialAdminEmail:
+    Type: String
+    Default: allbytestudios@gmail.com
+    Description: Email of the user to auto-promote to admin tier on next /auth/me call. One-time bootstrap; idempotent.
 
 Resources:
   # --- DynamoDB Tables ---
@@ -51,6 +55,8 @@ Resources:
           AttributeType: S
         - AttributeName: email
           AttributeType: S
+        - AttributeName: stripeCustomerId
+          AttributeType: S
       KeySchema:
         - AttributeName: userId
           KeyType: HASH
@@ -58,6 +64,12 @@ Resources:
         - IndexName: email-index
           KeySchema:
             - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: stripeCustomerId-index
+          KeySchema:
+            - AttributeName: stripeCustomerId
               KeyType: HASH
           Projection:
             ProjectionType: ALL
@@ -202,6 +214,7 @@ Resources:
                   "username": username,
                   "passwordHash": pw_hash,
                   "createdAt": now,
+                  "tier": "default",
               })
 
               jwt_secret = get_jwt_secret()
@@ -238,6 +251,7 @@ Resources:
           PRICE_INITIATE: !Ref StripePriceInitiate
           PRICE_HERO: !Ref StripePriceHero
           PRICE_LEGEND: !Ref StripePriceLegend
+          INITIAL_ADMIN_EMAIL: !Ref InitialAdminEmail
       Code:
         ZipFile: |
           import json
@@ -280,9 +294,12 @@ Resources:
               ).rstrip(b"=").decode()
               return f"{header}.{body}.{sig}"
 
-          def get_tier(stripe_customer_id):
+          INITIAL_ADMIN_EMAIL = os.environ.get("INITIAL_ADMIN_EMAIL", "").strip().lower()
+          VALID_TIERS = {"default", "initiate", "hero", "legend", "admin"}
+
+          def compute_tier_from_subscription(stripe_customer_id):
               if not stripe_customer_id:
-                  return None
+                  return "default"
               price_to_tier = {
                   os.environ["PRICE_INITIATE"]: "initiate",
                   os.environ["PRICE_HERO"]: "hero",
@@ -292,10 +309,43 @@ Resources:
                   resp = subs.get_item(Key={"customerId": stripe_customer_id})
                   item = resp.get("Item", {})
                   if item.get("status") == "active":
-                      return price_to_tier.get(item.get("priceId"))
+                      return price_to_tier.get(item.get("priceId"), "default")
               except Exception:
                   pass
-              return None
+              return "default"
+
+          def resolve_tier(user):
+              user_id = user["userId"]
+              email = (user.get("email") or "").strip().lower()
+              stored = user.get("tier")
+              if stored not in VALID_TIERS:
+                  computed = compute_tier_from_subscription(user.get("stripeCustomerId"))
+                  try:
+                      users.update_item(
+                          Key={"userId": user_id},
+                          UpdateExpression="SET #t = :t",
+                          ExpressionAttributeNames={"#t": "tier"},
+                          ExpressionAttributeValues={":t": computed},
+                      )
+                  except Exception:
+                      pass
+                  stored = computed
+              if (
+                  INITIAL_ADMIN_EMAIL
+                  and email == INITIAL_ADMIN_EMAIL
+                  and stored != "admin"
+              ):
+                  try:
+                      users.update_item(
+                          Key={"userId": user_id},
+                          UpdateExpression="SET #t = :t",
+                          ExpressionAttributeNames={"#t": "tier"},
+                          ExpressionAttributeValues={":t": "admin"},
+                      )
+                      stored = "admin"
+                  except Exception:
+                      pass
+              return stored
 
           def err(code, msg):
               return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
@@ -324,7 +374,7 @@ Resources:
               if not verify_password(password, user["passwordHash"]):
                   return err(401, "Invalid email or password")
 
-              tier = get_tier(user.get("stripeCustomerId"))
+              tier = resolve_tier(user)
               jwt_secret = get_jwt_secret()
               token = sign_jwt({
                   "sub": user["userId"],
@@ -365,6 +415,7 @@ Resources:
           PRICE_INITIATE: !Ref StripePriceInitiate
           PRICE_HERO: !Ref StripePriceHero
           PRICE_LEGEND: !Ref StripePriceLegend
+          INITIAL_ADMIN_EMAIL: !Ref InitialAdminEmail
       Code:
         ZipFile: |
           import json
@@ -377,6 +428,8 @@ Resources:
 
           users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
           subs = boto3.resource("dynamodb").Table(os.environ["SUBSCRIPTIONS_TABLE"])
+          INITIAL_ADMIN_EMAIL = os.environ.get("INITIAL_ADMIN_EMAIL", "").strip().lower()
+          VALID_TIERS = {"default", "initiate", "hero", "legend", "admin"}
 
           CORS = {
               "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
@@ -408,9 +461,10 @@ Resources:
                   return None
               return payload
 
-          def get_tier(stripe_customer_id):
+          def compute_tier_from_subscription(stripe_customer_id):
+              """Legacy fallback: compute tier by joining SubscriptionsTable."""
               if not stripe_customer_id:
-                  return None
+                  return "default"
               price_to_tier = {
                   os.environ["PRICE_INITIATE"]: "initiate",
                   os.environ["PRICE_HERO"]: "hero",
@@ -420,10 +474,53 @@ Resources:
                   resp = subs.get_item(Key={"customerId": stripe_customer_id})
                   item = resp.get("Item", {})
                   if item.get("status") == "active":
-                      return price_to_tier.get(item.get("priceId"))
+                      return price_to_tier.get(item.get("priceId"), "default")
               except Exception:
                   pass
-              return None
+              return "default"
+
+          def resolve_tier(user):
+              """Source-of-truth tier read with read-through migration + admin
+              bootstrap. Returns the canonical tier string (one of VALID_TIERS).
+              Writes back to UsersTable when migrating or promoting."""
+              user_id = user["userId"]
+              email = (user.get("email") or "").strip().lower()
+              stored = user.get("tier")
+
+              # Step 1: read-through migration. If no tier on the record yet,
+              # compute from the legacy Stripe subscription join and write back.
+              if stored not in VALID_TIERS:
+                  computed = compute_tier_from_subscription(user.get("stripeCustomerId"))
+                  try:
+                      users.update_item(
+                          Key={"userId": user_id},
+                          UpdateExpression="SET #t = :t",
+                          ExpressionAttributeNames={"#t": "tier"},
+                          ExpressionAttributeValues={":t": computed},
+                      )
+                  except Exception:
+                      pass
+                  stored = computed
+
+              # Step 2: admin bootstrap. If this user matches the seed email,
+              # promote to admin (idempotent — no-op when already admin).
+              if (
+                  INITIAL_ADMIN_EMAIL
+                  and email == INITIAL_ADMIN_EMAIL
+                  and stored != "admin"
+              ):
+                  try:
+                      users.update_item(
+                          Key={"userId": user_id},
+                          UpdateExpression="SET #t = :t",
+                          ExpressionAttributeNames={"#t": "tier"},
+                          ExpressionAttributeValues={":t": "admin"},
+                      )
+                      stored = "admin"
+                  except Exception:
+                      pass
+
+              return stored
 
           def err(code, msg):
               return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
@@ -447,7 +544,7 @@ Resources:
               if not user:
                   return err(401, "User not found")
 
-              tier = get_tier(user.get("stripeCustomerId"))
+              tier = resolve_tier(user)
 
               prefs = user.get("notificationPreferences")
               if prefs:
@@ -1248,6 +1345,7 @@ Resources:
                       "oauthProvider": provider,
                       "oauthId": oauth_id,
                       "createdAt": now,
+                      "tier": "default",
                   }
                   users.put_item(Item=user)
 
@@ -1431,6 +1529,10 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref SubscriptionsTable
+          USERS_TABLE: !Ref UsersTable
+          PRICE_INITIATE: !Ref StripePriceInitiate
+          PRICE_HERO: !Ref StripePriceHero
+          PRICE_LEGEND: !Ref StripePriceLegend
           STRIPE_SECRET_ARN: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:allbyte-studio/stripe-secret-key"
       Code:
         ZipFile: |
@@ -1442,7 +1544,48 @@ Resources:
           import boto3
 
           table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
+          users_table = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
           _webhook_secret_cache = {}
+
+          def tier_for(status, price_id):
+              """Map (subscription status, priceId) to a tier name."""
+              if status != "active":
+                  return "default"
+              price_to_tier = {
+                  os.environ.get("PRICE_INITIATE", ""): "initiate",
+                  os.environ.get("PRICE_HERO", ""): "hero",
+                  os.environ.get("PRICE_LEGEND", ""): "legend",
+              }
+              return price_to_tier.get(price_id, "default")
+
+          def update_user_tier_by_customer(customer_id, status, price_id):
+              """Reverse-lookup the user from stripeCustomerId via the GSI and
+              write the new tier to UsersTable. Idempotent — admin overrides
+              that aren't tied to a Stripe customer survive (they're a
+              different user). For users with an active subscription whose
+              admin lowered them, the next webhook touching their customer
+              clobbers the manual tier — documented behavior."""
+              if not customer_id:
+                  return
+              try:
+                  resp = users_table.query(
+                      IndexName="stripeCustomerId-index",
+                      KeyConditionExpression="stripeCustomerId = :c",
+                      ExpressionAttributeValues={":c": customer_id},
+                  )
+                  for u in resp.get("Items", []):
+                      # Don't clobber existing admins via subscription events.
+                      if u.get("tier") == "admin":
+                          continue
+                      new_tier = tier_for(status, price_id)
+                      users_table.update_item(
+                          Key={"userId": u["userId"]},
+                          UpdateExpression="SET #t = :t",
+                          ExpressionAttributeNames={"#t": "tier"},
+                          ExpressionAttributeValues={":t": new_tier},
+                      )
+              except Exception as e:
+                  print(f"[webhook] failed to update user tier for {customer_id}: {e}")
 
           def get_webhook_secret():
               if "key" not in _webhook_secret_cache:
@@ -1495,13 +1638,19 @@ Resources:
                       line_items = obj.get("display_items") or []
                       if not line_items:
                           line_items = obj.get("line_items", {}).get("data", [])
+                      price_id = ""
                       if line_items:
                           price = line_items[0].get("price", {})
                           if isinstance(price, dict):
-                              item["priceId"] = price.get("id", "")
+                              price_id = price.get("id", "")
                           elif isinstance(price, str):
-                              item["priceId"] = price
+                              price_id = price
+                          if price_id:
+                              item["priceId"] = price_id
                       table.put_item(Item=item)
+                      # Mirror the new tier into UsersTable so MeFunction can
+                      # read it directly without joining SubscriptionsTable.
+                      update_user_tier_by_customer(customer_id, "active", price_id)
 
                   elif mode == "payment":
                       table.put_item(Item={
@@ -1530,6 +1679,7 @@ Resources:
                               ":p": price_id,
                           },
                       )
+                      update_user_tier_by_customer(customer_id, status, price_id)
 
               return {"statusCode": 200, "body": "ok"}
 
@@ -1589,6 +1739,247 @@ Resources:
                   "statusCode": 200,
                   "headers": CORS,
                   "body": json.dumps(counts),
+              }
+
+  # --- Lambda: Admin — list all users (admin tier only) ---
+  AdminListUsersFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-admin-list-users
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "GET,OPTIONS",
+          }
+
+          _cache = {}
+          def get_jwt_secret():
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          # Sensitive fields stripped from the API response so the admin UI never
+          # sees password hashes / oauth IDs.
+          STRIP_FIELDS = {"passwordHash", "oauthId"}
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              auth = event.get("headers", {}).get("authorization", "")
+              if not auth.startswith("Bearer "):
+                  return err(401, "No token provided")
+
+              token = auth[7:]
+              jwt_secret = get_jwt_secret()
+              payload = verify_jwt(token, jwt_secret)
+              if not payload:
+                  return err(401, "Invalid or expired token")
+
+              # Verify the calling user is an admin.
+              actor_resp = users.get_item(Key={"userId": payload["sub"]})
+              actor = actor_resp.get("Item")
+              if not actor or actor.get("tier") != "admin":
+                  return err(403, "Admin tier required")
+
+              # Scan all users (small table — fine for now). Strip sensitive fields.
+              try:
+                  scan = users.scan()
+                  items = scan.get("Items", [])
+              except Exception as e:
+                  return err(500, f"scan failed: {e}")
+
+              cleaned = []
+              for u in items:
+                  out = {k: v for k, v in u.items() if k not in STRIP_FIELDS}
+                  # Coerce DynamoDB Decimals etc to JSON-friendly types if needed
+                  for k, v in list(out.items()):
+                      if hasattr(v, "__int__") and not isinstance(v, (int, str, bool)):
+                          out[k] = int(v)
+                  cleaned.append(out)
+
+              # Sort newest first (createdAt is ISO-8601, lexicographic sort works).
+              cleaned.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({"users": cleaned, "count": len(cleaned)}),
+              }
+
+  # --- Lambda: Admin — set a user's tier (admin tier only) ---
+  AdminSetTierFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-admin-set-tier
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+          VALID_TIERS = {"default", "initiate", "hero", "legend", "admin"}
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "PUT,OPTIONS",
+          }
+
+          _cache = {}
+          def get_jwt_secret():
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              auth = event.get("headers", {}).get("authorization", "")
+              if not auth.startswith("Bearer "):
+                  return err(401, "No token provided")
+
+              token = auth[7:]
+              jwt_secret = get_jwt_secret()
+              payload = verify_jwt(token, jwt_secret)
+              if not payload:
+                  return err(401, "Invalid or expired token")
+
+              # Admin assertion
+              actor_id = payload["sub"]
+              actor_resp = users.get_item(Key={"userId": actor_id})
+              actor = actor_resp.get("Item")
+              if not actor or actor.get("tier") != "admin":
+                  return err(403, "Admin tier required")
+
+              # Path param: userId
+              path_params = event.get("pathParameters") or {}
+              target_id = path_params.get("userId", "")
+              if not target_id:
+                  return err(400, "Missing userId path param")
+
+              # Body: tier
+              try:
+                  body = json.loads(event.get("body", "{}") or "{}")
+              except Exception:
+                  return err(400, "Invalid JSON body")
+              new_tier = body.get("tier", "")
+              if new_tier not in VALID_TIERS:
+                  return err(400, f"Invalid tier '{new_tier}'. Must be one of {sorted(VALID_TIERS)}")
+
+              # Block self-demotion to prevent admin lockout. Admins can't change
+              # their own tier — another admin must do it (or the InitialAdminEmail
+              # bootstrap re-promotes on next /auth/me call).
+              if target_id == actor_id and new_tier != "admin":
+                  return err(409, "Admins cannot demote themselves. Have another admin do it.")
+
+              # Verify target exists
+              target_resp = users.get_item(Key={"userId": target_id})
+              target = target_resp.get("Item")
+              if not target:
+                  return err(404, "Target user not found")
+
+              old_tier = target.get("tier", "default")
+
+              try:
+                  users.update_item(
+                      Key={"userId": target_id},
+                      UpdateExpression="SET #t = :t",
+                      ExpressionAttributeNames={"#t": "tier"},
+                      ExpressionAttributeValues={":t": new_tier},
+                  )
+              except Exception as e:
+                  return err(500, f"update failed: {e}")
+
+              # CloudWatch audit line — picked up by Lambda's stdout log group.
+              print(
+                  f"[AUDIT] admin={actor_id} ({actor.get('email','')}) "
+                  f"set userId={target_id} ({target.get('email','')}) "
+                  f"tier={old_tier}->{new_tier}"
+              )
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({
+                      "userId": target_id,
+                      "tier": new_tier,
+                      "previousTier": old_tier,
+                  }),
               }
 
   # --- API Gateway ---
@@ -1892,6 +2283,54 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref GetCountsFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Admin: list users
+  AdminListUsersIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt AdminListUsersFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  AdminListUsersRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /admin/users"
+      Target: !Sub "integrations/${AdminListUsersIntegration}"
+
+  AdminListUsersPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminListUsersFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Admin: set a user's tier
+  AdminSetTierIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt AdminSetTierFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  AdminSetTierRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "PUT /admin/users/{userId}/tier"
+      Target: !Sub "integrations/${AdminSetTierIntegration}"
+
+  AdminSetTierPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AdminSetTierFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"

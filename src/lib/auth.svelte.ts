@@ -1,10 +1,14 @@
+import type { Tier } from "./tier";
+
 const API = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";
 
 export interface User {
   userId: string;
   email: string;
   username: string;
-  tier: string | null;
+  /** One of the 5 enum values from src/lib/tier.ts. May still be string|null
+   *  on legacy responses from before the backend refactor. */
+  tier: Tier | string | null;
   stripeCustomerId: string | null;
   notificationPreferences: Record<string, boolean> | null;
 }

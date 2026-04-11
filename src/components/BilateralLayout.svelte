@@ -306,6 +306,9 @@
       </h1>
       <div class="header-right">
         <div class="header-right-buttons">
+          {#if isAdmin(auth.currentUser)}
+            <a href="/admin/users/" class="header-btn admin-btn" title="Admin user management"><span>Admin</span><span>Users</span></a>
+          {/if}
           <a href="/subscribe/" class="header-btn subscribe-btn" onclick={handleSubscribeClick}><span>Subscribe</span><span>Donate</span></a>
           {#if auth.currentUser}
             <button class="header-btn login-btn" onclick={logout}><span>Sign</span><span>Out</span></button>
@@ -702,6 +705,17 @@
   .subscribe-btn:hover {
     background: #1a2332;
     border-color: rgba(167, 243, 208, 0.3);
+  }
+
+  .admin-btn {
+    color: #f9a8d4;
+    border: 1px solid rgba(244, 114, 182, 0.45);
+    background: rgba(244, 114, 182, 0.06);
+  }
+
+  .admin-btn:hover {
+    background: rgba(244, 114, 182, 0.16);
+    border-color: rgba(244, 114, 182, 0.75);
   }
 
   .header-right-buttons {

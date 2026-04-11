@@ -2,7 +2,7 @@
 title: "Running Claude Code in Docker: Sandboxed AI with Full Permissions"
 description: "How I set up Docker containers to safely run Claude Code with --dangerously-skip-permissions, and the auth and user-mode issues I hit along the way."
 pubDate: 2026-04-09T00:01:00Z
-category: "technical"
+category: "engineering"
 devlog: "godot-and-claude"
 tags: ["docker", "claude", "devops", "security", "containers"]
 ---

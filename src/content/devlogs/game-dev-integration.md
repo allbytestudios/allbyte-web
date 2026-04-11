@@ -2,7 +2,7 @@
 title: "Integrating the Website with the Game"
 description: "How game assets flow from the Godot project to the web — asset sync, sprite conversion, and lessons learned building the pipeline."
 pubDate: 2026-04-08T00:01:00Z
-category: "technical"
+category: "engineering"
 devlog: "studio"
 tags: ["godot", "assets", "pipeline", "aws", "self-hosting"]
 ---

@@ -2,7 +2,7 @@
 title: "From Steam to Web: The Day Job Meets the Dream"
 description: "Why I'm spending my evenings building enterprise-grade infrastructure around a tactical RPG — and the moment I realized it might actually work."
 pubDate: 2026-04-10T23:00:00Z
-category: "technical"
+category: "narrative"
 devlog: "chronicles"
 tags: ["chronicles-of-nesis", "ai", "claude", "playwright", "indie", "infrastructure"]
 ---

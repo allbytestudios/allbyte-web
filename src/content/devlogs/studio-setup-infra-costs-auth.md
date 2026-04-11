@@ -2,7 +2,7 @@
 title: "My Setup: Infrastructure, Costs, and Auth"
 description: "How allbyte.studio runs on AWS for under $5/month — the infrastructure, CI/CD pipeline, cost protection, security boundaries, and custom auth system."
 pubDate: 2026-04-08T00:02:00Z
-category: "technical"
+category: "engineering"
 devlog: "studio"
 tags: ["aws", "infrastructure", "auth", "stripe", "self-hosting"]
 ---

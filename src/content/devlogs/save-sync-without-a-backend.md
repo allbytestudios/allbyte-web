@@ -2,7 +2,7 @@
 title: "Save Sync Without a Backend (Then With One)"
 description: "How browser saves persist for everyone, plus an opt-in server backup for Hero and Legend subscribers — and the architectural choices behind keeping the in-game save the only save action."
 pubDate: 2026-04-10T22:45:00Z
-category: "technical"
+category: "engineering"
 devlog: "studio"
 tags: ["godot", "saves", "architecture", "stripe", "subscription"]
 draft: true

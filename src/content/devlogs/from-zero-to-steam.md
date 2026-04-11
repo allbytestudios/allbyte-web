@@ -2,7 +2,7 @@
 title: "From Zero to Steam: Building Chronicles of Nesis"
 description: "How a tactical RPG went from a turn queue on a blank grid to a playable demo on Steam — built solo in Godot 3.5 over four years."
 pubDate: 2025-04-11
-category: "technical"
+category: "narrative"
 devlog: "chronicles"
 tags: ["godot", "gamedev", "steam", "tactical-rpg", "indie"]
 ---

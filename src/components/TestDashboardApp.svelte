@@ -7,12 +7,15 @@
   import TestStatusCard from "./TestStatusCard.svelte";
   import MilestoneStrip from "./MilestoneStrip.svelte";
   import BlockerPanel from "./BlockerPanel.svelte";
+  import { auth } from "../lib/auth.svelte.ts";
+  import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
 
   let index = $state<TestIndex | null>(null);
   let status = $state<TestRunStatus | null>(null);
   let roadmap = $state<TestingRoadmap | null>(null);
   let loadError = $state<string | null>(null);
+  let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "hero"));
 
   // UI state
   let statusFilter = $state<Set<string>>(new Set());
@@ -142,6 +145,24 @@
 </script>
 
 <div class="dashboard">
+  {#if !auth.authReady}
+    <div class="gate-card">
+      <p class="gate-loading">Loading…</p>
+    </div>
+  {:else if !viewerHasAccess}
+    <div class="gate-card">
+      <h2>Hero tier required</h2>
+      <p>The live test suite dashboard is part of the <strong>Hero</strong> subscription tier and above.</p>
+      {#if !auth.currentUser}
+        <p>Sign in from the home page, then subscribe to Hero or Legend to unlock it.</p>
+      {:else}
+        <p>You're signed in as <code>{auth.currentUser.email}</code> with tier <code>{auth.currentUser.tier ?? "default"}</code>. Upgrade to Hero or above to view test results, run history, and live activity.</p>
+      {/if}
+      <p class="gate-cta">
+        <a class="gate-link" href="/subscribe/">View subscription tiers →</a>
+      </p>
+    </div>
+  {:else}
   {#if loadError}
     <div class="error-banner">
       <strong>Test index not available.</strong> {loadError}
@@ -257,6 +278,7 @@
   {:else if !loadError}
     <div class="loading">Loading test index…</div>
   {/if}
+  {/if}
 </div>
 
 <style>
@@ -275,6 +297,54 @@
     color: #fca5a5;
     font-family: "Courier New", monospace;
     font-size: 0.85rem;
+  }
+  .gate-card {
+    max-width: 640px;
+    margin: 4rem auto;
+    padding: 2rem 2.25rem;
+    background: #12161e;
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    border-radius: 6px;
+    text-align: center;
+    font-family: "Courier New", monospace;
+    color: #d1d5db;
+  }
+  .gate-card h2 {
+    color: #fbbf24;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 1.05rem;
+    margin: 0 0 0.85rem;
+  }
+  .gate-card p {
+    margin: 0.5rem 0;
+    line-height: 1.5;
+    font-size: 0.9rem;
+  }
+  .gate-card code {
+    background: rgba(255, 255, 255, 0.05);
+    color: #a7f3d0;
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    font-size: 0.85rem;
+  }
+  .gate-card strong { color: #fbbf24; }
+  .gate-loading { color: #9ca3af; font-style: italic; }
+  .gate-cta { margin-top: 1.4rem; }
+  .gate-link {
+    display: inline-block;
+    color: #fbbf24;
+    text-decoration: none;
+    border: 1px solid rgba(251, 191, 36, 0.5);
+    padding: 0.55rem 1.1rem;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .gate-link:hover {
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.85);
   }
   .loading {
     text-align: center;

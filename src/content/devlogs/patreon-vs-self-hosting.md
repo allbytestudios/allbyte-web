@@ -2,7 +2,7 @@
 title: "Why Build My Own Site Instead of Using Patreon?"
 description: "An honest look at what I'm giving up by self-hosting instead of using Patreon — and why I'm trying it anyway."
 pubDate: 2026-04-08T00:03:00Z
-category: "technical"
+category: "strategy"
 devlog: "studio"
 tags: ["business", "patreon", "self-hosting", "stripe", "indie"]
 ---

@@ -23,10 +23,13 @@
   let index = $state<TestIndex | null>(null);
   let error = $state<string | null>(null);
   let milestoneId = $state("");
+  let cameFrom = $state<"home" | "test">("test");
 
   onMount(async () => {
     const params = new URLSearchParams(window.location.search);
     milestoneId = params.get("id") ?? "";
+    const from = params.get("from");
+    cameFrom = from === "home" ? "home" : "test";
     if (!milestoneId) {
       error = "Missing ?id=<milestone-id> in URL.";
       return;
@@ -40,6 +43,9 @@
       error = err?.message ?? String(err);
     }
   });
+
+  let backHref = $derived(cameFrom === "home" ? "/" : "/test/");
+  let backLabel = $derived(cameFrom === "home" ? "Home" : "Test Suite");
 
   let milestone = $derived<Milestone | null>(
     roadmap?.milestones.find((m) => m.id === milestoneId) ?? null
@@ -98,13 +104,13 @@
     <div class="error">
       <h2>Milestone not available</h2>
       <p>{error}</p>
-      <p><a href="/test/">← Back to test suite</a></p>
+      <p><a href={backHref}>← Back to {backLabel}</a></p>
     </div>
   {:else if !roadmap || !milestone}
     <div class="loading">Loading milestone…</div>
   {:else}
     <nav class="breadcrumb">
-      <a href="/test/">← Test Suite</a>
+      <a href={backHref}>← {backLabel}</a>
       <span class="sep">/</span>
       <span class="crumb">Milestones</span>
       <span class="sep">/</span>

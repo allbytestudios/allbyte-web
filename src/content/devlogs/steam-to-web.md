@@ -34,7 +34,7 @@ So fast that it has stopped being the bottleneck. In my opinion, the bottleneck 
 Both of those are things AI can also help with. But not for free. They each demand something specific:
 
 - **Knowing what to ask for** demands a knowledgeable user. AI doesn't replace expertise; it amplifies it. The unknowledgeable user gets fluent-sounding garbage; the knowledgeable user gets a hundred junior engineers.
-- **Knowing whether you got it** demands a tech stack and architecture where verification is cheap. Without that, you're back to manually verifying every little step, and the velocity gain evaporates inside an hour.
+- **Knowing whether you got it** demands a tech stack and architecture where verification is cheap. Without that, you're back to manually verifying every little step, and the velocity gain quickly levels off.
 
 ## The Game
 

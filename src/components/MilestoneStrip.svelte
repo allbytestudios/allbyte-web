@@ -17,7 +17,7 @@
   }
 
   function href(m: Milestone): string {
-    return `/test/milestones/view/?id=${m.id}`;
+    return `/test/milestones/view/?id=${m.id}&from=test`;
   }
 
   function hoursLabel(m: Milestone): string {

@@ -2,9 +2,23 @@
   import EnginePanel from "./EnginePanel.svelte";
   import HeartPanel from "./HeartPanel.svelte";
   import PlayOverlay from "./PlayOverlay.svelte";
+  import MilestoneBadge from "./MilestoneBadge.svelte";
+  import TestSuitePill from "./TestSuitePill.svelte";
   import gameVersion from "../data/game-version.json";
   import { auth, initAuth, login, signup, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
+  import { isTierAtLeast, isAdmin } from "../lib/tier";
+
+  let testSuiteEnabled = $derived(isTierAtLeast(auth.currentUser, "hero"));
+  let testSuiteTooltip = $derived.by(() => {
+    if (!auth.currentUser) {
+      return "Sign in and subscribe to Hero tier to access the test suite";
+    }
+    if (!testSuiteEnabled) {
+      return "Upgrade to Hero tier or above to access the test suite";
+    }
+    return "Open the test suite dashboard";
+  });
   let isMobile = $state(false);
   let showLoginModal = $state(false);
   let loginMode = $state("signin");
@@ -364,6 +378,14 @@
     </div>
   {:else}
     <div class="demo-row" style="position: relative;" onclick={launchGame}>
+      <div class="overlay-badges">
+        <MilestoneBadge />
+        <TestSuitePill
+          locked={!testSuiteEnabled}
+          lockedTooltip={testSuiteTooltip}
+          enabledTooltip={testSuiteTooltip}
+        />
+      </div>
       <div class="demo-overlay"><span>Coming Soon</span></div>
       <div class="demo-link">
         <div class="demo-banner">
@@ -1103,6 +1125,51 @@
     font-size: 2.5rem;
     color: rgba(224, 231, 255, 0.4);
     letter-spacing: 0.05em;
+  }
+
+  /* Thin overlay badges in the top-right of the demo button */
+  .overlay-badges {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-end;
+  }
+  /* TestSuitePill styles live in TestSuitePill.svelte itself. */
+
+  /* Mobile / narrow: pop the badges OUT of the demo row so they sit ABOVE it
+     side-by-side, clearing the demo button's title / Coming Soon / Play Now
+     centerline. The .demo-row reserves vertical space so the absolute-positioned
+     overlay doesn't collide with whatever sits above the demo-section. */
+  @media (max-width: 900px) {
+    .demo-row {
+      margin-top: 5rem;
+    }
+    .overlay-badges {
+      top: auto;
+      right: 0.75rem;
+      left: 0.75rem;
+      bottom: calc(100% + 0.5rem);
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .overlay-badges > :global(*) {
+      flex: 1 1 0;
+      min-width: 0;
+      max-width: 220px;
+    }
+    :global(.overlay-badges .milestone-badge),
+    :global(.overlay-badges .test-suite-pill) {
+      width: auto;
+    }
+    :global(.overlay-badges .milestone-badge) {
+      font-size: 0.72rem;
+    }
   }
 
   .demo-row {

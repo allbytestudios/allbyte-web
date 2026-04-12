@@ -155,8 +155,8 @@
         <tr>
           <th>Email</th>
           <th>Username</th>
-          <th>Created</th>
-          <th>Source</th>
+          <th class="col-created">Created</th>
+          <th class="col-source">Source</th>
           <th>Tier</th>
         </tr>
       </thead>
@@ -332,6 +332,51 @@
     color: #9ca3af;
     margin-left: 0.4rem;
     font-size: 0.85rem;
+  }
+
+  /* Mobile: hide created/source columns to make room for email + tier,
+     bigger touch targets on the tier select. */
+  @media (max-width: 640px) {
+    .admin-page {
+      padding: 0.75rem 0.6rem 3rem;
+    }
+    .admin-header h1 {
+      font-size: 1.1rem;
+    }
+    .users-table {
+      font-size: 0.78rem;
+    }
+    .users-table th.col-created,
+    .users-table th.col-source,
+    .users-table td.created,
+    .users-table td.source {
+      display: none;
+    }
+    .users-table th,
+    .users-table td {
+      padding: 0.6rem 0.4rem;
+    }
+    .email {
+      font-size: 0.78rem;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .self-badge {
+      display: none;
+    }
+    .tier-select {
+      font-size: 0.85rem;
+      padding: 0.45rem 0.5rem;
+      min-height: 38px;
+    }
+    .toast {
+      bottom: 0.75rem;
+      right: 0.75rem;
+      left: 0.75rem;
+      max-width: none;
+    }
   }
 
   .toast {

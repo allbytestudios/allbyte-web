@@ -318,7 +318,7 @@
         </div>
         {#if auth.currentUser}
           <span class="username">
-            <img src={auth.currentUser.tier === "legend" ? "/tier-legend.png" : auth.currentUser.tier === "hero" ? "/tier-hero.png" : auth.currentUser.tier === "initiate" ? "/tier-initiate.png" : "/tier-none.png"} alt="" class="user-tier-icon" />
+            <img src={auth.currentUser.tier === "admin" ? "/tier-admin.png" : auth.currentUser.tier === "legend" ? "/tier-legend.png" : auth.currentUser.tier === "hero" ? "/tier-hero.png" : auth.currentUser.tier === "initiate" ? "/tier-initiate.png" : "/tier-none.png"} alt="" class="user-tier-icon" />
             {auth.currentUser.username}
           </span>
         {/if}
@@ -394,7 +394,7 @@
     </div>
   {:else}
     <div class="demo-row" style="position: relative;" onclick={launchGame}>
-      <div class="overlay-badges">
+      <div class="overlay-badges" onclick={(e) => e.stopPropagation()}>
         <MilestoneBadge />
         <TestSuitePill
           locked={!testSuiteEnabled}
@@ -1194,7 +1194,14 @@
      but the badges sit above it via z-index. */
   @media (max-width: 900px) {
     .overlay-badges {
-      position: static;
+      /* position: relative (not static) so the z-index from the desktop
+         rule still applies and the badges sit ABOVE the demo-overlay
+         "Coming Soon" layer for click events. */
+      position: relative;
+      top: auto;
+      right: auto;
+      left: auto;
+      bottom: auto;
       flex-direction: row;
       align-items: stretch;
       justify-content: center;
@@ -1639,12 +1646,30 @@
     .demo-actions {
       flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.85rem;
+      padding: 0.85rem 1rem;
+    }
+
+    .demo-actions .steam-btn,
+    .demo-actions .build-date {
+      position: static;
+      transform: none;
+      top: auto;
+      left: auto;
+    }
+
+    .demo-actions .build-date {
+      order: 3;
+      font-size: 0.95rem;
+      opacity: 0.8;
+    }
+
+    .demo-actions .demo-cta {
+      order: 1;
     }
 
     .demo-actions .steam-btn {
-      position: static;
-      transform: none;
+      order: 2;
     }
   }
 </style>

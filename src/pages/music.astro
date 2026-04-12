@@ -6,6 +6,16 @@ import assetIndex from "../data/asset-index.json";
 const title = "Music — AllByte Studios";
 const description = "Original compositions for The Chronicles of Nesis, handcrafted by AllByte.";
 
+// Tracks gated behind the Initiate tier (and above). Server-side tagged so
+// the markup ships locked by default; client-side script unlocks after the
+// auth check passes. Names match asset-index.json `name` field exactly.
+const GATED_TRACKS = new Set([
+  "DwarvenRuins",
+  "ImpendingConclusion",
+  "Sleep",
+  "Victory",
+]);
+
 // Clean up track names for display
 function formatTrackName(name: string): string {
   return name
@@ -32,15 +42,26 @@ function formatTrackName(name: string): string {
 
     <main class="content">
       <div class="track-list">
-        {assetIndex.music.map((track, i) => (
-          <button class="track-card track-btn" data-index={i}>
-            <div class="track-info">
-              <span class="track-number">{String(i + 1).padStart(2, "0")}</span>
-              <span class="track-name">{formatTrackName(track.name)}</span>
-            </div>
-            <span class="play-hint"><span class="hint-play">&#9654; Play</span><span class="hint-active">&#9654; Now Playing</span></span>
-          </button>
-        ))}
+        {assetIndex.music.map((track, i) => {
+          const gated = GATED_TRACKS.has(track.name);
+          return (
+            <button
+              class={`track-card track-btn${gated ? " gated" : ""}`}
+              data-index={i}
+              data-gated={gated ? "true" : "false"}
+              data-required-tier={gated ? "initiate" : ""}
+            >
+              <div class="track-info">
+                <span class="track-number">{String(i + 1).padStart(2, "0")}</span>
+                <span class="track-name">{formatTrackName(track.name)}</span>
+                {gated && (
+                  <span class="gate-badge">&#128274; Initiate+</span>
+                )}
+              </div>
+              <span class="play-hint"><span class="hint-play">&#9654; Play</span><span class="hint-active">&#9654; Now Playing</span></span>
+            </button>
+          );
+        })}
 
         <!-- Locked tracks -->
         <div class="track-card locked-card">
@@ -56,6 +77,14 @@ function formatTrackName(name: string): string {
   </div>
   <script>
     import assetIndex from "../data/asset-index.json";
+
+    const API = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";
+    const TIER_RANK = { default: 0, initiate: 1, hero: 2, legend: 3, admin: 4 };
+    function tierAtLeast(userTier: string | null | undefined, required: string): boolean {
+      const u = TIER_RANK[(userTier ?? "default") as keyof typeof TIER_RANK] ?? 0;
+      const r = TIER_RANK[required as keyof typeof TIER_RANK] ?? 0;
+      return u >= r;
+    }
 
     const trackButtons = document.querySelectorAll<HTMLButtonElement>(".track-btn");
 
@@ -80,13 +109,47 @@ function formatTrackName(name: string): string {
       });
     }
 
+    function showGateMessage(requiredTier: string) {
+      const msg = `This track is part of the ${requiredTier[0].toUpperCase() + requiredTier.slice(1)} tier or above.\n\nSubscribe to unlock it.`;
+      window.alert(msg);
+    }
+
     trackButtons.forEach(btn => {
       btn.addEventListener("click", () => {
+        if (btn.classList.contains("gated")) {
+          showGateMessage(btn.dataset.requiredTier || "initiate");
+          return;
+        }
         const index = Number(btn.dataset.index);
         ensureLoaded(index);
         highlightActive(index);
       });
     });
+
+    // Unlock gated tracks if the signed-in user has the required tier.
+    async function checkTierAndUnlock() {
+      const token = localStorage.getItem("allbyte_token");
+      if (!token) return; // signed out — keep locked
+      try {
+        const res = await fetch(`${API}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const tier = data?.user?.tier ?? "default";
+        document.querySelectorAll<HTMLButtonElement>(".track-btn.gated").forEach(btn => {
+          const required = btn.dataset.requiredTier || "initiate";
+          if (tierAtLeast(tier, required)) {
+            btn.classList.remove("gated");
+            const badge = btn.querySelector(".gate-badge");
+            if (badge) badge.remove();
+          }
+        });
+      } catch {
+        // Network error — fail closed (stay locked)
+      }
+    }
+    checkTierAndUnlock();
 
     // Sync highlight when player changes track (e.g. next/prev from mini player)
     window.addEventListener("music-player:track-changed", ((e: CustomEvent) => {
@@ -286,6 +349,31 @@ function formatTrackName(name: string): string {
   .locked-name {
     color: #3a3020;
     font-style: italic;
+  }
+
+  .track-btn.gated {
+    background: #c5b67e;
+    border-style: dashed;
+    cursor: not-allowed;
+  }
+  .track-btn.gated:hover {
+    background: #b8a872;
+  }
+  .track-btn.gated .track-name {
+    color: #5a4d38;
+    font-style: italic;
+  }
+  .gate-badge {
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    color: #5a4d38;
+    background: rgba(58, 48, 32, 0.12);
+    border: 1px solid rgba(58, 48, 32, 0.35);
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    margin-left: 0.6rem;
+    letter-spacing: 0.05em;
+    font-weight: 700;
   }
 
   .page-footer {

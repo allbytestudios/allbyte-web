@@ -6,6 +6,10 @@
   "scripts": {
     "sync": "node scripts/sync-assets.js",
     "push-assets": "node scripts/push-assets.js",
+    "sync:watch": "node scripts/sync-test-data-watcher.js",
+    "sync:once": "node scripts/sync-test-data-watcher.js --once",
+    "sync:dry": "node scripts/sync-test-data-watcher.js --once --dry-run",
+    "sync:test": "node scripts/sync-test-data-watcher.js --self-test",
     "dev": "astro dev",
     "build": "node scripts/sync-assets.js && astro build",
     "preview": "astro preview",

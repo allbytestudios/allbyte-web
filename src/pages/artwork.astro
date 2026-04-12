@@ -32,6 +32,46 @@ const hiddenBosses = Object.entries(characterMeta).filter(([, m]) => m.category 
 const lockedAnimations: Record<string, string[]> = {
   "Elias": ["Smite Line", "Smite Line (alt)"],
 };
+
+// Characters gated behind subscription tiers. Server-side tagged on the
+// character card; client-side script unlocks after auth check passes.
+const GATED_CHARACTERS: Record<string, "initiate" | "hero" | "legend"> = {
+  // Names match the lowercase keys in sprite-gifs.json (the asset-manifest
+  // uses the directory casing, which is mostly lowercase except Falmri).
+  eastwood: "initiate",
+  Falmri: "hero",
+  spiting: "hero",
+  spiter: "hero",
+  vepir: "hero",
+};
+
+// Per-character animations gated behind a tier. Keyed by character name,
+// then a set of animation names (raw, not display-formatted).
+const GATED_ANIMATIONS: Record<string, Record<string, "initiate" | "hero" | "legend">> = {
+  Elias: {
+    SweepAttackDownRight: "initiate",
+    SweepAttackUpLeft: "initiate",
+    Casting: "initiate",
+  },
+};
+
+function gateInfoFor(name: string): { gated: boolean; tier: string; label: string } {
+  const tier = GATED_CHARACTERS[name];
+  if (!tier) return { gated: false, tier: "", label: "" };
+  const label = tier[0].toUpperCase() + tier.slice(1) + "+";
+  return { gated: true, tier, label };
+}
+
+function animationGateFor(character: string, animation: string): {
+  gated: boolean;
+  tier: string;
+  label: string;
+} {
+  const tier = GATED_ANIMATIONS[character]?.[animation];
+  if (!tier) return { gated: false, tier: "", label: "" };
+  const label = tier[0].toUpperCase() + tier.slice(1) + "+";
+  return { gated: true, tier, label };
+}
 ---
 
 <BaseLayout title={title} description={description}>
@@ -52,28 +92,46 @@ const lockedAnimations: Record<string, string[]> = {
       <section class="category-section">
         <h2 class="category-title">Allies</h2>
         <div class="characters">
-          {allies.map(([name, sprites]) => (
-            <div class="character-card">
-              <h3 class="character-name">{name}</h3>
-              <div class="sprite-showcase">
-                <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
+          {allies.map(([name, sprites]) => {
+            const charGate = gateInfoFor(name);
+            return (
+              <div
+                class={`character-card${charGate.gated ? " gated" : ""}`}
+                data-gated={charGate.gated ? "true" : "false"}
+                data-required-tier={charGate.tier}
+              >
+                <h3 class="character-name">
+                  {name}
+                  {charGate.gated && <span class="gate-badge">&#128274; {charGate.label}</span>}
+                </h3>
+                <div class="sprite-showcase">
+                  <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
+                </div>
+                <div class="sprite-grid">
+                  {sprites.map(s => {
+                    const animGate = animationGateFor(name, s.animation);
+                    return (
+                      <div
+                        class={`sprite-cell${animGate.gated ? " gated-cell" : ""}`}
+                        data-gated={animGate.gated ? "true" : "false"}
+                        data-required-tier={animGate.tier}
+                      >
+                        <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
+                        <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
+                        {animGate.gated && <span class="cell-gate-badge">&#128274; {animGate.label}</span>}
+                      </div>
+                    );
+                  })}
+                  {(lockedAnimations[name] || []).map(label => (
+                    <div class="sprite-cell locked-cell">
+                      <div class="locked-sprite-small">&#128274;</div>
+                      <span class="sprite-label">{label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div class="sprite-grid">
-                {sprites.map(s => (
-                  <div class="sprite-cell">
-                    <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
-                    <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
-                  </div>
-                ))}
-                {(lockedAnimations[name] || []).map(label => (
-                  <div class="sprite-cell locked-cell">
-                    <div class="locked-sprite-small">&#128274;</div>
-                    <span class="sprite-label">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {hiddenAllies.map(([name]) => (
             <div class="character-card mystery-card">
@@ -91,22 +149,32 @@ const lockedAnimations: Record<string, string[]> = {
       <section class="category-section">
         <h2 class="category-title">Enemies</h2>
         <div class="characters characters-masonry">
-          {enemies.map(([name, sprites]) => (
-            <div class="character-card">
-              <h3 class="character-name">{name}</h3>
-              <div class="sprite-showcase">
-                <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
+          {enemies.map(([name, sprites]) => {
+            const charGate = gateInfoFor(name);
+            return (
+              <div
+                class={`character-card${charGate.gated ? " gated" : ""}`}
+                data-gated={charGate.gated ? "true" : "false"}
+                data-required-tier={charGate.tier}
+              >
+                <h3 class="character-name">
+                  {name}
+                  {charGate.gated && <span class="gate-badge">&#128274; {charGate.label}</span>}
+                </h3>
+                <div class="sprite-showcase">
+                  <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
+                </div>
+                <div class="sprite-grid">
+                  {sprites.map(s => (
+                    <div class="sprite-cell">
+                      <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
+                      <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div class="sprite-grid">
-                {sprites.map(s => (
-                  <div class="sprite-cell">
-                    <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
-                    <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           <!-- Locked enemy placeholder -->
           <div class="character-card locked-card">
@@ -123,22 +191,32 @@ const lockedAnimations: Record<string, string[]> = {
       <section class="category-section">
         <h2 class="category-title">Bosses</h2>
         <div class="characters">
-          {bosses.map(([name, sprites]) => (
-            <div class="character-card">
-              <h3 class="character-name">{name}</h3>
-              <div class="sprite-showcase">
-                <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
+          {bosses.map(([name, sprites]) => {
+            const charGate = gateInfoFor(name);
+            return (
+              <div
+                class={`character-card${charGate.gated ? " gated" : ""}`}
+                data-gated={charGate.gated ? "true" : "false"}
+                data-required-tier={charGate.tier}
+              >
+                <h3 class="character-name">
+                  {name}
+                  {charGate.gated && <span class="gate-badge">&#128274; {charGate.label}</span>}
+                </h3>
+                <div class="sprite-showcase">
+                  <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
+                </div>
+                <div class="sprite-grid">
+                  {sprites.map(s => (
+                    <div class="sprite-cell">
+                      <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
+                      <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div class="sprite-grid">
-                {sprites.map(s => (
-                  <div class="sprite-cell">
-                    <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
-                    <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           <!-- Locked boss placeholder -->
           <div class="character-card locked-card">
@@ -174,6 +252,56 @@ const lockedAnimations: Record<string, string[]> = {
 
     <Footer theme="heart" />
   </div>
+  <script>
+    const API = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";
+    const TIER_RANK: Record<string, number> = {
+      default: 0,
+      initiate: 1,
+      hero: 2,
+      legend: 3,
+      admin: 4,
+    };
+    function tierAtLeast(userTier: string | null | undefined, required: string): boolean {
+      const u = TIER_RANK[(userTier ?? "default") as string] ?? 0;
+      const r = TIER_RANK[required] ?? 0;
+      return u >= r;
+    }
+
+    async function checkTierAndUnlock() {
+      const token = localStorage.getItem("allbyte_token");
+      if (!token) return;
+      try {
+        const res = await fetch(`${API}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const tier = data?.user?.tier ?? "default";
+
+        // Unlock character-level gates
+        document.querySelectorAll<HTMLElement>('.character-card.gated').forEach(card => {
+          const required = card.dataset.requiredTier || "initiate";
+          if (tierAtLeast(tier, required)) {
+            card.classList.remove("gated");
+            card.querySelector(".gate-badge")?.remove();
+          }
+        });
+
+        // Unlock per-cell animation gates
+        document.querySelectorAll<HTMLElement>('.sprite-cell.gated-cell').forEach(cell => {
+          const required = cell.dataset.requiredTier || "initiate";
+          if (tierAtLeast(tier, required)) {
+            cell.classList.remove("gated-cell");
+            cell.querySelector(".cell-gate-badge")?.remove();
+          }
+        });
+      } catch {
+        // Network error — fail closed (stay locked)
+      }
+    }
+
+    checkTierAndUnlock();
+  </script>
 </BaseLayout>
 
 <style is:global>
@@ -453,6 +581,56 @@ const lockedAnimations: Record<string, string[]> = {
     text-align: center;
     margin: 0;
     font-style: italic;
+  }
+
+  /* Gated character cards (locked behind a subscription tier) */
+  .character-card.gated {
+    background: #c5b67e;
+    border-style: dashed;
+    position: relative;
+  }
+  .character-card.gated .sprite-hero,
+  .character-card.gated .sprite-gif {
+    filter: grayscale(0.85) brightness(0.65);
+  }
+  .character-card.gated .character-name {
+    color: #5a4d38;
+    font-style: italic;
+  }
+  .gate-badge {
+    display: inline-block;
+    margin-left: 0.6rem;
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    color: #5a4d38;
+    background: rgba(58, 48, 32, 0.12);
+    border: 1px solid rgba(58, 48, 32, 0.4);
+    padding: 0.18rem 0.5rem;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    vertical-align: middle;
+  }
+
+  /* Gated individual sprite cells (per-animation locks) */
+  .sprite-cell.gated-cell {
+    position: relative;
+  }
+  .sprite-cell.gated-cell .sprite-gif {
+    filter: grayscale(0.9) brightness(0.55);
+  }
+  .cell-gate-badge {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    color: #f3f4f6;
+    background: rgba(58, 48, 32, 0.85);
+    padding: 0.12rem 0.4rem;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+    font-weight: 700;
   }
 
   /* Backgrounds */

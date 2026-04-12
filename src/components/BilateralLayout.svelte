@@ -3,7 +3,6 @@
   import HeartPanel from "./HeartPanel.svelte";
   import PlayOverlay from "./PlayOverlay.svelte";
   import MilestoneBadge from "./MilestoneBadge.svelte";
-  import TestSuitePill from "./TestSuitePill.svelte";
   import gameVersion from "../data/game-version.json";
   import { auth, initAuth, login, signup, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
@@ -22,10 +21,6 @@
     return `${y}-${m}-${day} ${hh}:${mm}`;
   })();
 
-  // Test suite summary (counts, milestones, blockers, sync health) is public
-  // as a proof-of-work signal for technical visitors. Deep inspection inside
-  // is still Hero+ gated inside the dashboard itself.
-  let testSuiteTooltip = "Open the test suite dashboard";
   let isMobile = $state(false);
   let showLoginModal = $state(false);
   let loginMode = $state("signin");
@@ -389,10 +384,6 @@
     <div class="demo-row" style="position: relative;" onclick={launchGame}>
       <div class="overlay-badges" onclick={(e) => e.stopPropagation()}>
         <MilestoneBadge />
-        <TestSuitePill
-          locked={false}
-          enabledTooltip={testSuiteTooltip}
-        />
       </div>
       <div class="demo-overlay"><span>Coming Soon</span></div>
       <div class="demo-link">
@@ -1139,7 +1130,6 @@
     gap: 0.4rem;
     align-items: flex-end;
   }
-  /* TestSuitePill styles live in TestSuitePill.svelte itself. */
 
   /* Mobile / narrow: drop the absolute positioning entirely. The badges
      flow naturally at the TOP of .demo-row as a side-by-side row, pushing

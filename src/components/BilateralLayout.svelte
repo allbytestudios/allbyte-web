@@ -7,7 +7,7 @@
   import gameVersion from "../data/game-version.json";
   import { auth, initAuth, login, signup, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
-  import { isTierAtLeast, isAdmin } from "../lib/tier";
+  import { isAdmin } from "../lib/tier";
 
   const buildDateLabel = (() => {
     const raw = (gameVersion as { buildDate?: string | null }).buildDate;
@@ -22,16 +22,10 @@
     return `${y}-${m}-${day} ${hh}:${mm}`;
   })();
 
-  let testSuiteEnabled = $derived(isTierAtLeast(auth.currentUser, "hero"));
-  let testSuiteTooltip = $derived.by(() => {
-    if (!auth.currentUser) {
-      return "Sign in and subscribe to Hero tier to access the test suite";
-    }
-    if (!testSuiteEnabled) {
-      return "Upgrade to Hero tier or above to access the test suite";
-    }
-    return "Open the test suite dashboard";
-  });
+  // Test suite summary (counts, milestones, blockers, sync health) is public
+  // as a proof-of-work signal for technical visitors. Deep inspection inside
+  // is still Hero+ gated inside the dashboard itself.
+  let testSuiteTooltip = "Open the test suite dashboard";
   let isMobile = $state(false);
   let showLoginModal = $state(false);
   let loginMode = $state("signin");
@@ -397,8 +391,7 @@
       <div class="overlay-badges" onclick={(e) => e.stopPropagation()}>
         <MilestoneBadge />
         <TestSuitePill
-          locked={!testSuiteEnabled}
-          lockedTooltip={testSuiteTooltip}
+          locked={false}
           enabledTooltip={testSuiteTooltip}
         />
       </div>

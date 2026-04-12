@@ -32,26 +32,31 @@ const {
       <MusicPlayer client:load />
     </div>
     <script>
-      // Set body.is-admin once auth resolves, so CSS rules gated on that
-      // class (draft devlog posts, etc.) can reveal admin-only content.
-      // Re-runs on every client-side navigation via ClientRouter.
-      function checkAdmin() {
+      // Set body.is-hero-plus / body.is-admin once auth resolves, so CSS
+      // rules gated on those classes (draft devlog previews, deep test
+      // inspection, etc.) can reveal tier-gated content without a server
+      // round-trip per element. Re-runs on every client-side navigation.
+      function syncTierClasses() {
         const token = localStorage.getItem("allbyte_token");
-        document.body.classList.remove("is-admin");
+        document.body.classList.remove("is-admin", "is-hero-plus");
         if (!token) return;
         fetch("https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((r) => (r.ok ? r.json() : null))
           .then((d) => {
-            if (d?.user?.tier === "admin") {
+            const tier = d?.user?.tier;
+            if (tier === "hero" || tier === "legend" || tier === "admin") {
+              document.body.classList.add("is-hero-plus");
+            }
+            if (tier === "admin") {
               document.body.classList.add("is-admin");
             }
           })
           .catch(() => {});
       }
-      checkAdmin();
-      document.addEventListener("astro:page-load", checkAdmin);
+      syncTierClasses();
+      document.addEventListener("astro:page-load", syncTierClasses);
     </script>
   </body>
 </html>

@@ -215,24 +215,6 @@
 </script>
 
 <div class="dashboard">
-  {#if !auth.authReady}
-    <div class="gate-card">
-      <p class="gate-loading">Loading…</p>
-    </div>
-  {:else if !viewerHasAccess}
-    <div class="gate-card">
-      <h2>Hero tier required</h2>
-      <p>The live test suite dashboard is part of the <strong>Hero</strong> subscription tier and above.</p>
-      {#if !auth.currentUser}
-        <p>Sign in from the home page, then subscribe to Hero or Legend to unlock it.</p>
-      {:else}
-        <p>You're signed in as <code>{auth.currentUser.email}</code> with tier <code>{auth.currentUser.tier ?? "default"}</code>. Upgrade to Hero or above to view test results, run history, and live activity.</p>
-      {/if}
-      <p class="gate-cta">
-        <a class="gate-link" href="/subscribe/">View subscription tiers →</a>
-      </p>
-    </div>
-  {:else}
   {#if loadError}
     <div class="error-banner">
       <strong>Test index not available.</strong> {loadError}
@@ -295,6 +277,29 @@
     <!-- Blocker panel (only renders if known_blockers[] is non-empty) -->
     <BlockerPanel {roadmap} />
 
+    {#if !auth.authReady}
+      <div class="deep-loading">Checking subscription…</div>
+    {:else if !viewerHasAccess}
+      <div class="deep-gate">
+        <h2>Deep test inspection</h2>
+        <p>
+          The summary above — test counts, milestone progress, sync health,
+          and blockers — is public so anyone can verify that work is happening.
+        </p>
+        <p>
+          Per-test detail, screenshot history, run artifacts, and live worker
+          activity are a <strong>Hero</strong> tier perk. If you want to drill
+          into why a specific test is failing, click through the full tree,
+          or watch runs happen in real time, that's where you'll find it.
+        </p>
+        <p class="deep-gate-cta">
+          <a class="gate-link" href="/subscribe/">View subscription tiers →</a>
+          {#if !auth.currentUser}
+            <span class="deep-gate-sub">or sign in from the home page first</span>
+          {/if}
+        </p>
+      </div>
+    {:else}
     <!-- Filter bar -->
     <div class="filters">
       <input
@@ -372,9 +377,9 @@
         </section>
       {/each}
     </div>
+    {/if}
   {:else if !loadError}
     <div class="loading">Loading test index…</div>
-  {/if}
   {/if}
 </div>
 
@@ -405,6 +410,48 @@
     text-align: center;
     font-family: "Courier New", monospace;
     color: #d1d5db;
+  }
+  .deep-gate {
+    max-width: 760px;
+    margin: 2rem auto;
+    padding: 1.75rem 2rem;
+    background: #12161e;
+    border: 1px dashed rgba(251, 191, 36, 0.45);
+    border-radius: 6px;
+    text-align: center;
+    font-family: "Courier New", monospace;
+    color: #d1d5db;
+    line-height: 1.55;
+  }
+  .deep-gate h2 {
+    color: #fbbf24;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 1.05rem;
+    margin: 0 0 0.75rem;
+  }
+  .deep-gate p {
+    font-size: 0.88rem;
+    margin: 0.4rem 0;
+  }
+  .deep-gate strong { color: #fbbf24; }
+  .deep-gate-cta {
+    margin-top: 1rem !important;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    align-items: center;
+  }
+  .deep-gate-sub {
+    font-size: 0.78rem;
+    color: #6b7280;
+  }
+  .deep-loading {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #6b7280;
+    font-family: "Courier New", monospace;
+    font-size: 0.85rem;
   }
   .gate-card h2 {
     color: #fbbf24;

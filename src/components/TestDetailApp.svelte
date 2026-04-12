@@ -9,7 +9,11 @@
     TIER_META,
   } from "../lib/testIndex";
   import { fetchIndex, artifactUrl } from "../lib/testDataSource";
+  import { auth } from "../lib/auth.svelte.ts";
+  import { isTierAtLeast } from "../lib/tier";
   import { onMount } from "svelte";
+
+  let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "hero"));
 
   let test = $state<TestEntry | null>(null);
   let index = $state<TestIndex | null>(null);
@@ -57,7 +61,16 @@
 </script>
 
 <div class="detail">
-  {#if error}
+  {#if !auth.authReady}
+    <div class="loading">Checking subscription…</div>
+  {:else if !viewerHasAccess}
+    <div class="gate">
+      <h2>Hero tier required</h2>
+      <p>Per-test detail, screenshots, and run history are a <strong>Hero</strong> tier perk. The public test suite summary is at <a href="/test/">/test/</a>.</p>
+      <p><a class="gate-link" href="/subscribe/">View subscription tiers →</a></p>
+      <p><a href="/test/">← Back to test suite</a></p>
+    </div>
+  {:else if error}
     <div class="error">
       <h2>Test not available</h2>
       <p>{error}</p>
@@ -161,12 +174,29 @@
     font-family: "Courier New", monospace;
   }
   .loading,
-  .error {
+  .error,
+  .gate {
     text-align: center;
     padding: 3rem;
     color: #9ca3af;
   }
   .error h2 { color: #fca5a5; }
+  .gate h2 {
+    color: #fbbf24;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 1.05rem;
+  }
+  .gate strong { color: #fbbf24; }
+  .gate a { color: #a7f3d0; text-decoration: none; }
+  .gate a:hover { text-decoration: underline; }
+  .gate .gate-link {
+    display: inline-block;
+    margin: 0.5rem 0;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(167, 243, 208, 0.45);
+    border-radius: 4px;
+  }
   .breadcrumb {
     display: flex;
     align-items: center;

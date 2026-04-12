@@ -46,13 +46,14 @@ const breadcrumbs = [
   <main class="article">
     {post.data.draft && (
       <div class="draft-banner">
-        ⚠ DRAFT — only visible to admin. Published date will update when this is promoted.
+        ⚠ DRAFT PREVIEW — visible to Hero+ subscribers. Text is still being revised and the published date will update on promotion.
       </div>
     )}
     {post.data.draft && (
       <div class="draft-gate">
         <h2>Draft post</h2>
-        <p>This devlog entry is still in progress and not yet public.</p>
+        <p>This devlog entry is still in progress. Early access to drafts is a <strong>Hero</strong> tier perk.</p>
+        <p><a href="/subscribe/">View subscription tiers →</a></p>
         <p><a href={backHref}>← Back to {categoryLabel}</a></p>
       </div>
     )}

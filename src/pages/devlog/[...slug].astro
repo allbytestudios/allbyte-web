@@ -6,9 +6,10 @@ import PageHeader from "../../components/PageHeader.astro";
 import { getCollection, render } from "astro:content";
 
 export async function getStaticPaths() {
-  const posts = (await getCollection("devlogs")).filter(
-    (p) => !p.data.draft || import.meta.env.DEV
-  );
+  // All posts (including drafts) render in prod so admin can preview in place.
+  // The post body is wrapped in .draft-post-content which CSS hides unless
+  // body.is-admin is set by the client-side auth check in BaseLayout.
+  const posts = await getCollection("devlogs");
   return posts.map((post) => ({
     params: { slug: post.id },
     props: { post },
@@ -43,7 +44,19 @@ const breadcrumbs = [
     <AiDisclaimer />
   </PageHeader>
   <main class="article">
-    <article class="content">
+    {post.data.draft && (
+      <div class="draft-banner">
+        ⚠ DRAFT — only visible to admin. Published date will update when this is promoted.
+      </div>
+    )}
+    {post.data.draft && (
+      <div class="draft-gate">
+        <h2>Draft post</h2>
+        <p>This devlog entry is still in progress and not yet public.</p>
+        <p><a href={backHref}>← Back to {categoryLabel}</a></p>
+      </div>
+    )}
+    <article class:list={["content", post.data.draft && "draft-post-content"]}>
       <header class="article-header">
         <div class="post-meta">
           <span class={`category-tag ${post.data.category}`}>{post.data.category}</span>

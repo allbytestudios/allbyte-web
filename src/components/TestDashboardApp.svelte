@@ -2,7 +2,8 @@
   import type { TestIndex, TestRunStatus, RunnerTier } from "../lib/testIndex";
   import type { TestingRoadmap } from "../lib/testingRoadmap";
   import { TIER_META, buildLeafTree } from "../lib/testIndex";
-  import { fetchIndex, fetchStatus, fetchRoadmap } from "../lib/testDataSource";
+  import type { SyncHeartbeat } from "../lib/testDataSource";
+  import { fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat } from "../lib/testDataSource";
   import TestLeafNode from "./TestLeafNode.svelte";
   import TestStatusCard from "./TestStatusCard.svelte";
   import MilestoneStrip from "./MilestoneStrip.svelte";
@@ -14,6 +15,9 @@
   let index = $state<TestIndex | null>(null);
   let status = $state<TestRunStatus | null>(null);
   let roadmap = $state<TestingRoadmap | null>(null);
+  let heartbeat = $state<SyncHeartbeat | null>(null);
+  let heartbeatCheckedAt = $state<number>(0);
+  let nowTs = $state<number>(Date.now());
   let loadError = $state<string | null>(null);
   let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "hero"));
 
@@ -78,6 +82,64 @@
     }
   }
 
+  async function loadHeartbeat() {
+    try {
+      heartbeat = await fetchHeartbeat();
+      heartbeatCheckedAt = Date.now();
+    } catch {
+      heartbeat = null;
+    }
+  }
+
+  // Tick nowTs every 10s so the "Xm ago" label re-derives without a
+  // heartbeat round trip.
+  let tickTimer: ReturnType<typeof setInterval> | null = null;
+
+  // Staleness thresholds. Watcher uploads heartbeat every 60s by default,
+  // so 3min = one missed beat + slack; 10min = definitively down.
+  const STALE_MS = 3 * 60 * 1000;
+  const OFFLINE_MS = 10 * 60 * 1000;
+
+  let syncHealth = $derived.by<{
+    state: "live" | "stale" | "offline" | "unknown";
+    ageMs: number | null;
+    label: string;
+  }>(() => {
+    // No heartbeat file at all = no watcher has ever run against this bucket,
+    // OR we're in dev. Dev returns null from fetchHeartbeat on purpose.
+    if (!heartbeat) {
+      if (import.meta.env.DEV) {
+        return { state: "unknown", ageMs: null, label: "dev · direct from disk" };
+      }
+      if (heartbeatCheckedAt === 0) {
+        return { state: "unknown", ageMs: null, label: "…" };
+      }
+      return { state: "offline", ageMs: null, label: "watcher offline" };
+    }
+    const written = Date.parse(heartbeat.written_at);
+    if (!Number.isFinite(written)) {
+      return { state: "unknown", ageMs: null, label: "heartbeat malformed" };
+    }
+    const age = Math.max(0, nowTs - written);
+    const ageLabel = formatAge(age);
+    if (age > OFFLINE_MS) {
+      return { state: "offline", ageMs: age, label: `offline · ${ageLabel} old` };
+    }
+    if (age > STALE_MS) {
+      return { state: "stale", ageMs: age, label: `stale · ${ageLabel} ago` };
+    }
+    if (heartbeat.last_sync_ok === false) {
+      return { state: "stale", ageMs: age, label: `sync failing · ${ageLabel} ago` };
+    }
+    return { state: "live", ageMs: age, label: `live · ${ageLabel} ago` };
+  });
+
+  function formatAge(ms: number): string {
+    if (ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}s`;
+    if (ms < 3_600_000) return `${Math.round(ms / 60_000)}m`;
+    return `${Math.round(ms / 3_600_000)}h`;
+  }
+
   function scheduleStatus() {
     if (pollTimer) clearTimeout(pollTimer);
     // Tighten to 500ms during an active run; otherwise 2s foreground / 30s background
@@ -102,13 +164,19 @@
     }, 30000);
   }
 
+  // Heartbeat refresh every 45s (watcher writes every 60s).
+  let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
   onMount(() => {
     loadIndex();
     loadRoadmap();
+    loadHeartbeat();
     loadStatus().then(() => {
       scheduleStatus();
     });
     scheduleIndex();
+    heartbeatTimer = setInterval(loadHeartbeat, 45_000);
+    tickTimer = setInterval(() => (nowTs = Date.now()), 10_000);
     const onVis = () => scheduleStatus();
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
@@ -117,6 +185,8 @@
   onDestroy(() => {
     if (pollTimer) clearTimeout(pollTimer);
     if (indexTimer) clearTimeout(indexTimer);
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    if (tickTimer) clearInterval(tickTimer);
     abortCtl?.abort();
   });
 
@@ -187,7 +257,34 @@
         <span class="sep">·</span>
         <span>last full run {Math.round(index.summary.last_full_run_seconds)}s</span>
       {/if}
+      <span
+        class="sync-pill sync-{syncHealth.state}"
+        title={heartbeat
+          ? `watcher pid ${heartbeat.pid} on ${heartbeat.host} · last sync ${heartbeat.last_sync_at ?? 'never'} · ${heartbeat.consecutive_failures} failures`
+          : 'no heartbeat file found in test-snapshot/'}
+      >
+        <span class="sync-dot"></span>
+        {syncHealth.label}
+      </span>
     </div>
+
+    {#if syncHealth.state === "offline" || syncHealth.state === "stale"}
+      <div class="sync-warning sync-warning-{syncHealth.state}">
+        <strong>
+          {#if syncHealth.state === "offline"}
+            ⛔ Sync watcher is offline.
+          {:else}
+            ⚠ Sync is stale.
+          {/if}
+        </strong>
+        <span>
+          Numbers on this page may not reflect the latest test run. The local
+          file watcher on Drew's machine pushes fresh data every time a test
+          file changes — if this banner sticks, the watcher process has
+          crashed or the desktop is asleep.
+        </span>
+      </div>
+    {/if}
 
     <!-- Live run status card (only renders if status file exists) -->
     <TestStatusCard {status} />
@@ -365,6 +462,76 @@
   .summary strong { color: #a7f3d0; }
   .sep { color: #4b5563; }
   .commit { color: #9ca3af; }
+
+  .sync-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: auto;
+    padding: 0.2rem 0.55rem;
+    border-radius: 3px;
+    border: 1px solid;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+  .sync-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .sync-live {
+    color: #a7f3d0;
+    border-color: rgba(167, 243, 208, 0.4);
+    background: rgba(167, 243, 208, 0.08);
+  }
+  .sync-live .sync-dot {
+    animation: sync-pulse 2s ease-in-out infinite;
+  }
+  .sync-stale {
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.45);
+    background: rgba(251, 191, 36, 0.1);
+  }
+  .sync-offline {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(248, 113, 113, 0.12);
+  }
+  .sync-unknown {
+    color: #9ca3af;
+    border-color: rgba(156, 163, 175, 0.35);
+    background: rgba(156, 163, 175, 0.06);
+  }
+  @keyframes sync-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .sync-warning {
+    margin: 0.5rem 0 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 4px;
+    border: 1px solid;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    display: flex;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+  .sync-warning strong { white-space: nowrap; }
+  .sync-warning-offline {
+    color: #fca5a5;
+    background: rgba(248, 113, 113, 0.08);
+    border-color: rgba(248, 113, 113, 0.4);
+  }
+  .sync-warning-stale {
+    color: #fcd34d;
+    background: rgba(251, 191, 36, 0.08);
+    border-color: rgba(251, 191, 36, 0.4);
+  }
+
   .filters {
     display: flex;
     align-items: center;

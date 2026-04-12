@@ -54,6 +54,40 @@ export async function fetchStatus(signal?: AbortSignal): Promise<TestRunStatus |
  * hasn't been emitted yet or the dashboard is running against a dataset that
  * predates it). Any other error throws.
  */
+export interface SyncHeartbeat {
+  schema_version: number;
+  written_at: string;
+  started_at: string | null;
+  last_sync_at: string | null;
+  last_sync_ok: boolean | null;
+  last_change_at: string | null;
+  consecutive_failures: number;
+  host: string;
+  pid: number;
+}
+
+/**
+ * Fetch the watcher heartbeat. Returns null if the file doesn't exist (dev
+ * mode or watcher has never run). Any other error throws.
+ */
+export async function fetchHeartbeat(
+  signal?: AbortSignal
+): Promise<SyncHeartbeat | null> {
+  // In dev the watcher isn't writing to the live middleware path, so skip.
+  if (import.meta.env.DEV) return null;
+  const res = await fetch(`${TEST_DATA_BASE}/heartbeat.json`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  try {
+    return (await res.json()) as SyncHeartbeat;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchRoadmap(
   signal?: AbortSignal
 ): Promise<TestingRoadmap | null> {

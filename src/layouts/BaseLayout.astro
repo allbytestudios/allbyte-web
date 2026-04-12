@@ -31,6 +31,28 @@ const {
     <div transition:persist="music-player">
       <MusicPlayer client:load />
     </div>
+    <script>
+      // Set body.is-admin once auth resolves, so CSS rules gated on that
+      // class (draft devlog posts, etc.) can reveal admin-only content.
+      // Re-runs on every client-side navigation via ClientRouter.
+      function checkAdmin() {
+        const token = localStorage.getItem("allbyte_token");
+        document.body.classList.remove("is-admin");
+        if (!token) return;
+        fetch("https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => {
+            if (d?.user?.tier === "admin") {
+              document.body.classList.add("is-admin");
+            }
+          })
+          .catch(() => {});
+      }
+      checkAdmin();
+      document.addEventListener("astro:page-load", checkAdmin);
+    </script>
   </body>
 </html>
 

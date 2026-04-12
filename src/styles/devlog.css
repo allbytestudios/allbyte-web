@@ -23,6 +23,66 @@
   transition: border-color 0.15s, background 0.15s;
 }
 
+/* Draft posts are rendered in prod so admin can see them; hidden from
+   everyone else until body.is-admin is set by the auth check. */
+.devlog-card.draft {
+  display: none;
+  border-style: dashed;
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.04);
+}
+body.is-admin .devlog-card.draft {
+  display: block;
+}
+.draft-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  font-family: "Courier New", monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fcd34d;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  border-radius: 2px;
+}
+
+/* Draft banner on individual post detail page (shown to admin only) */
+.draft-banner {
+  display: none;
+  max-width: 720px;
+  margin: 0 auto 1rem;
+  padding: 0.65rem 1rem;
+  color: #fcd34d;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+}
+body.is-admin .draft-banner { display: block; }
+
+/* Hide entire draft post content from non-admins (detail page) */
+.draft-post-content {
+  display: none;
+}
+body.is-admin .draft-post-content {
+  display: block;
+}
+.draft-gate {
+  max-width: 720px;
+  margin: 3rem auto;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: #9ca3af;
+  border: 1px dashed rgba(167, 243, 208, 0.25);
+  border-radius: 4px;
+}
+body.is-admin .draft-gate {
+  display: none;
+}
+
 .devlog-card:hover {
   border-color: rgba(167, 243, 208, 0.3);
   background: #161c24;

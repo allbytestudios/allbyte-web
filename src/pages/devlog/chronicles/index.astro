@@ -7,7 +7,7 @@ import "../../../styles/devlog.css";
 import { getCollection } from "astro:content";
 
 const posts = (await getCollection("devlogs"))
-  .filter((p) => p.data.devlog === "chronicles" && !p.data.draft)
+  .filter((p) => p.data.devlog === "chronicles")
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
@@ -24,14 +24,14 @@ const posts = (await getCollection("devlogs"))
   <main class="devlog-page">
     <div class="devlog-list">
     {posts.map((post) => (
-      <a href={`/devlog/${post.id}/`} class="devlog-card">
+      <a href={`/devlog/${post.id}/`} class:list={["devlog-card", post.data.draft && "draft"]}>
         <div class="card-header">
           <span class={`category-tag ${post.data.category}`}>{post.data.category}</span>
           <time datetime={post.data.pubDate.toISOString()}>
             {post.data.pubDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
           </time>
         </div>
-        <h2>{post.data.title}</h2>
+        <h2>{post.data.title}{post.data.draft && <span class="draft-badge">draft</span>}</h2>
         <p>{post.data.description}</p>
         {post.data.tags.length > 0 && (
           <div class="tags">

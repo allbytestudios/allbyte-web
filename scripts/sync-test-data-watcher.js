@@ -30,7 +30,8 @@
  */
 
 import { spawn } from "node:child_process";
-import { existsSync, statSync, watch } from "node:fs";
+import { existsSync, statSync, watch, writeFileSync, mkdtempSync } from "node:fs";
+import { tmpdir, hostname } from "node:os";
 import { dirname, join, normalize, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -48,6 +49,8 @@ const REGION = process.env.AWS_REGION || "us-east-1";
 const DEBOUNCE_MS = Number(process.env.SYNC_DEBOUNCE_MS) || 2000;
 const CIRCUIT_PAUSE_MS = Number(process.env.SYNC_CIRCUIT_PAUSE_MS) || 60000;
 const FAILURE_THRESHOLD = 3;
+// Heartbeat upload cadence. Dashboard flags >2x this as stale, >10x as offline.
+const HEARTBEAT_MS = Number(process.env.SYNC_HEARTBEAT_MS) || 60000;
 
 // Watch targets — relative to CHRONICLES_DIR. Each entry is { rel, kind }.
 // `kind: "json"` means the file change triggers a sync. `kind: "results"` is
@@ -71,9 +74,12 @@ export function buildSyncCommands({
   bucket,
   region,
 }) {
-  const idx = join(chroniclesDir, "test_index.json");
-  const road = join(chroniclesDir, "test_roadmap.json");
-  const results = join(chroniclesDir, "test_results");
+  // Use forward slashes even on Windows: aws.cmd accepts them and they
+  // survive spawn+shell:true without backslash-escaping hazards.
+  const toPosix = (p) => p.replace(/\\/g, "/");
+  const idx = toPosix(join(chroniclesDir, "test_index.json"));
+  const road = toPosix(join(chroniclesDir, "test_roadmap.json"));
+  const results = toPosix(join(chroniclesDir, "test_results"));
   const cacheCtrl = "public, max-age=30, must-revalidate";
 
   const cmds = [];
@@ -128,6 +134,33 @@ export function buildSyncCommands({
     ],
   });
   return cmds;
+}
+
+/**
+ * Build the shape that gets uploaded as heartbeat.json. Pure / testable —
+ * the dashboard reads this to decide if the watcher is alive.
+ */
+export function buildHeartbeat({
+  startedAt,
+  lastSyncAt,
+  lastSyncOk,
+  lastChangeAt,
+  consecutiveFailures,
+  host,
+  pid,
+  now = Date.now(),
+}) {
+  return {
+    schema_version: 1,
+    written_at: new Date(now).toISOString(),
+    started_at: startedAt ? new Date(startedAt).toISOString() : null,
+    last_sync_at: lastSyncAt ? new Date(lastSyncAt).toISOString() : null,
+    last_sync_ok: lastSyncOk,
+    last_change_at: lastChangeAt ? new Date(lastChangeAt).toISOString() : null,
+    consecutive_failures: consecutiveFailures,
+    host,
+    pid,
+  };
 }
 
 /**
@@ -223,10 +256,9 @@ function log(level, msg) {
 function runCommand(argv) {
   return new Promise((res) => {
     const [cmd, ...args] = argv;
-    const child = spawn(cmd, args, {
-      shell: process.platform === "win32",
-      windowsHide: true,
-    });
+    // aws.exe is a real executable on Windows; no shell needed. Dropping
+    // shell:true also avoids backslash-escape hazards in argument values.
+    const child = spawn(cmd, args, { windowsHide: true });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (d) => (stdout += d.toString()));
@@ -262,6 +294,54 @@ export function checkSanity({ chroniclesDir, files }) {
 
 async function checkAwsCli() {
   const r = await runCommand(["aws", "--version"]);
+  return r.ok;
+}
+
+// --- heartbeat ------------------------------------------------------------
+
+/**
+ * Write heartbeat JSON to a temp file and upload to S3. Short cache so the
+ * dashboard sees fresh values within ~30s of a write.
+ */
+async function uploadHeartbeat({ state, dryRun, bucket, region }) {
+  const body = buildHeartbeat({
+    startedAt: state.startedAt,
+    lastSyncAt: state.lastSyncAt,
+    lastSyncOk: state.lastSyncOk,
+    lastChangeAt: state.lastChangeAt,
+    consecutiveFailures: state.consecutiveFailures,
+    host: hostname(),
+    pid: process.pid,
+  });
+  if (dryRun) {
+    log("..", `[dry-run] heartbeat ${body.written_at}`);
+    return true;
+  }
+  const tmp = join(tmpdir(), `sync-heartbeat-${process.pid}.json`);
+  try {
+    writeFileSync(tmp, JSON.stringify(body, null, 2));
+  } catch (err) {
+    log("warn", `heartbeat tmp write failed: ${err.message}`);
+    return false;
+  }
+  const tmpPosix = tmp.replace(/\\/g, "/");
+  const argv = [
+    "aws",
+    "s3",
+    "cp",
+    tmpPosix,
+    `s3://${bucket}/test-snapshot/heartbeat.json`,
+    "--region",
+    region,
+    "--cache-control",
+    "public, max-age=20, must-revalidate",
+    "--content-type",
+    "application/json",
+  ];
+  const r = await runCommand(argv);
+  if (!r.ok) {
+    log("warn", `heartbeat upload failed: ${r.stderr.split("\n")[0] || "?"}`);
+  }
   return r.ok;
 }
 
@@ -474,6 +554,41 @@ async function runSelfTest() {
       if (cb.isOpen()) throw new Error("counter should reset on success");
     }) && ok;
 
+  console.log("\nbuildHeartbeat");
+  ok =
+    t("produces schema v1 with ISO timestamps", () => {
+      const hb = buildHeartbeat({
+        startedAt: 1000,
+        lastSyncAt: 2000,
+        lastSyncOk: true,
+        lastChangeAt: 1500,
+        consecutiveFailures: 0,
+        host: "h",
+        pid: 42,
+        now: 3000,
+      });
+      if (hb.schema_version !== 1) throw new Error("schema_version");
+      if (!hb.written_at.endsWith("Z")) throw new Error("written_at not ISO");
+      if (hb.last_sync_ok !== true) throw new Error("last_sync_ok");
+      if (hb.pid !== 42) throw new Error("pid");
+      if (hb.consecutive_failures !== 0) throw new Error("failures");
+    }) && ok;
+  ok =
+    t("nulls out missing timestamps", () => {
+      const hb = buildHeartbeat({
+        startedAt: null,
+        lastSyncAt: null,
+        lastSyncOk: null,
+        lastChangeAt: null,
+        consecutiveFailures: 0,
+        host: "h",
+        pid: 1,
+        now: 1000,
+      });
+      if (hb.last_sync_at !== null) throw new Error("last_sync_at should be null");
+      if (hb.started_at !== null) throw new Error("started_at should be null");
+    }) && ok;
+
   console.log("\ncheckSanity");
   ok =
     t("flags missing chronicles dir", () => {
@@ -580,16 +695,32 @@ async function main() {
 
   // Long-running watcher mode
   const breaker = makeCircuitBreaker(FAILURE_THRESHOLD, CIRCUIT_PAUSE_MS);
+  const hbState = {
+    startedAt: Date.now(),
+    lastSyncAt: null,
+    lastSyncOk: null,
+    lastChangeAt: null,
+    consecutiveFailures: 0,
+  };
   let pendingChange = null;
   const debouncer = makeDebouncer(DEBOUNCE_MS, async () => {
     log("..", `change detected (${pendingChange}) — syncing`);
     pendingChange = null;
-    await runSync({
+    const { ok } = await runSync({
       dryRun: args.dryRun,
       chroniclesDir: CHRONICLES_DIR,
       bucket: BUCKET,
       region: REGION,
       breaker,
+    });
+    hbState.lastSyncAt = Date.now();
+    hbState.lastSyncOk = ok;
+    hbState.consecutiveFailures = breaker.failures();
+    await uploadHeartbeat({
+      state: hbState,
+      dryRun: args.dryRun,
+      bucket: BUCKET,
+      region: REGION,
     });
   });
 
@@ -598,6 +729,7 @@ async function main() {
     files: WATCH_FILES,
     onChange: (rel) => {
       pendingChange = rel;
+      hbState.lastChangeAt = Date.now();
       debouncer.fire();
     },
   });
@@ -611,17 +743,38 @@ async function main() {
 
   // Initial sync on startup so prod is current the moment the watcher comes up
   log("..", "initial sync on startup");
-  await runSync({
+  const initial = await runSync({
     dryRun: args.dryRun,
     chroniclesDir: CHRONICLES_DIR,
     bucket: BUCKET,
     region: REGION,
     breaker,
   });
+  hbState.lastSyncAt = Date.now();
+  hbState.lastSyncOk = initial.ok;
+  hbState.consecutiveFailures = breaker.failures();
+  await uploadHeartbeat({
+    state: hbState,
+    dryRun: args.dryRun,
+    bucket: BUCKET,
+    region: REGION,
+  });
+
+  // Periodic heartbeat so the dashboard can tell "alive and idle" apart from
+  // "dead". Uploads regardless of whether a sync happened.
+  const hbInterval = setInterval(() => {
+    uploadHeartbeat({
+      state: hbState,
+      dryRun: args.dryRun,
+      bucket: BUCKET,
+      region: REGION,
+    });
+  }, HEARTBEAT_MS);
 
   // Graceful shutdown
   const shutdown = () => {
     log("..", "shutdown — closing watchers");
+    clearInterval(hbInterval);
     debouncer.cancel();
     for (const w of watchers) {
       try {

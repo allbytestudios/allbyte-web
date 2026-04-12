@@ -47,20 +47,24 @@
     gap: 0;
     max-width: 1600px;
     margin: 0 auto;
-    padding: 0.5rem 1rem 0;
+    padding: 0.5rem 0.5rem 0;
     border-bottom: 1px solid rgba(167, 243, 208, 0.12);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .nav-tab {
     font-family: "Courier New", monospace;
     font-size: 0.85rem;
     color: #6b7280;
     text-decoration: none;
-    padding: 0.55rem 1.1rem;
+    padding: 0.55rem 0.75rem;
     border-bottom: 2px solid transparent;
     transition: color 0.15s, border-color 0.15s;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.35rem;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
   .nav-tab:hover {
     color: #d1d5db;

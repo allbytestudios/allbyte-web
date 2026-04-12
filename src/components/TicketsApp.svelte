@@ -253,17 +253,30 @@
 
     {#if groupByEpic && milestoneGroups.length > 0}
       {#each milestoneGroups as mg (mg.milestone)}
+        {@const msTickets = [...mg.epics.flatMap(e => e.tickets), ...mg.uncategorized]}
+        {@const msDone = msTickets.filter(t => t.status === "done").length}
+        {@const msEpicsDone = mg.epics.filter(e => e.tickets.every(t => t.status === "done")).length}
         <div class="milestone-section">
-          <h2 class="ms-title">{mg.milestone}</h2>
+          <div class="ms-header">
+            <h2 class="ms-title">{mg.milestone}</h2>
+            <span class="ms-stats">
+              {msEpicsDone}/{mg.epics.length} epics complete · {msDone}/{msTickets.length} tickets done
+            </span>
+          </div>
           {#each mg.epics as eg (eg.epic.id)}
+            {@const done = eg.tickets.filter(t => t.status === "done").length}
+            {@const total = eg.tickets.length}
             <div class="epic-section">
               <div class="epic-header">
                 <span class="epic-status" style="color: {statusColor(eg.epic.status)}">{eg.epic.status}</span>
                 <h3 class="epic-title">{eg.epic.title}</h3>
-                <span class="epic-count">{eg.tickets.length} tickets</span>
+                <span class="epic-progress-label">{done}/{total}</span>
                 {#if eg.epic.estimatedHours}
                   <span class="epic-hours">{eg.epic.estimatedHours}h est</span>
                 {/if}
+              </div>
+              <div class="epic-bar">
+                <div class="epic-bar-fill" style="width: {total > 0 ? (done / total * 100).toFixed(0) : 0}%"></div>
               </div>
               <p class="epic-desc">{eg.epic.description}</p>
               <div class="ticket-list">
@@ -383,24 +396,36 @@
   .milestone-section {
     margin-bottom: 2rem;
   }
+  .ms-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+  }
   .ms-title {
     font-size: 1rem;
     color: #a7f3d0;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    margin: 0 0 0.75rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+    margin: 0;
+  }
+  .ms-stats {
+    font-size: 0.78rem;
+    color: #6b7280;
   }
   .epic-section {
     margin-bottom: 1.25rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid rgba(167, 243, 208, 0.1);
   }
   .epic-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.25rem;
   }
   .epic-title {
     font-size: 0.92rem;
@@ -412,14 +437,27 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  .epic-count {
-    font-size: 0.75rem;
-    color: #6b7280;
+  .epic-progress-label {
+    font-size: 0.78rem;
+    color: #a7f3d0;
+    font-weight: 700;
   }
   .epic-hours {
     font-size: 0.72rem;
     color: #4b5563;
     margin-left: auto;
+  }
+  .epic-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.35rem;
+  }
+  .epic-bar-fill {
+    height: 100%;
+    background: #a7f3d0;
+    transition: width 0.3s;
   }
   .epic-desc {
     font-size: 0.8rem;

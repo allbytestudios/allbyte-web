@@ -2335,6 +2335,410 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
 
+  # --- DynamoDB: Legend's Square posts ---
+  PostsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: allbyte-studio-posts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: postId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: postId
+          KeyType: HASH
+
+  # --- Lambda: Legend's Square — list posts (legend+ only) ---
+  ListPostsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-list-posts
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          POSTS_TABLE: !Ref PostsTable
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import boto3
+
+          posts = boto3.resource("dynamodb").Table(os.environ["POSTS_TABLE"])
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
+          }
+
+          TIER_RANK = {"default": 0, "initiate": 1, "hero": 2, "legend": 3, "admin": 4}
+
+          _cache = {}
+          def get_jwt_secret():
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              auth_header = event.get("headers", {}).get("authorization", "")
+              if not auth_header.startswith("Bearer "):
+                  return err(401, "No token provided")
+
+              payload = verify_jwt(auth_header[7:], get_jwt_secret())
+              if not payload:
+                  return err(401, "Invalid or expired token")
+
+              actor = users.get_item(Key={"userId": payload["sub"]}).get("Item")
+              if not actor:
+                  return err(403, "User not found")
+              tier = actor.get("tier", "default")
+              if TIER_RANK.get(tier, 0) < TIER_RANK["legend"]:
+                  return err(403, "Legend tier required")
+
+              try:
+                  scan = posts.scan()
+                  items = scan.get("Items", [])
+              except Exception as e:
+                  return err(500, f"scan failed: {e}")
+
+              items.sort(key=lambda x: x.get("createdAt", ""), reverse=True)
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({"posts": items}, default=str),
+              }
+
+  # --- Lambda: Legend's Square — create a post (legend+ only) ---
+  CreatePostFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-create-post
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          POSTS_TABLE: !Ref PostsTable
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import uuid
+          import boto3
+          from datetime import datetime, timezone
+
+          posts = boto3.resource("dynamodb").Table(os.environ["POSTS_TABLE"])
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
+          }
+
+          TIER_RANK = {"default": 0, "initiate": 1, "hero": 2, "legend": 3, "admin": 4}
+
+          _cache = {}
+          def get_jwt_secret():
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          MAX_BODY_LEN = 2000
+          MAX_TITLE_LEN = 200
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              auth_header = event.get("headers", {}).get("authorization", "")
+              if not auth_header.startswith("Bearer "):
+                  return err(401, "No token provided")
+
+              payload = verify_jwt(auth_header[7:], get_jwt_secret())
+              if not payload:
+                  return err(401, "Invalid or expired token")
+
+              actor = users.get_item(Key={"userId": payload["sub"]}).get("Item")
+              if not actor:
+                  return err(403, "User not found")
+              tier = actor.get("tier", "default")
+              if TIER_RANK.get(tier, 0) < TIER_RANK["legend"]:
+                  return err(403, "Legend tier required")
+
+              try:
+                  body = json.loads(event.get("body", "{}"))
+              except Exception:
+                  return err(400, "Invalid JSON body")
+
+              title = (body.get("title") or "").strip()
+              content = (body.get("content") or "").strip()
+              if not content:
+                  return err(400, "Post content is required")
+              if len(content) > MAX_BODY_LEN:
+                  return err(400, f"Content exceeds {MAX_BODY_LEN} characters")
+              if title and len(title) > MAX_TITLE_LEN:
+                  return err(400, f"Title exceeds {MAX_TITLE_LEN} characters")
+
+              now = datetime.now(timezone.utc).isoformat()
+              post_id = str(uuid.uuid4())[:8]
+
+              item = {
+                  "postId": post_id,
+                  "authorId": payload["sub"],
+                  "authorName": actor.get("username") or actor.get("email", "").split("@")[0],
+                  "authorTier": tier,
+                  "title": title,
+                  "content": content,
+                  "createdAt": now,
+                  "reply": None,
+                  "replyAt": None,
+              }
+
+              posts.put_item(Item=item)
+
+              return {
+                  "statusCode": 201,
+                  "headers": CORS,
+                  "body": json.dumps({"post": item}, default=str),
+              }
+
+  # --- Lambda: Legend's Square — reply to a post (admin only) ---
+  ReplyPostFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-reply-post
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          POSTS_TABLE: !Ref PostsTable
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hashlib
+          import hmac
+          import base64
+          import time
+          import boto3
+          from datetime import datetime, timezone
+
+          posts = boto3.resource("dynamodb").Table(os.environ["POSTS_TABLE"])
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ["SITE_DOMAIN"],
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
+          }
+
+          _cache = {}
+          def get_jwt_secret():
+              if "jwt" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["jwt"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["jwt"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              auth_header = event.get("headers", {}).get("authorization", "")
+              if not auth_header.startswith("Bearer "):
+                  return err(401, "No token provided")
+
+              payload = verify_jwt(auth_header[7:], get_jwt_secret())
+              if not payload:
+                  return err(401, "Invalid or expired token")
+
+              actor = users.get_item(Key={"userId": payload["sub"]}).get("Item")
+              if not actor or actor.get("tier") != "admin":
+                  return err(403, "Admin tier required")
+
+              post_id = event.get("pathParameters", {}).get("postId")
+              if not post_id:
+                  return err(400, "Missing postId")
+
+              try:
+                  body = json.loads(event.get("body", "{}"))
+              except Exception:
+                  return err(400, "Invalid JSON body")
+
+              reply = (body.get("reply") or "").strip()
+              if not reply:
+                  return err(400, "Reply content is required")
+              if len(reply) > 2000:
+                  return err(400, "Reply exceeds 2000 characters")
+
+              now = datetime.now(timezone.utc).isoformat()
+
+              posts.update_item(
+                  Key={"postId": post_id},
+                  UpdateExpression="SET reply = :r, replyAt = :t",
+                  ExpressionAttributeValues={":r": reply, ":t": now},
+              )
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({"postId": post_id, "reply": reply, "replyAt": now}),
+              }
+
+  # Legend's Square routes
+  ListPostsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ListPostsFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  ListPostsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /legend/posts"
+      Target: !Sub "integrations/${ListPostsIntegration}"
+
+  ListPostsPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ListPostsFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  CreatePostIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt CreatePostFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  CreatePostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /legend/posts"
+      Target: !Sub "integrations/${CreatePostIntegration}"
+
+  CreatePostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CreatePostFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  ReplyPostIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ReplyPostFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  ReplyPostRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "PUT /legend/posts/{postId}/reply"
+      Target: !Sub "integrations/${ReplyPostIntegration}"
+
+  ReplyPostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ReplyPostFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
 Outputs:
   ApiUrl:
     Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"

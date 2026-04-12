@@ -7,6 +7,7 @@
   import { onMount, onDestroy } from "svelte";
 
   let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "hero"));
+  let viewerIsLegend = $derived(isTierAtLeast(auth.currentUser, "legend"));
 
   let dashboard = $state<DashboardFile | null>(null);
   let agents = $state<AgentsFile | null>(null);
@@ -149,17 +150,24 @@
     </div>
 
     {#if recentWorkers.length > 0}
-      <h2 class="section-title">Worker History</h2>
-      <div class="history-list">
-        {#each recentWorkers as w (w.id + w.started)}
-          <div class="history-row">
-            <span class="history-expert" style="color: {EXPERT_META[w.expert.replace('-expert', '')]?.color ?? '#9ca3af'}">{w.expert.replace('-expert', '')}</span>
-            <span class="history-task">{w.task}</span>
-            <span class="history-duration">{w.duration_min}m</span>
-            <span class="history-result">{w.result}</span>
-          </div>
-        {/each}
-      </div>
+      {#if viewerIsLegend}
+        <h2 class="section-title">Worker History</h2>
+        <div class="history-list">
+          {#each recentWorkers as w (w.id + w.started)}
+            <div class="history-row">
+              <span class="history-expert" style="color: {EXPERT_META[w.expert.replace('-expert', '')]?.color ?? '#9ca3af'}">{w.expert.replace('-expert', '')}</span>
+              <span class="history-task">{w.task}</span>
+              <span class="history-duration">{w.duration_min}m</span>
+              <span class="history-result">{w.result}</span>
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <div class="legend-gate">
+          <span>Worker history is a <strong>Legend</strong> tier perk.</span>
+          <a href="/subscribe/">Upgrade →</a>
+        </div>
+      {/if}
     {/if}
   {:else if !loadError}
     <div class="loading">Loading agent status…</div>
@@ -189,6 +197,20 @@
   .gate strong { color: #fbbf24; }
   .gate a { color: #a7f3d0; text-decoration: none; }
   .gate a:hover { text-decoration: underline; }
+  .legend-gate {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    border: 1px dashed rgba(249, 115, 22, 0.4);
+    border-radius: 4px;
+    font-size: 0.82rem;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .legend-gate strong { color: #f97316; }
+  .legend-gate a { color: #f97316; text-decoration: none; }
+  .legend-gate a:hover { text-decoration: underline; }
   .empty { color: #6b7280; font-style: italic; font-size: 0.85rem; }
   .session-bar {
     display: flex;

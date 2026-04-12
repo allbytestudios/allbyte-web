@@ -11,7 +11,11 @@
   } from "../lib/testDataSource";
   import MilestoneStrip from "./MilestoneStrip.svelte";
   import TestStatusCard from "./TestStatusCard.svelte";
+  import { auth } from "../lib/auth.svelte.ts";
+  import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
+
+  let viewerIsLegend = $derived(isTierAtLeast(auth.currentUser, "legend"));
 
   let index = $state<TestIndex | null>(null);
   let status = $state<TestRunStatus | null>(null);
@@ -163,17 +167,24 @@
     </a>
   </div>
 
-  <!-- Recent activity (from dashboard) -->
+  <!-- Recent activity (Legend+ only) -->
   {#if dashboard?.recentActivity?.length}
-    <h3 class="section-title">Recent Activity</h3>
-    <div class="activity">
-      {#each dashboard.recentActivity.slice(0, 8) as entry}
-        <div class="activity-row">
-          <span class="act-time">{new Date(entry.time).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
-          <span class="act-text">{entry.action}</span>
-        </div>
-      {/each}
-    </div>
+    {#if viewerIsLegend}
+      <h3 class="section-title">Recent Activity</h3>
+      <div class="activity">
+        {#each dashboard.recentActivity.slice(0, 8) as entry}
+          <div class="activity-row">
+            <span class="act-time">{new Date(entry.time).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
+            <span class="act-text">{entry.action}</span>
+          </div>
+        {/each}
+      </div>
+    {:else}
+      <div class="legend-gate">
+        <span>Deployment activity feed is a <strong>Legend</strong> tier perk.</span>
+        <a href="/subscribe/">Upgrade →</a>
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -318,6 +329,21 @@
   }
   .act-time { color: #4b5563; flex-shrink: 0; width: 3.5rem; }
   .act-text { color: #d1d5db; }
+
+  .legend-gate {
+    margin: 1.5rem 0 0;
+    padding: 0.75rem 1rem;
+    border: 1px dashed rgba(249, 115, 22, 0.4);
+    border-radius: 4px;
+    font-size: 0.82rem;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .legend-gate strong { color: #f97316; }
+  .legend-gate a { color: #f97316; text-decoration: none; }
+  .legend-gate a:hover { text-decoration: underline; }
 
   @media (max-width: 768px) {
     .cards { grid-template-columns: 1fr; }

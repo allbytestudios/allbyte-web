@@ -13,6 +13,7 @@
   import { onMount, onDestroy } from "svelte";
 
   let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "hero"));
+  let viewerIsLegend = $derived(isTierAtLeast(auth.currentUser, "legend"));
 
   let tickets = $state<TicketsFile | null>(null);
   let roadmap = $state<TestingRoadmap | null>(null);
@@ -58,6 +59,9 @@
   let filtered = $derived.by<Ticket[]>(() => {
     if (!tickets) return [];
     let list = tickets.tickets;
+    if (!viewerIsLegend) {
+      list = list.filter((t) => t.priority !== "P3" && t.status !== "deferred");
+    }
     if (filterPriority !== "all") {
       list = list.filter((t) => t.priority === filterPriority);
     }
@@ -171,7 +175,7 @@
             <span class="subtask-label">{prog.done}/{prog.total} subtasks</span>
           {/if}
 
-          {#if t.subtasks?.length}
+          {#if t.subtasks?.length && viewerIsLegend}
             <details class="subtask-details">
               <summary>Subtasks</summary>
               <ul class="subtask-list">
@@ -192,6 +196,13 @@
         </div>
       {/each}
     </div>
+
+    {#if !viewerIsLegend}
+      <div class="legend-gate">
+        <span>Deferred tickets, P3 backlog, and subtask detail are <strong>Legend</strong> tier perks.</span>
+        <a href="/subscribe/">Upgrade →</a>
+      </div>
+    {/if}
   {:else if !loadError}
     <div class="loading">Loading tickets…</div>
   {/if}
@@ -220,6 +231,20 @@
   .gate strong { color: #fbbf24; }
   .gate a { color: #a7f3d0; text-decoration: none; }
   .gate a:hover { text-decoration: underline; }
+  .legend-gate {
+    margin: 1.5rem 0 0;
+    padding: 0.75rem 1rem;
+    border: 1px dashed rgba(249, 115, 22, 0.4);
+    border-radius: 4px;
+    font-size: 0.82rem;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .legend-gate strong { color: #f97316; }
+  .legend-gate a { color: #f97316; text-decoration: none; }
+  .legend-gate a:hover { text-decoration: underline; }
 
   .summary-bar {
     display: flex;

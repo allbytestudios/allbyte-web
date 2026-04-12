@@ -122,16 +122,15 @@
 
   let notifyMode = $state(false);
   let notifyPrefs = $state<Record<string, boolean>>({
-    chronicles: true, "godot-and-claude": true, studio: true,
-    music: true, artwork: true, fonts: true,
+    devlog: true, testsuite: true, music: true, artwork: true,
   });
   let notifySaving = $state(false);
 
   function enterNotifyMode() {
     const existing = auth.currentUser?.notificationPreferences;
     notifyPrefs = existing
-      ? { ...existing }
-      : { chronicles: true, "godot-and-claude": true, studio: true, music: true, artwork: true, fonts: true };
+      ? { devlog: true, testsuite: true, music: true, artwork: true, ...existing }
+      : { devlog: true, testsuite: true, music: true, artwork: true };
     notifyMode = true;
   }
 
@@ -157,7 +156,7 @@
     if (notifyMode) notifyPrefs[key] = !notifyPrefs[key];
   }
 
-  let { devlogCounts = { chronicles: 0, "godot-and-claude": 0, studio: 0 }, artCounts = { music: 0, artwork: 0 } } = $props();
+  let { devlogTotal = 0, artCounts = { music: 0, artwork: 0 } } = $props();
 
   let tierCounts = $state({ initiate: 0, hero: 0, legend: 0 });
 
@@ -452,47 +451,31 @@
         <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("artwork")}>
           <a href="/artwork/" class="link-card heart-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
             <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
-            <p>Sprites, pre-rendered backgrounds.</p>
+            <p>Sprites, pre-rendered backgrounds &amp; the ModernGoth typeface.</p>
             <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
           </a>
           {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.artwork} /></label>{/if}
-        </div>
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("fonts")}>
-          <a href="/fonts/" class="link-card heart-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
-            <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
-            <p>A custom typeface designed for The Chronicles of Nesis.</p>
-            <span class="entry-count heart-count">(1 typeface)</span>
-          </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.fonts} /></label>{/if}
         </div>
       </div>
     </div>
     <div class="mobile-panel engine-bg">
       <h2 class="panel-title engine-title"><span class="terminal-prompt">$</span> Dev<br/><span class="panel-sub">(built with AI)</span></h2>
       <div class="mobile-links">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("chronicles")}>
-          <a href="/devlog/chronicles/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>Chronicles of Nesis Devlog <span class="cursor-arrow"></span></h3>
-            <p>Devlog of Chronicles of Nesis, a 90s style tactical RPG.</p>
-            <span class="entry-count">({devlogCounts.chronicles} {devlogCounts.chronicles === 1 ? "entry" : "entries"})</span>
+        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("devlog")}>
+          <a href="/devlog/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
+            <h3>Devlog <span class="cursor-arrow"></span></h3>
+            <p>Engineering, workflow, strategy, narrative &amp; craft posts.</p>
+            <span class="entry-count">({devlogTotal} {devlogTotal === 1 ? "entry" : "entries"})</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.chronicles} /></label>{/if}
+          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.devlog} /></label>{/if}
         </div>
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("godot-and-claude")}>
-          <a href="/devlog/godot-and-claude/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>Godot &amp; Claude Devlog <span class="cursor-arrow"></span></h3>
-            <p>Devlog of Godot &amp; Claude local setup and feedback loop.</p>
-            <span class="entry-count">({devlogCounts["godot-and-claude"]} {devlogCounts["godot-and-claude"] === 1 ? "entry" : "entries"})</span>
+        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("testsuite")}>
+          <a href="/test/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
+            <h3>Test Suite Dashboard <span class="cursor-arrow"></span></h3>
+            <p>Live build health across three runner tiers with milestone progress &amp; blockers.</p>
+            <span class="entry-count">(public summary · Hero+ for depth)</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs["godot-and-claude"]} /></label>{/if}
-        </div>
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("studio")}>
-          <a href="/devlog/studio/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>AllByte Studios Devlog <span class="cursor-arrow"></span></h3>
-            <p>Devlog of building AllByte studio web app with Claude.</p>
-            <span class="entry-count">({devlogCounts.studio} {devlogCounts.studio === 1 ? "entry" : "entries"})</span>
-          </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.studio} /></label>{/if}
+          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.testsuite} /></label>{/if}
         </div>
       </div>
     </div>
@@ -509,13 +492,13 @@
       </div>
 
       <div class="cell engine-bg">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("chronicles")}>
-          <a href="/devlog/chronicles/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>Chronicles of Nesis Devlog <span class="cursor-arrow"></span></h3>
-            <p>Devlog of Chronicles of Nesis, a 90s style tactical RPG.</p>
-            <span class="entry-count">({devlogCounts.chronicles} {devlogCounts.chronicles === 1 ? "entry" : "entries"})</span>
+        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("devlog")}>
+          <a href="/devlog/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
+            <h3>Devlog <span class="cursor-arrow"></span></h3>
+            <p>Engineering, workflow, strategy, narrative &amp; craft posts — all in one feed with tag filters.</p>
+            <span class="entry-count">({devlogTotal} {devlogTotal === 1 ? "entry" : "entries"})</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.chronicles} /></label>{/if}
+          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.devlog} /></label>{/if}
         </div>
       </div>
       <div class="cell heart-bg">
@@ -530,44 +513,23 @@
       </div>
 
       <div class="cell engine-bg">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("godot-and-claude")}>
-          <a href="/devlog/godot-and-claude/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>Godot &amp; Claude Devlog <span class="cursor-arrow"></span></h3>
-            <p>Devlog of Godot &amp; Claude local setup and feedback loop.</p>
-            <span class="entry-count">({devlogCounts["godot-and-claude"]} {devlogCounts["godot-and-claude"] === 1 ? "entry" : "entries"})</span>
+        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("testsuite")}>
+          <a href="/test/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
+            <h3>Test Suite Dashboard <span class="cursor-arrow"></span></h3>
+            <p>Live build health across three runner tiers, milestone progress &amp; blockers.</p>
+            <span class="entry-count">(public summary · Hero+ for depth)</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs["godot-and-claude"]} /></label>{/if}
+          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.testsuite} /></label>{/if}
         </div>
       </div>
       <div class="cell heart-bg">
         <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("artwork")}>
           <a href="/artwork/" class="link-card heart-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
             <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
-            <p>Sprites, pre-rendered backgrounds.</p>
+            <p>Sprites, pre-rendered backgrounds &amp; the ModernGoth typeface.</p>
             <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
           </a>
           {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.artwork} /></label>{/if}
-        </div>
-      </div>
-
-      <div class="cell engine-bg">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("studio")}>
-          <a href="/devlog/studio/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>AllByte Studios Devlog <span class="cursor-arrow"></span></h3>
-            <p>Devlog of building AllByte studio web app with Claude.</p>
-            <span class="entry-count">({devlogCounts.studio} {devlogCounts.studio === 1 ? "entry" : "entries"})</span>
-          </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.studio} /></label>{/if}
-        </div>
-      </div>
-      <div class="cell heart-bg">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("fonts")}>
-          <a href="/fonts/" class="link-card heart-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={() => { fontHovered = true; playCursor(); }} onmouseleave={() => fontHovered = false}>
-            <h3>Font <img src={fontHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
-            <p>A custom typeface designed for The Chronicles of Nesis.</p>
-            <span class="entry-count heart-count">(1 typeface)</span>
-          </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.fonts} /></label>{/if}
         </div>
       </div>
     </div>

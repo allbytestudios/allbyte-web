@@ -24,7 +24,9 @@ const devlogShortNames: Record<string, string> = {
   "godot-and-claude": "Godot & Claude Devlog",
   studio: "AllByte Studios Devlog",
 };
-const backHref = `/devlog/${post.data.devlog}/`;
+// Unified devlog index with pre-selected tag filter (skips the 301 from
+// /devlog/<series>/ → /devlog/?tag=<series>).
+const backHref = `/devlog/?tag=${post.data.devlog}`;
 const categoryLabel = devlogShortNames[post.data.devlog] || "Devlog";
 
 const breadcrumbs = [

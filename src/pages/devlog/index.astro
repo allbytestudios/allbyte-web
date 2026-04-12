@@ -1,3 +1,167 @@
 ---
-return Astro.redirect("/", 301);
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Footer from "../../components/Footer.astro";
+import AiDisclaimer from "../../components/AiDisclaimer.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import "../../styles/devlog.css";
+import { getCollection } from "astro:content";
+
+const DEVLOG_LABELS: Record<string, string> = {
+  chronicles: "Chronicles of Nesis",
+  "godot-and-claude": "Godot & Claude",
+  studio: "AllByte Studios",
+};
+
+const posts = (await getCollection("devlogs"))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
+
+<BaseLayout
+  title="Devlog — AllByte Studios"
+  description="All devlog posts from AllByte Studios — engineering, workflow, strategy, narrative, and craft."
+>
+  <PageHeader
+    theme="engine"
+    title="Devlog"
+    backHref="/"
+    backLabel="Home"
+    breadcrumbs={[{ href: "/", label: "Home" }]}
+  >
+    <AiDisclaimer />
+  </PageHeader>
+  <main class="devlog-page">
+    <div class="devlog-list">
+      <div class="devlog-filters" data-filters>
+        <button type="button" class="filter-chip active" data-filter="all">All</button>
+        <span class="filter-sep">series:</span>
+        <button type="button" class="filter-chip" data-filter="devlog:chronicles">Chronicles</button>
+        <button type="button" class="filter-chip" data-filter="devlog:godot-and-claude">Godot &amp; Claude</button>
+        <button type="button" class="filter-chip" data-filter="devlog:studio">Studio</button>
+        <span class="filter-sep">topic:</span>
+        <button type="button" class="filter-chip" data-filter="cat:engineering">engineering</button>
+        <button type="button" class="filter-chip" data-filter="cat:workflow">workflow</button>
+        <button type="button" class="filter-chip" data-filter="cat:strategy">strategy</button>
+        <button type="button" class="filter-chip" data-filter="cat:narrative">narrative</button>
+        <button type="button" class="filter-chip" data-filter="cat:craft">craft</button>
+      </div>
+
+      {posts.map((post) => (
+        <a
+          href={`/devlog/${post.id}/`}
+          class:list={["devlog-card", post.data.draft && "draft"]}
+          data-devlog={post.data.devlog}
+          data-category={post.data.category}
+        >
+          <div class="card-header">
+            <span class={`category-tag ${post.data.category}`}>{post.data.category}</span>
+            <span class="series-tag">{DEVLOG_LABELS[post.data.devlog]}</span>
+            <time datetime={post.data.pubDate.toISOString()}>
+              {post.data.pubDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+            </time>
+          </div>
+          <h2>{post.data.title}{post.data.draft && <span class="draft-badge">draft</span>}</h2>
+          <p>{post.data.description}</p>
+          {post.data.tags.length > 0 && (
+            <div class="tags">
+              {post.data.tags.map((tag: string) => (
+                <span class="tag">{tag}</span>
+              ))}
+            </div>
+          )}
+        </a>
+      ))}
+    </div>
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<script>
+  // Tag-chip filter + ?tag= query-string preselect. Pure client-side, no
+  // state persistence — filters reset on navigation.
+  function applyFilter(filter: string) {
+    const cards = document.querySelectorAll<HTMLElement>(".devlog-card");
+    const [kind, value] = filter === "all" ? ["all", ""] : filter.split(":");
+    cards.forEach((c) => {
+      let show = true;
+      if (kind === "devlog") show = c.dataset.devlog === value;
+      else if (kind === "cat") show = c.dataset.category === value;
+      c.classList.toggle("filter-hidden", !show);
+    });
+    document.querySelectorAll<HTMLButtonElement>(".filter-chip").forEach((b) => {
+      b.classList.toggle("active", b.dataset.filter === filter);
+    });
+  }
+
+  function init() {
+    const params = new URLSearchParams(window.location.search);
+    const tag = params.get("tag");
+    // ?tag=chronicles → devlog:chronicles; ?tag=engineering → cat:engineering
+    const initial = tag
+      ? (["engineering", "workflow", "strategy", "narrative", "craft"].includes(tag)
+        ? `cat:${tag}`
+        : `devlog:${tag}`)
+      : "all";
+    applyFilter(initial);
+    document.querySelectorAll<HTMLButtonElement>(".filter-chip").forEach((b) => {
+      b.addEventListener("click", () => applyFilter(b.dataset.filter || "all"));
+    });
+  }
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>
+
+<style is:global>
+  .devlog-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.55rem;
+    max-width: 760px;
+    margin: 0 auto 1.5rem;
+    padding: 0.25rem 0 1rem;
+    border-bottom: 1px solid rgba(167, 243, 208, 0.08);
+  }
+  .filter-sep {
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-left: 0.3rem;
+  }
+  .filter-chip {
+    font-family: "Courier New", monospace;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.7rem;
+    background: transparent;
+    color: #9ca3af;
+    border: 1px solid rgba(167, 243, 208, 0.2);
+    border-radius: 3px;
+    cursor: pointer;
+    text-transform: lowercase;
+    letter-spacing: 0.03em;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .filter-chip:hover {
+    color: #a7f3d0;
+    border-color: rgba(167, 243, 208, 0.45);
+  }
+  .filter-chip.active {
+    color: #0a0e17;
+    background: #a7f3d0;
+    border-color: #a7f3d0;
+  }
+  .devlog-card.filter-hidden {
+    display: none;
+  }
+  .series-tag {
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    padding: 0.15rem 0.45rem;
+    border: 1px solid rgba(156, 163, 175, 0.25);
+    border-radius: 2px;
+  }
+</style>

@@ -142,6 +142,9 @@
     letter-spacing: 0.06em;
     color: #a7f3d0;
     font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
   .status {
     color: #9ca3af;
@@ -153,6 +156,13 @@
   .status-in_progress .status { color: #fcd34d; }
   .status-done .status { color: #a7f3d0; }
   .status-blocked .status { color: #fca5a5; }
+
+  /* On tight layouts the "IN PROGRESS" label is what runs out of room first.
+     The pulsing dot + color already convey status, so hide the word on the
+     two-up mobile layout. */
+  @media (max-width: 900px) {
+    .status { display: none; }
+  }
   .pct {
     font-weight: 700;
     color: #e5e7eb;

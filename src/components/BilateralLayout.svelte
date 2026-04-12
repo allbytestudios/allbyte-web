@@ -1223,6 +1223,20 @@
     }
   }
 
+  /* Very narrow mobile: side-by-side pinches the text so hard that labels get
+     clipped. Stack the badges so each takes the full container width. */
+  @media (max-width: 640px) {
+    .overlay-badges {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.45rem;
+    }
+    .overlay-badges > :global(*) {
+      max-width: none;
+      width: 100%;
+    }
+  }
+
   .demo-row {
     background: #141b24;
     position: relative;

@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Footer from "../../../components/Footer.astro";
+import TicketsApp from "../../../components/TicketsApp.svelte";
+import TestNav from "../../../components/TestNav.svelte";
+---
+
+<BaseLayout
+  title="Tickets — AllByte Studios"
+  description="Bug tracker and feature board for The Chronicles of Nesis web demo."
+>
+  <main class="tickets-shell">
+    <TestNav active="tickets" client:load />
+    <TicketsApp client:only="svelte" />
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .tickets-shell {
+    background: #0a0e17;
+    min-height: calc(100vh - 160px);
+  }
+</style>

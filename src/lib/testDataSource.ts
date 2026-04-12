@@ -88,6 +88,38 @@ export async function fetchHeartbeat(
   }
 }
 
+import type { TicketsFile, DashboardFile, AgentsFile } from "./ticketTypes";
+
+export async function fetchTickets(signal?: AbortSignal): Promise<TicketsFile | null> {
+  const res = await fetch(`${TEST_DATA_BASE}/tickets/tickets.json`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  return (await res.json()) as TicketsFile;
+}
+
+export async function fetchDashboard(signal?: AbortSignal): Promise<DashboardFile | null> {
+  const res = await fetch(`${TEST_DATA_BASE}/tickets/dashboard.json`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  return (await res.json()) as DashboardFile;
+}
+
+export async function fetchAgents(signal?: AbortSignal): Promise<AgentsFile | null> {
+  const res = await fetch(`${TEST_DATA_BASE}/tickets/agents.json`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  return (await res.json()) as AgentsFile;
+}
+
 export async function fetchRoadmap(
   signal?: AbortSignal
 ): Promise<TestingRoadmap | null> {

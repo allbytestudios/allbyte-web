@@ -6,7 +6,7 @@
   import gameVersion from "../data/game-version.json";
   import { auth, initAuth, login, signup, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
-  import { isAdmin } from "../lib/tier";
+  import { isAdmin, isTierAtLeast } from "../lib/tier";
 
   const buildDateLabel = (() => {
     const raw = (gameVersion as { buildDate?: string | null }).buildDate;
@@ -409,7 +409,12 @@
   {#if auth.currentUser}
     <div class="notify-bar">
       {#if !notifyMode}
-        <button class="notify-bar-btn" onclick={enterNotifyMode}>&#9993; Email Me Updates{#if auth.currentUser.notificationPreferences} (On){/if}</button>
+        <div class="notify-bar-row">
+          <button class="notify-bar-btn" onclick={enterNotifyMode}>&#9993; Email Me Updates{#if auth.currentUser.notificationPreferences} (On){/if}</button>
+          {#if isTierAtLeast(auth.currentUser, "legend")}
+            <a href="/legends_square/" class="notify-bar-btn legend-square-btn">&#9878; Legend's Square</a>
+          {/if}
+        </div>
       {:else}
         <div class="notify-bar-actions">
           <button class="notify-bar-save" onclick={saveNotifications} disabled={notifySaving}>{notifySaving ? "Saving..." : "Save"}</button>
@@ -754,6 +759,23 @@
     opacity: 0.7;
   }
 
+  .notify-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .legend-square-btn {
+    color: #f97316 !important;
+    text-decoration: none;
+  }
+
+  @media (max-width: 640px) {
+    .notify-bar-row {
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+  }
 
   .notify-bar-prompt {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;

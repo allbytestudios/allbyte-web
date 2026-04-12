@@ -256,46 +256,65 @@
         {@const msTickets = [...mg.epics.flatMap(e => e.tickets), ...mg.uncategorized]}
         {@const msDone = msTickets.filter(t => t.status === "done").length}
         {@const msEpicsDone = mg.epics.filter(e => e.tickets.every(t => t.status === "done")).length}
-        <div class="milestone-section">
-          <div class="ms-header">
-            <h2 class="ms-title">{mg.milestone}</h2>
-            <span class="ms-stats">
-              {msEpicsDone}/{mg.epics.length} epics complete · {msDone}/{msTickets.length} tickets done
-            </span>
-          </div>
+        <details class="fold fold-ms" open>
+          <summary class="fold-summary ms-summary">
+            <span class="fold-arrow"></span>
+            <span class="ms-title">{mg.milestone}</span>
+            <span class="fold-counts">{msEpicsDone}/{mg.epics.length} epics · {msDone}/{msTickets.length} tickets</span>
+          </summary>
           {#each mg.epics as eg (eg.epic.id)}
             {@const done = eg.tickets.filter(t => t.status === "done").length}
             {@const total = eg.tickets.length}
-            <div class="epic-section">
-              <div class="epic-header">
+            <details class="fold fold-epic" open={eg.epic.status !== "done"}>
+              <summary class="fold-summary epic-summary">
+                <span class="fold-arrow"></span>
                 <span class="epic-status" style="color: {statusColor(eg.epic.status)}">{eg.epic.status}</span>
-                <h3 class="epic-title">{eg.epic.title}</h3>
+                <span class="epic-title">{eg.epic.title}</span>
                 <span class="epic-progress-label">{done}/{total}</span>
+                <span class="epic-bar-inline"><span class="epic-bar-fill-inline" style="width: {total > 0 ? (done / total * 100).toFixed(0) : 0}%"></span></span>
                 {#if eg.epic.estimatedHours}
-                  <span class="epic-hours">{eg.epic.estimatedHours}h est</span>
+                  <span class="epic-hours">{eg.epic.estimatedHours}h</span>
                 {/if}
-              </div>
-              <div class="epic-bar">
-                <div class="epic-bar-fill" style="width: {total > 0 ? (done / total * 100).toFixed(0) : 0}%"></div>
-              </div>
-              <p class="epic-desc">{eg.epic.description}</p>
-              <div class="ticket-list">
+              </summary>
+              <div class="fold-content">
                 {#each eg.tickets as t (t.id)}
                   {@const prog = subtaskProgress(t)}
-                  {@render ticketCard(t, prog)}
+                  <details class="fold fold-ticket">
+                    <summary class="fold-summary ticket-summary">
+                      <span class="fold-arrow"></span>
+                      <span class="ticket-priority" style="color: {PRIORITY_META[t.priority as TicketPriority]?.color ?? '#9ca3af'}">{t.priority}</span>
+                      <span class="ticket-id-inline">{t.id}</span>
+                      <span class="ticket-title-inline">{t.title}</span>
+                      <span class="ticket-status-inline" style="color: {statusColor(t.status)}">{t.status}</span>
+                      {#if t.blocksDemo}<span class="blocker-badge">BLOCKER</span>{/if}
+                      {#if prog.total > 0}<span class="fold-counts">{prog.done}/{prog.total}</span>{/if}
+                    </summary>
+                    <div class="fold-content ticket-detail">
+                      {@render ticketCard(t, prog)}
+                    </div>
+                  </details>
                 {/each}
               </div>
-            </div>
+            </details>
           {/each}
           {#if mg.uncategorized.length > 0}
-            <div class="ticket-list">
-              {#each mg.uncategorized as t (t.id)}
-                {@const prog = subtaskProgress(t)}
-                {@render ticketCard(t, prog)}
-              {/each}
-            </div>
+            {#each mg.uncategorized as t (t.id)}
+              {@const prog = subtaskProgress(t)}
+              <details class="fold fold-ticket">
+                <summary class="fold-summary ticket-summary">
+                  <span class="fold-arrow"></span>
+                  <span class="ticket-priority" style="color: {PRIORITY_META[t.priority as TicketPriority]?.color ?? '#9ca3af'}">{t.priority}</span>
+                  <span class="ticket-id-inline">{t.id}</span>
+                  <span class="ticket-title-inline">{t.title}</span>
+                  <span class="ticket-status-inline" style="color: {statusColor(t.status)}">{t.status}</span>
+                </summary>
+                <div class="fold-content ticket-detail">
+                  {@render ticketCard(t, prog)}
+                </div>
+              </details>
+            {/each}
           {/if}
-        </div>
+        </details>
       {/each}
     {:else}
     <div class="ticket-list">
@@ -396,13 +415,50 @@
   .milestone-section {
     margin-bottom: 2rem;
   }
-  .ms-header {
+  /* Collapsible tree */
+  .fold {
+    margin: 0;
+    border: none;
+  }
+  .fold-summary {
     display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    list-style: none;
+    padding: 0.4rem 0;
+    user-select: none;
+  }
+  .fold-summary::-webkit-details-marker { display: none; }
+  .fold-arrow {
+    width: 0;
+    height: 0;
+    border-left: 5px solid currentColor;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+    color: #4b5563;
+  }
+  details[open] > .fold-summary > .fold-arrow {
+    transform: rotate(90deg);
+  }
+  .fold-counts {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-left: auto;
+  }
+  .fold-content {
+    padding-left: 1rem;
+  }
+
+  /* Milestone level */
+  .fold-ms {
+    margin-bottom: 0.5rem;
+  }
+  .ms-summary {
+    padding: 0.55rem 0;
+    border-bottom: 1px solid rgba(167, 243, 208, 0.12);
   }
   .ms-title {
     font-size: 1rem;
@@ -410,60 +466,80 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin: 0;
+    font-weight: 700;
   }
-  .ms-stats {
-    font-size: 0.78rem;
-    color: #6b7280;
+
+  /* Epic level */
+  .fold-epic {
+    margin: 0.15rem 0;
   }
-  .epic-section {
-    margin-bottom: 1.25rem;
-    padding-left: 0.75rem;
-    border-left: 2px solid rgba(167, 243, 208, 0.1);
-  }
-  .epic-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 0.25rem;
+  .epic-summary {
+    padding: 0.35rem 0;
   }
   .epic-title {
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     color: #e5e7eb;
-    margin: 0;
+    font-weight: 600;
   }
   .epic-status {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    flex-shrink: 0;
   }
   .epic-progress-label {
     font-size: 0.78rem;
     color: #a7f3d0;
     font-weight: 700;
+    flex-shrink: 0;
   }
-  .epic-hours {
-    font-size: 0.72rem;
-    color: #4b5563;
-    margin-left: auto;
-  }
-  .epic-bar {
+  .epic-bar-inline {
+    width: 50px;
     height: 4px;
     background: rgba(255, 255, 255, 0.06);
     border-radius: 2px;
     overflow: hidden;
-    margin-bottom: 0.35rem;
+    flex-shrink: 0;
   }
-  .epic-bar-fill {
+  .epic-bar-fill-inline {
+    display: block;
     height: 100%;
     background: #a7f3d0;
-    transition: width 0.3s;
   }
-  .epic-desc {
-    font-size: 0.8rem;
-    color: #9ca3af;
-    margin: 0 0 0.5rem;
-    line-height: 1.4;
+  .epic-hours {
+    font-size: 0.7rem;
+    color: #4b5563;
+  }
+
+  /* Ticket level */
+  .fold-ticket {
+    margin: 0.1rem 0;
+  }
+  .ticket-summary {
+    padding: 0.3rem 0;
+    font-size: 0.82rem;
+  }
+  .ticket-id-inline {
+    color: #6b7280;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+  .ticket-title-inline {
+    color: #d1d5db;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .ticket-status-inline {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .ticket-detail {
+    padding-bottom: 0.5rem;
   }
 
   .ticket-list {

@@ -506,9 +506,9 @@
       <div class="cell engine-bg">
         <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("testsuite")}>
           <a href="/test/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
-            <h3>Test Suite Dashboard <span class="cursor-arrow"></span></h3>
-            <p>Live build health across three runner tiers, milestone progress &amp; blockers.</p>
-            <span class="entry-count">(public summary · Hero+ for depth)</span>
+            <h3>Dev Console <span class="cursor-arrow"></span></h3>
+            <p>Tests, agents, tickets &amp; milestones — live build status at a glance.</p>
+            <span class="entry-count">(public overview · Hero+ for depth)</span>
           </a>
           {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.testsuite} /></label>{/if}
         </div>

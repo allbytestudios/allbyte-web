@@ -3,11 +3,11 @@
   import type { TestingRoadmap } from "../lib/testingRoadmap";
   import { TIER_META, buildLeafTree } from "../lib/testIndex";
   import type { SyncHeartbeat } from "../lib/testDataSource";
-  import { fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat } from "../lib/testDataSource";
+  import type { DashboardFile, TicketsFile } from "../lib/ticketTypes";
+  import { PRIORITY_META, EXPERT_META, subtaskProgress } from "../lib/ticketTypes";
+  import { fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat, fetchDashboard, fetchTickets } from "../lib/testDataSource";
   import TestLeafNode from "./TestLeafNode.svelte";
   import TestStatusCard from "./TestStatusCard.svelte";
-  import MilestoneStrip from "./MilestoneStrip.svelte";
-  import BlockerPanel from "./BlockerPanel.svelte";
   import { auth } from "../lib/auth.svelte.ts";
   import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
@@ -18,6 +18,8 @@
   let heartbeat = $state<SyncHeartbeat | null>(null);
   let heartbeatCheckedAt = $state<number>(0);
   let nowTs = $state<number>(Date.now());
+  let dashboard = $state<DashboardFile | null>(null);
+  let ticketsData = $state<TicketsFile | null>(null);
   let loadError = $state<string | null>(null);
   let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "hero"));
 
@@ -88,6 +90,16 @@
       heartbeatCheckedAt = Date.now();
     } catch {
       heartbeat = null;
+    }
+  }
+
+  async function loadDashboardAndTickets() {
+    try {
+      const [d, t] = await Promise.all([fetchDashboard(), fetchTickets()]);
+      dashboard = d;
+      ticketsData = t;
+    } catch {
+      // Non-fatal
     }
   }
 
@@ -167,15 +179,19 @@
   // Heartbeat refresh every 45s (watcher writes every 60s).
   let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
+  let dashTicketTimer: ReturnType<typeof setInterval> | null = null;
+
   onMount(() => {
     loadIndex();
     loadRoadmap();
     loadHeartbeat();
+    loadDashboardAndTickets();
     loadStatus().then(() => {
       scheduleStatus();
     });
     scheduleIndex();
     heartbeatTimer = setInterval(loadHeartbeat, 45_000);
+    dashTicketTimer = setInterval(loadDashboardAndTickets, 10_000);
     tickTimer = setInterval(() => (nowTs = Date.now()), 10_000);
     const onVis = () => scheduleStatus();
     document.addEventListener("visibilitychange", onVis);
@@ -186,6 +202,7 @@
     if (pollTimer) clearTimeout(pollTimer);
     if (indexTimer) clearTimeout(indexTimer);
     if (heartbeatTimer) clearInterval(heartbeatTimer);
+    if (dashTicketTimer) clearInterval(dashTicketTimer);
     if (tickTimer) clearInterval(tickTimer);
     abortCtl?.abort();
   });
@@ -271,11 +288,44 @@
     <!-- Live run status card (only renders if status file exists) -->
     <TestStatusCard {status} />
 
-    <!-- Milestone strip (only renders if roadmap file exists) -->
-    <MilestoneStrip {roadmap} {index} />
-
-    <!-- Blocker panel (only renders if known_blockers[] is non-empty) -->
-    <BlockerPanel {roadmap} />
+    <!-- Overview cards: compact agent + ticket summaries (public) -->
+    <div class="overview-cards">
+      {#if dashboard}
+        <a href="/test/agents/" class="overview-card">
+          <h3 class="ov-title">Agents</h3>
+          <div class="ov-experts">
+            {#each Object.entries(dashboard.experts) as [id, ex]}
+              {@const meta = EXPERT_META[id]}
+              <span class="ov-expert" style="color: {meta?.color ?? '#9ca3af'}">
+                <span class="ov-dot ov-dot-{ex.status === 'active' || ex.status === 'investigating' ? 'active' : 'idle'}"></span>
+                {meta?.label ?? id}
+              </span>
+            {/each}
+          </div>
+          <span class="ov-sub">{dashboard.workers.length} workers · session {dashboard.session} · {dashboard.deployedVersion}</span>
+        </a>
+      {/if}
+      {#if ticketsData}
+        {@const open = ticketsData.tickets.filter(t => t.status !== "done" && t.status !== "deferred").length}
+        {@const blockers = ticketsData.tickets.filter(t => t.blocksDemo).length}
+        <a href="/test/tickets/" class="overview-card">
+          <h3 class="ov-title">Tickets</h3>
+          <div class="ov-priorities">
+            {#each ["P0", "P1", "P2", "P3"] as p}
+              {@const count = ticketsData.tickets.filter(t => t.priority === p).length}
+              {#if count > 0}
+                <span class="ov-priority" style="color: {PRIORITY_META[p as keyof typeof PRIORITY_META]?.color ?? '#9ca3af'}">
+                  {p} {count}
+                </span>
+              {/if}
+            {/each}
+          </div>
+          <span class="ov-sub">
+            {open} open · {blockers > 0 ? `${blockers} blocking demo` : "no blockers"}
+          </span>
+        </a>
+      {/if}
+    </div>
 
     {#if !auth.authReady}
       <div class="deep-loading">Checking subscription…</div>
@@ -411,6 +461,73 @@
     font-family: "Courier New", monospace;
     color: #d1d5db;
   }
+  .overview-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+  .overview-card {
+    background: #12161e;
+    border: 1px solid rgba(167, 243, 208, 0.12);
+    border-radius: 4px;
+    padding: 0.85rem 1rem;
+    text-decoration: none;
+    transition: border-color 0.15s, background 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .overview-card:hover {
+    border-color: rgba(167, 243, 208, 0.35);
+    background: #161c24;
+  }
+  .ov-title {
+    font-family: "Courier New", monospace;
+    font-size: 0.85rem;
+    color: #a7f3d0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0;
+  }
+  .ov-experts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .ov-expert {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: "Courier New", monospace;
+    font-size: 0.78rem;
+  }
+  .ov-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .ov-dot-active { background: #a7f3d0; box-shadow: 0 0 4px rgba(167, 243, 208, 0.5); }
+  .ov-dot-idle { background: #4b5563; }
+  .ov-priorities {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .ov-priority {
+    font-family: "Courier New", monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+  .ov-sub {
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+  @media (max-width: 640px) {
+    .overview-cards { grid-template-columns: 1fr; }
+  }
+
   .deep-gate {
     max-width: 760px;
     margin: 2rem auto;

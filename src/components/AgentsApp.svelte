@@ -2,7 +2,11 @@
   import type { DashboardFile, AgentsFile, AgentWorkerHistory } from "../lib/ticketTypes";
   import { EXPERT_META } from "../lib/ticketTypes";
   import { fetchDashboard, fetchAgents } from "../lib/testDataSource";
+  import { auth } from "../lib/auth.svelte.ts";
+  import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
+
+  let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "hero"));
 
   let dashboard = $state<DashboardFile | null>(null);
   let agents = $state<AgentsFile | null>(null);
@@ -67,6 +71,15 @@
 </script>
 
 <div class="agents-page">
+  {#if !auth.authReady}
+    <div class="loading">Checking subscription…</div>
+  {:else if !viewerHasAccess}
+    <div class="gate">
+      <h2>Hero tier required</h2>
+      <p>Full agent status, worker history, and deployment logs are a <strong>Hero</strong> tier perk. The public overview is at <a href="/test/">/test/</a>.</p>
+      <p><a href="/subscribe/">View subscription tiers →</a></p>
+    </div>
+  {:else}
   {#if loadError}
     <div class="error-banner">{loadError}</div>
   {/if}
@@ -151,6 +164,7 @@
   {:else if !loadError}
     <div class="loading">Loading agent status…</div>
   {/if}
+  {/if}
 </div>
 
 <style>
@@ -170,7 +184,11 @@
     color: #fca5a5;
     font-size: 0.85rem;
   }
-  .loading { text-align: center; padding: 3rem; color: #6b7280; }
+  .loading, .gate { text-align: center; padding: 3rem; color: #9ca3af; }
+  .gate h2 { color: #fbbf24; text-transform: uppercase; letter-spacing: 0.08em; font-size: 1.05rem; }
+  .gate strong { color: #fbbf24; }
+  .gate a { color: #a7f3d0; text-decoration: none; }
+  .gate a:hover { text-decoration: underline; }
   .empty { color: #6b7280; font-style: italic; font-size: 0.85rem; }
   .session-bar {
     display: flex;

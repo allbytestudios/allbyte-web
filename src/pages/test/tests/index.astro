@@ -2,13 +2,13 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import PageHeader from "../../../components/PageHeader.astro";
 import Footer from "../../../components/Footer.astro";
-import AgentsApp from "../../../components/AgentsApp.svelte";
+import TestDashboardApp from "../../../components/TestDashboardApp.svelte";
 import TestNav from "../../../components/TestNav.svelte";
 ---
 
 <BaseLayout
-  title="Agents — Dev Console — AllByte Studios"
-  description="Live status of expert and worker agents building The Chronicles of Nesis."
+  title="Tests — Dev Console — AllByte Studios"
+  description="Live test results across three runner tiers for Chronicles of Nesis."
 >
   <PageHeader
     theme="engine"
@@ -17,16 +17,17 @@ import TestNav from "../../../components/TestNav.svelte";
     backLabel="Home"
     breadcrumbs={[{ href: "/", label: "Home" }]}
   />
-  <main class="agents-shell">
-    <TestNav active="agents" client:load />
-    <AgentsApp client:only="svelte" />
+  <main class="test-page">
+    <TestNav active="tests" client:load />
+    <TestDashboardApp client:only="svelte" />
   </main>
   <Footer theme="engine" />
 </BaseLayout>
 
 <style>
-  .agents-shell {
+  .test-page {
     background: #0a0e17;
     min-height: calc(100vh - 160px);
+    padding: 0.5rem 0 2rem;
   }
 </style>

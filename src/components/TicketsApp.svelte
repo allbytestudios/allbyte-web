@@ -4,10 +4,19 @@
     PRIORITY_ORDER, PRIORITY_META, EXPERT_META,
     statusColor, subtaskProgress,
   } from "../lib/ticketTypes";
-  import { fetchTickets } from "../lib/testDataSource";
+  import type { TestingRoadmap } from "../lib/testingRoadmap";
+  import type { TestIndex } from "../lib/testIndex";
+  import { fetchTickets, fetchRoadmap, fetchIndex } from "../lib/testDataSource";
+  import MilestoneStrip from "./MilestoneStrip.svelte";
+  import { auth } from "../lib/auth.svelte.ts";
+  import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
 
+  let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "hero"));
+
   let tickets = $state<TicketsFile | null>(null);
+  let roadmap = $state<TestingRoadmap | null>(null);
+  let testIndex = $state<TestIndex | null>(null);
   let loadError = $state<string | null>(null);
   let filterPriority = $state<TicketPriority | "all">("all");
   let filterStatus = $state<string>("all");
@@ -16,7 +25,10 @@
 
   async function load() {
     try {
-      tickets = await fetchTickets();
+      const [t, r, idx] = await Promise.all([fetchTickets(), fetchRoadmap(), fetchIndex()]);
+      tickets = t;
+      roadmap = r;
+      testIndex = idx;
       loadError = null;
     } catch (err: any) {
       loadError = err?.message ?? String(err);
@@ -69,11 +81,22 @@
 </script>
 
 <div class="tickets-page">
+  {#if !auth.authReady}
+    <div class="loading">Checking subscription…</div>
+  {:else if !viewerHasAccess}
+    <div class="gate">
+      <h2>Hero tier required</h2>
+      <p>Full ticket board with subtask detail, reproduction steps, and file references is a <strong>Hero</strong> tier perk. The public overview is at <a href="/test/">/test/</a>.</p>
+      <p><a href="/subscribe/">View subscription tiers →</a></p>
+    </div>
+  {:else}
   {#if loadError}
     <div class="error-banner">{loadError}</div>
   {/if}
 
   {#if tickets}
+    <MilestoneStrip {roadmap} index={testIndex} />
+
     <div class="summary-bar">
       <span class="total">{tickets.tickets.length} tickets</span>
       {#each PRIORITY_ORDER.filter(p => p !== "done") as p}
@@ -172,6 +195,7 @@
   {:else if !loadError}
     <div class="loading">Loading tickets…</div>
   {/if}
+  {/if}
 </div>
 
 <style>
@@ -191,7 +215,11 @@
     color: #fca5a5;
     font-size: 0.85rem;
   }
-  .loading { text-align: center; padding: 3rem; color: #6b7280; }
+  .loading, .gate { text-align: center; padding: 3rem; color: #9ca3af; }
+  .gate h2 { color: #fbbf24; text-transform: uppercase; letter-spacing: 0.08em; font-size: 1.05rem; }
+  .gate strong { color: #fbbf24; }
+  .gate a { color: #a7f3d0; text-decoration: none; }
+  .gate a:hover { text-decoration: underline; }
 
   .summary-bar {
     display: flex;

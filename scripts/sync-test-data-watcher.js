@@ -63,6 +63,8 @@ const WATCH_FILES = [
   "tickets/tickets.json",
   "tickets/dashboard.json",
   "tickets/agents.json",
+  "tickets/epics.json",
+  "test_fixtures/manifest.json",
 ];
 
 // --- pure helpers (testable) ----------------------------------------------
@@ -150,6 +152,20 @@ export function buildSyncCommands({
       cacheCtrl,
       "--exclude",
       "README.md",
+    ],
+  });
+  cmds.push({
+    label: "test_fixtures/",
+    argv: [
+      "aws",
+      "s3",
+      "sync",
+      toPosix(join(chroniclesDir, "test_fixtures")),
+      `s3://${bucket}/test-snapshot/test_fixtures`,
+      "--region",
+      region,
+      "--cache-control",
+      cacheCtrl,
     ],
   });
   return cmds;
@@ -443,14 +459,14 @@ async function runSelfTest() {
 
   console.log("buildSyncCommands");
   ok =
-    t("returns 4 commands", () => {
+    t("returns 5 commands", () => {
       const cmds = buildSyncCommands({
         chroniclesDir: "/tmp/chr",
         bucket: "b",
         region: "r",
       });
-      if (cmds.length !== 4)
-        throw new Error(`expected 4, got ${cmds.length}`);
+      if (cmds.length !== 5)
+        throw new Error(`expected 5, got ${cmds.length}`);
     }) && ok;
   ok =
     t("first cmd uploads test_index.json", () => {

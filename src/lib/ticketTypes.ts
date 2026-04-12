@@ -112,6 +112,47 @@ export interface AgentsFile {
   workerHistory: AgentWorkerHistory[];
 }
 
+export interface Epic {
+  id: string;
+  title: string;
+  milestone: string;
+  status: "planned" | "in_progress" | "investigating" | "done" | string;
+  description: string;
+  ticketIds: string[];
+  estimatedHours?: number;
+  acceptanceCriteria?: string;
+  visualMockup?: string;
+  created: string;
+  updated: string;
+}
+
+export interface EpicsFile {
+  version: number;
+  lastUpdated: string;
+  epics: Epic[];
+}
+
+export interface FixtureEntry {
+  id: string;
+  name: string;
+  description: string;
+  savePath: string;
+  gameVersion: string;
+  scene: string;
+  completedEvents?: number[];
+  inventory?: string[];
+  partyLevel?: number;
+  tags?: string[];
+  createdBy?: string;
+  createdAt: string;
+}
+
+export interface FixtureManifest {
+  version: number;
+  lastUpdated: string;
+  fixtures: FixtureEntry[];
+}
+
 export const PRIORITY_ORDER: TicketPriority[] = ["P0", "P1", "P2", "P3", "done"];
 
 export const PRIORITY_META: Record<TicketPriority, { label: string; color: string }> = {

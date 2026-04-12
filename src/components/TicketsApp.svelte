@@ -1,12 +1,12 @@
 <script lang="ts">
-  import type { TicketsFile, Ticket, TicketPriority } from "../lib/ticketTypes";
+  import type { TicketsFile, Ticket, TicketPriority, EpicsFile, Epic } from "../lib/ticketTypes";
   import {
     PRIORITY_ORDER, PRIORITY_META, EXPERT_META,
     statusColor, subtaskProgress,
   } from "../lib/ticketTypes";
   import type { TestingRoadmap } from "../lib/testingRoadmap";
   import type { TestIndex } from "../lib/testIndex";
-  import { fetchTickets, fetchRoadmap, fetchIndex } from "../lib/testDataSource";
+  import { fetchTickets, fetchRoadmap, fetchIndex, fetchEpics } from "../lib/testDataSource";
   import MilestoneStrip from "./MilestoneStrip.svelte";
   import { auth } from "../lib/auth.svelte.ts";
   import { isTierAtLeast } from "../lib/tier";
@@ -16,9 +16,11 @@
   let viewerIsLegend = $derived(isTierAtLeast(auth.currentUser, "legend"));
 
   let tickets = $state<TicketsFile | null>(null);
+  let epicsData = $state<EpicsFile | null>(null);
   let roadmap = $state<TestingRoadmap | null>(null);
   let testIndex = $state<TestIndex | null>(null);
   let loadError = $state<string | null>(null);
+  let groupByEpic = $state(true);
   let filterPriority = $state<TicketPriority | "all">("all");
   let filterStatus = $state<string>("all");
 
@@ -26,8 +28,9 @@
 
   async function load() {
     try {
-      const [t, r, idx] = await Promise.all([fetchTickets(), fetchRoadmap(), fetchIndex()]);
+      const [t, e, r, idx] = await Promise.all([fetchTickets(), fetchEpics(), fetchRoadmap(), fetchIndex()]);
       tickets = t;
+      epicsData = e;
       roadmap = r;
       testIndex = idx;
       loadError = null;
@@ -76,6 +79,64 @@
     return [...new Set(tickets.tickets.map((t) => t.status))].sort();
   });
 
+  interface EpicGroup {
+    epic: Epic;
+    tickets: Ticket[];
+  }
+  interface MilestoneGroup {
+    milestone: string;
+    epics: EpicGroup[];
+    uncategorized: Ticket[];
+  }
+
+  let milestoneGroups = $derived.by<MilestoneGroup[]>(() => {
+    if (!epicsData || !tickets) return [];
+    const epicMap = new Map<string, Epic>();
+    for (const e of epicsData.epics) epicMap.set(e.id, e);
+
+    const ticketById = new Map<string, Ticket>();
+    for (const t of filtered) ticketById.set(t.id, t);
+
+    const msMap = new Map<string, { epics: Map<string, Ticket[]>; uncategorized: Ticket[] }>();
+    const assigned = new Set<string>();
+
+    for (const epic of epicsData.epics) {
+      const ms = epic.milestone;
+      if (!msMap.has(ms)) msMap.set(ms, { epics: new Map(), uncategorized: [] });
+      const group = msMap.get(ms)!;
+      const epicTickets: Ticket[] = [];
+      for (const tid of epic.ticketIds) {
+        const t = ticketById.get(tid);
+        if (t) {
+          epicTickets.push(t);
+          assigned.add(tid);
+        }
+      }
+      if (epicTickets.length > 0) group.epics.set(epic.id, epicTickets);
+    }
+
+    const uncategorized = filtered.filter((t) => !assigned.has(t.id));
+    if (uncategorized.length > 0) {
+      if (!msMap.has("_uncategorized")) msMap.set("_uncategorized", { epics: new Map(), uncategorized: [] });
+      msMap.get("_uncategorized")!.uncategorized = uncategorized;
+    }
+
+    const msOrder = ["pre_alpha", "alpha", "beta", "_uncategorized"];
+    return msOrder
+      .filter((ms) => msMap.has(ms))
+      .map((ms) => {
+        const g = msMap.get(ms)!;
+        return {
+          milestone: ms === "_uncategorized" ? "Uncategorized" : ms.replace(/_/g, " "),
+          epics: [...g.epics.entries()].map(([eid, tix]) => ({
+            epic: epicMap.get(eid)!,
+            tickets: tix,
+          })),
+          uncategorized: g.uncategorized,
+        };
+      });
+  });
+
   function relativeDate(iso: string): string {
     const ms = Date.now() - Date.parse(iso);
     if (ms < 3_600_000) return `${Math.round(ms / 60_000)}m ago`;
@@ -83,6 +144,62 @@
     return `${Math.round(ms / 86_400_000)}d ago`;
   }
 </script>
+
+{#snippet ticketCard(t: Ticket, prog: { done: number; total: number })}
+  <div class="ticket-card" class:blocker={t.blocksDemo}>
+    <div class="ticket-header">
+      <span class="ticket-priority" style="color: {PRIORITY_META[t.priority as TicketPriority]?.color ?? '#9ca3af'}">
+        {t.priority}
+      </span>
+      <span class="ticket-id">{t.id}</span>
+      <span class="ticket-status" style="color: {statusColor(t.status)}">
+        {t.status}
+      </span>
+      {#if t.blocksDemo}
+        <span class="blocker-badge">BLOCKS DEMO</span>
+      {/if}
+    </div>
+    <h3 class="ticket-title">{t.title}</h3>
+    <p class="ticket-desc">{t.description}</p>
+    <div class="ticket-meta">
+      <span class="meta-expert" style="color: {EXPERT_META[t.ownerExpert]?.color ?? '#9ca3af'}">
+        {EXPERT_META[t.ownerExpert]?.label ?? t.ownerExpert}
+      </span>
+      {#if t.currentVersion}
+        <span class="meta-version">{t.currentVersion}</span>
+      {/if}
+      {#if t.tags?.length}
+        {#each t.tags.slice(0, 4) as tag}
+          <span class="meta-tag">{tag}</span>
+        {/each}
+      {/if}
+      <span class="meta-updated">{relativeDate(t.updated)}</span>
+    </div>
+    {#if prog.total > 0}
+      <div class="subtask-bar">
+        <div class="subtask-fill" style="width: {(prog.done / prog.total * 100).toFixed(0)}%"></div>
+      </div>
+      <span class="subtask-label">{prog.done}/{prog.total} subtasks</span>
+    {/if}
+    {#if t.subtasks?.length && viewerIsLegend}
+      <details class="subtask-details">
+        <summary>Subtasks</summary>
+        <ul class="subtask-list">
+          {#each t.subtasks as sub}
+            <li class="subtask-item subtask-{sub.status}">
+              <span class="sub-check">{sub.status === "done" ? "✓" : sub.status === "pending" ? "○" : "◉"}</span>
+              <span class="sub-text">{sub.task}</span>
+              {#if sub.result}
+                <span class="sub-result">→ {sub.result}</span>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      </details>
+    {/if}
+    <p class="ticket-update">{t.lastUpdate}</p>
+  </div>
+{/snippet}
 
 <div class="tickets-page">
   {#if !auth.authReady}
@@ -134,68 +251,47 @@
       </select>
     </div>
 
+    {#if groupByEpic && milestoneGroups.length > 0}
+      {#each milestoneGroups as mg (mg.milestone)}
+        <div class="milestone-section">
+          <h2 class="ms-title">{mg.milestone}</h2>
+          {#each mg.epics as eg (eg.epic.id)}
+            <div class="epic-section">
+              <div class="epic-header">
+                <span class="epic-status" style="color: {statusColor(eg.epic.status)}">{eg.epic.status}</span>
+                <h3 class="epic-title">{eg.epic.title}</h3>
+                <span class="epic-count">{eg.tickets.length} tickets</span>
+                {#if eg.epic.estimatedHours}
+                  <span class="epic-hours">{eg.epic.estimatedHours}h est</span>
+                {/if}
+              </div>
+              <p class="epic-desc">{eg.epic.description}</p>
+              <div class="ticket-list">
+                {#each eg.tickets as t (t.id)}
+                  {@const prog = subtaskProgress(t)}
+                  {@render ticketCard(t, prog)}
+                {/each}
+              </div>
+            </div>
+          {/each}
+          {#if mg.uncategorized.length > 0}
+            <div class="ticket-list">
+              {#each mg.uncategorized as t (t.id)}
+                {@const prog = subtaskProgress(t)}
+                {@render ticketCard(t, prog)}
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/each}
+    {:else}
     <div class="ticket-list">
       {#each filtered as t (t.id)}
         {@const prog = subtaskProgress(t)}
-        <div class="ticket-card" class:blocker={t.blocksDemo}>
-          <div class="ticket-header">
-            <span class="ticket-priority" style="color: {PRIORITY_META[t.priority as TicketPriority]?.color ?? '#9ca3af'}">
-              {t.priority}
-            </span>
-            <span class="ticket-id">{t.id}</span>
-            <span class="ticket-status" style="color: {statusColor(t.status)}">
-              {t.status}
-            </span>
-            {#if t.blocksDemo}
-              <span class="blocker-badge">BLOCKS DEMO</span>
-            {/if}
-          </div>
-          <h3 class="ticket-title">{t.title}</h3>
-          <p class="ticket-desc">{t.description}</p>
-
-          <div class="ticket-meta">
-            <span class="meta-expert" style="color: {EXPERT_META[t.ownerExpert]?.color ?? '#9ca3af'}">
-              {EXPERT_META[t.ownerExpert]?.label ?? t.ownerExpert}
-            </span>
-            {#if t.currentVersion}
-              <span class="meta-version">{t.currentVersion}</span>
-            {/if}
-            {#if t.tags?.length}
-              {#each t.tags.slice(0, 4) as tag}
-                <span class="meta-tag">{tag}</span>
-              {/each}
-            {/if}
-            <span class="meta-updated">{relativeDate(t.updated)}</span>
-          </div>
-
-          {#if prog.total > 0}
-            <div class="subtask-bar">
-              <div class="subtask-fill" style="width: {(prog.done / prog.total * 100).toFixed(0)}%"></div>
-            </div>
-            <span class="subtask-label">{prog.done}/{prog.total} subtasks</span>
-          {/if}
-
-          {#if t.subtasks?.length && viewerIsLegend}
-            <details class="subtask-details">
-              <summary>Subtasks</summary>
-              <ul class="subtask-list">
-                {#each t.subtasks as sub}
-                  <li class="subtask-item subtask-{sub.status}">
-                    <span class="sub-check">{sub.status === "done" ? "✓" : sub.status === "pending" ? "○" : "◉"}</span>
-                    <span class="sub-text">{sub.task}</span>
-                    {#if sub.result}
-                      <span class="sub-result">→ {sub.result}</span>
-                    {/if}
-                  </li>
-                {/each}
-              </ul>
-            </details>
-          {/if}
-
-          <p class="ticket-update">{t.lastUpdate}</p>
-        </div>
+        {@render ticketCard(t, prog)}
       {/each}
     </div>
+    {/if}
 
     {#if !viewerIsLegend}
       <div class="legend-gate">
@@ -282,6 +378,54 @@
     font-family: inherit;
     font-size: 0.8rem;
     cursor: pointer;
+  }
+
+  .milestone-section {
+    margin-bottom: 2rem;
+  }
+  .ms-title {
+    font-size: 1rem;
+    color: #a7f3d0;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+  }
+  .epic-section {
+    margin-bottom: 1.25rem;
+  }
+  .epic-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.3rem;
+  }
+  .epic-title {
+    font-size: 0.92rem;
+    color: #e5e7eb;
+    margin: 0;
+  }
+  .epic-status {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .epic-count {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+  .epic-hours {
+    font-size: 0.72rem;
+    color: #4b5563;
+    margin-left: auto;
+  }
+  .epic-desc {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin: 0 0 0.5rem;
+    line-height: 1.4;
   }
 
   .ticket-list {

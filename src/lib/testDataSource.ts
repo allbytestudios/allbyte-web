@@ -88,7 +88,7 @@ export async function fetchHeartbeat(
   }
 }
 
-import type { TicketsFile, DashboardFile, AgentsFile } from "./ticketTypes";
+import type { TicketsFile, DashboardFile, AgentsFile, EpicsFile, FixtureManifest } from "./ticketTypes";
 
 export async function fetchTickets(signal?: AbortSignal): Promise<TicketsFile | null> {
   const res = await fetch(`${TEST_DATA_BASE}/tickets/tickets.json`, {
@@ -118,6 +118,30 @@ export async function fetchAgents(signal?: AbortSignal): Promise<AgentsFile | nu
   if (res.status === 404) return null;
   if (!res.ok) return null;
   return (await res.json()) as AgentsFile;
+}
+
+export async function fetchEpics(signal?: AbortSignal): Promise<EpicsFile | null> {
+  const res = await fetch(`${TEST_DATA_BASE}/tickets/epics.json`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  return (await res.json()) as EpicsFile;
+}
+
+export async function fetchFixtureManifest(signal?: AbortSignal): Promise<FixtureManifest | null> {
+  const res = await fetch(`${TEST_DATA_BASE}/test_fixtures/manifest.json`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  return (await res.json()) as FixtureManifest;
+}
+
+export function fixtureUrl(savePath: string): string {
+  return `${TEST_DATA_BASE}/${savePath.replace(/^\/+/, "")}`;
 }
 
 export async function fetchRoadmap(

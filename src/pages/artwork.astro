@@ -102,15 +102,15 @@ function animationGateFor(character: string, animation: string): {
               >
                 {charGate.gated && (
                   <Fragment>
-                    <h3 class="character-name gated-name">???</h3>
-                    <div class="sprite-showcase">
+                    <div class="sprite-showcase gated-placeholder">
                       <div class="mystery-sprite">?</div>
                     </div>
                     <p class="mystery-text">&#128274; Unlock with {charGate.label}</p>
                   </Fragment>
                 )}
-                <h3 class={`character-name${charGate.gated ? " real-name" : ""}`}>
+                <h3 class="character-name">
                   {name}
+                  {charGate.gated && <span class="gate-badge">&#128274; {charGate.label}</span>}
                 </h3>
                 <div class={`sprite-showcase${charGate.gated ? " real-content" : ""}`}>
                   <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
@@ -124,9 +124,15 @@ function animationGateFor(character: string, animation: string): {
                         data-gated={animGate.gated ? "true" : "false"}
                         data-required-tier={animGate.tier}
                       >
-                        <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
-                        <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
-                        {animGate.gated && <span class="cell-gate-badge">&#128274; {animGate.label}</span>}
+                        {animGate.gated && (
+                          <div class="cell-locked-placeholder">
+                            <div class="locked-sprite-small">&#128274;</div>
+                            <span class="sprite-label">{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
+                            <span class="cell-gate-badge">&#128274; {animGate.label}</span>
+                          </div>
+                        )}
+                        <img src={s.file} alt={`${name} ${s.animation}`} class={`sprite-gif${animGate.gated ? " real-cell-content" : ""}`} loading="lazy" />
+                        <span class={`sprite-label${animGate.gated ? " real-cell-content" : ""}`}>{s.animation.replace(/([A-Z])/g, " $1").trim()}</span>
                       </div>
                     );
                   })}
@@ -167,15 +173,15 @@ function animationGateFor(character: string, animation: string): {
               >
                 {charGate.gated && (
                   <Fragment>
-                    <h3 class="character-name gated-name">???</h3>
-                    <div class="sprite-showcase">
+                    <div class="sprite-showcase gated-placeholder">
                       <div class="mystery-sprite">?</div>
                     </div>
                     <p class="mystery-text">&#128274; Unlock with {charGate.label}</p>
                   </Fragment>
                 )}
-                <h3 class={`character-name${charGate.gated ? " real-name" : ""}`}>
+                <h3 class="character-name">
                   {name}
+                  {charGate.gated && <span class="gate-badge">&#128274; {charGate.label}</span>}
                 </h3>
                 <div class={`sprite-showcase${charGate.gated ? " real-content" : ""}`}>
                   <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
@@ -217,15 +223,15 @@ function animationGateFor(character: string, animation: string): {
               >
                 {charGate.gated && (
                   <Fragment>
-                    <h3 class="character-name gated-name">???</h3>
-                    <div class="sprite-showcase">
+                    <div class="sprite-showcase gated-placeholder">
                       <div class="mystery-sprite">?</div>
                     </div>
                     <p class="mystery-text">&#128274; Unlock with {charGate.label}</p>
                   </Fragment>
                 )}
-                <h3 class={`character-name${charGate.gated ? " real-name" : ""}`}>
+                <h3 class="character-name">
                   {name}
+                  {charGate.gated && <span class="gate-badge">&#128274; {charGate.label}</span>}
                 </h3>
                 <div class={`sprite-showcase${charGate.gated ? " real-content" : ""}`}>
                   <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
@@ -625,52 +631,71 @@ function animationGateFor(character: string, animation: string): {
     font-style: italic;
   }
 
-  /* Gated character cards: show mystery placeholder, hide real content.
-     When the auth script removes .gated, the real-content/real-name
-     elements reappear and the mystery placeholder hides. */
+  /* Gated character cards: show mystery placeholder, hide real sprites.
+     When the auth script removes .gated, the real content reappears and
+     the mystery placeholder hides. Name stays visible — only art is hidden. */
   .character-card.gated {
     border-style: dashed;
     position: relative;
   }
-  .character-card.gated .real-content,
-  .character-card.gated .real-name {
+  .character-card.gated .real-content {
     display: none;
   }
-  .gated-name,
+  .gated-placeholder,
   .character-card .mystery-text {
     display: none;
   }
-  .character-card.gated .gated-name,
+  .character-card.gated .gated-placeholder,
   .character-card.gated .mystery-text {
-    display: block;
-  }
-  .character-card.gated .gated-name {
-    text-align: center;
+    display: flex;
   }
   .character-card.gated .mystery-text {
     text-align: center;
+    justify-content: center;
     font-family: "Courier New", monospace;
     font-size: 0.85rem;
     color: #5a4d38;
     margin: 0;
   }
-
-  /* Gated individual sprite cells (per-animation locks) */
-  .sprite-cell.gated-cell {
-    position: relative;
-  }
-  .sprite-cell.gated-cell .sprite-gif {
-    filter: grayscale(0.9) brightness(0.55);
-  }
-  .cell-gate-badge {
-    position: absolute;
-    top: 0.25rem;
-    right: 0.25rem;
+  .gate-badge {
+    display: inline-block;
+    margin-left: 0.6rem;
     font-family: "Courier New", monospace;
     font-size: 0.75rem;
-    color: #f3f4f6;
-    background: rgba(58, 48, 32, 0.85);
-    padding: 0.12rem 0.4rem;
+    color: #5a4d38;
+    background: rgba(58, 48, 32, 0.12);
+    border: 1px solid rgba(58, 48, 32, 0.4);
+    padding: 0.18rem 0.5rem;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    vertical-align: middle;
+  }
+
+  /* Gated individual sprite cells: hide real sprite, show locked placeholder.
+     Same toggle pattern as character-level gating — removing .gated-cell
+     hides the placeholder and shows the real content. */
+  .sprite-cell.gated-cell .real-cell-content {
+    display: none;
+  }
+  .cell-locked-placeholder {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    min-height: 80px;
+  }
+  .sprite-cell.gated-cell .cell-locked-placeholder {
+    display: flex;
+  }
+  .cell-gate-badge {
+    font-family: "Courier New", monospace;
+    font-size: 0.75rem;
+    color: #5a4d38;
+    background: rgba(58, 48, 32, 0.12);
+    border: 1px solid rgba(58, 48, 32, 0.35);
+    padding: 0.1rem 0.35rem;
     border-radius: 2px;
     letter-spacing: 0.05em;
     font-weight: 700;

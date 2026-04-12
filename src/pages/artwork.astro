@@ -100,14 +100,22 @@ function animationGateFor(character: string, animation: string): {
                 data-gated={charGate.gated ? "true" : "false"}
                 data-required-tier={charGate.tier}
               >
-                <h3 class="character-name">
+                {charGate.gated && (
+                  <Fragment>
+                    <h3 class="character-name gated-name">???</h3>
+                    <div class="sprite-showcase">
+                      <div class="mystery-sprite">?</div>
+                    </div>
+                    <p class="mystery-text">&#128274; Unlock with {charGate.label}</p>
+                  </Fragment>
+                )}
+                <h3 class={`character-name${charGate.gated ? " real-name" : ""}`}>
                   {name}
-                  {charGate.gated && <span class="gate-badge">&#128274; {charGate.label}</span>}
                 </h3>
-                <div class="sprite-showcase">
+                <div class={`sprite-showcase${charGate.gated ? " real-content" : ""}`}>
                   <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
                 </div>
-                <div class="sprite-grid">
+                <div class={`sprite-grid${charGate.gated ? " real-content" : ""}`}>
                   {sprites.map(s => {
                     const animGate = animationGateFor(name, s.animation);
                     return (
@@ -157,14 +165,22 @@ function animationGateFor(character: string, animation: string): {
                 data-gated={charGate.gated ? "true" : "false"}
                 data-required-tier={charGate.tier}
               >
-                <h3 class="character-name">
+                {charGate.gated && (
+                  <Fragment>
+                    <h3 class="character-name gated-name">???</h3>
+                    <div class="sprite-showcase">
+                      <div class="mystery-sprite">?</div>
+                    </div>
+                    <p class="mystery-text">&#128274; Unlock with {charGate.label}</p>
+                  </Fragment>
+                )}
+                <h3 class={`character-name${charGate.gated ? " real-name" : ""}`}>
                   {name}
-                  {charGate.gated && <span class="gate-badge">&#128274; {charGate.label}</span>}
                 </h3>
-                <div class="sprite-showcase">
+                <div class={`sprite-showcase${charGate.gated ? " real-content" : ""}`}>
                   <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
                 </div>
-                <div class="sprite-grid">
+                <div class={`sprite-grid${charGate.gated ? " real-content" : ""}`}>
                   {sprites.map(s => (
                     <div class="sprite-cell">
                       <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
@@ -199,14 +215,22 @@ function animationGateFor(character: string, animation: string): {
                 data-gated={charGate.gated ? "true" : "false"}
                 data-required-tier={charGate.tier}
               >
-                <h3 class="character-name">
+                {charGate.gated && (
+                  <Fragment>
+                    <h3 class="character-name gated-name">???</h3>
+                    <div class="sprite-showcase">
+                      <div class="mystery-sprite">?</div>
+                    </div>
+                    <p class="mystery-text">&#128274; Unlock with {charGate.label}</p>
+                  </Fragment>
+                )}
+                <h3 class={`character-name${charGate.gated ? " real-name" : ""}`}>
                   {name}
-                  {charGate.gated && <span class="gate-badge">&#128274; {charGate.label}</span>}
                 </h3>
-                <div class="sprite-showcase">
+                <div class={`sprite-showcase${charGate.gated ? " real-content" : ""}`}>
                   <img src={sprites.find(s => s.animation === "IdleDown")?.file || sprites[0].file} alt={`${name} idle`} class="sprite-hero" />
                 </div>
-                <div class="sprite-grid">
+                <div class={`sprite-grid${charGate.gated ? " real-content" : ""}`}>
                   {sprites.map(s => (
                     <div class="sprite-cell">
                       <img src={s.file} alt={`${name} ${s.animation}`} class="sprite-gif" loading="lazy" />
@@ -601,33 +625,34 @@ function animationGateFor(character: string, animation: string): {
     font-style: italic;
   }
 
-  /* Gated character cards (locked behind a subscription tier) */
+  /* Gated character cards: show mystery placeholder, hide real content.
+     When the auth script removes .gated, the real-content/real-name
+     elements reappear and the mystery placeholder hides. */
   .character-card.gated {
-    background: #c5b67e;
     border-style: dashed;
     position: relative;
   }
-  .character-card.gated .sprite-hero,
-  .character-card.gated .sprite-gif {
-    filter: grayscale(0.85) brightness(0.65);
+  .character-card.gated .real-content,
+  .character-card.gated .real-name {
+    display: none;
   }
-  .character-card.gated .character-name {
-    color: #5a4d38;
-    font-style: italic;
+  .gated-name,
+  .character-card .mystery-text {
+    display: none;
   }
-  .gate-badge {
-    display: inline-block;
-    margin-left: 0.6rem;
+  .character-card.gated .gated-name,
+  .character-card.gated .mystery-text {
+    display: block;
+  }
+  .character-card.gated .gated-name {
+    text-align: center;
+  }
+  .character-card.gated .mystery-text {
+    text-align: center;
     font-family: "Courier New", monospace;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     color: #5a4d38;
-    background: rgba(58, 48, 32, 0.12);
-    border: 1px solid rgba(58, 48, 32, 0.4);
-    padding: 0.18rem 0.5rem;
-    border-radius: 3px;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    vertical-align: middle;
+    margin: 0;
   }
 
   /* Gated individual sprite cells (per-animation locks) */

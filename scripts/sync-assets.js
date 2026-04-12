@@ -17,46 +17,49 @@ if (!existsSync(godot)) {
 }
 
 // --- 1. Extract game version + build date ---
-// Prefer the Chronicles project (where CON Claude actively bumps the version
-// on each web build). Fall back to the legacy TacticalTestDev godotProject.
+// Read from CON Claude's dashboard.json (the live source of truth for the
+// deployed web export version). Falls back to World.gd if dashboard missing.
 let version = "unknown";
 let buildDate = null;
 
-function readVersionFrom(projectPath, versionFile, versionRegex) {
-  const abs = join(projectPath, versionFile);
-  if (!existsSync(abs)) return null;
-  const src = readFileSync(abs, "utf-8");
-  const m = src.match(new RegExp(versionRegex));
-  return m ? m[1] : null;
-}
-
 if (manifest.chroniclesProject && existsSync(manifest.chroniclesProject)) {
-  const v = readVersionFrom(
-    manifest.chroniclesProject,
-    manifest.chroniclesVersionFile || manifest.versionFile,
-    manifest.versionRegex
-  );
-  if (v) {
-    version = v;
-    console.log(`Version (chronicles): ${version}`);
+  const dashPath = join(manifest.chroniclesProject, "tickets/dashboard.json");
+  if (existsSync(dashPath)) {
+    try {
+      const dash = JSON.parse(readFileSync(dashPath, "utf-8"));
+      if (dash.deployedVersion) {
+        version = dash.deployedVersion;
+        console.log(`Version (dashboard): ${version}`);
+      }
+      if (dash.lastUpdated) {
+        buildDate = dash.lastUpdated;
+        console.log(`Build date (dashboard): ${buildDate}`);
+      }
+    } catch {
+      console.log("⚠ Failed to parse dashboard.json, falling back");
+    }
   }
-  // Build date from the mtime of the web export file, if present.
-  if (manifest.chroniclesWebExportFile) {
+
+  // Fallback: read from World.gd if dashboard didn't have a version
+  if (version === "unknown") {
+    const vFile = join(manifest.chroniclesProject, manifest.chroniclesVersionFile || manifest.versionFile);
+    if (existsSync(vFile)) {
+      const src = readFileSync(vFile, "utf-8");
+      const m = src.match(new RegExp(manifest.versionRegex));
+      if (m) {
+        version = m[1];
+        console.log(`Version (World.gd fallback): ${version}`);
+      }
+    }
+  }
+
+  // Build date fallback: mtime of the web export .pck
+  if (!buildDate && manifest.chroniclesWebExportFile) {
     const exportPath = join(manifest.chroniclesProject, manifest.chroniclesWebExportFile);
     if (existsSync(exportPath)) {
       buildDate = statSync(exportPath).mtime.toISOString();
-      console.log(`Build date: ${buildDate} (${manifest.chroniclesWebExportFile})`);
-    } else {
-      console.log(`No web export at ${exportPath}, build date will be null.`);
+      console.log(`Build date (pck mtime fallback): ${buildDate}`);
     }
-  }
-}
-
-if (version === "unknown") {
-  const v = readVersionFrom(godot, manifest.versionFile, manifest.versionRegex);
-  if (v) {
-    version = v;
-    console.log(`Version (fallback): ${version}`);
   }
 }
 

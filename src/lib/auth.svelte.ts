@@ -127,3 +127,16 @@ export function logout() {
   auth.authToken = null;
   auth.currentUser = null;
 }
+
+export function devLogin(tier: string) {
+  auth.currentUser = {
+    userId: "dev-local",
+    email: "dev@localhost",
+    username: "dev",
+    tier,
+    stripeCustomerId: null,
+    notificationPreferences: null,
+  };
+  auth.authToken = "dev-local-token";
+  auth.authReady = true;
+}

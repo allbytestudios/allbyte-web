@@ -2,6 +2,7 @@
 import { ClientRouter } from "astro:transitions";
 import MusicPlayer from "../components/MusicPlayer.svelte";
 import AuthInit from "../components/AuthInit.svelte";
+import DevAuthSwitcher from "../components/DevAuthSwitcher.svelte";
 
 interface Props {
   title?: string;
@@ -27,6 +28,7 @@ const {
   </head>
   <body>
     <AuthInit client:load />
+    <DevAuthSwitcher client:load />
     <slot />
     <div transition:persist="music-player">
       <MusicPlayer client:load />

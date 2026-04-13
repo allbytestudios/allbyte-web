@@ -207,6 +207,13 @@ export interface ChatMessage {
   refs?: string[];
 }
 
+export interface AgentSubagents {
+  active: number;
+  completed: number;
+  total_spawned: number;
+  workers: { id: string; task: string; started: string; status: string }[];
+}
+
 export interface AgentActivity {
   schema_version: number;
   lastUpdated: string;
@@ -216,6 +223,7 @@ export interface AgentActivity {
     tickets: string[];
     started: string;
     status: string;
+    subagents?: AgentSubagents;
   }[];
   recentActivity: {
     agent: string;

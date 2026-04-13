@@ -54,13 +54,13 @@
   }
 
   // Live status from agent_activity.json (more current than dashboard.json)
-  function liveAgentStatus(agentName: string): { status: string; task: string | null; tickets: string[] } | null {
+  function liveAgentStatus(agentName: string): { status: string; task: string | null; tickets: string[]; subagents?: any } | null {
     if (!activity) return null;
     const entry = activity.activeAgents.find(
       (a) => a.agent.toLowerCase() === agentName.toLowerCase()
     );
     if (!entry) return null;
-    return { status: entry.status, task: entry.task, tickets: entry.tickets };
+    return { status: entry.status, task: entry.task, tickets: entry.tickets, subagents: (entry as any).subagents };
   }
 
   function elapsed(started: string): string {
@@ -178,6 +178,12 @@
               <span class="meta-chip">{actLive.tickets.length} tickets</span>
             {:else if dashLive?.ticketCount}
               <span class="meta-chip">{dashLive.ticketCount} tickets</span>
+            {/if}
+            {#if actLive?.subagents?.active}
+              <span class="meta-chip subagent">{actLive.subagents.active} subagents</span>
+            {/if}
+            {#if actLive?.subagents?.total_spawned && !actLive?.subagents?.active}
+              <span class="meta-chip doc">{actLive.subagents.total_spawned} spawned</span>
             {/if}
             {#each expert.ownedDocs as doc}
               <span class="meta-chip doc">{doc.split("/").pop()}</span>
@@ -407,6 +413,7 @@
     color: #a7f3d0;
   }
   .meta-chip.doc { color: #9ca3af; border-color: rgba(156, 163, 175, 0.25); background: rgba(156, 163, 175, 0.06); }
+  .meta-chip.subagent { color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); background: rgba(251, 191, 36, 0.08); }
 
   /* Agent profile */
   .agent-profile {

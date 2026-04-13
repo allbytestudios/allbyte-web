@@ -220,16 +220,25 @@
   {/if}
 
   {#if resolved.length > 0}
-    <h2 class="section-title resolved-title">Resolved ({resolved.length})</h2>
-    <div class="resolved-list">
-      {#each resolved as d (d.id)}
-        <div class="resolved-row">
-          <span class="dec-id">{d.id}</span>
-          <span class="resolved-status">{d.status}</span>
-          <span class="resolved-text">{d.msg.message.slice(0, 80)}…</span>
-        </div>
-      {/each}
-    </div>
+    <details class="resolved-fold">
+      <summary class="section-title resolved-title">Resolved ({resolved.length})</summary>
+      <div class="decision-list">
+        {#each resolved as d (d.id)}
+          {@const fromMeta = EXPERT_META[d.msg.from.toLowerCase()]}
+          <div class="decision-card resolved-card">
+            <div class="dec-header">
+              <span class="dec-id">{d.id}</span>
+              <span class="dec-from" style="color: {fromMeta?.color ?? '#9ca3af'}">{fromMeta?.label ?? d.msg.from}</span>
+              {#each d.tickets as tid}
+                <a href="/test/tickets/#ticket-{tid}" class="dec-ticket">{tid}</a>
+              {/each}
+              <span class="resolved-choice">Answered: {(d.msg as any).decision?.chosenOption ?? d.status}</span>
+            </div>
+            <p class="dec-body">{d.msg.message}</p>
+          </div>
+        {/each}
+      </div>
+    </details>
   {/if}
   {/if}
 </div>
@@ -467,27 +476,24 @@
   }
 
   /* Resolved */
-  .resolved-title { color: #6b7280; }
-  .resolved-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
+  .resolved-fold { margin-top: 1rem; }
+  .resolved-title {
+    color: #6b7280 !important;
+    cursor: pointer;
+    list-style: none;
   }
-  .resolved-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.3rem 0;
-    font-size: 0.78rem;
-    color: #6b7280;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  .resolved-title::-webkit-details-marker { display: none; }
+  .resolved-card {
+    opacity: 0.6;
+    border-color: rgba(107, 114, 128, 0.2) !important;
+    border-left-color: #6b7280 !important;
   }
-  .resolved-status {
-    color: #a7f3d0;
+  .resolved-choice {
     font-size: 0.72rem;
-    text-transform: uppercase;
+    color: #a7f3d0;
+    margin-left: auto;
+    font-weight: 600;
   }
-  .resolved-text { color: #4b5563; }
 
   .queue-empty { text-align: center; padding: 2rem 0; }
 </style>

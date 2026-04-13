@@ -6,7 +6,7 @@
   import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy, tick } from "svelte";
 
-  let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "hero"));
+  let viewerHasAccess = $derived(isTierAtLeast(auth.currentUser, "legend"));
 
   let messages = $state<ChatMessage[]>([]);
   let loadError = $state<string | null>(null);
@@ -81,8 +81,8 @@
     <div class="loading">Checking subscription…</div>
   {:else if !viewerHasAccess}
     <div class="gate">
-      <h2>Hero tier required</h2>
-      <p>Agent chat feed is a <strong>Hero</strong> tier perk.</p>
+      <h2>Legend tier required</h2>
+      <p>Agent chat feed is a <strong>Legend</strong> tier perk.</p>
       <p><a href="/subscribe/">View subscription tiers →</a></p>
     </div>
   {:else}

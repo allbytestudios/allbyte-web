@@ -526,6 +526,8 @@
   }
   @media (max-width: 640px) {
     .overview-cards { grid-template-columns: 1fr; }
+    .tier-columns { grid-template-columns: 1fr !important; }
+    .test-tree { overflow-x: hidden; word-break: break-word; }
   }
 
   .deep-gate {

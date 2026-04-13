@@ -119,13 +119,12 @@
 <style>
   .test-nav {
     display: flex;
+    flex-wrap: wrap;
     gap: 0;
     max-width: 1600px;
     margin: 0 auto;
     padding: 0.5rem 0.5rem 0;
     border-bottom: 1px solid rgba(167, 243, 208, 0.12);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
   .nav-tab {
     font-family: "Courier New", monospace;
@@ -149,7 +148,7 @@
     border-bottom-color: #a7f3d0;
   }
   .nav-count {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     color: #4b5563;
     background: rgba(167, 243, 208, 0.08);
     border: 1px solid rgba(167, 243, 208, 0.15);

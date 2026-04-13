@@ -527,8 +527,12 @@
   .history-result { color: #9ca3af; font-size: 0.75rem; }
 
   @media (max-width: 640px) {
+    .agents-page { padding: 0.5rem 0.5rem 2rem; }
     .experts-grid { grid-template-columns: 1fr; }
     .history-row { grid-template-columns: 1fr; gap: 0.2rem; }
     .worker-row { flex-wrap: wrap; }
+    .activity-row { flex-wrap: wrap; }
+    .session-bar { flex-wrap: wrap; }
+    .profile-feed { max-height: 300px; }
   }
 </style>

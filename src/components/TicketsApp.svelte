@@ -403,7 +403,7 @@
         <h4 class="disc-title">
           Discussion ({t.comments.length})
           {#if t.comments.length > 3}
-            <button class="disc-toggle" onclick={() => toggleFold(`comments:${t.id}`)}>
+            <button class="disc-toggle" aria-label="Toggle all comments" onclick={() => toggleFold(`comments:${t.id}`)}>
               {showAll ? "Show recent" : `Show all ${t.comments.length}`}
             </button>
           {/if}
@@ -1234,9 +1234,14 @@
   }
 
   @media (max-width: 640px) {
+    .tickets-page { padding: 0.5rem 0.5rem 2rem; }
+    .summary-bar { font-size: 0.75rem; }
+    .ms-filters { flex-wrap: wrap; }
     .ticket-meta { font-size: 0.72rem; }
     .filters { flex-direction: column; }
     .blocker-badge { font-size: 0.65rem; }
     .swim-lanes { grid-template-columns: repeat(3, 1fr); }
+    .epic-fold-summary { flex-wrap: wrap; }
+    .lane-stats { flex-wrap: wrap; }
   }
 </style>

@@ -84,7 +84,7 @@
     heartbeat ? (nowTs - Date.parse(heartbeat.written_at) < 180_000) : false
   );
 
-  interface MsEstimate { name: string; epicCount: number; ticketCount: number; doneCount: number; totalHours: number; pctDone: number; }
+  interface MsEstimate { name: string; epicCount: number; ticketCount: number; doneCount: number; weightedDone: number; totalHours: number; pctDone: number; }
   let milestoneEstimates = $derived.by<MsEstimate[]>(() => {
     if (!epicsData || !ticketsData) return [];
     const ticketById = new Map(ticketsData.tickets.map(t => [t.id, t]));
@@ -98,12 +98,12 @@
     for (const t of ticketsData.tickets) {
       if (t.epic && epicTickets.has(t.epic)) epicTickets.get(t.epic)!.add(t.id);
     }
-    const msMap = new Map<string, { epics: number; tickets: number; done: number; hours: number }>();
+    const msMap = new Map<string, { epics: number; tickets: number; done: number; weighted: number; hours: number }>();
     const msOrder = ["pre_alpha", "alpha", "beta"];
     for (const epic of epicsData.epics) {
       if (!epic) continue;
       const ms = epic.milestone ?? "_uncategorized";
-      if (!msMap.has(ms)) msMap.set(ms, { epics: 0, tickets: 0, done: 0, hours: 0 });
+      if (!msMap.has(ms)) msMap.set(ms, { epics: 0, tickets: 0, done: 0, weighted: 0, hours: 0 });
       const g = msMap.get(ms)!;
       g.epics++;
       g.hours += epic.estimatedHours ?? 0;
@@ -112,7 +112,10 @@
         const t = ticketById.get(tid);
         if (t) {
           g.tickets++;
-          if (effectivePhase(t) === "done") g.done++;
+          const phase = effectivePhase(t);
+          if (phase === "done") { g.done++; g.weighted += 1; }
+          else if (phase === "testing") g.weighted += 0.75;
+          else if (phase === "in_progress") g.weighted += 0.5;
         }
       }
     }
@@ -123,8 +126,9 @@
         epicCount: g.epics,
         ticketCount: g.tickets,
         doneCount: g.done,
+        weightedDone: g.weighted,
         totalHours: g.hours,
-        pctDone: g.tickets > 0 ? Math.round(g.done / g.tickets * 100) : 0,
+        pctDone: g.tickets > 0 ? Math.round(g.weighted / g.tickets * 100) : 0,
       };
     });
   });
@@ -146,8 +150,27 @@
     {/if}
   </div>
 
-  <!-- Milestone strip -->
-  <MilestoneStrip {roadmap} {index} />
+  <!-- Milestone progress -->
+  {#if milestoneEstimates.length > 0}
+    <div class="ms-progress">
+      {#each milestoneEstimates as ms}
+        <div class="ms-card">
+          <div class="ms-header">
+            <span class="ms-name">{ms.name}</span>
+            <span class="ms-pct">{ms.pctDone}%</span>
+          </div>
+          <div class="ms-bar"><div class="ms-bar-fill" style="width: {ms.pctDone}%"></div></div>
+          <div class="ms-detail">
+            <span>{ms.epicCount} epics</span>
+            <span>{ms.doneCount}/{ms.ticketCount} tickets</span>
+            {#if ms.totalHours > 0}<span>~{ms.totalHours}h est.</span>{/if}
+          </div>
+        </div>
+      {/each}
+    </div>
+  {:else}
+    <MilestoneStrip {roadmap} {index} />
+  {/if}
 
   <!-- Live run status -->
   <TestStatusCard {status} />
@@ -216,22 +239,6 @@
     </a>
   </div>
 
-  <!-- Estimation rollups -->
-  {#if milestoneEstimates.length > 0 && viewerIsLegend}
-    <h3 class="section-title">Estimation</h3>
-    <div class="estimation">
-      {#each milestoneEstimates as ms}
-        <div class="est-row">
-          <span class="est-ms">{ms.name}</span>
-          <span class="est-detail">{ms.epicCount} epics · {ms.doneCount}/{ms.ticketCount} tickets</span>
-          {#if ms.totalHours > 0}
-            <span class="est-hours">~{ms.totalHours}h est.</span>
-          {/if}
-          <span class="est-pct">{ms.pctDone}% done</span>
-        </div>
-      {/each}
-    </div>
-  {/if}
 
   <!-- Fixture picker (Legend+ only) -->
   {#if viewerIsLegend}
@@ -400,6 +407,57 @@
   }
   .act-time { color: #4b5563; flex-shrink: 0; width: 3.5rem; }
   .act-text { color: #d1d5db; }
+
+  /* Milestone progress */
+  .ms-progress {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin: 0.75rem 0;
+  }
+  .ms-card {
+    background: #12161e;
+    border: 1px solid rgba(167, 243, 208, 0.12);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+  }
+  .ms-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.4rem;
+  }
+  .ms-name {
+    font-size: 0.85rem;
+    color: #a7f3d0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .ms-pct {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e5e7eb;
+  }
+  .ms-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+  }
+  .ms-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #34d399, #a7f3d0);
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .ms-detail {
+    display: flex;
+    gap: 0.6rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
 
   .estimation {
     display: flex;

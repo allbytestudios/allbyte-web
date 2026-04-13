@@ -1,6 +1,12 @@
-<script>
+<script lang="ts">
+  interface Props {
+    fixture?: string;
+  }
+  let { fixture }: Props = $props();
+
   let loading = $state(true);
   let error = $state("");
+  let iframeEl = $state<HTMLIFrameElement | null>(null);
 
   // Served from /godot/ in both dev and prod. Astro dev sets the required
   // COOP/COEP headers via vite.server.headers; CloudFront sets them in prod.
@@ -8,6 +14,15 @@
 
   function onLoad() {
     loading = false;
+    if (fixture && iframeEl?.contentWindow) {
+      // Give the game engine a moment to initialize TestBridge
+      setTimeout(() => {
+        iframeEl?.contentWindow?.postMessage(
+          { type: "load_fixture", path: `test_fixtures/${fixture}.json` },
+          "*",
+        );
+      }, 2000);
+    }
   }
 
   function onError() {
@@ -34,6 +49,7 @@
     </div>
   {:else}
     <iframe
+      bind:this={iframeEl}
       src={gameUrl}
       title="The Chronicles of Nesis"
       class="game-frame"

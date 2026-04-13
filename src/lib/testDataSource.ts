@@ -140,6 +140,37 @@ export async function fetchFixtureManifest(signal?: AbortSignal): Promise<Fixtur
   return (await res.json()) as FixtureManifest;
 }
 
+export async function fetchAgentChat(signal?: AbortSignal): Promise<import("./ticketTypes").ChatMessage[]> {
+  const res = await fetch(`${TEST_DATA_BASE}/tickets/agent_chat.ndjson`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return [];
+  if (!res.ok) return [];
+  const text = await res.text();
+  return text.trim().split("\n").filter(Boolean).map((line) => JSON.parse(line));
+}
+
+export async function fetchAgentActivity(signal?: AbortSignal): Promise<import("./ticketTypes").AgentActivity | null> {
+  const res = await fetch(`${TEST_DATA_BASE}/tickets/agent_activity.json`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+export async function submitDecision(decisionId: string, choice: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`/api/decisions/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ decisionId, choice }),
+  });
+  if (!res.ok) throw new Error(`Decision submit failed: ${res.status}`);
+  return res.json();
+}
+
 export function fixtureUrl(savePath: string): string {
   return `${TEST_DATA_BASE}/${savePath.replace(/^\/+/, "")}`;
 }

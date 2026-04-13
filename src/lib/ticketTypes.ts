@@ -1,4 +1,12 @@
 export type TicketPriority = "P0" | "P1" | "P2" | "P3" | "done";
+export type TicketPhase =
+  | "planning"
+  | "tech_review"
+  | "ready"
+  | "in_progress"
+  | "testing"
+  | "done"
+  | "deferred";
 export type TicketStatus =
   | "open"
   | "investigating"
@@ -11,6 +19,30 @@ export type TicketStatus =
   | "known, HTML5 limitation";
 export type TicketType = "bug" | "feature" | "investigation" | "port" | "documentation";
 export type ExpertId = "qa" | "game" | "test" | "web-export";
+
+export interface SuccessCriterion {
+  criterion: string;
+  testSpec: string | null;
+  testShape: string | null;
+  veraApproved: boolean;
+}
+
+export type CommentType = "review" | "question" | "answer" | "decision" | "status";
+
+export interface Comment {
+  author: string;
+  timestamp: string;
+  type: CommentType;
+  content: string;
+}
+
+export const COMMENT_TYPE_META: Record<CommentType, { label: string; color: string }> = {
+  review: { label: "Review", color: "#60a5fa" },
+  question: { label: "Question", color: "#fbbf24" },
+  answer: { label: "Answer", color: "#a7f3d0" },
+  decision: { label: "Decision", color: "#f97316" },
+  status: { label: "Status", color: "#9ca3af" },
+};
 
 export interface Subtask {
   task: string;
@@ -42,6 +74,17 @@ export interface Ticket {
     hangAfterOrder: number;
     nextCommands: string[];
   };
+  // v2 fields (optional for backward compat)
+  awaitingOwner?: boolean;
+  phase?: TicketPhase;
+  leads?: string[];
+  leadReview?: Record<string, string>;
+  successCriteria?: SuccessCriterion[];
+  milestone?: string;
+  epic?: string;
+  comments?: Comment[];
+  phaseHistory?: { phase: TicketPhase; entered: string }[];
+  resources?: { estimatedSlots?: number; needsBrowser?: boolean; needsExport?: boolean };
 }
 
 export interface TicketsFile {
@@ -122,6 +165,8 @@ export interface Epic {
   estimatedHours?: number;
   acceptanceCriteria?: string;
   visualMockup?: string;
+  ownerReviewNeeded?: boolean;
+  ownerReviewReason?: string;
   created: string;
   updated: string;
 }
@@ -153,6 +198,33 @@ export interface FixtureManifest {
   fixtures: FixtureEntry[];
 }
 
+export interface ChatMessage {
+  timestamp: string;
+  from: string;
+  to: string;
+  channel: string;
+  message: string;
+  refs?: string[];
+}
+
+export interface AgentActivity {
+  schema_version: number;
+  lastUpdated: string;
+  activeAgents: {
+    agent: string;
+    task: string;
+    tickets: string[];
+    started: string;
+    status: string;
+  }[];
+  recentActivity: {
+    agent: string;
+    task: string;
+    completed: string;
+    result: string;
+  }[];
+}
+
 export const PRIORITY_ORDER: TicketPriority[] = ["P0", "P1", "P2", "P3", "done"];
 
 export const PRIORITY_META: Record<TicketPriority, { label: string; color: string }> = {
@@ -164,10 +236,22 @@ export const PRIORITY_META: Record<TicketPriority, { label: string; color: strin
 };
 
 export const EXPERT_META: Record<string, { label: string; color: string }> = {
-  qa: { label: "Planning / QA", color: "#c084fc" },
-  game: { label: "Game Systems", color: "#fbbf24" },
-  test: { label: "Test Implementation", color: "#a7f3d0" },
-  "web-export": { label: "Web Export", color: "#60a5fa" },
+  qa: { label: "Arc", color: "#c084fc" },
+  game: { label: "Nix", color: "#fbbf24" },
+  test: { label: "Vera", color: "#a7f3d0" },
+  "web-export": { label: "Port", color: "#60a5fa" },
+  // v2 agent name aliases
+  arc: { label: "Arc", color: "#c084fc" },
+  nix: { label: "Nix", color: "#fbbf24" },
+  vera: { label: "Vera", color: "#a7f3d0" },
+  port: { label: "Port", color: "#60a5fa" },
+};
+
+export const TEST_SHAPE_META: Record<string, { label: string; color: string }> = {
+  A: { label: "Scene-based", color: "#a7f3d0" },
+  B: { label: "Fixture", color: "#60a5fa" },
+  C: { label: "Traversal", color: "#fbbf24" },
+  D: { label: "Playthrough", color: "#f87171" },
 };
 
 export function statusColor(s: TicketStatus): string {
@@ -180,6 +264,23 @@ export function statusColor(s: TicketStatus): string {
     case "deferred": return "#6b7280";
     default: return "#9ca3af";
   }
+}
+
+export function phaseColor(p: string): string {
+  switch (p) {
+    case "planning": return "#818cf8";
+    case "tech_review": return "#f472b6";
+    case "ready": return "#34d399";
+    case "in_progress": return "#60a5fa";
+    case "testing": return "#c084fc";
+    case "done": return "#a7f3d0";
+    case "deferred": return "#6b7280";
+    default: return "#9ca3af";
+  }
+}
+
+export function effectivePhase(t: Ticket): string {
+  return t.phase ?? t.status;
 }
 
 export function subtaskProgress(t: Ticket): { done: number; total: number } {

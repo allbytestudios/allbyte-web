@@ -1,16 +1,17 @@
 <script lang="ts">
   import type { TestIndex, TestRunStatus } from "../lib/testIndex";
   import type { TestingRoadmap } from "../lib/testingRoadmap";
-  import type { DashboardFile, TicketsFile } from "../lib/ticketTypes";
+  import type { DashboardFile, TicketsFile, EpicsFile } from "../lib/ticketTypes";
   import type { SyncHeartbeat } from "../lib/testDataSource";
   import { TIER_META } from "../lib/testIndex";
-  import { PRIORITY_META, EXPERT_META, subtaskProgress } from "../lib/ticketTypes";
+  import { PRIORITY_META, EXPERT_META, effectivePhase, subtaskProgress } from "../lib/ticketTypes";
   import {
     fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat,
-    fetchDashboard, fetchTickets,
+    fetchDashboard, fetchTickets, fetchEpics,
   } from "../lib/testDataSource";
   import MilestoneStrip from "./MilestoneStrip.svelte";
   import TestStatusCard from "./TestStatusCard.svelte";
+  import FixturePicker from "./FixturePicker.svelte";
   import { auth } from "../lib/auth.svelte.ts";
   import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
@@ -23,19 +24,21 @@
   let heartbeat = $state<SyncHeartbeat | null>(null);
   let dashboard = $state<DashboardFile | null>(null);
   let ticketsData = $state<TicketsFile | null>(null);
+  let epicsData = $state<EpicsFile | null>(null);
   let nowTs = $state<number>(Date.now());
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let tickTimer: ReturnType<typeof setInterval> | null = null;
 
   async function loadAll() {
-    const [idx, st, rm, hb, db, tx] = await Promise.all([
+    const [idx, st, rm, hb, db, tx, ep] = await Promise.all([
       fetchIndex().catch(() => null),
       fetchStatus().catch(() => null),
       fetchRoadmap().catch(() => null),
       fetchHeartbeat().catch(() => null),
       fetchDashboard().catch(() => null),
       fetchTickets().catch(() => null),
+      fetchEpics().catch(() => null),
     ]);
     index = idx;
     status = st;
@@ -43,6 +46,7 @@
     heartbeat = hb;
     dashboard = db;
     ticketsData = tx;
+    epicsData = ep;
   }
 
   onMount(() => {
@@ -79,6 +83,51 @@
   let syncOk = $derived(
     heartbeat ? (nowTs - Date.parse(heartbeat.written_at) < 180_000) : false
   );
+
+  interface MsEstimate { name: string; epicCount: number; ticketCount: number; doneCount: number; totalHours: number; pctDone: number; }
+  let milestoneEstimates = $derived.by<MsEstimate[]>(() => {
+    if (!epicsData || !ticketsData) return [];
+    const ticketById = new Map(ticketsData.tickets.map(t => [t.id, t]));
+    const epicById = new Map(epicsData.epics.filter(Boolean).map(e => [e.id, e]));
+    // Build epic→ticket sets from both directions
+    const epicTickets = new Map<string, Set<string>>();
+    for (const e of epicsData.epics) {
+      if (!e) continue;
+      epicTickets.set(e.id, new Set(e.ticketIds));
+    }
+    for (const t of ticketsData.tickets) {
+      if (t.epic && epicTickets.has(t.epic)) epicTickets.get(t.epic)!.add(t.id);
+    }
+    const msMap = new Map<string, { epics: number; tickets: number; done: number; hours: number }>();
+    const msOrder = ["pre_alpha", "alpha", "beta"];
+    for (const epic of epicsData.epics) {
+      if (!epic) continue;
+      const ms = epic.milestone ?? "_uncategorized";
+      if (!msMap.has(ms)) msMap.set(ms, { epics: 0, tickets: 0, done: 0, hours: 0 });
+      const g = msMap.get(ms)!;
+      g.epics++;
+      g.hours += epic.estimatedHours ?? 0;
+      const tids = epicTickets.get(epic.id) ?? new Set();
+      for (const tid of tids) {
+        const t = ticketById.get(tid);
+        if (t) {
+          g.tickets++;
+          if (effectivePhase(t) === "done") g.done++;
+        }
+      }
+    }
+    return msOrder.filter(ms => msMap.has(ms)).map(ms => {
+      const g = msMap.get(ms)!;
+      return {
+        name: ms.replace(/_/g, " "),
+        epicCount: g.epics,
+        ticketCount: g.tickets,
+        doneCount: g.done,
+        totalHours: g.hours,
+        pctDone: g.tickets > 0 ? Math.round(g.done / g.tickets * 100) : 0,
+      };
+    });
+  });
 </script>
 
 <div class="console">
@@ -166,6 +215,28 @@
       {/if}
     </a>
   </div>
+
+  <!-- Estimation rollups -->
+  {#if milestoneEstimates.length > 0 && viewerIsLegend}
+    <h3 class="section-title">Estimation</h3>
+    <div class="estimation">
+      {#each milestoneEstimates as ms}
+        <div class="est-row">
+          <span class="est-ms">{ms.name}</span>
+          <span class="est-detail">{ms.epicCount} epics · {ms.doneCount}/{ms.ticketCount} tickets</span>
+          {#if ms.totalHours > 0}
+            <span class="est-hours">~{ms.totalHours}h est.</span>
+          {/if}
+          <span class="est-pct">{ms.pctDone}% done</span>
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  <!-- Fixture picker (Legend+ only) -->
+  {#if viewerIsLegend}
+    <FixturePicker />
+  {/if}
 
   <!-- Recent activity (Legend+ only) -->
   {#if dashboard?.recentActivity?.length}
@@ -329,6 +400,31 @@
   }
   .act-time { color: #4b5563; flex-shrink: 0; width: 3.5rem; }
   .act-text { color: #d1d5db; }
+
+  .estimation {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .est-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+  .est-ms {
+    color: #a7f3d0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    font-size: 0.78rem;
+    min-width: 6rem;
+  }
+  .est-detail { color: #9ca3af; }
+  .est-hours { color: #6b7280; }
+  .est-pct { margin-left: auto; color: #d1d5db; font-weight: 700; }
 
   .legend-gate {
     margin: 1.5rem 0 0;

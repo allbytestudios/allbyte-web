@@ -2,14 +2,17 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Footer from "../components/Footer.astro";
 import GodotEmbed from "../components/GodotEmbed.svelte";
+
+const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
 ---
 
 <BaseLayout title="Play — AllByte Studios">
   <main class="play-page">
     <nav class="play-nav">
       <a href="/" class="back-link">&larr; Back</a>
+      {fixture && <span class="fixture-label">Fixture: {fixture}</span>}
     </nav>
-    <GodotEmbed client:load />
+    <GodotEmbed client:load {fixture} />
   </main>
   <Footer theme="engine" />
 </BaseLayout>
@@ -64,5 +67,16 @@ import GodotEmbed from "../components/GodotEmbed.svelte";
   .play-nav .back-link:hover {
     background: rgba(167, 243, 208, 0.18);
     border-color: rgba(167, 243, 208, 0.5);
+  }
+
+  .fixture-label {
+    color: #fbbf24;
+    font-family: "Courier New", monospace;
+    font-size: 0.82rem;
+    margin-left: 1rem;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 3px;
+    background: rgba(251, 191, 36, 0.08);
   }
 </style>

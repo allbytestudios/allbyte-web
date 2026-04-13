@@ -26,6 +26,21 @@ export function oauthLogin(provider: "google" | "discord") {
 }
 
 export async function initAuth() {
+  // Auto-login as admin on localhost dev server
+  if (import.meta.env.DEV && window.location.hostname === "localhost") {
+    auth.currentUser = {
+      userId: "dev-local",
+      email: "dev@localhost",
+      username: "dev",
+      tier: "legend",
+      stripeCustomerId: null,
+      notificationPreferences: null,
+    };
+    auth.authToken = "dev-local-token";
+    auth.authReady = true;
+    return;
+  }
+
   // Check for OAuth callback token in URL hash
   const hash = window.location.hash;
   if (hash) {

@@ -182,13 +182,13 @@ export interface TestRunStatus {
 
 // --- schema guard ---
 
-export const SUPPORTED_SCHEMA_VERSIONS = [1] as const;
+export const SUPPORTED_SCHEMA_VERSIONS = [1, 2] as const;
 
 export function assertSupportedSchema(index: { schema_version?: number }): void {
   if (!index || typeof index.schema_version !== "number") {
     throw new Error("test_index.json: missing schema_version");
   }
-  if (!SUPPORTED_SCHEMA_VERSIONS.includes(index.schema_version as 1)) {
+  if (!SUPPORTED_SCHEMA_VERSIONS.includes(index.schema_version as 1 | 2)) {
     throw new Error(
       `test_index.json: schema_version ${index.schema_version} not supported (expected: ${SUPPORTED_SCHEMA_VERSIONS.join(", ")})`
     );

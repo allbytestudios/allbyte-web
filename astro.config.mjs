@@ -1,28 +1,24 @@
 import { defineConfig } from "astro/config";
 import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { join, normalize, resolve, sep } from "node:path";
+
+const chroniclesRoot = resolve(
+  process.env.CHRONICLES_DIR ||
+    "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis"
+);
 
 // Dev-only proxy: serves /test-data/* AND /godot/* live from the Chronicles
 // repo so neither the test dashboard nor the playable Godot demo need a manual
 // copy step when CON Claude rebuilds. In prod, /test-snapshot/* and /godot/*
 // come from the S3 bucket populated by `npm run push-assets`.
 function chroniclesProxy() {
-  const chroniclesRoot = resolve(
-    process.env.CHRONICLES_DIR ||
-      "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis"
-  );
   // Where Godot's HTML5 export lands inside the Chronicles repo.
   const godotExportRel = "WebBootstrap/export";
 
   function streamFile(full, res, isGodot) {
     res.setHeader("Cache-Control", "no-store");
-    // Godot HTML5 needs the iframe to be cross-origin-isolated for
-    // SharedArrayBuffer. Vite's vite.server.headers sets COOP/COEP on
-    // responses Vite generates itself; this middleware bypasses that path
-    // by piping streams directly, so we set them explicitly here for godot.
-    // CORP=same-origin lets the parent (also same-origin) embed safely.
     if (isGodot) {
       res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
       res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
@@ -67,8 +63,6 @@ function chroniclesProxy() {
           return res.end("bad path");
         }
         if (!existsSync(full) || !statSync(full).isFile()) {
-          // Fall through so Astro's static handler can still serve a baseline
-          // copy from public/ if the live file isn't present.
           return next();
         }
         streamFile(full, res, isGodot);
@@ -82,13 +76,66 @@ function chroniclesProxy() {
   return {
     name: "allbyte-chronicles-proxy",
     configureServer(server) {
-      // /test-data/* — read from Chronicles repo root (test_index.json,
-      // test_roadmap.json, test_results/...)
       server.middlewares.use("/test-data", makeProxy("/test-data", "", false));
-      // /godot/* — read from Chronicles' WebBootstrap/export so CON's
-      // rebuilds appear instantly with no copy step. Sets COOP/COEP/CORP
-      // explicitly so the iframe is cross-origin-isolated.
       server.middlewares.use("/godot", makeProxy("/godot", godotExportRel, true));
+    },
+  };
+}
+
+// Dev-only POST endpoint for owner decision write-back.
+// Writes to agent_chat.ndjson in the Chronicles repo.
+function decisionWriteback() {
+  return {
+    name: "allbyte-decision-writeback",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.replace(/\/$/, "") ?? "";
+        if (req.method !== "POST" || url !== "/api/decisions") return next();
+        let body = "";
+        req.on("data", (chunk) => (body += chunk));
+        req.on("end", () => {
+          try {
+            const { decisionId, choice } = JSON.parse(body);
+            if (!decisionId || !choice) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "decisionId and choice required" }));
+            }
+            const chatPath = normalize(join(chroniclesRoot, "tickets", "agent_chat.ndjson"));
+            // Append owner decision as a new chat message
+            const msg = {
+              timestamp: new Date().toISOString(),
+              from: "Owner",
+              to: "Arc",
+              channel: "decisions",
+              message: `Decision ${decisionId}: ${choice}`,
+              decision: { id: decisionId, choice, status: "resolved" },
+            };
+            appendFileSync(chatPath, JSON.stringify(msg) + "\n");
+            // Update the original decision's status in the NDJSON
+            const lines = readFileSync(chatPath, "utf-8").trim().split("\n");
+            let updated = false;
+            const newLines = lines.map((line) => {
+              try {
+                const parsed = JSON.parse(line);
+                if (parsed.decision?.id === decisionId && parsed.from !== "Owner") {
+                  parsed.decision.status = "resolved";
+                  parsed.decision.chosenBy = "Owner";
+                  parsed.decision.chosenOption = choice;
+                  updated = true;
+                  return JSON.stringify(parsed);
+                }
+              } catch {}
+              return line;
+            });
+            if (updated) writeFileSync(chatPath, newLines.join("\n") + "\n");
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true, decisionId, choice }));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: String(err?.message ?? err) }));
+          }
+        });
+      });
     },
   };
 }
@@ -97,7 +144,7 @@ export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
   vite: {
-    plugins: [tailwindcss(), chroniclesProxy()],
+    plugins: [tailwindcss(), decisionWriteback(), chroniclesProxy()],
     server: {
       headers: {
         "Cross-Origin-Opener-Policy": "same-origin",

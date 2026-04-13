@@ -112,7 +112,7 @@ export interface TestingRoadmap {
 
 // --- schema ---
 
-export const ROADMAP_SUPPORTED_SCHEMA_VERSIONS = [1] as const;
+export const ROADMAP_SUPPORTED_SCHEMA_VERSIONS = [1, 2] as const;
 
 export function assertSupportedRoadmapSchema(r: {
   schema_version?: number;
@@ -120,7 +120,7 @@ export function assertSupportedRoadmapSchema(r: {
   if (!r || typeof r.schema_version !== "number") {
     throw new Error("test_roadmap.json: missing schema_version");
   }
-  if (!ROADMAP_SUPPORTED_SCHEMA_VERSIONS.includes(r.schema_version as 1)) {
+  if (!ROADMAP_SUPPORTED_SCHEMA_VERSIONS.includes(r.schema_version as 1 | 2)) {
     throw new Error(
       `test_roadmap.json: schema_version ${r.schema_version} not supported`
     );

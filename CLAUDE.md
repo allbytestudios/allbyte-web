@@ -21,8 +21,15 @@ npm run sync                          # Pull assets from Godot project
 npm run push-assets                   # Upload generated assets to S3
 python scripts/spritesheet-to-gif.py  # Convert sprite sheets to animated GIFs
 
-# E2E tests (Playwright + pytest)
-pytest tests/e2e/                     # Run all E2E tests (headless, needs dev server running)
+# Test data sync (Arc → web console)
+npm run sync:watch                    # Watch for test/ticket data changes from Godot project
+npm run sync:once                     # One-shot sync of test data
+npm run sync:dry                      # Dry-run sync (show what would change)
+npm run sync:test                     # Self-test the sync watcher
+
+# E2E tests (Playwright + pytest, dev server must be running)
+npm run test:e2e                      # Run all E2E tests (headless)
+npm run test:a11y                     # Run accessibility tests (WCAG 2.1 AA)
 pytest tests/e2e/test_devlog.py       # Run a single test file
 pytest tests/e2e/ --headed            # Run with visible browser
 BASE_URL=https://allbyte.studio pytest tests/e2e/  # Test against production
@@ -66,11 +73,16 @@ The `Footer.astro` component accepts a `theme` prop (`"engine"` | `"heart"`) to 
 - `/artwork` — Sprite gallery (Allies/Enemies/Bosses)
 - `/fonts` — ModernGoth typeface showcase
 - `/subscribe` — Subscription tiers + Stripe Checkout
+- `/legends_square/` — Legend-tier private post board (auth-gated)
 - `/devlog/` — Devlog hub with three sub-blogs:
   - `/devlog/chronicles/` — Chronicles of Nesis game development
   - `/devlog/godot-and-claude/` — Godot + AI pair-programming
   - `/devlog/studio/` — Studio platform & infrastructure
 - `/devlog/[...slug]/` — Individual devlog posts (dynamic route)
+- `/test/` — Dev Console (engine-themed dashboard for tests, agents, tickets, milestones)
+  - `/test/tickets/` — Collapsible tree view of milestones → epics → tickets
+  - `/test/tests/`, `/test/agents/` — Test and agent management views
+- `/admin/users` — Admin user management
 
 ### Content Collections
 - **Devlogs** (`src/content/devlogs/`): Markdown posts with frontmatter schema
@@ -178,10 +190,37 @@ Playwright-based E2E tests in `tests/e2e/` using pytest. The dev server must be 
 ## Multi-Claude Coordination
 Two Claude instances work together on this project:
 - **App Claude** (you) — works in `allbyte-web/`, handles the Astro web app, backend Lambdas, infrastructure, and CI/CD
-- **CON Claude** — works in `/workspace/GameDev/ChroniclesOfNesis/` inside the docker container, handles the Godot game (`WebBootstrap/`, `Autoload/DAL.gd`, etc.)
+- **Arc** — orchestrator agent in the docker container (`/workspace/GameDev/ChroniclesOfNesis/`), manages tickets and coordinates three lead agents:
+  - **Nix** — game system lead (GDScript, events, scenes, autoloads)
+  - **Vera** — test implementation lead (Playwright, test shapes A/B/C/D, quality gates)
+  - **Port** — web export lead (WASM, translation rules, pack pipeline)
 
-When signing notes or messages between the two, use these names explicitly (not "framework Claude" — that's ambiguous). Cross-Claude coordination files live in `C:\Users\drew\Desktop\GameDev\` (the host-side mount of `/workspace/GameDev/`):
+Arc is Drew's primary interface for the game side. Tickets follow: `PLANNING → TECH REVIEW → READY → IN PROGRESS → TESTING → DONE`. Each lead can spawn workers within a slot budget.
+
+### Data Files Arc Publishes
+The webapp consumes these from `ChroniclesOfNesis/tickets/`:
+| File | Purpose | Schema version |
+|------|---------|---------------|
+| `tickets.json` | All tickets with phase, leads, success criteria, test specs | v2 |
+| `epics.json` | Epic groupings (Milestone → Epic → Ticket) with `estimatedHours`, `acceptanceCriteria` | v1 |
+| `dashboard.json` | Live expert/worker status, recent activity, test suite stats | — |
+| `agents.json` | Expert definitions, prompt files, worker history | v1 |
+
+Additionally, `test_fixtures/manifest.json` will list save-state fixtures for the fixture picker.
+
+### Cross-Claude Communication
+Coordination files live in `C:\Users\drew\Desktop\GameDev\` (host-side mount of `/workspace/GameDev/`):
 - `SAVE_SYNC_INTEGRATION.md` — postMessage protocol contract for save sync
-- `WEB_DEPLOY_QUESTIONS.md` — current Q&A about deploying the web export
+- `WEB_DEPLOY_QUESTIONS.md` — Q&A about deploying the web export
+- `CON_CLAUDE_FIXTURE_RESPONSE.md` — fixture format and TestBridge hooks
+- `CLAUDE_COORDINATION.md` — coordination protocol and change boundaries
 
-When you need to ping CON Claude for a question, leave a markdown file in that directory and (optionally) send a tmux message via `docker exec --user dev tactical-dev tmux send-keys -t 0 "[App Claude] ..."` followed by Enter to interrupt their session.
+When you need to ping Arc, leave a markdown file in that directory and (optionally) send a tmux message via `docker exec --user dev tactical-dev tmux send-keys -t 0 "[App Claude] ..."` followed by Enter to interrupt their session.
+
+### Dev Console Data Integration
+The Dev Console (`/test/`) renders Arc's ticket data:
+- **Local dev:** Near real-time polling (seconds). Vite proxy serves JSON directly from Chronicles repo.
+- **Prod:** Light real-time (~60s-5min). JSON synced to S3 via `npm run push-assets`.
+- **Fixture picker:** Reads `test_fixtures/manifest.json`, sends `{type: "load_fixture", path: "..."}` via postMessage to Godot iframe.
+- **Estimation rollups:** Epic `estimatedHours` rolled up by epic and milestone for effort-vs-priority view.
+- **Ticket detail:** Show current phase, lead signoffs, success criteria with paired test specs. No per-ticket phase history — aggregate analytics for bottleneck analysis only.

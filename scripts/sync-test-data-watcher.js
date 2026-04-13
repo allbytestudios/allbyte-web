@@ -64,6 +64,8 @@ const WATCH_FILES = [
   "tickets/dashboard.json",
   "tickets/agents.json",
   "tickets/epics.json",
+  "tickets/agent_chat.ndjson",
+  "tickets/agent_activity.json",
   "test_fixtures/manifest.json",
 ];
 

@@ -163,7 +163,7 @@
           <div class="ms-detail">
             <span>{ms.epicCount} epics</span>
             <span>{ms.doneCount}/{ms.ticketCount} tickets</span>
-            {#if ms.totalHours > 0}<span>~{ms.totalHours}h est.</span>{/if}
+            {#if ms.totalHours > 0}<span>~{Math.round(ms.weightedDone / ms.ticketCount * ms.totalHours)}h / {ms.totalHours}h</span>{/if}
           </div>
         </div>
       {/each}

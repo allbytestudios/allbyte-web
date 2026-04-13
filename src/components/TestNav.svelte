@@ -72,11 +72,12 @@
     }
 
     // Agent Questions: pending decisions + awaiting owner tickets
-    const pendingDecs = chat.filter((m: any) => m.decision?.status === "pending");
+    const ownerNames = new Set(["Owner", "AllByte", "Drew", "owner", "allbyte"]);
+    const ownerDecs = chat.filter((m: any) => ownerNames.has(m.to) && m.decision);
+    const pendingDecs = ownerDecs.filter((m: any) => m.decision.status === "pending");
     const awaitingCount = tix ? tix.tickets.filter(t => t.awaitingOwner && effectivePhase(t) !== "done").length : 0;
     questionsPending = (pendingDecs.length + awaitingCount) || null;
-    const allDecs = chat.filter((m: any) => m.decision);
-    questionsTotal = (allDecs.length + awaitingCount) || null;
+    questionsTotal = (ownerDecs.length + awaitingCount) || null;
   });
 </script>
 

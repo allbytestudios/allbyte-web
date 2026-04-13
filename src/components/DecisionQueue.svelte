@@ -58,9 +58,11 @@
   }
 
   // Extract decisions from owner-targeted messages
+  const OWNER_NAMES = new Set(["Owner", "AllByte", "Drew", "owner", "allbyte"]);
+
   let decisions = $derived.by<Decision[]>(() => {
     return allMessages
-      .filter((m: any) => m.to === "Owner" && m.decision)
+      .filter((m: any) => OWNER_NAMES.has(m.to) && m.decision)
       .map((m: any) => ({
         msg: m,
         id: m.decision.id,
@@ -81,9 +83,9 @@
     return ticketsData.tickets.filter((t) => t.awaitingOwner && effectivePhase(t) !== "done");
   });
 
-  // Context messages (to Owner, no decision — just info)
+  // Context messages (to owner, no decision — just info)
   let context = $derived(
-    allMessages.filter((m: any) => m.to === "Owner" && !m.decision)
+    allMessages.filter((m: any) => OWNER_NAMES.has(m.to) && !m.decision)
   );
 
   function relativeDate(iso: string): string {
@@ -220,7 +222,7 @@
   {/if}
 
   {#if resolved.length > 0}
-    <details class="resolved-fold">
+    <details class="resolved-fold" open>
       <summary class="section-title resolved-title">Resolved ({resolved.length})</summary>
       <div class="decision-list">
         {#each resolved as d (d.id)}

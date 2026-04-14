@@ -84,29 +84,33 @@ No merge. No rebase. Just `cp` followed by a verification command and a commit. 
 
 The agent never gets to commit. Every briefing prompt includes "do not commit" explicitly — agents sometimes commit in their worktree thinking it helps, but it doesn't, because I can't cherry-pick from a branch, I can only copy files.
 
-## The 300-500 word briefing floor (tickets all the way down)
+## The 300-500 word briefing floor (leads briefing subagents)
 
-The single biggest lesson from the first few parallel sessions: **one-line agent prompts produce bad work.**
+When a lead spawns a subagent for parallel work — Vera writing a batch of test specs while the main thread ports a scene, Nix running a dep audit while Port handles a WASM hang — the lead has to hand-write the brief. That brief is what the subagent reads on spawn; there's no ongoing chat, no context it can ask for later, no back-and-forth to refine scope. Whatever is in the 300-500 words has to be enough to deliver the full deliverable and nothing else.
 
-That lesson applies at every level of the hierarchy. When Arc briefs Nix on a ticket, the same rules apply. When Nix spawns a subagent to write tests, the same rules again. An agent arriving with zero context has to infer the scope, the files to avoid, the verification strategy, and the deliverable format. Without a proper brief, it does the obvious thing — which is usually not what anyone wanted — and then someone upstream spends fifteen minutes translating its output into something usable. By then they could have done the task themselves.
+The single biggest lesson from the first few parallel sessions: **one-line subagent prompts produce bad work.**
 
-The shape settled on 300-500 words per brief. That wasn't a guess — Arc and I iterated on what a ticket should look like, and I basically replicated how I've built tickets in my career before this. Good tickets have always needed the same things: why the work matters, scope boundaries, technical context, what "done" looks like. Humans don't usually struggle with ticket size (we tend to write just enough to do the work). Claude is more at risk of both under-and over-scoping — hence the explicit floor and the explicit ceiling.
+A subagent arrives with zero context. It has to infer the scope, the files to avoid, the verification strategy, and the deliverable format. Without a proper brief, it does the obvious thing — which is usually not what the lead wanted — and then the lead spends fifteen minutes translating its output into something usable. By then they could have done the task themselves.
 
-A well-formed brief includes six things:
+This pattern — "give the worker a complete context bundle, then don't interrupt" — is the same pattern that runs at every level of the hierarchy above it. Arc writes tickets to leads with success criteria, scope fences, and test specs. I write ticket scope to Arc in our planning conversations. Same shape, different resolutions. The 300-500 words are what a *subagent* needs; a full ticket to a lead runs longer and has more structure. But the principle travels up and down the stack: give the agent everything it needs, or it will guess.
+
+The shape settled on 300-500 words for subagent briefs. That wasn't a guess — Arc and I iterated on what a *ticket* should look like, and I basically replicated how I've built tickets in my career before this. Good tickets have always needed the same things: why the work matters, scope boundaries, technical context, what "done" looks like. Humans don't usually struggle with ticket size (we tend to write just enough to do the work). Claude is more at risk of both under-and over-scoping — hence the explicit floor and the explicit ceiling. The brief is the ticket scaled down to what a subagent — a short-term contractor with one job — can actually act on.
+
+A well-formed subagent brief includes six things (the lead writes this, the subagent reads it):
 
 1. **What the agent is doing and why** — not "write tests for the dialogue system," but "the owner wants every event command type to have coverage. You're taking a slice: `delay`, `face`, `faceCharacter`, `position`, `speed`, `visibility`. The goal is to catch regressions in `SceneTemplate.gd`'s command-match statement if someone reorders or breaks an arm."
 
-2. **Strict scope fences** — which files may be edited, which may only be read, which are hands-off. For test agents I typically list: "Edit: `WebTests/test_<thing>.py` (new file only). Read only: `WebBootstrap/Autoload/TestBridge.gd`, `SceneTemplate.gd`, `core_Events.json`. Hands-off: anything in `packs_src/`, any other `WebTests/*.py`."
+2. **Strict scope fences** — which files may be edited, which may only be read, which are hands-off. For test subagents Vera typically lists: "Edit: `WebTests/test_<thing>.py` (new file only). Read only: `WebBootstrap/Autoload/TestBridge.gd`, `SceneTemplate.gd`, `core_Events.json`. Hands-off: anything in `packs_src/`, any other `WebTests/*.py`."
 
-3. **Files to read first, in order** — saves the agent five to ten minutes of exploration and makes sure it hits the source of truth before the derived docs.
+3. **Files to read first, in order** — saves the subagent five to ten minutes of exploration and makes sure it hits the source of truth before the derived docs.
 
 4. **Concrete deliverable format** — "A report under 300 words with: list of files touched, test function names grouped by bucket, any surprising behaviour you found with `file:line` citations, the exact `pytest -k` command to run just your tests, and whether your tests pass headless."
 
-5. **Do not commit** — repeated every brief. Agents forget.
+5. **Do not commit** — repeated every brief. Subagents forget.
 
-6. **Time budget** — 30-45 minutes typical, 60-90 for larger refactors. The agent uses this to decide how much exploration is acceptable before starting the actual write.
+6. **Time budget** — 30-45 minutes typical, 60-90 for larger refactors. The subagent uses this to decide how much exploration is acceptable before starting the actual write.
 
-The report shape is load-bearing. Whoever sent the brief uses the file list for cherry-picking and the verification command to confirm the agent's claims before trusting the output. The work doesn't cross the worktree boundary until verification passes.
+The report shape is load-bearing. The lead who sent the brief uses the file list for cherry-picking and the verification command to confirm the subagent's claims before trusting the output. The work doesn't cross the worktree boundary until verification passes on the lead's terminal.
 
 ## Pushback, questions, and the terminal overflow
 

@@ -38,11 +38,13 @@ const lockedAnimations: Record<string, string[]> = {
 const GATED_CHARACTERS: Record<string, "initiate" | "hero" | "legend"> = {
   // Names match the lowercase keys in sprite-gifs.json (the asset-manifest
   // uses the directory casing, which is mostly lowercase except Falmri).
+  // All sprites are unlocked at Initiate — matches the subscribe page
+  // promise "All game assets unlocked" at the Initiate tier.
   eastwood: "initiate",
-  Falmri: "hero",
-  spiting: "hero",
-  spiter: "hero",
-  vepir: "hero",
+  Falmri: "initiate",
+  spiting: "initiate",
+  spiter: "initiate",
+  vepir: "initiate",
 };
 
 // Per-character animations gated behind a tier. Keyed by character name,

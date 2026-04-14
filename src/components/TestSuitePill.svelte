@@ -200,8 +200,7 @@
   }
 
   /* Locked state: same structure as enabled, but an overlay veil is drawn
-     on top with a "Hero Only" label — matches the .demo-overlay /
-     "Coming Soon" pattern used on the demo button itself. */
+     on top with a "Hero Only" label. */
   .test-suite-pill.locked {
     cursor: not-allowed;
     user-select: none;

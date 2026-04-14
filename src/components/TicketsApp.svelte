@@ -434,7 +434,7 @@
   {:else if !viewerHasAccess}
     <div class="gate">
       <h2>Hero tier required</h2>
-      <p>Full ticket board with subtask detail, reproduction steps, and file references is a <strong>Hero</strong> tier perk. The public overview is at <a href="/test/">/test/</a>.</p>
+      <p>The active ticket board — phases, priorities, and success criteria — is a <strong>Hero</strong> tier perk. The deferred backlog and subtask detail are <strong>Legend</strong>. The public overview is at <a href="/test/">/test/</a>.</p>
       <p><a href="/subscribe/">View subscription tiers →</a></p>
     </div>
   {:else}

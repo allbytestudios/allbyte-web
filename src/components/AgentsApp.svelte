@@ -133,7 +133,7 @@
   {:else if !viewerHasAccess}
     <div class="gate">
       <h2>Hero tier required</h2>
-      <p>Full agent status, worker history, and deployment logs are a <strong>Hero</strong> tier perk. The public overview is at <a href="/test/">/test/</a>.</p>
+      <p>Live agent status and active-task views are a <strong>Hero</strong> tier perk. Full worker history is <strong>Legend</strong>. The public overview is at <a href="/test/">/test/</a>.</p>
       <p><a href="/subscribe/">View subscription tiers →</a></p>
     </div>
   {:else}

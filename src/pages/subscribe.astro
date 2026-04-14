@@ -4,7 +4,7 @@ import Footer from "../components/Footer.astro";
 import PageHeader from "../components/PageHeader.astro";
 
 const title = "Subscribe — AllByte Studios";
-const description = "Support AllByte Studios and unlock nightly builds, assets, server saves, and more.";
+const description = "Support AllByte Studios and unlock minor version release builds, full asset access, and deep Dev Console inspection.";
 
 const tiers = [
   {
@@ -12,8 +12,8 @@ const tiers = [
     price: 3,
     color: "#a7f3d0",
     features: [
-      "Nightly demo builds",
-      "Discord server access",
+      "Minor version release build access",
+      "All game assets unlocked",
     ],
   },
   {
@@ -24,8 +24,6 @@ const tiers = [
       "Everything in Initiate",
       "Deep test suite inspection — per-test history, screenshots, live workers",
       "Early access to devlog drafts",
-      "All game assets unlocked",
-      "Server-managed save files",
     ],
   },
   {
@@ -34,12 +32,8 @@ const tiers = [
     color: "#f97316",
     features: [
       "Everything in Hero",
-      "Deployment activity feed — see every version land in real time",
       "Worker history — full agent task logs and durations",
       "Ticket backlog — P3/deferred priorities and subtask detail",
-      "Legend's Square — private post board with guaranteed responses from AllByte",
-      "Direct input on game design & priorities",
-      "Name in credits",
     ],
   },
 ];
@@ -84,19 +78,19 @@ const tiers = [
         <div class="faq-grid">
           <div class="faq-item">
             <h3>When do I get access?</h3>
-            <p>Immediately after subscribing. Nightly builds and asset downloads unlock right away.</p>
+            <p>Immediately after subscribing. Build downloads and asset unlocks take effect right away.</p>
           </div>
           <div class="faq-item">
             <h3>Can I change tiers?</h3>
             <p>Upgrade or downgrade anytime. Changes take effect on your next billing cycle.</p>
           </div>
           <div class="faq-item">
-            <h3>What are server-managed saves?</h3>
-            <p>Your game progress syncs to the cloud. Play on any device, never lose a save.</p>
+            <h3>What's a minor version release build?</h3>
+            <p>Each minor version (0.4.x → 0.5.0) ships a playable build with the latest features. Subscribers get access to these as they land, ahead of the public demo.</p>
           </div>
           <div class="faq-item">
-            <h3>What's the Legend Discord channel?</h3>
-            <p>All subscribers get Discord access, but Legends get a private channel to request gameplay features, vote on priorities, and directly shape the game's direction.</p>
+            <h3>What's in the Dev Console?</h3>
+            <p>Live status of every test suite, agent, and ticket — the same dashboard I use to run the studio. Hero unlocks per-test history, screenshots, and live worker views. Legend adds full agent task logs and the deferred ticket backlog.</p>
           </div>
         </div>
       </div>

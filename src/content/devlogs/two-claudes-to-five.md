@@ -10,6 +10,8 @@ draft: true
 
 A few weeks ago my engineering team was two Claudes. [App Claude](/devlog/two-claudes-talking/) drove the web portal you're reading this on; CON Claude drove the Godot game. They coordinated through markdown files and a shared tmux session, which worked for small-scoped back-and-forth but buckled the moment either side had a queue longer than three items. One Claude thrashing on five parallel tasks still has only one context to think with.
 
+It became clear when I was playtesting the game and listing bugs, new features, and odd behavior all to Claude at once. He literally said "wait, slow down" — because he was doing all the work. Testing the game, developing against my bug reports, talking to me about priority, documenting findings. One context doing four jobs. That's when it clicked: I needed specialists.
+
 The fix wasn't a bigger model. It was more Claudes, each narrower.
 
 Today the team is five:

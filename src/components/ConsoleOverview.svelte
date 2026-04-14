@@ -686,7 +686,6 @@
     height: 70px;
     padding: 0.15rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    overflow-x: auto;
   }
   .ma-overlay {
     position: absolute;
@@ -715,7 +714,8 @@
     cursor: pointer;
   }
   .hour-bar-wrap {
-    flex: 0 0 3px;
+    flex: 1 1 0;
+    min-width: 2px;
     height: 100%;
     display: flex;
     align-items: flex-end;

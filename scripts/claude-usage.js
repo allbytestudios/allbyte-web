@@ -15,10 +15,10 @@ import { homedir } from "node:os";
 const CLAUDE_PROJECTS = join(homedir(), ".claude", "projects");
 const OUT_PATH = resolve("src/data/claude-usage.json");
 
-// Weekly budget — calibrated so this matches what Claude reports internally.
-// Drew saw 69% at ~1384 messages → budget ≈ 2000 messages/week.
-// Tune CLAUDE_WEEKLY_MESSAGES env var if this drifts from the real number.
-const WEEKLY_BUDGET_MESSAGES = Number(process.env.CLAUDE_WEEKLY_MESSAGES) || 2000;
+// Weekly budget — calibrated to Drew's Max account.
+// 8907 msg since Wed reset = 69% weekly → budget ≈ 12900 messages/week.
+// Tune CLAUDE_WEEKLY_MESSAGES env var if this drifts.
+const WEEKLY_BUDGET_MESSAGES = Number(process.env.CLAUDE_WEEKLY_MESSAGES) || 12900;
 
 const nowMs = Date.now();
 const weekMs = 7 * 24 * 60 * 60 * 1000;

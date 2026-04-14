@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "lastUpdated": "2026-04-14T00:44:55.249Z",
+  "lastUpdated": "2026-04-14T00:46:42.665Z",
   "week": {
     "startedAt": "2026-04-08T17:00:00.000Z",
     "progressPct": 76
   },
   "usage": {
     "activeHours": 70,
-    "messages": 8907,
-    "budgetMessages": 2000,
-    "usagePct": 100
+    "messages": 8914,
+    "budgetMessages": 12900,
+    "usagePct": 69
   },
-  "paceDeltaPct": 24
+  "paceDeltaPct": -7
 }

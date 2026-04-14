@@ -71,21 +71,26 @@ for (const file of files) {
   }
 }
 
-// Week progress: assume Drew's week is a rolling 7-day window starting 7 days ago
-// at the same time of day. Progress = (now - weekStart) / weekDuration = always 100% for
-// a rolling window, which isn't useful. Better: progress = (now - earliestActivity) / week
-// Simpler and more intuitive: use ISO week (Monday 00:00 UTC → next Monday 00:00)
+// Week window matches Anthropic's reset: Wednesday 1pm local time.
+// Override via CLAUDE_WEEK_RESET_DAY (0=Sun..6=Sat) and CLAUDE_WEEK_RESET_HOUR (0-23).
+const RESET_DAY = Number(process.env.CLAUDE_WEEK_RESET_DAY ?? 3);   // 3 = Wednesday
+const RESET_HOUR = Number(process.env.CLAUDE_WEEK_RESET_HOUR ?? 13); // 1pm
+
 function getWeekProgress() {
   const now = new Date();
-  // Find most recent Monday 00:00 local time
-  const monday = new Date(now);
-  const day = monday.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-  const daysFromMonday = (day + 6) % 7; // Mon=0, Tue=1, ... Sun=6
-  monday.setDate(monday.getDate() - daysFromMonday);
-  monday.setHours(0, 0, 0, 0);
-  const elapsed = now.getTime() - monday.getTime();
+  // Find most recent reset (Wed 1pm local)
+  const reset = new Date(now);
+  reset.setHours(RESET_HOUR, 0, 0, 0);
+  const daysBack = (reset.getDay() - RESET_DAY + 7) % 7;
+  reset.setDate(reset.getDate() - daysBack);
+  // If that computed reset is in the future (e.g., today is reset day but before 1pm),
+  // back it up a week.
+  if (reset.getTime() > now.getTime()) {
+    reset.setDate(reset.getDate() - 7);
+  }
+  const elapsed = now.getTime() - reset.getTime();
   const pct = Math.min(100, (elapsed / weekMs) * 100);
-  return { pct, weekStart: monday.toISOString(), elapsedMs: elapsed };
+  return { pct, weekStart: reset.toISOString(), elapsedMs: elapsed };
 }
 
 const weekProgress = getWeekProgress();

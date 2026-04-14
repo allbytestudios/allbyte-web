@@ -235,11 +235,42 @@ for (const repo of REPOS) {
   } catch {
     continue; // repo not a git dir or no log
   }
+  // Two-pass: first accumulate per-commit totals so we can skip bulk imports
+  const commits = [];
+  let cur = null;
+  for (const line of out.split("\n")) {
+    if (line.startsWith("=C=")) {
+      if (cur) commits.push(cur);
+      const [hash, iso] = line.slice(3).split("|");
+      cur = { hash, iso, ins: 0, del: 0, paths: [] };
+    } else if (cur && line.trim()) {
+      const [insStr, delStr, path] = line.split("\t");
+      const ins = parseInt(insStr, 10);
+      const del = parseInt(delStr, 10);
+      if (Number.isFinite(ins) && Number.isFinite(del) && path) {
+        cur.paths.push({ ins, del, path });
+        cur.ins += ins;
+        cur.del += del;
+      }
+    }
+  }
+  if (cur) commits.push(cur);
+
+  // Skip "bulk import" commits: > 10k net insertions likely means a
+  // large codebase import/merge, not organic Claude-driven work.
+  const BULK_THRESHOLD = 10000;
+  const skippedCommits = commits.filter(c => c.ins > BULK_THRESHOLD).map(c => c.hash.slice(0, 7));
+  if (skippedCommits.length) {
+    console.log(`  skipping bulk commits in ${repo.split(/[\\/]/).pop()}: ${skippedCommits.join(", ")}`);
+  }
+
   let currentHour = null;
   for (const line of out.split("\n")) {
     if (line.startsWith("=C=")) {
-      const iso = line.split("|")[1];
+      const [hash, iso] = line.slice(3).split("|");
       if (!iso) { currentHour = null; continue; }
+      const c = commits.find(x => x.hash === hash);
+      if (c && c.ins > BULK_THRESHOLD) { currentHour = null; continue; }
       currentHour = hourBucketFor(Date.parse(iso));
       if (!gitByHour.has(currentHour)) gitByHour.set(currentHour, { commits: 0, insertions: 0, deletions: 0 });
       gitByHour.get(currentHour).commits++;
@@ -249,8 +280,21 @@ for (const repo of REPOS) {
       const ins = parseInt(insStr, 10);
       const del = parseInt(delStr, 10);
       if (Number.isFinite(ins) && Number.isFinite(del) && path) {
-        // Skip generated/data files from churn counts (they inflate LOC)
-        if (/package-lock|node_modules|claude-usage(-history)?\.json|asset-index\.json|test_index\.json|test_roadmap\.json/.test(path)) continue;
+        // Skip files that inflate LOC without reflecting Claude effort:
+        // - generated/data files
+        // - narrative markdown (devlogs are prose, not code)
+        // - WebBootstrap/ ports (mostly copies of existing Chronicles code)
+        // - pack_src/ (Godot pack source copies)
+        // - screenshots and binary-ish assets
+        // - imported Godot project files
+        const excluded =
+          /package-lock|node_modules|claude-usage(-history)?\.json|asset-index\.json|test_index\.json|test_roadmap\.json|sprite-gifs\.json/.test(path) ||
+          /DEVLOG[_-]|devlog[_-]|content\/devlogs\//i.test(path) ||
+          /^WebBootstrap\//.test(path) ||
+          /packs_src\//.test(path) ||
+          /\.import$|\.tscn\.remap$|\.translation$/.test(path) ||
+          /screenshot|\.png$|\.jpg$|\.jpeg$|\.webp$|\.wav$|\.ogg$|\.mp3$|\.mp4$/i.test(path);
+        if (excluded) continue;
         gitByHour.get(currentHour).insertions += ins;
         gitByHour.get(currentHour).deletions += del;
       }

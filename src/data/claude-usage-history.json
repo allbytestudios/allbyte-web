@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "lastUpdated": "2026-04-14T01:10:15.118Z",
+  "lastUpdated": "2026-04-14T01:16:12.841Z",
   "resetDay": 3,
   "resetHour": 13,
   "weeklyBudget": 12900,
@@ -540,9 +540,9 @@
         "App (web)": 416
       },
       "commits": 4,
-      "insertions": 4078,
-      "deletions": 266,
-      "churn": 4344,
+      "insertions": 3431,
+      "deletions": 26,
+      "churn": 3457,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -591,9 +591,9 @@
         "App (web)": 165
       },
       "commits": 5,
-      "insertions": 3144,
-      "deletions": 234,
-      "churn": 3378,
+      "insertions": 3059,
+      "deletions": 124,
+      "churn": 3183,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -676,9 +676,9 @@
         "App (web)": 78
       },
       "commits": 1,
-      "insertions": 694,
+      "insertions": 559,
       "deletions": 34,
-      "churn": 728,
+      "churn": 593,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -745,9 +745,9 @@
         "App (web)": 108
       },
       "commits": 2,
-      "insertions": 913,
-      "deletions": 272,
-      "churn": 1185,
+      "insertions": 808,
+      "deletions": 117,
+      "churn": 925,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -962,9 +962,9 @@
         "App (web)": 207
       },
       "commits": 2,
-      "insertions": 1443,
-      "deletions": 843,
-      "churn": 2286,
+      "insertions": 980,
+      "deletions": 824,
+      "churn": 1804,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1010,9 +1010,9 @@
         "App (web)": 2
       },
       "commits": 1,
-      "insertions": 38,
-      "deletions": 28,
-      "churn": 66,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1075,10 +1075,10 @@
         "Docker setup": 18,
         "App (web)": 79
       },
-      "commits": 11,
-      "insertions": 102429,
-      "deletions": 552,
-      "churn": 102981,
+      "commits": 10,
+      "insertions": 755,
+      "deletions": 70,
+      "churn": 825,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1092,9 +1092,9 @@
         "App (web)": 88
       },
       "commits": 5,
-      "insertions": 212,
-      "deletions": 22,
-      "churn": 234,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1108,9 +1108,9 @@
         "App (web)": 29
       },
       "commits": 2,
-      "insertions": 54,
-      "deletions": 10,
-      "churn": 64,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1124,9 +1124,9 @@
         "App (web)": 17
       },
       "commits": 4,
-      "insertions": 1449,
-      "deletions": 17,
-      "churn": 1466,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1141,9 +1141,9 @@
         "App (web)": 19
       },
       "commits": 5,
-      "insertions": 583,
-      "deletions": 27,
-      "churn": 610,
+      "insertions": 332,
+      "deletions": 0,
+      "churn": 332,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1155,9 +1155,9 @@
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 1,
-      "insertions": 76,
-      "deletions": 3,
-      "churn": 79,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1171,9 +1171,9 @@
         "App (web)": 39
       },
       "commits": 1,
-      "insertions": 157,
-      "deletions": 36,
-      "churn": 193,
+      "insertions": 129,
+      "deletions": 35,
+      "churn": 164,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1203,9 +1203,9 @@
         "App (web)": 289
       },
       "commits": 4,
-      "insertions": 4490,
-      "deletions": 361,
-      "churn": 4851,
+      "insertions": 4482,
+      "deletions": 351,
+      "churn": 4833,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1219,9 +1219,9 @@
         "App (web)": 110
       },
       "commits": 6,
-      "insertions": 891,
-      "deletions": 141,
-      "churn": 1032,
+      "insertions": 828,
+      "deletions": 135,
+      "churn": 963,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1251,9 +1251,9 @@
         "App (web)": 76
       },
       "commits": 2,
-      "insertions": 758,
-      "deletions": 3,
-      "churn": 761,
+      "insertions": 748,
+      "deletions": 1,
+      "churn": 749,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1267,9 +1267,9 @@
         "App (web)": 158
       },
       "commits": 2,
-      "insertions": 463,
-      "deletions": 25,
-      "churn": 488,
+      "insertions": 396,
+      "deletions": 9,
+      "churn": 405,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1283,9 +1283,9 @@
         "App (web)": 68
       },
       "commits": 1,
-      "insertions": 272,
-      "deletions": 2,
-      "churn": 274,
+      "insertions": 252,
+      "deletions": 0,
+      "churn": 252,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1315,9 +1315,9 @@
         "App (web)": 33
       },
       "commits": 2,
-      "insertions": 749,
+      "insertions": 442,
       "deletions": 35,
-      "churn": 784,
+      "churn": 477,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1347,9 +1347,9 @@
         "App (web)": 49
       },
       "commits": 2,
-      "insertions": 14,
-      "deletions": 19,
-      "churn": 33,
+      "insertions": 7,
+      "deletions": 2,
+      "churn": 9,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1393,9 +1393,9 @@
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 10,
-      "insertions": 3043,
-      "deletions": 620,
-      "churn": 3663,
+      "insertions": 2161,
+      "deletions": 619,
+      "churn": 2780,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1409,9 +1409,9 @@
         "App (web)": 9
       },
       "commits": 6,
-      "insertions": 370,
+      "insertions": 352,
       "deletions": 412,
-      "churn": 782,
+      "churn": 764,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1425,9 +1425,9 @@
         "App (web)": 15
       },
       "commits": 3,
-      "insertions": 322,
-      "deletions": 182,
-      "churn": 504,
+      "insertions": 197,
+      "deletions": 176,
+      "churn": 373,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1439,9 +1439,9 @@
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 4,
-      "insertions": 264,
-      "deletions": 9,
-      "churn": 273,
+      "insertions": 244,
+      "deletions": 0,
+      "churn": 244,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1454,10 +1454,10 @@
       "byProject": {
         "App (web)": 50
       },
-      "commits": 9,
-      "insertions": 17163,
-      "deletions": 36,
-      "churn": 17199,
+      "commits": 8,
+      "insertions": 1088,
+      "deletions": 15,
+      "churn": 1103,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1472,9 +1472,9 @@
         "App (web)": 176
       },
       "commits": 11,
-      "insertions": 3132,
-      "deletions": 180,
-      "churn": 3312,
+      "insertions": 1098,
+      "deletions": 77,
+      "churn": 1175,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1488,9 +1488,9 @@
         "App (web)": 133
       },
       "commits": 9,
-      "insertions": 4038,
+      "insertions": 3597,
       "deletions": 83,
-      "churn": 4121,
+      "churn": 3680,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1504,9 +1504,9 @@
         "App (web)": 21
       },
       "commits": 5,
-      "insertions": 2340,
-      "deletions": 11,
-      "churn": 2351,
+      "insertions": 1554,
+      "deletions": 6,
+      "churn": 1560,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1520,9 +1520,9 @@
         "App (web)": 223
       },
       "commits": 10,
-      "insertions": 4679,
-      "deletions": 59,
-      "churn": 4738,
+      "insertions": 1816,
+      "deletions": 43,
+      "churn": 1859,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1536,9 +1536,9 @@
         "App (web)": 166
       },
       "commits": 8,
-      "insertions": 2137,
-      "deletions": 104,
-      "churn": 2241,
+      "insertions": 1359,
+      "deletions": 55,
+      "churn": 1414,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1552,9 +1552,9 @@
         "App (web)": 184
       },
       "commits": 3,
-      "insertions": 1598,
-      "deletions": 120,
-      "churn": 1718,
+      "insertions": 1297,
+      "deletions": 81,
+      "churn": 1378,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1568,9 +1568,9 @@
         "App (web)": 283
       },
       "commits": 15,
-      "insertions": 3587,
-      "deletions": 247,
-      "churn": 3834,
+      "insertions": 2984,
+      "deletions": 235,
+      "churn": 3219,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1600,9 +1600,9 @@
         "App (web)": 54
       },
       "commits": 8,
-      "insertions": 1898,
-      "deletions": 320,
-      "churn": 2218,
+      "insertions": 1888,
+      "deletions": 319,
+      "churn": 2207,
       "ticketsDone": 0,
       "ticketsMoved": 2,
       "efficiencyCycles": 0
@@ -1614,9 +1614,9 @@
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 12,
-      "insertions": 1235,
-      "deletions": 29,
-      "churn": 1264,
+      "insertions": 55,
+      "deletions": 0,
+      "churn": 55,
       "ticketsDone": 0,
       "ticketsMoved": 7,
       "efficiencyCycles": 0
@@ -1630,9 +1630,9 @@
         "App (web)": 17
       },
       "commits": 7,
-      "insertions": 2849,
-      "deletions": 22,
-      "churn": 2871,
+      "insertions": 339,
+      "deletions": 0,
+      "churn": 339,
       "ticketsDone": 1,
       "ticketsMoved": 4,
       "efficiencyCycles": 0
@@ -1646,9 +1646,9 @@
         "App (web)": 59
       },
       "commits": 3,
-      "insertions": 802,
+      "insertions": 710,
       "deletions": 0,
-      "churn": 802,
+      "churn": 710,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1662,9 +1662,9 @@
         "App (web)": 163
       },
       "commits": 8,
-      "insertions": 2630,
-      "deletions": 61,
-      "churn": 2691,
+      "insertions": 2629,
+      "deletions": 58,
+      "churn": 2687,
       "ticketsDone": 1,
       "ticketsMoved": 4,
       "efficiencyCycles": 0
@@ -1694,9 +1694,9 @@
         "App (web)": 9
       },
       "commits": 1,
-      "insertions": 17,
-      "deletions": 29,
-      "churn": 46,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1710,9 +1710,9 @@
         "App (web)": 82
       },
       "commits": 4,
-      "insertions": 452,
-      "deletions": 95,
-      "churn": 547,
+      "insertions": 392,
+      "deletions": 16,
+      "churn": 408,
       "ticketsDone": 0,
       "ticketsMoved": 12,
       "efficiencyCycles": 0
@@ -1726,9 +1726,9 @@
         "App (web)": 32
       },
       "commits": 4,
-      "insertions": 333,
-      "deletions": 105,
-      "churn": 438,
+      "insertions": 325,
+      "deletions": 97,
+      "churn": 422,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1742,9 +1742,9 @@
         "App (web)": 46
       },
       "commits": 6,
-      "insertions": 435,
-      "deletions": 73,
-      "churn": 508,
+      "insertions": 433,
+      "deletions": 72,
+      "churn": 505,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1756,9 +1756,9 @@
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 1,
-      "insertions": 2,
-      "deletions": 1,
-      "churn": 3,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -1852,9 +1852,9 @@
         "App (web)": 215
       },
       "commits": 5,
-      "insertions": 2780,
+      "insertions": 2700,
       "deletions": 389,
-      "churn": 3169,
+      "churn": 3089,
       "ticketsDone": 0,
       "ticketsMoved": 5,
       "efficiencyCycles": 2
@@ -1940,15 +1940,15 @@
     {
       "hour": "2026-04-13 21",
       "weekStart": "2026-04-08",
-      "messages": 37,
-      "pctOfWeeklyBudget": 0.29,
+      "messages": 76,
+      "pctOfWeeklyBudget": 0.59,
       "byProject": {
-        "App (web)": 37
+        "App (web)": 76
       },
-      "commits": 2,
-      "insertions": 248,
-      "deletions": 41,
-      "churn": 289,
+      "commits": 4,
+      "insertions": 597,
+      "deletions": 110,
+      "churn": 707,
       "ticketsDone": 3,
       "ticketsMoved": 16,
       "efficiencyCycles": 1
@@ -2014,24 +2014,24 @@
       "messages": 14050,
       "pctOfWeeklyBudget": 109,
       "commits": 12,
-      "insertions": 8685,
-      "deletions": 776,
-      "churn": 9461,
+      "insertions": 7818,
+      "deletions": 426,
+      "churn": 8244,
       "ticketsDone": 0,
       "msgPerCommit": 1171,
       "msgPerTicket": null
     },
     {
       "weekStart": "2026-04-08",
-      "messages": 8978,
+      "messages": 9017,
       "pctOfWeeklyBudget": 70,
       "commits": 229,
-      "insertions": 177052,
-      "deletions": 6316,
-      "churn": 183368,
+      "insertions": 43681,
+      "deletions": 5134,
+      "churn": 48815,
       "ticketsDone": 11,
       "msgPerCommit": 39,
-      "msgPerTicket": 816
+      "msgPerTicket": 820
     }
   ]
 }

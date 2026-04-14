@@ -123,8 +123,10 @@ That last mechanism broke my terminal almost immediately. I'd be three pages dee
 Since we have Claude, we can just build what we need. So I designed a ticketing system:
 
 - **Arc writes the state** — every ticket, every phase transition, every lead signoff — to JSON files. Cross-agent chat goes to a separate NDJSON stream. Decisions pointed at me go to a dedicated channel.
-- **[The webapp](/devlog/dev-console-agent-dashboard/)** (App Claude's side) reads those files and renders them live. I see ticket state, lead status, and agent chat in visually separated places instead of one scrolling terminal.
+- **App Claude built the webapp side** — reads those files and renders them live. I see ticket state, lead status, and agent chat in visually separated places instead of one scrolling terminal.
 - **The decision queue** is the key piece — a curated list of specific questions with pre-framed options. When I have ten minutes, I can run through five unblocks instead of hunting them across three Claude sessions.
+
+That webapp — the **Dev Console** — became the thing that actually unblocks day-to-day work. Without it I was the bottleneck, missing lead questions for hours because they'd scrolled off the top of my terminal. With it I can glance at the Questions tab and clear six pending decisions in a coffee break. **[A Real-Time Dashboard for an AI Development Team](/devlog/dev-console-agent-dashboard/)** walks through how the dashboard is built — the data contract, the tabs, the decision write-back loop, and how App Claude contributes its own recommendations when Arc asks the backend for input. That post is the *how*; this one is the *why*.
 
 I'm still training Arc to route lead updates through the ticket system instead of dumping them into our conversation. Occasionally he slips and I get a lead's status report mid-dialogue about something else. That'll improve — or at some point I'll just add a rule to his CLAUDE.md forbidding it.
 

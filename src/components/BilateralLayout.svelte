@@ -297,10 +297,6 @@
           {#if isAdmin(auth.currentUser)}
             <a href="/admin/users/" class="header-btn admin-btn" title="Admin user management"><span>Admin</span><span>Users</span></a>
           {/if}
-          <a href="https://discord.gg/qjRmcFaB7Z" class="header-btn discord-server-btn" target="_blank" rel="noopener noreferrer" title="Join the AllByte Discord server">
-            <span><svg class="discord-icon" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg> Discord</span>
-            <span>Server</span>
-          </a>
           <a href="/subscribe/" class="header-btn subscribe-btn" onclick={handleSubscribeClick}><span>Subscribe</span><span>Donate</span></a>
           {#if auth.currentUser}
             <button class="header-btn login-btn" onclick={logout}><span>Sign</span><span>Out</span></button>
@@ -409,28 +405,30 @@
   {/if}
   </div>
 
-  {#if auth.currentUser}
-    <div class="notify-bar">
-      {#if !notifyMode}
-        <div class="notify-bar-row">
+  <div class="notify-bar">
+    {#if !notifyMode}
+      <div class="notify-bar-row">
+        {#if auth.currentUser}
           <button class="notify-bar-btn" onclick={enterNotifyMode}>&#9993; Email Me Updates{#if auth.currentUser.notificationPreferences} (On){/if}</button>
-          {#if isTierAtLeast(auth.currentUser, "legend")}
-            <a href="/legends_square/" class="notify-bar-btn legend-square-btn">&#9878; Legend's Square</a>
-          {/if}
-        </div>
-      {:else}
-        <div class="notify-bar-actions">
-          <button class="notify-bar-save" onclick={saveNotifications} disabled={notifySaving}>{notifySaving ? "Saving..." : "Save"}</button>
-          <button class="notify-bar-cancel" onclick={cancelNotifyMode}>Cancel</button>
-          {#if auth.currentUser.notificationPreferences}
-            <button class="notify-bar-stop" onclick={stopAllNotifications} disabled={notifySaving}>Stop all</button>
-          {/if}
-        </div>
-        <span class="notify-bar-prompt">&#9993; Which areas do you want to be notified about new content?</span>
-        <span class="notify-bar-prompt">(subscriptions help me know what content people are interested in)</span>
-      {/if}
-    </div>
-  {/if}
+          <!-- Legend's Square hidden until the feature is complete and in the subscription promise -->
+        {/if}
+        <a href="https://discord.gg/qjRmcFaB7Z" class="notify-bar-btn discord-notify-btn" target="_blank" rel="noopener noreferrer" title="Join the AllByte Discord server">
+          <svg class="discord-inline-icon" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
+          Discord Server
+        </a>
+      </div>
+    {:else if auth.currentUser}
+      <div class="notify-bar-actions">
+        <button class="notify-bar-save" onclick={saveNotifications} disabled={notifySaving}>{notifySaving ? "Saving..." : "Save"}</button>
+        <button class="notify-bar-cancel" onclick={cancelNotifyMode}>Cancel</button>
+        {#if auth.currentUser.notificationPreferences}
+          <button class="notify-bar-stop" onclick={stopAllNotifications} disabled={notifySaving}>Stop all</button>
+        {/if}
+      </div>
+      <span class="notify-bar-prompt">&#9993; Which areas do you want to be notified about new content?</span>
+      <span class="notify-bar-prompt">(subscriptions help me know what content people are interested in)</span>
+    {/if}
+  </div>
 
   {#if isMobile}
     <!-- Mobile: stacked groups (Heart/Assets first) -->
@@ -661,23 +659,6 @@
     border-color: rgba(167, 243, 208, 0.3);
   }
 
-  .discord-server-btn {
-    color: #e0e7ff;
-    border: 1px solid rgba(88, 101, 242, 0.4);
-  }
-
-  .discord-server-btn:hover {
-    background: #1a2332;
-    border-color: rgba(88, 101, 242, 0.8);
-  }
-
-  .discord-icon {
-    width: 1em;
-    height: 0.75em;
-    vertical-align: -0.05em;
-    margin-right: 0.3em;
-    color: #5865f2;
-  }
 
   .admin-btn {
     color: #f9a8d4;
@@ -789,6 +770,20 @@
   .legend-square-btn {
     color: #f97316 !important;
     text-decoration: none;
+  }
+
+  .discord-notify-btn {
+    color: #a7f3d0 !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .discord-inline-icon {
+    width: 1em;
+    height: 0.75em;
+    color: #5865f2;
   }
 
   @media (max-width: 640px) {
@@ -1212,6 +1207,7 @@
     width: 90%;
     transition: background 0.25s;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
   }
 
   .demo-row:hover {

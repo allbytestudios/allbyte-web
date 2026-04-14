@@ -1,36 +1,25 @@
-"""Quick visual check that the Discord button lands in the header correctly."""
+"""Quick visual check that the Discord button lands in the notify bar correctly."""
 
 
-def test_discord_button_in_header(page, base_url):
+def test_discord_button_in_notify_bar(page, base_url):
     page.goto(f"{base_url}/")
     page.wait_for_load_state("networkidle")
 
-    btn = page.locator("a.discord-server-btn")
+    btn = page.locator("a.discord-notify-btn")
     assert btn.count() == 1, f"expected 1 discord button, got {btn.count()}"
     assert btn.get_attribute("href") == "https://discord.gg/qjRmcFaB7Z"
+    assert btn.get_attribute("target") == "_blank"
 
     text = btn.inner_text()
-    assert "Discord" in text and "Server" in text, f"unexpected button text: {text!r}"
+    assert "Discord Server" in text, f"unexpected button text: {text!r}"
 
-    # Zoomed-in screenshot of just the button for visual sanity check
-    page.evaluate("document.querySelector('a.discord-server-btn').scrollIntoView()")
-    btn.screenshot(path="tests/e2e/test_results/discord-server-btn-closeup.png")
-    page.locator("header.site-header").screenshot(
-        path="tests/e2e/test_results/header-with-discord.png"
-    )
+    # Must be inside the notify bar, not the header
+    in_notify = page.locator(".notify-bar a.discord-notify-btn").count()
+    assert in_notify == 1, "discord button not inside .notify-bar"
+    in_header = page.locator("header.site-header a.discord-notify-btn").count()
+    assert in_header == 0, "discord button should not be in header anymore"
 
-    # Bounding box sanity — should match other header buttons
-    subscribe_box = page.locator("a.subscribe-btn").bounding_box()
-    discord_box = btn.bounding_box()
-    print(f"\nsubscribe box: {subscribe_box}")
-    print(f"discord box: {discord_box}")
-
-    # Computed styles check — is the button background purple (bug) or dark?
-    bg = page.evaluate(
-        "getComputedStyle(document.querySelector('a.discord-server-btn')).backgroundColor"
-    )
-    print(f"discord-server-btn background-color: {bg}")
-    # Should be #141b24 = rgb(20, 27, 36)
-    assert "20, 27, 36" in bg or "rgb(20, 27, 36)" == bg or bg == "rgba(0, 0, 0, 0)", (
-        f"discord btn has unexpected bg {bg}"
+    # Screenshot for visual sanity
+    page.locator(".notify-bar").screenshot(
+        path="tests/e2e/test_results/notify-bar-with-discord.png"
     )

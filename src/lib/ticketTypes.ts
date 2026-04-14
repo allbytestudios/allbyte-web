@@ -78,7 +78,7 @@ export interface Ticket {
   awaitingOwner?: boolean;
   phase?: TicketPhase;
   leads?: string[];
-  leadReview?: Record<string, string>;
+  leadReview?: Record<string, string | { call: string; note?: string }>;
   successCriteria?: SuccessCriterion[];
   milestone?: string;
   epic?: string;

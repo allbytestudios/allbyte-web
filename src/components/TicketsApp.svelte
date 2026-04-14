@@ -390,8 +390,10 @@
     {#if t.leadReview && Object.keys(t.leadReview).length > 0}
       <div class="lead-signoffs">
         {#each Object.entries(t.leadReview) as [agent, review]}
-          <span class="signoff-chip signoff-{review.split(' ')[0]}">
-            {EXPERT_META[agent.toLowerCase()]?.label ?? agent}: {review}
+          {@const call = typeof review === "string" ? review.split(" ")[0] : (review as any)?.call ?? "watch"}
+          {@const note = typeof review === "string" ? review : (review as any)?.note ?? ""}
+          <span class="signoff-chip signoff-{call}" title={note}>
+            {EXPERT_META[agent.toLowerCase()]?.label ?? agent}: {call}
           </span>
         {/each}
       </div>

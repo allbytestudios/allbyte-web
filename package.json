@@ -10,7 +10,7 @@
     "sync:once": "node scripts/sync-test-data-watcher.js --once",
     "sync:dry": "node scripts/sync-test-data-watcher.js --once --dry-run",
     "sync:test": "node scripts/sync-test-data-watcher.js --self-test",
-    "dev": "astro dev",
+    "dev": "astro dev --host 0.0.0.0",
     "build": "node scripts/sync-assets.js && astro build",
     "preview": "astro preview",
     "astro": "astro",

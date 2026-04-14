@@ -146,6 +146,8 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss(), decisionWriteback(), chroniclesProxy()],
     server: {
+      host: "0.0.0.0",
+      allowedHosts: true,
       headers: {
         "Cross-Origin-Opener-Policy": "same-origin",
         "Cross-Origin-Embedder-Policy": "require-corp",

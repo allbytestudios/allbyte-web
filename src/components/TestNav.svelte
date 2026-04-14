@@ -136,6 +136,7 @@
     transition: color 0.15s, border-color 0.15s;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.35rem;
     white-space: nowrap;
     flex-shrink: 0;
@@ -181,5 +182,33 @@
     background: rgba(248, 113, 113, 0.15) !important;
     border-color: rgba(248, 113, 113, 0.4) !important;
     font-weight: 700;
+  }
+
+  /* Mobile: 3-column grid, 2 rows for 6 tabs */
+  @media (max-width: 640px) {
+    .test-nav {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.25rem;
+      padding: 0.5rem;
+    }
+    .nav-tab {
+      padding: 0.5rem 0.35rem;
+      font-size: 0.78rem;
+      border: 1px solid rgba(167, 243, 208, 0.1);
+      border-radius: 4px;
+      min-height: 52px;
+      flex-wrap: wrap;
+      gap: 0.2rem;
+    }
+    .nav-tab.active {
+      border-color: #a7f3d0;
+      border-bottom-color: #a7f3d0;
+      background: rgba(167, 243, 208, 0.06);
+    }
+    .nav-count {
+      font-size: 0.7rem;
+      padding: 0.02rem 0.2rem;
+    }
   }
 </style>

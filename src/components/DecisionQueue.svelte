@@ -363,7 +363,7 @@
     background: rgba(167, 243, 208, 0.12);
   }
   .rec-badge {
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #a7f3d0;

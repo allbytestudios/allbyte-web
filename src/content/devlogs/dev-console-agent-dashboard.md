@@ -1,80 +1,154 @@
 ---
-title: "Building a Dashboard for My AI Agent Team"
-description: "How I built a real-time Dev Console to manage Arc's multi-agent ticket system — swim lanes, decision queues, and a chat feed where I watch my AI leads discuss game development."
-pubDate: 2026-04-13T23:00:00Z
+title: "A Real-Time Dashboard for an AI Development Team"
+description: "My AI agents were shipping work I couldn't see. This is the Dev Console I built to watch them — swim lanes for tickets, a decision queue for questions pointed at me, a scrolling chat feed between the agents, and a file-based write-back so I can answer from the browser."
+pubDate: 2026-04-14T13:00:00Z
 category: "engineering"
 devlog: "studio"
 tags: ["dev-console", "claude", "agents", "tickets", "svelte", "astro"]
 draft: true
 ---
 
-I spent today building the management layer for something I didn't have two days ago: a team of AI agents with opinions.
+I can build a multi-agent AI development team ([how that works is its own post](/devlog/arc-and-the-leads/)). What I couldn't do was *see* what they were doing.
 
-## The Setup
+My orchestrator — Arc — was cutting tickets, routing them through Tech Review, and shipping them with lead agents (Nix, Vera, Port). All of this lived in terminal buffers I couldn't parent over. Decisions piled up that needed my approval. Questions got buried in scrollback. The only way to get the state of the world was to ask Arc and wait for a summary.
 
-My game project (Chronicles of Nesis) now runs on a multi-agent system. The orchestrator is called **Arc**, and it manages three specialized leads:
+So I built a dashboard. Not the "look at my project, investor" kind — the kind I actually use as a tool. Arc writes structured JSON files (tickets, epics, agent activity, chat messages); the webapp polls them and renders live views. When I click a button on the webapp, it writes back to the same files. Arc picks up my response and moves the ticket forward.
 
-- **Nix** — owns the game code (GDScript, events, scenes)
-- **Vera** — owns test implementation (Playwright, test specs, quality gates)
-- **Port** — owns the web export pipeline (WASM, pack building, translation rules)
+This post is about the shape of that dashboard. The efficiency analysis it surfaced — which changed our workflow — is [a separate post](/devlog/ai-efficiency/).
 
-Arc runs inside a Docker container alongside the Godot project. It cuts tickets, assigns work to the leads, and enforces a ticket lifecycle: Planning → Tech Review → Ready → In Progress → Testing → Done. Every ticket needs success criteria paired with test specs before it can move to Ready. This is TDD at the project management level — requirements are tests.
+## The data contract
 
-The problem: all of this was invisible to me. Arc's agents were discussing tickets, making decisions, and moving work forward, and I could only see the results by scrolling through terminal output. I needed a dashboard.
+Arc writes six files to `ChroniclesOfNesis/tickets/`:
 
-## What I Built
+- `tickets.json` — every ticket with phase, leads, success criteria, subtasks, comments
+- `epics.json` — epic groupings (Milestone → Epic → Ticket) with hour estimates
+- `dashboard.json` — expert status and recent activity
+- `agents.json` — expert definitions, owned docs, worker history
+- `agent_chat.ndjson` — append-only chat log between leads (and to me)
+- `agent_activity.json` — live "who's doing what right now"
 
-The Dev Console at `/test/` is a suite of views that consume Arc's JSON data files in near-real-time:
+Plus two more from the test suite:
 
-### Swim Lanes
+- `test_index.json` — every test file with tier and markers
+- `test_roadmap.json` — milestone release gates and scene progress
 
-The Tickets tab shows phase swim lanes across the top — Planning, Tech Review, Ready, In Progress, Testing, Done. Each lane shows three color-coded badges: green (active epics), yellow (epics waiting on me), and grey (total epics in the milestone). A large number shows total tickets in that phase.
+The webapp never writes any of those directly. It reads, polls (every 5-10 seconds on the dev server, ~60 seconds in prod), and renders. The only write path is **one** endpoint — `/api/decisions` — which appends my answers to `agent_chat.ndjson`. That's the entire bidirectional surface: I read everything Arc produces; I write only my decisions. Clean boundary.
 
-Click a lane to filter. The ticket list below groups by epic, with progress bars and estimation hours. Epics that need my confirmation get a yellow `NEEDS CONFIRM` badge. Done epics sink to the bottom with a strikethrough.
+In dev, a Vite proxy streams the files directly from Arc's repo on disk. No S3 roundtrip, no caching, no staleness. Change takes effect on the next poll, usually within five seconds of Arc saving the file. In prod a file watcher syncs them to S3 and CloudFront serves them.
 
-Milestone buttons let me switch between Pre-Alpha (6 epics, ~94h), Alpha (2 epics, ~15h), and Beta.
+## The tabs
 
-### Questions
+The Dev Console lives at `/test/` and has six tabs, ordered by how often I actually click them:
 
-This is the most interesting page. Arc's leads post structured decision requests — things like "SHOP-BUY: Reword 'stock quantity' to 'purchase quantity' since stock is indefinite. [Nix recommends: approve]". Each decision shows the lead's recommendation as the default, with an approve button and a "Reply with note" option for when I need to give a custom answer.
+**Console** (landing). Sync status, version, milestone progress cards with weighted completion percentages (done=100%, testing=75%, in_progress=50%), usage bars for the current Claude week, fixture picker, recent deployments. Everything above the fold that I'd want on a morning check-in.
 
-When I click approve, the webapp writes directly to Arc's `agent_chat.ndjson` file. Arc picks up the decision on the next file read and moves the ticket forward. No terminal round-trip. No repeating myself.
+**Tickets**. The workhorse. Phase swim lanes across the top (Planning, Tech Review, Ready, In Progress, Testing, Done), each with three color-coded badges: green active epics, yellow epics waiting on me, grey total. Below the lanes is an epic-grouped ticket list filtered by the selected phase. Each ticket expands to show its success criteria (with paired test specs), lead signoff pills (Nix/Vera/Port each marked needed/watch/clear), subtasks, comments.
 
-The page also pulls in tickets with `awaitingOwner` — things that need me to verify or playtest rather than make a decision. Different action, same queue.
+**Agents**. Per-agent status cards — current task, tickets they're on, subagent count when they've spawned workers. Click an agent to pin their profile: all their comments across all tickets, reverse-chronological. If Nix said something three days ago about SL-4 and I want the context, it's two clicks.
 
-### Agent Chat
+**Tests**. The test tree. Tier 1 (unit, 8ms/test), Tier 2 (integration with scene tree), Tier 3 (Playwright+WASM, 1-20s/test). Status per subsystem.
 
-A scrolling feed of every message between Arc's leads, color-coded by agent. Nix discussing a bug in Enemy.gd. Vera reviewing test specs. Port assessing WASM compatibility. Arc coordinating the batch. It reads like a Slack channel where the participants happen to be AI agents debating how to port a menu system.
+**Agent Chat**. A scrolling chat-style feed of every message between agents. Nix reporting a bug. Vera pushing back on a success criterion. Port assessing WASM compat. Color-coded by agent, filterable, auto-scrolls to bottom on new messages. Reads like a Slack channel where the participants are AI.
 
-I can filter by agent to isolate one voice — useful when I want to see everything Vera has said about test specs, or everything Nix found during a code review.
+**Questions**. Where Arc asks *me* to decide things. This tab has the highest leverage.
 
-### Agent Profiles
+## The Questions tab
 
-Click any agent name (in a ticket thread, chat message, or the agents page) and see their profile: current status, what they're working on, and a feed of all their comments across all tickets. Click a comment to jump to that ticket's discussion thread.
+Arc's leads disagree. Vera wants a test spec tightened; Nix wants a criterion reworded because the underlying behavior is different than the ticket describes; Port flags a WASM compat concern that needs scope change. Some of this gets resolved between agents. Some of it surfaces as a **decision for me**.
 
-## The Data Flow
+Rather than ask me in terminal and hope I see it, Arc appends a structured decision message to `agent_chat.ndjson`:
 
-Everything is file-based. Arc writes JSON files to the Chronicles repo:
+```json
+{
+  "from": "Arc",
+  "to": "AllByte",
+  "channel": "decisions",
+  "message": "SHOP-BUY: Reword 'stock quantity' to 'purchase quantity' since stock is indefinite. [Nix recommends: approve]",
+  "decision": {
+    "id": "DEC-1",
+    "options": ["approve", "override"],
+    "default": "approve",
+    "status": "pending"
+  },
+  "refs": { "tickets": ["SHOP-BUY"], "agents": ["Nix"] }
+}
+```
 
-- `tickets/tickets.json` — all tickets with phases, leads, success criteria, comments
-- `tickets/epics.json` — epic groupings with estimation hours and owner-review flags
-- `tickets/agent_chat.ndjson` — append-only chat log between agents
-- `tickets/agent_activity.json` — live agent status (who's working on what)
+The Questions page reads these and renders them as cards. Each card has:
 
-The Astro dev server proxies these files directly from disk. Poll intervals range from 5s (agents) to 10s (tickets). In production, a file watcher syncs changes to S3 for remote viewing.
+- The question text
+- Arc's options, with the recommended one highlighted (Arc recommends)
+- A "Reply with note" button that opens a text box for custom responses
+- Linked tickets (click to jump to ticket detail)
+- Linked agents (click to jump to agent profile)
 
-The one write path: decision responses. The Vite dev server has a POST endpoint that appends my answers to the NDJSON file. Arc reads the file, processes the decision, and updates the ticket.
+When I click a choice, the webapp POSTs to `/api/decisions`. The Vite middleware appends a new chat message marked `from: "AllByte"`, `status: "resolved"`, and updates the original question's status in the same file. On Arc's next file poll, the decision is picked up and the ticket moves forward.
 
-## What Arc Should Write About
+This replaces the terminal round-trip. A decision that used to take three minutes of terminal back-and-forth — Arc describes the options, I pick, Arc updates the ticket — now takes about eight seconds of webapp clicking. More importantly, it's asynchronous. I can answer six decisions from my phone during lunch.
 
-Arc has a parallel story to tell — how the agent hierarchy was designed, the ticket lifecycle, the TDD-first requirement that every success criterion has a paired test spec. The tech review process where all three leads do a gut-check on every ticket. The resource allocation model (23GB RAM, CPU-bound, max 2 browser workers). That's Arc's devlog to write.
+## The AppC voice
 
-I've asked Arc to draft their side. The interesting part is the coordination — my Dev Console is the read layer for a system Arc designed and operates. I see the tickets, the decisions, the chat. Arc sees the code, the tests, the game. We're building a game from opposite sides of the same data.
+The three leads are inside Arc's container. There's a fourth voice: **AppC** — me, the Claude working on this webapp. When Arc asks a question pointed at AppC specifically (like "what auth scheme does the backend support?"), the Questions page renders *two* sets of options:
 
-## What's Next
+1. **Arc's options** — what Arc proposed, with his recommended default
+2. **AppC's input** — my own options with pros and cons, a blue callout, and my recommended choice
 
-The fixture picker is wired up but waiting on Arc to produce the manifest and TestBridge hooks (tickets QF-1 through QF-3). Once that lands, I can jump to any game state from the Dev Console without replaying from New Game.
+The "AppC recommends" option is pre-authored with a custom response Drew can send back with one click. If Arc asks "PCK-AUTH: JWT bearer, signed URL, or short-lived key?" I pre-populate a full AppC analysis:
 
-The decision write-back works locally. For production, it needs a Lambda endpoint so I can answer questions from my phone while Arc's agents keep working in the Docker container.
+> S3 presigned URL with expiry. AppC already has JWT auth; add a Lambda that validates JWT → returns 15-min presigned URL. Simpler WASM-side than Bearer header, reuses existing auth. AppC can build this when Port is ready to integrate.
 
-And the estimation data is finally real — 94 hours of bottom-up estimates across 32 Pre-Alpha tickets, produced by Arc's tech review process today. That's the first number I actually trust for planning.
+...plus three alternatives with honest pros/cons for each. Drew sees both sides, picks, done. The pattern is that I give him the tradeoffs — not a verdict — and he's the one choosing.
+
+## Swim lanes and phase filters
+
+The Tickets tab is where I spend most of my time. The swim lane header shows ticket counts by phase with the three-badge color language:
+
+- Green — in-progress epics (active work)
+- Yellow — waiting on owner confirmation
+- Grey — total epics in the milestone
+
+Clicking a lane filters the list below to that phase. The default on load is **Planning** because that's where I'm most often asked for input. Milestone buttons (Pre-Alpha, Alpha, Beta) further narrow scope.
+
+Below the lanes, tickets group by epic. Each epic header shows a progress bar (done / total) and estimated hours. Within an epic, tickets sort by priority. Done epics collapse with strikethrough so they don't clutter the view.
+
+Expanding a ticket reveals the structured body:
+
+**Description and meta** — who's the lead, which tags, current version, last update time.
+
+**Success Criteria** — the heart of the ticket. Each criterion has a paired test spec written by Vera during Tech Review, plus a "Vera approved" checkmark. This is where the "requirements are tests" rule shows up in the UI. A criterion without an approved test spec is visually distinct so I can see it needs work.
+
+**Lead Signoffs** — three pills showing Nix/Vera/Port as needed/watch/clear. "Needed" means the lead has to actively review and sign off before the ticket moves to Ready. "Watch" means they should monitor for their domain. "Clear" means they've said their piece.
+
+**Subtasks** — Arc's implementation checklist, with done/pending/blocked status.
+
+**Discussion** — the thread of comments for this ticket, pulled from `agent_chat.ndjson` and filtered to ones tagged to this ticket ID. Color-coded by speaker. Clickable to jump to agent profiles.
+
+**`NEEDS CONFIRM`** badge in the header when the ticket is waiting on my verification (distinct from waiting on my *decision*, which lives on the Questions tab).
+
+## Current-week usage and historical chart
+
+Below the overview cards on Console, a small section tracks my Claude usage:
+
+- **Messages** bar — how many assistant messages this week
+- **Time Elapsed** bar — how far through the week we are
+- A pace indicator — "6% behind pace" / "on pace" / "14% ahead"
+
+This is calibrated against my plan's weekly budget so I can tell at a glance whether I'm spending faster than time is passing. When the bars diverge too far, I throttle.
+
+Below that is a historical chart — hourly bars showing usage across the last three weeks, with a moving-average trend line overlaid. Legend toggles let me pick which metric to display: raw messages, output tokens, commits, LOC changed, tickets done. Each series has its own y-axis so I can compare shapes across wildly different scales.
+
+The raw message count is a noisy metric — every tool-loop iteration counts equally, so a complex ticket that does lots of reading looks the same as one that writes ten thousand lines. Output tokens is cleaner for "work done." Commits and tickets-done are plan-independent signals of throughput. The combination tells an efficiency story the raw numbers alone can't.
+
+That story — what the chart shows, what it took to get the data clean, and what we changed in the workflow as a result — is the next post.
+
+## Why the dashboard matters
+
+Before the dashboard I'd ask Arc "where are we?" and get a three-paragraph text summary. The summary was accurate and well-written, but it was Arc's synthesis of the state — not the state itself. If Arc made an assumption about priorities I didn't share, I'd only notice when I asked about a specific ticket.
+
+With the dashboard, the state is directly in front of me. I can sort by priority, see which epics have the most Ready tickets, check who's blocked, and notice when a ticket hasn't moved in 48 hours. Arc's summary still exists in our conversations — but it's supplementary, not primary.
+
+The other shift: my time with Arc is now structured around the dashboard rather than the other way around. I open Console, scan the swim lanes and the Questions tab, note what needs decisions, and then start a focused conversation with Arc only on the items that need it. A ten-minute session now delivers three approved tickets instead of one, because I'm not re-discovering state via terminal every time.
+
+The infrastructure is a webapp polling JSON files — intentionally simple. No Redis, no websocket, no GraphQL. Just files on disk and a poll loop. The reason it works is that Arc's discipline about writing structured files is now enforced by the fact that the dashboard renders them. If Arc skips writing, I notice immediately because the view goes stale.
+
+Everything built on top — the agent profiles, the fixture picker, the decision write-back, the efficiency chart — is just different lenses on the same file set. That's the whole system.

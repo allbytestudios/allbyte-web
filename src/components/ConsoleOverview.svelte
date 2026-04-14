@@ -269,9 +269,9 @@
     <h3 class="section-title">Current Week</h3>
     <div class="usage-bars">
       <div class="usage-row">
-        <span class="usage-label">Usage</span>
+        <span class="usage-label">Messages</span>
         <div class="usage-bar"><div class="usage-fill usage-blue" style="width: {usageData.usage.usagePct}%"></div></div>
-        <span class="usage-pct">{usageData.usage.usagePct}%</span>
+        <span class="usage-pct">{usageData.usage.messages.toLocaleString()}</span>
       </div>
       <div class="usage-row">
         <span class="usage-label">Time Elapsed</span>
@@ -286,7 +286,6 @@
         {:else}
           on pace
         {/if}
-        <span class="usage-budget-hint">· budget {usageData.usage.budgetMessages.toLocaleString()} msg (Max plan)</span>
       </div>
     </div>
   {/if}

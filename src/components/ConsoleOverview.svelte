@@ -21,14 +21,16 @@
   let viewerIsLegend = $derived(isTierAtLeast(auth.currentUser, "legend"));
 
   // History chart series toggles
-  type SeriesKey = "messages" | "commits" | "churn" | "ticketsDone";
+  type SeriesKey = "messages" | "outputTokens" | "freshTokens" | "commits" | "churn" | "ticketsDone";
   const SERIES: { key: SeriesKey; label: string; color: string; field: string }[] = [
-    { key: "messages",    label: "Messages",    color: "#60a5fa", field: "messages" },
-    { key: "commits",     label: "Commits",     color: "#34d399", field: "commits" },
-    { key: "churn",       label: "LOC Changed", color: "#fbbf24", field: "churn" },
-    { key: "ticketsDone", label: "Tickets Done",color: "#c084fc", field: "ticketsDone" },
+    { key: "messages",     label: "Messages",      color: "#60a5fa", field: "messages" },
+    { key: "outputTokens", label: "Output Tokens", color: "#22d3ee", field: "outputTokens" },
+    { key: "freshTokens",  label: "Fresh Tokens",  color: "#f472b6", field: "freshTokens" },
+    { key: "commits",      label: "Commits",       color: "#34d399", field: "commits" },
+    { key: "churn",        label: "LOC Changed",   color: "#fbbf24", field: "churn" },
+    { key: "ticketsDone",  label: "Tickets Done",  color: "#c084fc", field: "ticketsDone" },
   ];
-  let activeSeries = $state<Set<SeriesKey>>(new Set(["messages", "commits", "churn", "ticketsDone"]));
+  let activeSeries = $state<Set<SeriesKey>>(new Set(["messages", "outputTokens", "commits", "ticketsDone"]));
   function toggleSeries(k: SeriesKey) {
     const s = new Set(activeSeries);
     if (s.has(k)) s.delete(k);

@@ -187,8 +187,8 @@ function hourBucketFor(ts) {
   return `${y}-${m}-${day} ${hr}`;
 }
 
-// Collect hourly message counts + project split
-const hourly = new Map(); // hourKey → { total, byProject: Map, weekKey }
+// Collect hourly message counts + project split + token usage
+const hourly = new Map(); // hourKey → { total, byProject: Map, weekKey, inputTokens, outputTokens, cacheCreate, cacheRead }
 
 for (const file of files) {
   const parts = file.split(/[\\/]/);
@@ -208,10 +208,17 @@ for (const file of files) {
     if (!ts) continue;
 
     const hk = hourBucketFor(ts);
-    if (!hourly.has(hk)) hourly.set(hk, { total: 0, byProject: new Map(), weekKey: weekBucketFor(ts) });
+    if (!hourly.has(hk)) hourly.set(hk, { total: 0, byProject: new Map(), weekKey: weekBucketFor(ts), inputTokens: 0, outputTokens: 0, cacheCreate: 0, cacheRead: 0 });
     const bucket = hourly.get(hk);
     bucket.total++;
     bucket.byProject.set(projectLabel, (bucket.byProject.get(projectLabel) ?? 0) + 1);
+    const usage = obj.message?.usage;
+    if (usage) {
+      bucket.inputTokens += usage.input_tokens ?? 0;
+      bucket.outputTokens += usage.output_tokens ?? 0;
+      bucket.cacheCreate += usage.cache_creation_input_tokens ?? 0;
+      bucket.cacheRead += usage.cache_read_input_tokens ?? 0;
+    }
   }
 }
 
@@ -353,7 +360,7 @@ const allHourKeys = [...new Set([
 ])].sort();
 
 const hours = allHourKeys.map((hk) => {
-  const b = hourly.get(hk) ?? { total: 0, byProject: new Map(), weekKey: weekBucketFor(Date.parse(hk.replace(" ", "T") + ":00:00")) };
+  const b = hourly.get(hk) ?? { total: 0, byProject: new Map(), weekKey: weekBucketFor(Date.parse(hk.replace(" ", "T") + ":00:00")), inputTokens: 0, outputTokens: 0, cacheCreate: 0, cacheRead: 0 };
   const byProject = {};
   for (const [k, v] of b.byProject) byProject[k] = v;
   const git = gitByHour.get(hk) ?? { commits: 0, insertions: 0, deletions: 0 };
@@ -372,19 +379,27 @@ const hours = allHourKeys.map((hk) => {
     ticketsDone: tix.done,
     ticketsMoved: tix.moved,
     efficiencyCycles: eff.cycles,
+    outputTokens: b.outputTokens,
+    inputTokens: b.inputTokens,
+    cacheCreate: b.cacheCreate,
+    cacheRead: b.cacheRead,
+    // "Fresh" tokens = what costs the plan (excludes cached reads)
+    freshTokens: b.inputTokens + b.outputTokens + b.cacheCreate,
   };
 });
 
 // Weekly summary — aggregate all signals per week
 const weekly = new Map();
 for (const h of hours) {
-  if (!weekly.has(h.weekStart)) weekly.set(h.weekStart, { messages: 0, commits: 0, insertions: 0, deletions: 0, ticketsDone: 0 });
+  if (!weekly.has(h.weekStart)) weekly.set(h.weekStart, { messages: 0, commits: 0, insertions: 0, deletions: 0, ticketsDone: 0, outputTokens: 0, freshTokens: 0 });
   const w = weekly.get(h.weekStart);
   w.messages += h.messages;
   w.commits += h.commits;
   w.insertions += h.insertions;
   w.deletions += h.deletions;
   w.ticketsDone += h.ticketsDone;
+  w.outputTokens += h.outputTokens;
+  w.freshTokens += h.freshTokens;
 }
 const weeks = [...weekly.keys()].sort().map((wk) => {
   const w = weekly.get(wk);
@@ -397,6 +412,8 @@ const weeks = [...weekly.keys()].sort().map((wk) => {
     deletions: w.deletions,
     churn: w.insertions + w.deletions,
     ticketsDone: w.ticketsDone,
+    outputTokens: w.outputTokens,
+    freshTokens: w.freshTokens,
     msgPerCommit: w.commits > 0 ? Math.round(w.messages / w.commits) : null,
     msgPerTicket: w.ticketsDone > 0 ? Math.round(w.messages / w.ticketsDone) : null,
   };

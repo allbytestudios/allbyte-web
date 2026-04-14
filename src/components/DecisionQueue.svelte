@@ -47,10 +47,18 @@
     if (pollTimer) clearInterval(pollTimer);
   });
 
+  interface AppcOption {
+    label: string;
+    pros: string[];
+    cons: string[];
+    customResponse: string;       // pre-filled reply text
+    matchesArcOption?: string;    // if this aligns with an option Arc listed
+    recommended?: boolean;        // AppC's top pick
+  }
+
   interface AppcRecommendation {
-    recommendedOption?: string;   // if it matches an existing option, highlight that button
-    customResponse: string;       // pre-filled reply text for "Send" button
-    rationale: string;            // one-liner explanation shown under the button
+    summary: string;              // one-line intro
+    options: AppcOption[];
   }
 
   interface Decision {
@@ -67,9 +75,72 @@
   // AppC's canned responses for decisions that specifically ask about AppC's backend
   const APPC_RESPONSES: Record<string, AppcRecommendation> = {
     "DEC-9": {
-      recommendedOption: "Signed URL with expiry",
-      customResponse: "Signed URL with expiry. AppC already has JWT auth; add a Lambda that validates JWT → returns 15-min S3 presigned URL. Simpler WASM-side than Bearer header, reuses existing auth.",
-      rationale: "Reuses existing JWT auth. 15-min presigned URL = simpler WASM fetch, no header-leak risk, tier gate on the URL-generation Lambda.",
+      summary: "AppC has 4 viable approaches. Each trades security for simplicity differently.",
+      options: [
+        {
+          label: "S3 presigned URL (15-min expiry)",
+          matchesArcOption: "Signed URL with expiry",
+          recommended: true,
+          pros: [
+            "Reuses existing JWT auth (Lambda validates JWT, returns URL)",
+            "WASM fetch is simple — just hit the URL, no headers",
+            "Native AWS, ~30 lines of Lambda code",
+            "URL is the ephemeral credential; expiry limits blast radius",
+          ],
+          cons: [
+            "URL is the secret — anyone with it downloads until expiry",
+            "Hard to revoke before expiry (must rotate S3 bucket or use denylist)",
+            "CloudFront can't cache per-user URLs effectively",
+          ],
+          customResponse: "S3 presigned URL. AppC adds a Lambda that validates JWT + tier, returns 15-min presigned URL. Godot fetches URL directly. Reuses existing auth, no new systems.",
+        },
+        {
+          label: "CloudFront signed cookies",
+          pros: [
+            "Browser sends cookie with every CDN request automatically",
+            "CloudFront caches work normally (same URL for all users)",
+            "Best CDN performance — PCK downloads are edge-cached",
+            "Cookie is domain-scoped, can't leak into unrelated requests",
+          ],
+          cons: [
+            "Requires CloudFront key group + public/private key pair setup",
+            "More infrastructure (one-time cost, but real)",
+            "Cookie auth is browser-specific (won't work for non-browser fetches)",
+            "Cookie expiry behavior across WASM iframe needs testing",
+          ],
+          customResponse: "CloudFront signed cookies. AppC sets the cookie on login (Legend tier). Best CDN caching story, but requires CloudFront key group setup.",
+        },
+        {
+          label: "JWT Bearer on proxy Lambda",
+          matchesArcOption: "JWT bearer",
+          pros: [
+            "Real-time auth check per download — can revoke immediately by invalidating JWT",
+            "Per-request logging and rate limiting possible",
+            "Standard pattern, familiar",
+          ],
+          cons: [
+            "Lambda has to proxy/stream the PCK file (potentially 10-50MB)",
+            "Lambda response size cap is 6MB — need to stream or redirect anyway",
+            "Added latency vs direct CDN delivery",
+            "Godot WASM needs to set Authorization header — more PackLoader complexity",
+          ],
+          customResponse: "JWT Bearer. AppC adds a Lambda that validates JWT and proxies the PCK. Real-time revocation but added latency and WASM header complexity.",
+        },
+        {
+          label: "Public PCK + separate auth for game access",
+          pros: [
+            "Simplest CDN story — PCK is just a static file, maximum cache hit",
+            "No backend auth for the download itself",
+            "If the PCK alone is useless (needs game server/save data), auth moves to those calls",
+          ],
+          cons: [
+            "Anyone with the URL downloads the PCK — no tier gating",
+            "Only works if the PCK has no standalone value (e.g., subscriber-only content)",
+            "Still need auth somewhere for tier-gated features, just not on download",
+          ],
+          customResponse: "Serve PCK publicly, gate actual game features (save sync, multiplayer) on JWT. Only works if PCK alone is useless without other auth'd calls.",
+        },
+      ],
     },
   };
 
@@ -82,8 +153,8 @@
     const text = (m.message ?? "").toLowerCase();
     if (text.includes("appc") || text.includes("app claude") || text.includes("app c ")) {
       return {
-        customResponse: "",
-        rationale: "This decision mentions AppC — AppC hasn't pre-analyzed this one. Check with App Claude before answering.",
+        summary: "This decision mentions AppC — AppC hasn't pre-analyzed this one. Check with App Claude before answering.",
+        options: [],
       };
     }
     return undefined;
@@ -187,23 +258,41 @@
           {#if d.appcInput}
             <div class="appc-input">
               <div class="options-label appc-label">AppC's input:</div>
-              <p class="appc-rationale">{d.appcInput.rationale}</p>
-              {#if d.appcInput.recommendedOption}
-                <button
-                  class="dec-btn appc-btn"
-                  disabled={submitting === d.id}
-                  onclick={() => handleDecision(d.id, d.appcInput!.customResponse || d.appcInput!.recommendedOption!)}
-                >
-                  {submitting === d.id ? "…" : `Send AppC's answer: "${d.appcInput.recommendedOption}"`}
-                </button>
+              {#if d.appcInput.summary}
+                <p class="appc-summary">{d.appcInput.summary}</p>
               {/if}
+              {#each d.appcInput.options as opt}
+                <div class="appc-option" class:appc-recommended-opt={opt.recommended}>
+                  <div class="appc-opt-header">
+                    <span class="appc-opt-label">{opt.label}</span>
+                    {#if opt.recommended}<span class="appc-rec-badge">AppC recommends</span>{/if}
+                  </div>
+                  <div class="appc-pros-cons">
+                    <div class="appc-pros">
+                      <span class="appc-pc-label">Pros</span>
+                      <ul>{#each opt.pros as p}<li>{p}</li>{/each}</ul>
+                    </div>
+                    <div class="appc-cons">
+                      <span class="appc-pc-label">Cons</span>
+                      <ul>{#each opt.cons as c}<li>{c}</li>{/each}</ul>
+                    </div>
+                  </div>
+                  <button
+                    class="dec-btn appc-btn"
+                    disabled={submitting === d.id}
+                    onclick={() => handleDecision(d.id, opt.customResponse)}
+                  >
+                    {submitting === d.id ? "…" : `Send: "${opt.matchesArcOption ?? opt.label}"`}
+                  </button>
+                </div>
+              {/each}
             </div>
           {/if}
 
           <div class="dec-actions">
             <button
               class="dec-btn dec-reply-toggle"
-              onclick={() => { replyOpen = replyOpen === d.id ? null : d.id; replyText = d.appcInput?.customResponse ?? ""; }}
+              onclick={() => { replyOpen = replyOpen === d.id ? null : d.id; replyText = ""; }}
             >Reply with note</button>
           </div>
           {#if replyOpen === d.id}
@@ -437,27 +526,86 @@
   /* AppC input section */
   .appc-input {
     margin: 0.6rem 0 0.3rem;
-    padding: 0.5rem 0.75rem;
-    background: rgba(96, 165, 250, 0.06);
-    border: 1px solid rgba(96, 165, 250, 0.3);
+    padding: 0.6rem 0.8rem;
+    background: rgba(96, 165, 250, 0.04);
+    border: 1px solid rgba(96, 165, 250, 0.25);
     border-left: 3px solid #60a5fa;
     border-radius: 4px;
   }
-  .appc-rationale {
-    font-size: 0.8rem;
+  .appc-summary {
+    font-size: 0.82rem;
     color: #d1d5db;
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.6rem;
     line-height: 1.5;
-    font-style: italic;
   }
+  .appc-option {
+    padding: 0.6rem 0.7rem;
+    margin-bottom: 0.5rem;
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(96, 165, 250, 0.15);
+    border-radius: 3px;
+  }
+  .appc-option.appc-recommended-opt {
+    border-color: rgba(52, 211, 153, 0.5);
+    background: rgba(52, 211, 153, 0.04);
+  }
+  .appc-opt-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+  .appc-opt-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #e5e7eb;
+  }
+  .appc-rec-badge {
+    font-size: 0.65rem;
+    color: #34d399;
+    background: rgba(52, 211, 153, 0.12);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    padding: 0.05rem 0.35rem;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+  }
+  .appc-pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+  .appc-pros .appc-pc-label { color: #34d399; }
+  .appc-cons .appc-pc-label { color: #f87171; }
+  .appc-pc-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .appc-pros ul, .appc-cons ul {
+    margin: 0.2rem 0 0;
+    padding-left: 1rem;
+    list-style: disc;
+    font-size: 0.78rem;
+    color: #d1d5db;
+    line-height: 1.45;
+  }
+  .appc-pros li, .appc-cons li { margin-bottom: 0.15rem; }
   .appc-btn {
     background: rgba(96, 165, 250, 0.1) !important;
     border-color: #60a5fa !important;
     color: #60a5fa !important;
     font-weight: 700;
+    font-size: 0.8rem;
   }
   .appc-btn:hover:not(:disabled) {
     background: rgba(96, 165, 250, 0.2) !important;
+  }
+  @media (max-width: 640px) {
+    .appc-pros-cons { grid-template-columns: 1fr; }
   }
 
   /* Awaiting owner tickets */

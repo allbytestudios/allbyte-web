@@ -1,7 +1,7 @@
 import { defineConfig } from "astro/config";
 import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
-import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, writeFileSync } from "node:fs";
+import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, writeFileSync, realpathSync } from "node:fs";
 import { join, normalize, resolve, sep } from "node:path";
 
 const chroniclesRoot = resolve(
@@ -58,6 +58,8 @@ function chroniclesProxy() {
           ? normalize(join(chroniclesRoot, baseRel))
           : chroniclesRoot;
         const full = normalize(join(baseDir, rel));
+        // First check: the normalized path must be under baseDir (catches ../
+        // traversal in the URL).
         if (!full.startsWith(baseDir + sep) && full !== baseDir) {
           res.statusCode = 400;
           return res.end("bad path");
@@ -65,7 +67,21 @@ function chroniclesProxy() {
         if (!existsSync(full) || !statSync(full).isFile()) {
           return next();
         }
-        streamFile(full, res, isGodot);
+        // Second check: resolve symlinks, reject if the real path escapes
+        // baseDir. Protects against a symlink inside Chronicles pointing out.
+        let realFull;
+        try {
+          realFull = realpathSync(full);
+        } catch {
+          res.statusCode = 500;
+          return res.end("cannot resolve path");
+        }
+        const realBase = realpathSync(baseDir);
+        if (!realFull.startsWith(realBase + sep) && realFull !== realBase) {
+          res.statusCode = 403;
+          return res.end("forbidden");
+        }
+        streamFile(realFull, res, isGodot);
       } catch (err) {
         res.statusCode = 500;
         res.end(String(err && err.message ? err.message : err));
@@ -91,14 +107,39 @@ function decisionWriteback() {
       server.middlewares.use((req, res, next) => {
         const url = req.url?.replace(/\/$/, "") ?? "";
         if (req.method !== "POST" || url !== "/api/decisions") return next();
+        // Body size cap — prevents a trivial flood that appends megabytes
+        // to agent_chat.ndjson. 16KB is plenty for a decision + note.
+        const MAX_BODY = 16 * 1024;
         let body = "";
-        req.on("data", (chunk) => (body += chunk));
+        let tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
         req.on("end", () => {
+          if (tooLarge) return;
           try {
             const { decisionId, choice } = JSON.parse(body);
             if (!decisionId || !choice) {
               res.statusCode = 400;
               return res.end(JSON.stringify({ error: "decisionId and choice required" }));
+            }
+            // Validate decisionId shape: letters/digits/dash/underscore only,
+            // max 64 chars. Blocks injection via weird IDs.
+            if (typeof decisionId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(decisionId)) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "invalid decisionId format" }));
+            }
+            // Choice: string, max 4KB (custom replies allowed, but not essays).
+            if (typeof choice !== "string" || choice.length > 4096) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "invalid choice" }));
             }
             const chatPath = normalize(join(chroniclesRoot, "tickets", "agent_chat.ndjson"));
             // Append owner decision as a new chat message

@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "lastUpdated": "2026-04-14T01:32:35.320Z",
+  "lastUpdated": "2026-04-14T14:09:38.713Z",
   "resetDay": 3,
   "resetHour": 13,
   "weeklyBudget": 12900,
@@ -9,6 +9,8 @@
       "hour": "2026-02-22 09",
       "weekStart": "2026-02-18",
       "messages": 74,
+      "hostMessages": 74,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.57,
       "byProject": {
         "App (TTD)": 74
@@ -20,8 +22,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 188,
       "inputTokens": 1458,
+      "outputTokens": 188,
       "cacheCreate": 385945,
       "cacheRead": 2375675,
       "freshTokens": 387591
@@ -30,6 +32,8 @@
       "hour": "2026-02-22 12",
       "weekStart": "2026-02-18",
       "messages": 84,
+      "hostMessages": 84,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.65,
       "byProject": {
         "App (TTD)": 84
@@ -41,8 +45,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 148,
       "inputTokens": 524,
+      "outputTokens": 148,
       "cacheCreate": 468408,
       "cacheRead": 2208217,
       "freshTokens": 469080
@@ -51,6 +55,8 @@
       "hour": "2026-02-22 15",
       "weekStart": "2026-02-18",
       "messages": 212,
+      "hostMessages": 212,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.64,
       "byProject": {
         "App (TTD)": 212
@@ -62,8 +68,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 444,
       "inputTokens": 26871,
+      "outputTokens": 444,
       "cacheCreate": 484594,
       "cacheRead": 6023501,
       "freshTokens": 511909
@@ -72,6 +78,8 @@
       "hour": "2026-02-22 16",
       "weekStart": "2026-02-18",
       "messages": 33,
+      "hostMessages": 33,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.26,
       "byProject": {
         "App (TTD)": 33
@@ -83,8 +91,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 51,
       "inputTokens": 27232,
+      "outputTokens": 51,
       "cacheCreate": 77178,
       "cacheRead": 572391,
       "freshTokens": 104461
@@ -93,6 +101,8 @@
       "hour": "2026-02-23 13",
       "weekStart": "2026-02-18",
       "messages": 91,
+      "hostMessages": 91,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.71,
       "byProject": {
         "App (TTD)": 91
@@ -104,8 +114,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 448,
       "inputTokens": 152,
+      "outputTokens": 448,
       "cacheCreate": 221621,
       "cacheRead": 2824790,
       "freshTokens": 222221
@@ -114,6 +124,8 @@
       "hour": "2026-04-05 12",
       "weekStart": "2026-04-01",
       "messages": 414,
+      "hostMessages": 414,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 3.21,
       "byProject": {
         "Worktree": 414
@@ -125,8 +137,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 78476,
       "inputTokens": 18277,
+      "outputTokens": 78476,
       "cacheCreate": 2114518,
       "cacheRead": 20880588,
       "freshTokens": 2211271
@@ -135,6 +147,8 @@
       "hour": "2026-04-05 13",
       "weekStart": "2026-04-01",
       "messages": 79,
+      "hostMessages": 79,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.61,
       "byProject": {
         "Worktree": 79
@@ -146,8 +160,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 36586,
       "inputTokens": 182,
+      "outputTokens": 36586,
       "cacheCreate": 544102,
       "cacheRead": 7013507,
       "freshTokens": 580870
@@ -156,6 +170,8 @@
       "hour": "2026-04-05 14",
       "weekStart": "2026-04-01",
       "messages": 94,
+      "hostMessages": 94,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.73,
       "byProject": {
         "Worktree": 94
@@ -167,8 +183,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 25638,
       "inputTokens": 94,
+      "outputTokens": 25638,
       "cacheCreate": 64982,
       "cacheRead": 13166000,
       "freshTokens": 90714
@@ -177,6 +193,8 @@
       "hour": "2026-04-05 19",
       "weekStart": "2026-04-01",
       "messages": 65,
+      "hostMessages": 65,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.5,
       "byProject": {
         "Worktree": 65
@@ -188,8 +206,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 9238,
       "inputTokens": 339,
+      "outputTokens": 9238,
       "cacheCreate": 1304328,
       "cacheRead": 3024766,
       "freshTokens": 1313905
@@ -198,6 +216,8 @@
       "hour": "2026-04-05 20",
       "weekStart": "2026-04-01",
       "messages": 274,
+      "hostMessages": 274,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.12,
       "byProject": {
         "Worktree": 274
@@ -209,8 +229,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 57496,
       "inputTokens": 3625,
+      "outputTokens": 57496,
       "cacheCreate": 1148481,
       "cacheRead": 23700689,
       "freshTokens": 1209602
@@ -219,6 +239,8 @@
       "hour": "2026-04-05 21",
       "weekStart": "2026-04-01",
       "messages": 310,
+      "hostMessages": 310,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.4,
       "byProject": {
         "Worktree": 310
@@ -230,8 +252,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 75716,
       "inputTokens": 722,
+      "outputTokens": 75716,
       "cacheCreate": 811138,
       "cacheRead": 28146610,
       "freshTokens": 887576
@@ -240,6 +262,8 @@
       "hour": "2026-04-05 22",
       "weekStart": "2026-04-01",
       "messages": 128,
+      "hostMessages": 128,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.99,
       "byProject": {
         "Worktree": 128
@@ -251,8 +275,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 44068,
       "inputTokens": 2251,
+      "outputTokens": 44068,
       "cacheCreate": 481940,
       "cacheRead": 12116344,
       "freshTokens": 528259
@@ -261,6 +285,8 @@
       "hour": "2026-04-06 08",
       "weekStart": "2026-04-01",
       "messages": 39,
+      "hostMessages": 39,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.3,
       "byProject": {
         "Worktree": 39
@@ -272,8 +298,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 6996,
       "inputTokens": 226,
+      "outputTokens": 6996,
       "cacheCreate": 283109,
       "cacheRead": 1254881,
       "freshTokens": 290331
@@ -282,6 +308,8 @@
       "hour": "2026-04-06 09",
       "weekStart": "2026-04-01",
       "messages": 495,
+      "hostMessages": 495,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 3.84,
       "byProject": {
         "App (game-host)": 495
@@ -293,8 +321,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 80736,
       "inputTokens": 11207,
+      "outputTokens": 80736,
       "cacheCreate": 724800,
       "cacheRead": 26189955,
       "freshTokens": 816743
@@ -303,6 +331,8 @@
       "hour": "2026-04-06 10",
       "weekStart": "2026-04-01",
       "messages": 266,
+      "hostMessages": 266,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.06,
       "byProject": {
         "App (game-host)": 266
@@ -314,8 +344,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 56280,
       "inputTokens": 366,
+      "outputTokens": 56280,
       "cacheCreate": 255592,
       "cacheRead": 39234192,
       "freshTokens": 312238
@@ -324,6 +354,8 @@
       "hour": "2026-04-06 11",
       "weekStart": "2026-04-01",
       "messages": 340,
+      "hostMessages": 340,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.64,
       "byProject": {
         "App (game-host)": 340
@@ -335,8 +367,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 66855,
       "inputTokens": 420,
+      "outputTokens": 66855,
       "cacheCreate": 244212,
       "cacheRead": 68668012,
       "freshTokens": 311487
@@ -345,6 +377,8 @@
       "hour": "2026-04-06 12",
       "weekStart": "2026-04-01",
       "messages": 683,
+      "hostMessages": 683,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 5.29,
       "byProject": {
         "App (game-host)": 683
@@ -356,8 +390,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 103341,
       "inputTokens": 3439,
+      "outputTokens": 103341,
       "cacheCreate": 506683,
       "cacheRead": 168004095,
       "freshTokens": 613463
@@ -366,6 +400,8 @@
       "hour": "2026-04-06 13",
       "weekStart": "2026-04-01",
       "messages": 937,
+      "hostMessages": 937,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 7.26,
       "byProject": {
         "App (game-host)": 735,
@@ -378,8 +414,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 145911,
       "inputTokens": 9604,
+      "outputTokens": 145911,
       "cacheCreate": 899822,
       "cacheRead": 249747524,
       "freshTokens": 1055337
@@ -388,6 +424,8 @@
       "hour": "2026-04-06 14",
       "weekStart": "2026-04-01",
       "messages": 40,
+      "hostMessages": 40,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.31,
       "byProject": {
         "App (game-host)": 16,
@@ -400,8 +438,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 10061,
       "inputTokens": 44,
+      "outputTokens": 10061,
       "cacheCreate": 35570,
       "cacheRead": 8457024,
       "freshTokens": 45675
@@ -410,6 +448,8 @@
       "hour": "2026-04-06 15",
       "weekStart": "2026-04-01",
       "messages": 340,
+      "hostMessages": 340,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.64,
       "byProject": {
         "App (game-host)": 206,
@@ -422,8 +462,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 51418,
       "inputTokens": 436,
+      "outputTokens": 51418,
       "cacheCreate": 1372386,
       "cacheRead": 102176190,
       "freshTokens": 1424240
@@ -432,6 +472,8 @@
       "hour": "2026-04-06 16",
       "weekStart": "2026-04-01",
       "messages": 652,
+      "hostMessages": 652,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 5.05,
       "byProject": {
         "App (game-host)": 306,
@@ -444,8 +486,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 119402,
       "inputTokens": 1100,
+      "outputTokens": 119402,
       "cacheCreate": 443043,
       "cacheRead": 174938615,
       "freshTokens": 563545
@@ -454,6 +496,8 @@
       "hour": "2026-04-06 17",
       "weekStart": "2026-04-01",
       "messages": 424,
+      "hostMessages": 424,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 3.29,
       "byProject": {
         "App (game-host)": 142,
@@ -466,8 +510,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 76168,
       "inputTokens": 758,
+      "outputTokens": 76168,
       "cacheCreate": 210016,
       "cacheRead": 121848632,
       "freshTokens": 286942
@@ -476,6 +520,8 @@
       "hour": "2026-04-06 19",
       "weekStart": "2026-04-01",
       "messages": 430,
+      "hostMessages": 430,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 3.33,
       "byProject": {
         "App (game-host)": 268,
@@ -488,8 +534,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 86760,
       "inputTokens": 594,
+      "outputTokens": 86760,
       "cacheCreate": 3410068,
       "cacheRead": 179763734,
       "freshTokens": 3497422
@@ -498,6 +544,8 @@
       "hour": "2026-04-06 20",
       "weekStart": "2026-04-01",
       "messages": 158,
+      "hostMessages": 158,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.22,
       "byProject": {
         "App (game-host)": 158
@@ -509,8 +557,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 27235,
       "inputTokens": 8689,
+      "outputTokens": 27235,
       "cacheCreate": 615624,
       "cacheRead": 4919827,
       "freshTokens": 651548
@@ -519,6 +567,8 @@
       "hour": "2026-04-06 21",
       "weekStart": "2026-04-01",
       "messages": 332,
+      "hostMessages": 332,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.57,
       "byProject": {
         "App (game-host)": 216,
@@ -531,8 +581,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 78465,
       "inputTokens": 460,
+      "outputTokens": 78465,
       "cacheCreate": 1009148,
       "cacheRead": 40557514,
       "freshTokens": 1088073
@@ -541,6 +591,8 @@
       "hour": "2026-04-07 07",
       "weekStart": "2026-04-01",
       "messages": 298,
+      "hostMessages": 298,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.31,
       "byProject": {
         "App (game-host)": 218,
@@ -553,8 +605,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 54077,
       "inputTokens": 438,
+      "outputTokens": 54077,
       "cacheCreate": 1086550,
       "cacheRead": 41573124,
       "freshTokens": 1141065
@@ -563,6 +615,8 @@
       "hour": "2026-04-07 08",
       "weekStart": "2026-04-01",
       "messages": 618,
+      "hostMessages": 618,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 4.79,
       "byProject": {
         "App (game-host)": 512,
@@ -575,8 +629,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 107465,
       "inputTokens": 1150,
+      "outputTokens": 107465,
       "cacheCreate": 608663,
       "cacheRead": 105305732,
       "freshTokens": 717278
@@ -585,6 +639,8 @@
       "hour": "2026-04-07 09",
       "weekStart": "2026-04-01",
       "messages": 284,
+      "hostMessages": 284,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.2,
       "byProject": {
         "App (game-host)": 196,
@@ -597,8 +653,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 55515,
       "inputTokens": 376,
+      "outputTokens": 55515,
       "cacheCreate": 210388,
       "cacheRead": 71158876,
       "freshTokens": 266279
@@ -607,6 +663,8 @@
       "hour": "2026-04-07 10",
       "weekStart": "2026-04-01",
       "messages": 360,
+      "hostMessages": 360,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.79,
       "byProject": {
         "App (game-host)": 360
@@ -618,8 +676,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 53337,
       "inputTokens": 460,
+      "outputTokens": 53337,
       "cacheCreate": 133124,
       "cacheRead": 101224260,
       "freshTokens": 186921
@@ -628,6 +686,8 @@
       "hour": "2026-04-07 11",
       "weekStart": "2026-04-01",
       "messages": 504,
+      "hostMessages": 504,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 3.91,
       "byProject": {
         "App (game-host)": 388,
@@ -640,8 +700,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 88823,
       "inputTokens": 648,
+      "outputTokens": 88823,
       "cacheCreate": 768868,
       "cacheRead": 161568700,
       "freshTokens": 858339
@@ -650,6 +710,8 @@
       "hour": "2026-04-07 12",
       "weekStart": "2026-04-01",
       "messages": 873,
+      "hostMessages": 873,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 6.77,
       "byProject": {
         "App (game-host)": 512,
@@ -662,8 +724,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 229147,
       "inputTokens": 10891,
+      "outputTokens": 229147,
       "cacheCreate": 1447520,
       "cacheRead": 170166601,
       "freshTokens": 1687558
@@ -672,6 +734,8 @@
       "hour": "2026-04-07 13",
       "weekStart": "2026-04-01",
       "messages": 880,
+      "hostMessages": 880,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 6.82,
       "byProject": {
         "App (game-host)": 446,
@@ -684,8 +748,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 177660,
       "inputTokens": 4177,
+      "outputTokens": 177660,
       "cacheCreate": 1111502,
       "cacheRead": 182523777,
       "freshTokens": 1293339
@@ -694,6 +758,8 @@
       "hour": "2026-04-07 14",
       "weekStart": "2026-04-01",
       "messages": 929,
+      "hostMessages": 929,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 7.2,
       "byProject": {
         "App (game-host)": 513,
@@ -706,8 +772,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 172308,
       "inputTokens": 8005,
+      "outputTokens": 172308,
       "cacheCreate": 1270123,
       "cacheRead": 233802272,
       "freshTokens": 1450436
@@ -716,6 +782,8 @@
       "hour": "2026-04-07 15",
       "weekStart": "2026-04-01",
       "messages": 469,
+      "hostMessages": 469,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 3.64,
       "byProject": {
         "App (game-host)": 228,
@@ -728,8 +796,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 86724,
       "inputTokens": 649,
+      "outputTokens": 86724,
       "cacheCreate": 518889,
       "cacheRead": 62620053,
       "freshTokens": 606262
@@ -738,6 +806,8 @@
       "hour": "2026-04-07 16",
       "weekStart": "2026-04-01",
       "messages": 278,
+      "hostMessages": 278,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.16,
       "byProject": {
         "App (game-host)": 118,
@@ -750,8 +820,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 66917,
       "inputTokens": 11688,
+      "outputTokens": 66917,
       "cacheCreate": 456729,
       "cacheRead": 45750333,
       "freshTokens": 535334
@@ -760,6 +830,8 @@
       "hour": "2026-04-07 17",
       "weekStart": "2026-04-01",
       "messages": 218,
+      "hostMessages": 218,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.69,
       "byProject": {
         "App (game-host)": 53,
@@ -772,8 +844,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 33618,
       "inputTokens": 401,
+      "outputTokens": 33618,
       "cacheCreate": 1578554,
       "cacheRead": 44577901,
       "freshTokens": 1612573
@@ -782,6 +854,8 @@
       "hour": "2026-04-07 19",
       "weekStart": "2026-04-01",
       "messages": 235,
+      "hostMessages": 235,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.82,
       "byProject": {
         "App (game-host)": 64,
@@ -794,8 +868,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 33601,
       "inputTokens": 11958,
+      "outputTokens": 33601,
       "cacheCreate": 658873,
       "cacheRead": 22840927,
       "freshTokens": 704432
@@ -804,6 +878,8 @@
       "hour": "2026-04-07 20",
       "weekStart": "2026-04-01",
       "messages": 233,
+      "hostMessages": 233,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.81,
       "byProject": {
         "App (game-host)": 98,
@@ -816,8 +892,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 42294,
       "inputTokens": 307,
+      "outputTokens": 42294,
       "cacheCreate": 125564,
       "cacheRead": 39945368,
       "freshTokens": 168165
@@ -826,6 +902,8 @@
       "hour": "2026-04-07 21",
       "weekStart": "2026-04-01",
       "messages": 264,
+      "hostMessages": 264,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.05,
       "byProject": {
         "App (game-host)": 91,
@@ -838,8 +916,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 59378,
       "inputTokens": 344,
+      "outputTokens": 59378,
       "cacheCreate": 127503,
       "cacheRead": 52307999,
       "freshTokens": 187225
@@ -848,6 +926,8 @@
       "hour": "2026-04-08 09",
       "weekStart": "2026-04-01",
       "messages": 545,
+      "hostMessages": 545,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 4.22,
       "byProject": {
         "App (game-host)": 284,
@@ -860,8 +940,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 86663,
       "inputTokens": 38031,
+      "outputTokens": 86663,
       "cacheCreate": 2597289,
       "cacheRead": 36152768,
       "freshTokens": 2721983
@@ -870,6 +950,8 @@
       "hour": "2026-04-08 10",
       "weekStart": "2026-04-01",
       "messages": 194,
+      "hostMessages": 194,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.5,
       "byProject": {
         "App (game-host)": 116,
@@ -882,8 +964,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 39899,
       "inputTokens": 445,
+      "outputTokens": 39899,
       "cacheCreate": 155392,
       "cacheRead": 25719805,
       "freshTokens": 195736
@@ -892,6 +974,8 @@
       "hour": "2026-04-08 11",
       "weekStart": "2026-04-01",
       "messages": 317,
+      "hostMessages": 317,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.46,
       "byProject": {
         "App (game-host)": 245,
@@ -904,8 +988,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 80601,
       "inputTokens": 23938,
+      "outputTokens": 80601,
       "cacheCreate": 1171050,
       "cacheRead": 30949017,
       "freshTokens": 1275589
@@ -914,6 +998,8 @@
       "hour": "2026-04-08 12",
       "weekStart": "2026-04-01",
       "messages": 51,
+      "hostMessages": 51,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.4,
       "byProject": {
         "App (game-host)": 22,
@@ -926,8 +1012,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 8503,
       "inputTokens": 69,
+      "outputTokens": 8503,
       "cacheCreate": 1378115,
       "cacheRead": 9275528,
       "freshTokens": 1386687
@@ -936,6 +1022,8 @@
       "hour": "2026-04-08 13",
       "weekStart": "2026-04-08",
       "messages": 464,
+      "hostMessages": 464,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 3.6,
       "byProject": {
         "App (game-host)": 345,
@@ -949,8 +1037,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 72671,
       "inputTokens": 21045,
+      "outputTokens": 72671,
       "cacheCreate": 1885823,
       "cacheRead": 32737144,
       "freshTokens": 1979539
@@ -959,6 +1047,8 @@
       "hour": "2026-04-08 14",
       "weekStart": "2026-04-08",
       "messages": 325,
+      "hostMessages": 325,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.52,
       "byProject": {
         "App (game-host)": 217,
@@ -971,8 +1061,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 51942,
       "inputTokens": 576,
+      "outputTokens": 51942,
       "cacheCreate": 331195,
       "cacheRead": 29277119,
       "freshTokens": 383713
@@ -981,6 +1071,8 @@
       "hour": "2026-04-08 15",
       "weekStart": "2026-04-08",
       "messages": 609,
+      "hostMessages": 609,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 4.72,
       "byProject": {
         "App (game-host)": 424,
@@ -993,8 +1085,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 88740,
       "inputTokens": 1584,
+      "outputTokens": 88740,
       "cacheCreate": 1206168,
       "cacheRead": 84536840,
       "freshTokens": 1296492
@@ -1003,6 +1095,8 @@
       "hour": "2026-04-08 16",
       "weekStart": "2026-04-08",
       "messages": 416,
+      "hostMessages": 416,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 3.22,
       "byProject": {
         "App (game-host)": 302,
@@ -1015,8 +1109,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 78332,
       "inputTokens": 8714,
+      "outputTokens": 78332,
       "cacheCreate": 761805,
       "cacheRead": 48610093,
       "freshTokens": 848851
@@ -1025,6 +1119,8 @@
       "hour": "2026-04-08 17",
       "weekStart": "2026-04-08",
       "messages": 70,
+      "hostMessages": 70,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.54,
       "byProject": {
         "App (game-host)": 53,
@@ -1037,8 +1133,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 12187,
       "inputTokens": 88,
+      "outputTokens": 12187,
       "cacheCreate": 36219,
       "cacheRead": 21844404,
       "freshTokens": 48494
@@ -1047,6 +1143,8 @@
       "hour": "2026-04-08 18",
       "weekStart": "2026-04-08",
       "messages": 109,
+      "hostMessages": 109,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.84,
       "byProject": {
         "App (game-host)": 93,
@@ -1059,8 +1157,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 19178,
       "inputTokens": 123,
+      "outputTokens": 19178,
       "cacheCreate": 69158,
       "cacheRead": 38090432,
       "freshTokens": 88459
@@ -1069,6 +1167,8 @@
       "hour": "2026-04-08 19",
       "weekStart": "2026-04-08",
       "messages": 211,
+      "hostMessages": 211,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.64,
       "byProject": {
         "App (game-host)": 191,
@@ -1081,8 +1181,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 44962,
       "inputTokens": 469,
+      "outputTokens": 44962,
       "cacheCreate": 708216,
       "cacheRead": 67991810,
       "freshTokens": 753647
@@ -1091,6 +1191,8 @@
       "hour": "2026-04-08 20",
       "weekStart": "2026-04-08",
       "messages": 170,
+      "hostMessages": 170,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.32,
       "byProject": {
         "App (game-host)": 145,
@@ -1103,8 +1205,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 30985,
       "inputTokens": 10675,
+      "outputTokens": 30985,
       "cacheCreate": 452539,
       "cacheRead": 46398576,
       "freshTokens": 494199
@@ -1113,6 +1215,8 @@
       "hour": "2026-04-08 21",
       "weekStart": "2026-04-08",
       "messages": 10,
+      "hostMessages": 10,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.08,
       "byProject": {
         "App (game-host)": 10
@@ -1124,8 +1228,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 2079,
       "inputTokens": 10,
+      "outputTokens": 2079,
       "cacheCreate": 985044,
       "cacheRead": 4041136,
       "freshTokens": 987133
@@ -1134,6 +1238,8 @@
       "hour": "2026-04-09 03",
       "weekStart": "2026-04-08",
       "messages": 480,
+      "hostMessages": 480,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 3.72,
       "byProject": {
         "App (game-host)": 366,
@@ -1146,8 +1252,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 110214,
       "inputTokens": 21337,
+      "outputTokens": 110214,
       "cacheCreate": 2049259,
       "cacheRead": 100065727,
       "freshTokens": 2180810
@@ -1156,6 +1262,8 @@
       "hour": "2026-04-09 04",
       "weekStart": "2026-04-08",
       "messages": 287,
+      "hostMessages": 287,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.22,
       "byProject": {
         "App (game-host)": 169,
@@ -1169,8 +1277,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 75369,
       "inputTokens": 2485,
+      "outputTokens": 75369,
       "cacheCreate": 440395,
       "cacheRead": 70221784,
       "freshTokens": 518249
@@ -1179,6 +1287,8 @@
       "hour": "2026-04-09 05",
       "weekStart": "2026-04-08",
       "messages": 29,
+      "hostMessages": 29,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.22,
       "byProject": {
         "Docker setup": 29
@@ -1190,8 +1300,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 6075,
       "inputTokens": 591,
+      "outputTokens": 6075,
       "cacheCreate": 15777,
       "cacheRead": 774416,
       "freshTokens": 22443
@@ -1200,6 +1310,8 @@
       "hour": "2026-04-09 06",
       "weekStart": "2026-04-08",
       "messages": 50,
+      "hostMessages": 50,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.39,
       "byProject": {
         "Docker setup": 50
@@ -1211,8 +1323,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 8781,
       "inputTokens": 3259,
+      "outputTokens": 8781,
       "cacheCreate": 147950,
       "cacheRead": 1269633,
       "freshTokens": 159990
@@ -1221,6 +1333,8 @@
       "hour": "2026-04-09 08",
       "weekStart": "2026-04-08",
       "messages": 16,
+      "hostMessages": 16,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.12,
       "byProject": {
         "Docker setup": 16
@@ -1232,8 +1346,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 2729,
       "inputTokens": 51,
+      "outputTokens": 2729,
       "cacheCreate": 121381,
       "cacheRead": 302442,
       "freshTokens": 124161
@@ -1242,6 +1356,8 @@
       "hour": "2026-04-09 09",
       "weekStart": "2026-04-08",
       "messages": 207,
+      "hostMessages": 207,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.6,
       "byProject": {
         "App (web)": 207
@@ -1253,8 +1369,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 31705,
       "inputTokens": 464,
+      "outputTokens": 31705,
       "cacheCreate": 336826,
       "cacheRead": 8559602,
       "freshTokens": 368995
@@ -1263,6 +1379,8 @@
       "hour": "2026-04-09 10",
       "weekStart": "2026-04-08",
       "messages": 61,
+      "hostMessages": 61,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.47,
       "byProject": {
         "App (web)": 61
@@ -1274,8 +1392,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 9858,
       "inputTokens": 89,
+      "outputTokens": 9858,
       "cacheCreate": 23565,
       "cacheRead": 5043447,
       "freshTokens": 33512
@@ -1284,6 +1402,8 @@
       "hour": "2026-04-09 11",
       "weekStart": "2026-04-08",
       "messages": 121,
+      "hostMessages": 121,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.94,
       "byProject": {
         "App (web)": 121
@@ -1295,8 +1415,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 25060,
       "inputTokens": 173,
+      "outputTokens": 25060,
       "cacheCreate": 63274,
       "cacheRead": 13487359,
       "freshTokens": 88507
@@ -1305,6 +1425,8 @@
       "hour": "2026-04-09 12",
       "weekStart": "2026-04-08",
       "messages": 2,
+      "hostMessages": 2,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.02,
       "byProject": {
         "App (web)": 2
@@ -1316,8 +1438,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 172,
       "inputTokens": 4,
+      "outputTokens": 172,
       "cacheCreate": 442,
       "cacheRead": 279412,
       "freshTokens": 618
@@ -1326,6 +1448,8 @@
       "hour": "2026-04-09 13",
       "weekStart": "2026-04-08",
       "messages": 17,
+      "hostMessages": 17,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.13,
       "byProject": {
         "App (web)": 17
@@ -1337,8 +1461,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 1989,
       "inputTokens": 33,
+      "outputTokens": 1989,
       "cacheCreate": 132045,
       "cacheRead": 2274373,
       "freshTokens": 134067
@@ -1347,6 +1471,8 @@
       "hour": "2026-04-09 14",
       "weekStart": "2026-04-08",
       "messages": 74,
+      "hostMessages": 74,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.57,
       "byProject": {
         "App (web)": 74
@@ -1358,8 +1484,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 18844,
       "inputTokens": 7864,
+      "outputTokens": 18844,
       "cacheCreate": 545281,
       "cacheRead": 2080106,
       "freshTokens": 571989
@@ -1368,6 +1494,8 @@
       "hour": "2026-04-09 15",
       "weekStart": "2026-04-08",
       "messages": 237,
+      "hostMessages": 237,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.84,
       "byProject": {
         "Docker setup": 6,
@@ -1380,8 +1508,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 69994,
       "inputTokens": 2017,
+      "outputTokens": 69994,
       "cacheCreate": 480667,
       "cacheRead": 32098586,
       "freshTokens": 552678
@@ -1390,6 +1518,8 @@
       "hour": "2026-04-09 16",
       "weekStart": "2026-04-08",
       "messages": 97,
+      "hostMessages": 97,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.75,
       "byProject": {
         "Docker setup": 18,
@@ -1402,8 +1532,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 15394,
       "inputTokens": 159,
+      "outputTokens": 15394,
       "cacheCreate": 29656,
       "cacheRead": 19771865,
       "freshTokens": 45209
@@ -1412,6 +1542,8 @@
       "hour": "2026-04-09 17",
       "weekStart": "2026-04-08",
       "messages": 88,
+      "hostMessages": 88,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.68,
       "byProject": {
         "App (web)": 88
@@ -1423,8 +1555,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 10997,
       "inputTokens": 1332,
+      "outputTokens": 10997,
       "cacheCreate": 133556,
       "cacheRead": 12830296,
       "freshTokens": 145885
@@ -1433,6 +1565,8 @@
       "hour": "2026-04-09 19",
       "weekStart": "2026-04-08",
       "messages": 29,
+      "hostMessages": 29,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.22,
       "byProject": {
         "App (web)": 29
@@ -1444,8 +1578,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 11180,
       "inputTokens": 39,
+      "outputTokens": 11180,
       "cacheCreate": 271330,
       "cacheRead": 7579198,
       "freshTokens": 282549
@@ -1454,6 +1588,8 @@
       "hour": "2026-04-09 20",
       "weekStart": "2026-04-08",
       "messages": 17,
+      "hostMessages": 17,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.13,
       "byProject": {
         "App (web)": 17
@@ -1465,8 +1601,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 3381,
       "inputTokens": 27,
+      "outputTokens": 3381,
       "cacheCreate": 3914,
       "cacheRead": 4730145,
       "freshTokens": 7322
@@ -1475,6 +1611,8 @@
       "hour": "2026-04-09 21",
       "weekStart": "2026-04-08",
       "messages": 23,
+      "hostMessages": 23,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.18,
       "byProject": {
         "Docker setup": 4,
@@ -1487,8 +1625,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 4333,
       "inputTokens": 37,
+      "outputTokens": 4333,
       "cacheCreate": 314764,
       "cacheRead": 5254667,
       "freshTokens": 319134
@@ -1497,6 +1635,8 @@
       "hour": "2026-04-09 22",
       "weekStart": "2026-04-08",
       "messages": 0,
+      "hostMessages": 0,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 1,
@@ -1506,8 +1646,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 0,
       "inputTokens": 0,
+      "outputTokens": 0,
       "cacheCreate": 0,
       "cacheRead": 0,
       "freshTokens": 0
@@ -1516,6 +1656,8 @@
       "hour": "2026-04-10 07",
       "weekStart": "2026-04-08",
       "messages": 39,
+      "hostMessages": 39,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.3,
       "byProject": {
         "App (web)": 39
@@ -1527,8 +1669,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 15171,
       "inputTokens": 104,
+      "outputTokens": 15171,
       "cacheCreate": 377862,
       "cacheRead": 14395850,
       "freshTokens": 393137
@@ -1537,6 +1679,8 @@
       "hour": "2026-04-10 08",
       "weekStart": "2026-04-08",
       "messages": 89,
+      "hostMessages": 89,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.69,
       "byProject": {
         "App (web)": 89
@@ -1548,8 +1692,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 19801,
       "inputTokens": 412,
+      "outputTokens": 19801,
       "cacheCreate": 261153,
       "cacheRead": 13243589,
       "freshTokens": 281366
@@ -1558,6 +1702,8 @@
       "hour": "2026-04-10 09",
       "weekStart": "2026-04-08",
       "messages": 289,
+      "hostMessages": 289,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.24,
       "byProject": {
         "App (web)": 289
@@ -1569,8 +1715,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 133140,
       "inputTokens": 389,
+      "outputTokens": 133140,
       "cacheCreate": 235697,
       "cacheRead": 139089999,
       "freshTokens": 369226
@@ -1579,6 +1725,8 @@
       "hour": "2026-04-10 10",
       "weekStart": "2026-04-08",
       "messages": 110,
+      "hostMessages": 110,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.85,
       "byProject": {
         "App (web)": 110
@@ -1590,8 +1738,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 49359,
       "inputTokens": 175,
+      "outputTokens": 49359,
       "cacheCreate": 80579,
       "cacheRead": 63091312,
       "freshTokens": 130113
@@ -1600,6 +1748,8 @@
       "hour": "2026-04-10 11",
       "weekStart": "2026-04-08",
       "messages": 173,
+      "hostMessages": 173,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.34,
       "byProject": {
         "App (web)": 173
@@ -1611,8 +1761,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 94422,
       "inputTokens": 19038,
+      "outputTokens": 94422,
       "cacheCreate": 455553,
       "cacheRead": 36877823,
       "freshTokens": 569013
@@ -1621,6 +1771,8 @@
       "hour": "2026-04-10 12",
       "weekStart": "2026-04-08",
       "messages": 76,
+      "hostMessages": 76,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.59,
       "byProject": {
         "App (web)": 76
@@ -1632,8 +1784,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 61096,
       "inputTokens": 146,
+      "outputTokens": 61096,
       "cacheCreate": 114153,
       "cacheRead": 52318668,
       "freshTokens": 175395
@@ -1642,6 +1794,8 @@
       "hour": "2026-04-10 13",
       "weekStart": "2026-04-08",
       "messages": 158,
+      "hostMessages": 158,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.22,
       "byProject": {
         "App (web)": 158
@@ -1653,8 +1807,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 102565,
       "inputTokens": 318,
+      "outputTokens": 102565,
       "cacheCreate": 170914,
       "cacheRead": 124626709,
       "freshTokens": 273797
@@ -1663,6 +1817,8 @@
       "hour": "2026-04-10 14",
       "weekStart": "2026-04-08",
       "messages": 68,
+      "hostMessages": 68,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.53,
       "byProject": {
         "App (web)": 68
@@ -1674,8 +1830,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 47654,
       "inputTokens": 163,
+      "outputTokens": 47654,
       "cacheCreate": 51148,
       "cacheRead": 57307993,
       "freshTokens": 98965
@@ -1684,6 +1840,8 @@
       "hour": "2026-04-10 15",
       "weekStart": "2026-04-08",
       "messages": 103,
+      "hostMessages": 103,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.8,
       "byProject": {
         "App (web)": 103
@@ -1695,8 +1853,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 43318,
       "inputTokens": 343,
+      "outputTokens": 43318,
       "cacheCreate": 52379,
       "cacheRead": 90875561,
       "freshTokens": 96040
@@ -1705,6 +1863,8 @@
       "hour": "2026-04-10 16",
       "weekStart": "2026-04-08",
       "messages": 33,
+      "hostMessages": 33,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.26,
       "byProject": {
         "App (web)": 33
@@ -1716,8 +1876,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 21935,
       "inputTokens": 88,
+      "outputTokens": 21935,
       "cacheCreate": 25087,
       "cacheRead": 30016524,
       "freshTokens": 47110
@@ -1726,6 +1886,8 @@
       "hour": "2026-04-10 17",
       "weekStart": "2026-04-08",
       "messages": 68,
+      "hostMessages": 68,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.53,
       "byProject": {
         "App (web)": 68
@@ -1737,8 +1899,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 35528,
       "inputTokens": 173,
+      "outputTokens": 35528,
       "cacheCreate": 142648,
       "cacheRead": 2906044,
       "freshTokens": 178349
@@ -1747,6 +1909,8 @@
       "hour": "2026-04-10 18",
       "weekStart": "2026-04-08",
       "messages": 49,
+      "hostMessages": 49,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.38,
       "byProject": {
         "App (web)": 49
@@ -1758,8 +1922,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 25085,
       "inputTokens": 149,
+      "outputTokens": 25085,
       "cacheCreate": 31141,
       "cacheRead": 3364174,
       "freshTokens": 56375
@@ -1768,6 +1932,8 @@
       "hour": "2026-04-10 19",
       "weekStart": "2026-04-08",
       "messages": 75,
+      "hostMessages": 75,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.58,
       "byProject": {
         "App (web)": 75
@@ -1779,8 +1945,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 38778,
       "inputTokens": 160,
+      "outputTokens": 38778,
       "cacheCreate": 309090,
       "cacheRead": 6858134,
       "freshTokens": 348028
@@ -1789,6 +1955,8 @@
       "hour": "2026-04-10 20",
       "weekStart": "2026-04-08",
       "messages": 54,
+      "hostMessages": 54,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.42,
       "byProject": {
         "App (web)": 54
@@ -1800,8 +1968,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 42547,
       "inputTokens": 144,
+      "outputTokens": 42547,
       "cacheCreate": 55012,
       "cacheRead": 6541353,
       "freshTokens": 97703
@@ -1810,6 +1978,8 @@
       "hour": "2026-04-10 21",
       "weekStart": "2026-04-08",
       "messages": 0,
+      "hostMessages": 0,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 10,
@@ -1819,8 +1989,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 0,
       "inputTokens": 0,
+      "outputTokens": 0,
       "cacheCreate": 0,
       "cacheRead": 0,
       "freshTokens": 0
@@ -1829,6 +1999,8 @@
       "hour": "2026-04-10 22",
       "weekStart": "2026-04-08",
       "messages": 9,
+      "hostMessages": 9,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.07,
       "byProject": {
         "App (web)": 9
@@ -1840,8 +2012,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 20977,
       "inputTokens": 29,
+      "outputTokens": 20977,
       "cacheCreate": 273568,
       "cacheRead": 1049041,
       "freshTokens": 294574
@@ -1850,6 +2022,8 @@
       "hour": "2026-04-11 08",
       "weekStart": "2026-04-08",
       "messages": 15,
+      "hostMessages": 15,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.12,
       "byProject": {
         "App (web)": 15
@@ -1861,8 +2035,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 8677,
       "inputTokens": 40,
+      "outputTokens": 8677,
       "cacheCreate": 440771,
       "cacheRead": 1995615,
       "freshTokens": 449488
@@ -1871,6 +2045,8 @@
       "hour": "2026-04-11 09",
       "weekStart": "2026-04-08",
       "messages": 0,
+      "hostMessages": 0,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 4,
@@ -1880,8 +2056,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 0,
       "inputTokens": 0,
+      "outputTokens": 0,
       "cacheCreate": 0,
       "cacheRead": 0,
       "freshTokens": 0
@@ -1890,6 +2066,8 @@
       "hour": "2026-04-11 11",
       "weekStart": "2026-04-08",
       "messages": 50,
+      "hostMessages": 50,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.39,
       "byProject": {
         "App (web)": 50
@@ -1901,8 +2079,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 61670,
       "inputTokens": 871,
+      "outputTokens": 61670,
       "cacheCreate": 545254,
       "cacheRead": 3515839,
       "freshTokens": 607795
@@ -1911,6 +2089,8 @@
       "hour": "2026-04-11 14",
       "weekStart": "2026-04-08",
       "messages": 179,
+      "hostMessages": 179,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.39,
       "byProject": {
         "App (game-host)": 3,
@@ -1923,8 +2103,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 292442,
       "inputTokens": 314,
+      "outputTokens": 292442,
       "cacheCreate": 1149988,
       "cacheRead": 56005959,
       "freshTokens": 1442744
@@ -1933,6 +2113,8 @@
       "hour": "2026-04-11 15",
       "weekStart": "2026-04-08",
       "messages": 133,
+      "hostMessages": 133,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.03,
       "byProject": {
         "App (web)": 133
@@ -1944,8 +2126,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 197487,
       "inputTokens": 208,
+      "outputTokens": 197487,
       "cacheCreate": 281467,
       "cacheRead": 59808888,
       "freshTokens": 479162
@@ -1954,6 +2136,8 @@
       "hour": "2026-04-11 16",
       "weekStart": "2026-04-08",
       "messages": 21,
+      "hostMessages": 21,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.16,
       "byProject": {
         "App (web)": 21
@@ -1965,8 +2149,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 18036,
       "inputTokens": 36,
+      "outputTokens": 18036,
       "cacheCreate": 26935,
       "cacheRead": 10665474,
       "freshTokens": 45007
@@ -1975,6 +2159,8 @@
       "hour": "2026-04-11 17",
       "weekStart": "2026-04-08",
       "messages": 223,
+      "hostMessages": 223,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.73,
       "byProject": {
         "App (web)": 223
@@ -1986,8 +2172,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 286314,
       "inputTokens": 849,
+      "outputTokens": 286314,
       "cacheCreate": 546071,
       "cacheRead": 111023141,
       "freshTokens": 833234
@@ -1996,6 +2182,8 @@
       "hour": "2026-04-11 18",
       "weekStart": "2026-04-08",
       "messages": 166,
+      "hostMessages": 166,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.29,
       "byProject": {
         "App (web)": 166
@@ -2007,8 +2195,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 141059,
       "inputTokens": 236,
+      "outputTokens": 141059,
       "cacheCreate": 150036,
       "cacheRead": 117748994,
       "freshTokens": 291331
@@ -2017,6 +2205,8 @@
       "hour": "2026-04-11 19",
       "weekStart": "2026-04-08",
       "messages": 184,
+      "hostMessages": 184,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.43,
       "byProject": {
         "App (web)": 184
@@ -2028,8 +2218,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 141058,
       "inputTokens": 239,
+      "outputTokens": 141058,
       "cacheCreate": 211785,
       "cacheRead": 150836391,
       "freshTokens": 353082
@@ -2038,6 +2228,8 @@
       "hour": "2026-04-11 20",
       "weekStart": "2026-04-08",
       "messages": 283,
+      "hostMessages": 283,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.19,
       "byProject": {
         "App (web)": 283
@@ -2049,8 +2241,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 222323,
       "inputTokens": 398,
+      "outputTokens": 222323,
       "cacheCreate": 520425,
       "cacheRead": 169503708,
       "freshTokens": 743146
@@ -2059,6 +2251,8 @@
       "hour": "2026-04-11 21",
       "weekStart": "2026-04-08",
       "messages": 167,
+      "hostMessages": 167,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.29,
       "byProject": {
         "App (web)": 167
@@ -2070,8 +2264,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 106184,
       "inputTokens": 282,
+      "outputTokens": 106184,
       "cacheCreate": 168557,
       "cacheRead": 29846041,
       "freshTokens": 275023
@@ -2080,6 +2274,8 @@
       "hour": "2026-04-11 22",
       "weekStart": "2026-04-08",
       "messages": 54,
+      "hostMessages": 54,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.42,
       "byProject": {
         "App (web)": 54
@@ -2091,8 +2287,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 2,
       "efficiencyCycles": 0,
-      "outputTokens": 21744,
       "inputTokens": 60,
+      "outputTokens": 21744,
       "cacheCreate": 193481,
       "cacheRead": 9760336,
       "freshTokens": 215285
@@ -2101,6 +2297,8 @@
       "hour": "2026-04-11 23",
       "weekStart": "2026-04-08",
       "messages": 0,
+      "hostMessages": 0,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 12,
@@ -2110,8 +2308,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 7,
       "efficiencyCycles": 0,
-      "outputTokens": 0,
       "inputTokens": 0,
+      "outputTokens": 0,
       "cacheCreate": 0,
       "cacheRead": 0,
       "freshTokens": 0
@@ -2120,6 +2318,8 @@
       "hour": "2026-04-12 02",
       "weekStart": "2026-04-08",
       "messages": 17,
+      "hostMessages": 17,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.13,
       "byProject": {
         "App (web)": 17
@@ -2131,8 +2331,8 @@
       "ticketsDone": 1,
       "ticketsMoved": 4,
       "efficiencyCycles": 0,
-      "outputTokens": 1507,
       "inputTokens": 84,
+      "outputTokens": 1507,
       "cacheCreate": 261465,
       "cacheRead": 293938,
       "freshTokens": 263056
@@ -2141,6 +2341,8 @@
       "hour": "2026-04-12 03",
       "weekStart": "2026-04-08",
       "messages": 59,
+      "hostMessages": 59,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.46,
       "byProject": {
         "App (web)": 59
@@ -2152,8 +2354,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 37004,
       "inputTokens": 76,
+      "outputTokens": 37004,
       "cacheCreate": 121600,
       "cacheRead": 11823102,
       "freshTokens": 158680
@@ -2162,6 +2364,8 @@
       "hour": "2026-04-12 07",
       "weekStart": "2026-04-08",
       "messages": 163,
+      "hostMessages": 163,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.26,
       "byProject": {
         "App (web)": 163
@@ -2173,8 +2377,8 @@
       "ticketsDone": 1,
       "ticketsMoved": 4,
       "efficiencyCycles": 0,
-      "outputTokens": 72371,
       "inputTokens": 185,
+      "outputTokens": 72371,
       "cacheCreate": 312494,
       "cacheRead": 41094617,
       "freshTokens": 385050
@@ -2183,6 +2387,8 @@
       "hour": "2026-04-12 08",
       "weekStart": "2026-04-08",
       "messages": 2,
+      "hostMessages": 2,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.02,
       "byProject": {
         "App (web)": 2
@@ -2194,8 +2400,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 330,
       "inputTokens": 2,
+      "outputTokens": 330,
       "cacheCreate": 490,
       "cacheRead": 573124,
       "freshTokens": 822
@@ -2204,6 +2410,8 @@
       "hour": "2026-04-12 12",
       "weekStart": "2026-04-08",
       "messages": 9,
+      "hostMessages": 9,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.07,
       "byProject": {
         "App (web)": 9
@@ -2215,8 +2423,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 4907,
       "inputTokens": 19,
+      "outputTokens": 4907,
       "cacheCreate": 279925,
       "cacheRead": 2320644,
       "freshTokens": 284851
@@ -2225,6 +2433,8 @@
       "hour": "2026-04-12 13",
       "weekStart": "2026-04-08",
       "messages": 82,
+      "hostMessages": 82,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.64,
       "byProject": {
         "App (web)": 82
@@ -2236,8 +2446,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 12,
       "efficiencyCycles": 0,
-      "outputTokens": 22932,
       "inputTokens": 121,
+      "outputTokens": 22932,
       "cacheCreate": 71315,
       "cacheRead": 22305319,
       "freshTokens": 94368
@@ -2246,6 +2456,8 @@
       "hour": "2026-04-12 14",
       "weekStart": "2026-04-08",
       "messages": 32,
+      "hostMessages": 32,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.25,
       "byProject": {
         "App (web)": 32
@@ -2257,8 +2469,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 8073,
       "inputTokens": 38,
+      "outputTokens": 8073,
       "cacheCreate": 320087,
       "cacheRead": 10000635,
       "freshTokens": 328198
@@ -2267,6 +2479,8 @@
       "hour": "2026-04-12 15",
       "weekStart": "2026-04-08",
       "messages": 46,
+      "hostMessages": 46,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.36,
       "byProject": {
         "App (web)": 46
@@ -2278,8 +2492,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 23686,
       "inputTokens": 66,
+      "outputTokens": 23686,
       "cacheCreate": 26230,
       "cacheRead": 15381502,
       "freshTokens": 49982
@@ -2288,6 +2502,8 @@
       "hour": "2026-04-12 16",
       "weekStart": "2026-04-08",
       "messages": 0,
+      "hostMessages": 0,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0,
       "byProject": {},
       "commits": 1,
@@ -2297,8 +2513,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 0,
       "inputTokens": 0,
+      "outputTokens": 0,
       "cacheCreate": 0,
       "cacheRead": 0,
       "freshTokens": 0
@@ -2307,6 +2523,8 @@
       "hour": "2026-04-13 09",
       "weekStart": "2026-04-08",
       "messages": 74,
+      "hostMessages": 74,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.57,
       "byProject": {
         "App (web)": 74
@@ -2318,8 +2536,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 20776,
       "inputTokens": 142,
+      "outputTokens": 20776,
       "cacheCreate": 214979,
       "cacheRead": 1943183,
       "freshTokens": 235897
@@ -2328,6 +2546,8 @@
       "hour": "2026-04-13 11",
       "weekStart": "2026-04-08",
       "messages": 184,
+      "hostMessages": 184,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.43,
       "byProject": {
         "App (web)": 184
@@ -2339,8 +2559,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 46987,
       "inputTokens": 6552,
+      "outputTokens": 46987,
       "cacheCreate": 995676,
       "cacheRead": 7805120,
       "freshTokens": 1049215
@@ -2349,6 +2569,8 @@
       "hour": "2026-04-13 12",
       "weekStart": "2026-04-08",
       "messages": 277,
+      "hostMessages": 277,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 2.15,
       "byProject": {
         "App (web)": 277
@@ -2360,8 +2582,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0,
-      "outputTokens": 107528,
       "inputTokens": 375,
+      "outputTokens": 107528,
       "cacheCreate": 252288,
       "cacheRead": 45508051,
       "freshTokens": 360191
@@ -2369,10 +2591,13 @@
     {
       "hour": "2026-04-13 13",
       "weekStart": "2026-04-08",
-      "messages": 224,
-      "pctOfWeeklyBudget": 1.74,
+      "messages": 334,
+      "hostMessages": 224,
+      "arcMessages": 110,
+      "pctOfWeeklyBudget": 2.59,
       "byProject": {
-        "App (web)": 224
+        "App (web)": 224,
+        "Arc (container)": 110
       },
       "commits": 0,
       "insertions": 0,
@@ -2381,19 +2606,22 @@
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 1,
-      "outputTokens": 91026,
       "inputTokens": 260,
+      "outputTokens": 91026,
       "cacheCreate": 195367,
       "cacheRead": 61179538,
-      "freshTokens": 286653
+      "freshTokens": 4049335
     },
     {
       "hour": "2026-04-13 14",
       "weekStart": "2026-04-08",
-      "messages": 248,
-      "pctOfWeeklyBudget": 1.92,
+      "messages": 355,
+      "hostMessages": 248,
+      "arcMessages": 107,
+      "pctOfWeeklyBudget": 2.75,
       "byProject": {
-        "App (web)": 248
+        "App (web)": 248,
+        "Arc (container)": 107
       },
       "commits": 0,
       "insertions": 0,
@@ -2402,19 +2630,22 @@
       "ticketsDone": 0,
       "ticketsMoved": 7,
       "efficiencyCycles": 2,
-      "outputTokens": 79992,
       "inputTokens": 302,
+      "outputTokens": 79992,
       "cacheCreate": 120300,
       "cacheRead": 89138031,
-      "freshTokens": 200594
+      "freshTokens": 4988324
     },
     {
       "hour": "2026-04-13 15",
       "weekStart": "2026-04-08",
-      "messages": 215,
-      "pctOfWeeklyBudget": 1.67,
+      "messages": 325,
+      "hostMessages": 215,
+      "arcMessages": 110,
+      "pctOfWeeklyBudget": 2.52,
       "byProject": {
-        "App (web)": 215
+        "App (web)": 215,
+        "Arc (container)": 110
       },
       "commits": 5,
       "insertions": 2700,
@@ -2423,16 +2654,18 @@
       "ticketsDone": 0,
       "ticketsMoved": 5,
       "efficiencyCycles": 2,
-      "outputTokens": 57958,
       "inputTokens": 265,
+      "outputTokens": 57958,
       "cacheCreate": 96817,
       "cacheRead": 90918536,
-      "freshTokens": 155040
+      "freshTokens": 3917722
     },
     {
       "hour": "2026-04-13 16",
       "weekStart": "2026-04-08",
       "messages": 19,
+      "hostMessages": 19,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.15,
       "byProject": {
         "App (web)": 19
@@ -2444,8 +2677,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 5,
       "efficiencyCycles": 0,
-      "outputTokens": 3835,
       "inputTokens": 19,
+      "outputTokens": 3835,
       "cacheCreate": 8327,
       "cacheRead": 8756424,
       "freshTokens": 12181
@@ -2454,6 +2687,8 @@
       "hour": "2026-04-13 17",
       "weekStart": "2026-04-08",
       "messages": 3,
+      "hostMessages": 3,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 0.02,
       "byProject": {
         "App (web)": 3
@@ -2465,8 +2700,8 @@
       "ticketsDone": 1,
       "ticketsMoved": 9,
       "efficiencyCycles": 0,
-      "outputTokens": 1598,
       "inputTokens": 3,
+      "outputTokens": 1598,
       "cacheCreate": 1715,
       "cacheRead": 1391058,
       "freshTokens": 3316
@@ -2474,9 +2709,13 @@
     {
       "hour": "2026-04-13 18",
       "weekStart": "2026-04-08",
-      "messages": 0,
-      "pctOfWeeklyBudget": 0,
-      "byProject": {},
+      "messages": 79,
+      "hostMessages": 0,
+      "arcMessages": 79,
+      "pctOfWeeklyBudget": 0.61,
+      "byProject": {
+        "Arc (container)": 79
+      },
       "commits": 0,
       "insertions": 0,
       "deletions": 0,
@@ -2484,19 +2723,22 @@
       "ticketsDone": 0,
       "ticketsMoved": 25,
       "efficiencyCycles": 1,
-      "outputTokens": 0,
       "inputTokens": 0,
+      "outputTokens": 0,
       "cacheCreate": 0,
       "cacheRead": 0,
-      "freshTokens": 0
+      "freshTokens": 3740538
     },
     {
       "hour": "2026-04-13 19",
       "weekStart": "2026-04-08",
-      "messages": 12,
-      "pctOfWeeklyBudget": 0.09,
+      "messages": 634,
+      "hostMessages": 12,
+      "arcMessages": 622,
+      "pctOfWeeklyBudget": 4.91,
       "byProject": {
-        "App (web)": 12
+        "App (web)": 12,
+        "Arc (container)": 622
       },
       "commits": 1,
       "insertions": 264,
@@ -2505,16 +2747,18 @@
       "ticketsDone": 0,
       "ticketsMoved": 7,
       "efficiencyCycles": 6,
-      "outputTokens": 5036,
       "inputTokens": 22,
+      "outputTokens": 5036,
       "cacheCreate": 1178365,
       "cacheRead": 6084799,
-      "freshTokens": 1183423
+      "freshTokens": 40862552
     },
     {
       "hour": "2026-04-13 20",
       "weekStart": "2026-04-08",
       "messages": 188,
+      "hostMessages": 188,
+      "arcMessages": 0,
       "pctOfWeeklyBudget": 1.46,
       "byProject": {
         "App (web)": 188
@@ -2526,8 +2770,8 @@
       "ticketsDone": 0,
       "ticketsMoved": 10,
       "efficiencyCycles": 0,
-      "outputTokens": 130322,
       "inputTokens": 328,
+      "outputTokens": 130322,
       "cacheCreate": 149657,
       "cacheRead": 121900073,
       "freshTokens": 280307
@@ -2535,10 +2779,13 @@
     {
       "hour": "2026-04-13 21",
       "weekStart": "2026-04-08",
-      "messages": 154,
-      "pctOfWeeklyBudget": 1.19,
+      "messages": 333,
+      "hostMessages": 156,
+      "arcMessages": 177,
+      "pctOfWeeklyBudget": 2.58,
       "byProject": {
-        "App (web)": 154
+        "App (web)": 156,
+        "Arc (container)": 177
       },
       "commits": 10,
       "insertions": 690,
@@ -2547,18 +2794,22 @@
       "ticketsDone": 4,
       "ticketsMoved": 17,
       "efficiencyCycles": 1,
-      "outputTokens": 107115,
-      "inputTokens": 274,
-      "cacheCreate": 121287,
-      "cacheRead": 113502721,
-      "freshTokens": 228676
+      "inputTokens": 276,
+      "outputTokens": 108049,
+      "cacheCreate": 122804,
+      "cacheRead": 115056585,
+      "freshTokens": 12546980
     },
     {
       "hour": "2026-04-13 22",
       "weekStart": "2026-04-08",
-      "messages": 0,
-      "pctOfWeeklyBudget": 0,
-      "byProject": {},
+      "messages": 299,
+      "hostMessages": 0,
+      "arcMessages": 299,
+      "pctOfWeeklyBudget": 2.32,
+      "byProject": {
+        "Arc (container)": 299
+      },
       "commits": 0,
       "insertions": 0,
       "deletions": 0,
@@ -2566,18 +2817,22 @@
       "ticketsDone": 1,
       "ticketsMoved": 7,
       "efficiencyCycles": 2,
-      "outputTokens": 0,
       "inputTokens": 0,
+      "outputTokens": 0,
       "cacheCreate": 0,
       "cacheRead": 0,
-      "freshTokens": 0
+      "freshTokens": 20013919
     },
     {
       "hour": "2026-04-13 23",
       "weekStart": "2026-04-08",
-      "messages": 0,
-      "pctOfWeeklyBudget": 0,
-      "byProject": {},
+      "messages": 530,
+      "hostMessages": 0,
+      "arcMessages": 530,
+      "pctOfWeeklyBudget": 4.11,
+      "byProject": {
+        "Arc (container)": 530
+      },
       "commits": 0,
       "insertions": 0,
       "deletions": 0,
@@ -2585,30 +2840,80 @@
       "ticketsDone": 0,
       "ticketsMoved": 9,
       "efficiencyCycles": 3,
-      "outputTokens": 0,
       "inputTokens": 0,
+      "outputTokens": 0,
       "cacheCreate": 0,
       "cacheRead": 0,
-      "freshTokens": 0
+      "freshTokens": 62525528
     },
     {
       "hour": "2026-04-14 00",
       "weekStart": "2026-04-08",
-      "messages": 0,
-      "pctOfWeeklyBudget": 0,
-      "byProject": {},
+      "messages": 222,
+      "hostMessages": 0,
+      "arcMessages": 222,
+      "pctOfWeeklyBudget": 1.72,
+      "byProject": {
+        "Arc (container)": 222
+      },
       "commits": 0,
       "insertions": 0,
       "deletions": 0,
       "churn": 0,
       "ticketsDone": 4,
       "ticketsMoved": 7,
-      "efficiencyCycles": 1,
-      "outputTokens": 0,
+      "efficiencyCycles": 2,
       "inputTokens": 0,
+      "outputTokens": 0,
       "cacheCreate": 0,
       "cacheRead": 0,
-      "freshTokens": 0
+      "freshTokens": 17850446
+    },
+    {
+      "hour": "2026-04-14 09",
+      "weekStart": "2026-04-08",
+      "messages": 3,
+      "hostMessages": 3,
+      "arcMessages": 0,
+      "pctOfWeeklyBudget": 0.02,
+      "byProject": {
+        "App (web)": 3
+      },
+      "commits": 1,
+      "insertions": 30,
+      "deletions": 11,
+      "churn": 41,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0,
+      "inputTokens": 13,
+      "outputTokens": 2833,
+      "cacheCreate": 763161,
+      "cacheRead": 1574778,
+      "freshTokens": 766007
+    },
+    {
+      "hour": "2026-04-14 10",
+      "weekStart": "2026-04-08",
+      "messages": 25,
+      "hostMessages": 25,
+      "arcMessages": 0,
+      "pctOfWeeklyBudget": 0.19,
+      "byProject": {
+        "App (web)": 25
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0,
+      "inputTokens": 55,
+      "outputTokens": 21001,
+      "cacheCreate": 25651,
+      "cacheRead": 19631411,
+      "freshTokens": 46707
     }
   ],
   "weeks": [
@@ -2642,17 +2947,17 @@
     },
     {
       "weekStart": "2026-04-08",
-      "messages": 9095,
-      "pctOfWeeklyBudget": 71,
-      "commits": 235,
-      "insertions": 43774,
-      "deletions": 5256,
-      "churn": 49030,
+      "messages": 11381,
+      "pctOfWeeklyBudget": 88,
+      "commits": 236,
+      "insertions": 43804,
+      "deletions": 5267,
+      "churn": 49071,
       "ticketsDone": 12,
-      "outputTokens": 3878504,
-      "freshTokens": 27141633,
-      "msgPerCommit": 39,
-      "msgPerTicket": 758
+      "outputTokens": 3903272,
+      "freshTokens": 196395305,
+      "msgPerCommit": 48,
+      "msgPerTicket": 948
     }
   ]
 }

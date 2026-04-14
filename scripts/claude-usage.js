@@ -330,8 +330,18 @@ try {
   // tickets.json unavailable
 }
 
-// Arc's efficiency metrics per hour (if available)
-const efficiencyByHour = new Map(); // hourKey → { cycles, tickets_moved, agents_spawned }
+// Arc's efficiency metrics per hour (if available).
+// Arc writes tickets/efficiency_metrics.ndjson with per-cycle data.
+// Tolerant field reading: accepts multiple naming conventions for tokens
+// (input_tokens/inputTokens, output_tokens/outputTokens, etc.)
+function pick(obj, ...keys) {
+  for (const k of keys) {
+    if (obj[k] != null) return obj[k];
+  }
+  return 0;
+}
+
+const efficiencyByHour = new Map(); // hourKey → { cycles, tickets_moved, agents_spawned, arcMessages, arcInput, arcOutput, arcCacheCreate, arcCacheRead }
 try {
   const CHRONICLES_DIR = resolve(process.env.CHRONICLES_DIR || "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis");
   const content = readFileSync(join(CHRONICLES_DIR, "tickets/efficiency_metrics.ndjson"), "utf-8");
@@ -340,11 +350,23 @@ try {
     try {
       const m = JSON.parse(line);
       const hk = hourBucketFor(Date.parse(m.timestamp));
-      if (!efficiencyByHour.has(hk)) efficiencyByHour.set(hk, { cycles: 0, tickets_moved: 0, agents_spawned: 0 });
+      if (!efficiencyByHour.has(hk)) efficiencyByHour.set(hk, {
+        cycles: 0, tickets_moved: 0, agents_spawned: 0,
+        arcMessages: 0, arcInput: 0, arcOutput: 0, arcCacheCreate: 0, arcCacheRead: 0,
+        arcTotalTokens: 0,
+      });
       const b = efficiencyByHour.get(hk);
       b.cycles++;
-      b.tickets_moved += m.tickets_moved || 0;
-      b.agents_spawned += (m.agents_spawned || 0) + (m.subagents_spawned || 0);
+      b.tickets_moved += pick(m, "tickets_moved", "ticketsMoved");
+      b.agents_spawned += pick(m, "agents_spawned", "agentsSpawned")
+                        + pick(m, "subagents_spawned", "subagentsSpawned");
+      // Token fields — Arc may write either single total or split breakdown
+      b.arcMessages    += pick(m, "messages", "messageCount", "message_count");
+      b.arcInput       += pick(m, "input_tokens", "inputTokens");
+      b.arcOutput      += pick(m, "output_tokens", "outputTokens");
+      b.arcCacheCreate += pick(m, "cache_creation_input_tokens", "cacheCreationInputTokens", "cache_create_tokens", "cacheCreateTokens");
+      b.arcCacheRead   += pick(m, "cache_read_input_tokens", "cacheReadInputTokens", "cache_read_tokens", "cacheReadTokens");
+      b.arcTotalTokens += pick(m, "tokens", "totalTokens", "total_tokens");
     } catch {}
   }
 } catch {
@@ -365,12 +387,32 @@ const hours = allHourKeys.map((hk) => {
   for (const [k, v] of b.byProject) byProject[k] = v;
   const git = gitByHour.get(hk) ?? { commits: 0, insertions: 0, deletions: 0 };
   const tix = ticketsByHour.get(hk) ?? { done: 0, moved: 0 };
-  const eff = efficiencyByHour.get(hk) ?? { cycles: 0, tickets_moved: 0, agents_spawned: 0 };
+  const eff = efficiencyByHour.get(hk) ?? {
+    cycles: 0, tickets_moved: 0, agents_spawned: 0,
+    arcMessages: 0, arcInput: 0, arcOutput: 0, arcCacheCreate: 0, arcCacheRead: 0,
+    arcTotalTokens: 0,
+  };
+  // Tag Arc's project bucket if he contributed here
+  if (eff.arcMessages > 0) byProject["Arc (container)"] = (byProject["Arc (container)"] ?? 0) + eff.arcMessages;
+  // If Arc only provided the total, use it as the "fresh tokens" fallback.
+  // When Arc provides the split, the total field may still be present — prefer the split.
+  const arcHasSplit = eff.arcInput + eff.arcOutput + eff.arcCacheCreate + eff.arcCacheRead > 0;
+  const arcFresh = arcHasSplit
+    ? (eff.arcInput + eff.arcOutput + eff.arcCacheCreate)
+    : eff.arcTotalTokens;
+  // Merged totals = host-side + Arc
+  const mergedMessages = b.total + eff.arcMessages;
+  const mergedInput    = b.inputTokens + eff.arcInput;
+  const mergedOutput   = b.outputTokens + eff.arcOutput;
+  const mergedCreate   = b.cacheCreate + eff.arcCacheCreate;
+  const mergedRead     = b.cacheRead + eff.arcCacheRead;
   return {
     hour: hk,
     weekStart: b.weekKey,
-    messages: b.total,
-    pctOfWeeklyBudget: Math.round((b.total / WEEKLY_BUDGET_MESSAGES) * 100 * 100) / 100,
+    messages: mergedMessages,
+    hostMessages: b.total,
+    arcMessages: eff.arcMessages,
+    pctOfWeeklyBudget: Math.round((mergedMessages / WEEKLY_BUDGET_MESSAGES) * 100 * 100) / 100,
     byProject,
     commits: git.commits,
     insertions: git.insertions,
@@ -379,12 +421,11 @@ const hours = allHourKeys.map((hk) => {
     ticketsDone: tix.done,
     ticketsMoved: tix.moved,
     efficiencyCycles: eff.cycles,
-    outputTokens: b.outputTokens,
-    inputTokens: b.inputTokens,
-    cacheCreate: b.cacheCreate,
-    cacheRead: b.cacheRead,
-    // "Fresh" tokens = what costs the plan (excludes cached reads)
-    freshTokens: b.inputTokens + b.outputTokens + b.cacheCreate,
+    inputTokens: mergedInput,
+    outputTokens: mergedOutput,
+    cacheCreate: mergedCreate,
+    cacheRead: mergedRead,
+    freshTokens: (mergedInput + mergedOutput + mergedCreate) + (arcHasSplit ? 0 : arcFresh),
   };
 });
 

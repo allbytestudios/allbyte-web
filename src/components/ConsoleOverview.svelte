@@ -355,54 +355,8 @@
           </div>
         </div>
       {/each}
-      <div class="chart-weeks-grid">
-        {#each usageHistory.weeks as w}
-          <div class="chart-week-card">
-            <div class="chart-week-header">
-              <span class="chart-week-label">Week of {w.weekStart.slice(5)}</span>
-              <span class="chart-week-pct" class:chart-week-over={w.pctOfWeeklyBudget > 100}>{w.pctOfWeeklyBudget}%</span>
-            </div>
-            <div class="chart-week-stats">
-              <div class="stat-row">
-                <span class="stat-k">Messages</span>
-                <span class="stat-v">{w.messages.toLocaleString()}</span>
-              </div>
-              {#if w.commits > 0}
-                <div class="stat-row">
-                  <span class="stat-k">Commits</span>
-                  <span class="stat-v">{w.commits}</span>
-                </div>
-              {/if}
-              {#if w.churn > 0}
-                <div class="stat-row">
-                  <span class="stat-k">LOC changed</span>
-                  <span class="stat-v">+{w.insertions.toLocaleString()} / −{w.deletions.toLocaleString()}</span>
-                </div>
-              {/if}
-              {#if w.ticketsDone > 0}
-                <div class="stat-row">
-                  <span class="stat-k">Tickets done</span>
-                  <span class="stat-v">{w.ticketsDone}</span>
-                </div>
-              {/if}
-              {#if w.msgPerCommit != null}
-                <div class="stat-row stat-eff">
-                  <span class="stat-k">msg / commit</span>
-                  <span class="stat-v">{w.msgPerCommit}</span>
-                </div>
-              {/if}
-              {#if w.msgPerTicket != null}
-                <div class="stat-row stat-eff">
-                  <span class="stat-k">msg / ticket</span>
-                  <span class="stat-v">{w.msgPerTicket}</span>
-                </div>
-              {/if}
-            </div>
-          </div>
-        {/each}
-      </div>
       <div class="chart-legend">
-        <span>Each bar = one hour, height = % of weekly budget ({usageHistory.weeklyBudget} msg). {usageHistory.hours.length} active hours across {usageHistory.weeks.length} weeks. Lower msg/commit = more efficient.</span>
+        <span>{usageHistory.hours.length} active hours across {usageHistory.weeks.length} weeks. Hover a bar for the hour's count.</span>
       </div>
     </div>
   {/if}
@@ -697,52 +651,6 @@
     height: 100%;
     margin: 0 3px;
   }
-  .chart-weeks-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0.5rem;
-    padding-top: 0.75rem;
-  }
-  .chart-week-card {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-    padding: 0.5rem 0.6rem;
-  }
-  .chart-week-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 0.3rem;
-    padding-bottom: 0.25rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-  .chart-week-label {
-    font-size: 0.72rem;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .chart-week-pct {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #60a5fa;
-  }
-  .chart-week-pct.chart-week-over { color: #f87171; }
-  .chart-week-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-  }
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.72rem;
-  }
-  .stat-k { color: #6b7280; }
-  .stat-v { color: #d1d5db; font-weight: 600; }
-  .stat-eff { padding-top: 0.2rem; margin-top: 0.15rem; border-top: 1px dashed rgba(255, 255, 255, 0.06); }
-  .stat-eff .stat-v { color: #a7f3d0; }
   .chart-legend {
     margin-top: 0.4rem;
     font-size: 0.7rem;

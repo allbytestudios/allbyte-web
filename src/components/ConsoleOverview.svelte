@@ -286,6 +286,7 @@
         {:else}
           on pace
         {/if}
+        <span class="usage-budget-hint">· budget {usageData.usage.budgetMessages.toLocaleString()} msg (Max plan)</span>
       </div>
     </div>
   {/if}
@@ -336,7 +337,7 @@
         </div>
       {/each}
       <div class="chart-legend">
-        <span>{usageHistory.hours.length} active hours across {usageHistory.weeks.length} weeks. Hover a bar for the hour's count.</span>
+        <span>Each series scaled to its own peak. {usageHistory.hours.length} active hours across {usageHistory.weeks.length} weeks. Bars show raw counts (not % of budget — weekly limits have varied with plan changes).</span>
       </div>
     </div>
   {/if}
@@ -556,6 +557,13 @@
   }
   .usage-note.usage-ahead { color: #fbbf24; }
   .usage-note.usage-behind { color: #a7f3d0; }
+  .usage-budget-hint {
+    color: #4b5563;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    margin-left: 0.5rem;
+  }
 
   /* Historical chart */
   .history-chart {

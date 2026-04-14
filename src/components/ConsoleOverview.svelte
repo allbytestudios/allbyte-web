@@ -31,7 +31,7 @@
     { key: "ticketsDone",  label: "Tickets Done",  color: "#c084fc", field: "ticketsDone" },
   ];
   let activeSeries = $state<Set<SeriesKey>>(new Set(["messages", "outputTokens", "commits", "ticketsDone"]));
-  let maWindow = $state<number>(7); // hours in moving-average window
+  let maWindow = $state<number>(24); // hours in moving-average window
   function toggleSeries(k: SeriesKey) {
     const s = new Set(activeSeries);
     if (s.has(k)) s.delete(k);
@@ -338,10 +338,12 @@
         <span class="ma-window-ctrl">
           Trend:
           <select bind:value={maWindow} class="ma-window-select">
-            <option value={3}>3h</option>
             <option value={7}>7h</option>
             <option value={12}>12h</option>
             <option value={24}>24h</option>
+            <option value={48}>48h</option>
+            <option value={72}>3d</option>
+            <option value={168}>1w</option>
           </select>
         </span>
       </div>
@@ -375,10 +377,12 @@
               <polyline
                 points={mavgPoints(values, maxVal, maWindow)}
                 stroke={s.color}
-                stroke-width="1.5"
+                stroke-width="2.5"
+                stroke-linejoin="round"
+                stroke-linecap="round"
                 vector-effect="non-scaling-stroke"
                 fill="none"
-                opacity="0.95"
+                opacity="1"
               />
             </svg>
           </div>
@@ -725,9 +729,10 @@
     width: 100%;
     background: linear-gradient(180deg, #60a5fa, #3b82f6);
     min-height: 1px;
+    opacity: 0.35;
     transition: opacity 0.15s;
   }
-  .hour-bar-wrap:hover .hour-bar { opacity: 0.5; background: #fbbf24; }
+  .hour-bar-wrap:hover .hour-bar { opacity: 1; background: #fbbf24; }
   .week-divider {
     flex: 0 0 1px;
     background: rgba(167, 243, 208, 0.25);

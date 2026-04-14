@@ -11,6 +11,7 @@
 import { readdirSync, readFileSync, writeFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { homedir } from "node:os";
+import { execSync } from "node:child_process";
 
 const CLAUDE_PROJECTS = join(homedir(), ".claude", "projects");
 const OUT_PATH = resolve("src/data/claude-usage.json");
@@ -216,33 +217,146 @@ for (const file of files) {
 
 // Build sorted hour array (oldest first)
 const hourKeys = [...hourly.keys()].sort();
-const hours = hourKeys.map((hk) => {
-  const b = hourly.get(hk);
+
+// Git stats: commits + line churn per hour across repos
+const REPOS = [
+  resolve("."), // allbyte-web (this repo)
+  resolve(process.env.CHRONICLES_DIR || "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis"),
+];
+
+const gitByHour = new Map(); // hourKey → { commits, insertions, deletions }
+
+for (const repo of REPOS) {
+  let out;
+  try {
+    out = execSync(`git log --since="6 weeks ago" --pretty=format:"=C=%H|%aI" --numstat`, {
+      cwd: repo, encoding: "utf-8", maxBuffer: 50 * 1024 * 1024,
+    });
+  } catch {
+    continue; // repo not a git dir or no log
+  }
+  let currentHour = null;
+  for (const line of out.split("\n")) {
+    if (line.startsWith("=C=")) {
+      const iso = line.split("|")[1];
+      if (!iso) { currentHour = null; continue; }
+      currentHour = hourBucketFor(Date.parse(iso));
+      if (!gitByHour.has(currentHour)) gitByHour.set(currentHour, { commits: 0, insertions: 0, deletions: 0 });
+      gitByHour.get(currentHour).commits++;
+    } else if (currentHour && line.trim()) {
+      // numstat line: "<ins>\t<del>\t<path>"
+      const [insStr, delStr, path] = line.split("\t");
+      const ins = parseInt(insStr, 10);
+      const del = parseInt(delStr, 10);
+      if (Number.isFinite(ins) && Number.isFinite(del) && path) {
+        // Skip generated/data files from churn counts (they inflate LOC)
+        if (/package-lock|node_modules|claude-usage(-history)?\.json|asset-index\.json|test_index\.json|test_roadmap\.json/.test(path)) continue;
+        gitByHour.get(currentHour).insertions += ins;
+        gitByHour.get(currentHour).deletions += del;
+      }
+    }
+  }
+}
+
+// Ticket completions per hour from phaseHistory
+const ticketsByHour = new Map(); // hourKey → { done, moved }
+try {
+  const CHRONICLES_DIR = resolve(process.env.CHRONICLES_DIR || "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis");
+  const ticketsData = JSON.parse(readFileSync(join(CHRONICLES_DIR, "tickets/tickets.json"), "utf-8"));
+  for (const t of ticketsData.tickets ?? []) {
+    for (const h of t.phaseHistory ?? []) {
+      if (!h.entered) continue;
+      const hk = hourBucketFor(Date.parse(h.entered));
+      if (!ticketsByHour.has(hk)) ticketsByHour.set(hk, { done: 0, moved: 0 });
+      ticketsByHour.get(hk).moved++;
+      if (h.phase === "done") ticketsByHour.get(hk).done++;
+    }
+  }
+} catch {
+  // tickets.json unavailable
+}
+
+// Arc's efficiency metrics per hour (if available)
+const efficiencyByHour = new Map(); // hourKey → { cycles, tickets_moved, agents_spawned }
+try {
+  const CHRONICLES_DIR = resolve(process.env.CHRONICLES_DIR || "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis");
+  const content = readFileSync(join(CHRONICLES_DIR, "tickets/efficiency_metrics.ndjson"), "utf-8");
+  for (const line of content.split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const m = JSON.parse(line);
+      const hk = hourBucketFor(Date.parse(m.timestamp));
+      if (!efficiencyByHour.has(hk)) efficiencyByHour.set(hk, { cycles: 0, tickets_moved: 0, agents_spawned: 0 });
+      const b = efficiencyByHour.get(hk);
+      b.cycles++;
+      b.tickets_moved += m.tickets_moved || 0;
+      b.agents_spawned += (m.agents_spawned || 0) + (m.subagents_spawned || 0);
+    } catch {}
+  }
+} catch {
+  // efficiency_metrics.ndjson unavailable
+}
+
+// Merge all hour-keys (message hours + git hours + ticket hours)
+const allHourKeys = [...new Set([
+  ...hourKeys,
+  ...gitByHour.keys(),
+  ...ticketsByHour.keys(),
+  ...efficiencyByHour.keys(),
+])].sort();
+
+const hours = allHourKeys.map((hk) => {
+  const b = hourly.get(hk) ?? { total: 0, byProject: new Map(), weekKey: weekBucketFor(Date.parse(hk.replace(" ", "T") + ":00:00")) };
   const byProject = {};
   for (const [k, v] of b.byProject) byProject[k] = v;
+  const git = gitByHour.get(hk) ?? { commits: 0, insertions: 0, deletions: 0 };
+  const tix = ticketsByHour.get(hk) ?? { done: 0, moved: 0 };
+  const eff = efficiencyByHour.get(hk) ?? { cycles: 0, tickets_moved: 0, agents_spawned: 0 };
   return {
-    hour: hk, // YYYY-MM-DD HH
+    hour: hk,
     weekStart: b.weekKey,
     messages: b.total,
-    pctOfWeeklyBudget: Math.round((b.total / WEEKLY_BUDGET_MESSAGES) * 100 * 100) / 100, // 2 decimals
+    pctOfWeeklyBudget: Math.round((b.total / WEEKLY_BUDGET_MESSAGES) * 100 * 100) / 100,
     byProject,
+    commits: git.commits,
+    insertions: git.insertions,
+    deletions: git.deletions,
+    churn: git.insertions + git.deletions,
+    ticketsDone: tix.done,
+    ticketsMoved: tix.moved,
+    efficiencyCycles: eff.cycles,
   };
 });
 
-// Weekly summary (for boundaries and totals)
+// Weekly summary — aggregate all signals per week
 const weekly = new Map();
 for (const h of hours) {
-  if (!weekly.has(h.weekStart)) weekly.set(h.weekStart, { messages: 0 });
-  weekly.get(h.weekStart).messages += h.messages;
+  if (!weekly.has(h.weekStart)) weekly.set(h.weekStart, { messages: 0, commits: 0, insertions: 0, deletions: 0, ticketsDone: 0 });
+  const w = weekly.get(h.weekStart);
+  w.messages += h.messages;
+  w.commits += h.commits;
+  w.insertions += h.insertions;
+  w.deletions += h.deletions;
+  w.ticketsDone += h.ticketsDone;
 }
-const weeks = [...weekly.keys()].sort().map((wk) => ({
-  weekStart: wk,
-  messages: weekly.get(wk).messages,
-  pctOfWeeklyBudget: Math.round((weekly.get(wk).messages / WEEKLY_BUDGET_MESSAGES) * 100),
-}));
+const weeks = [...weekly.keys()].sort().map((wk) => {
+  const w = weekly.get(wk);
+  return {
+    weekStart: wk,
+    messages: w.messages,
+    pctOfWeeklyBudget: Math.round((w.messages / WEEKLY_BUDGET_MESSAGES) * 100),
+    commits: w.commits,
+    insertions: w.insertions,
+    deletions: w.deletions,
+    churn: w.insertions + w.deletions,
+    ticketsDone: w.ticketsDone,
+    msgPerCommit: w.commits > 0 ? Math.round(w.messages / w.commits) : null,
+    msgPerTicket: w.ticketsDone > 0 ? Math.round(w.messages / w.ticketsDone) : null,
+  };
+});
 
 const history = {
-  schema_version: 3,
+  schema_version: 4,
   lastUpdated: new Date().toISOString(),
   resetDay: RESET_DAY,
   resetHour: RESET_HOUR,

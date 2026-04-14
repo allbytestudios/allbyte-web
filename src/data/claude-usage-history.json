@@ -1,6 +1,6 @@
 {
-  "schema_version": 3,
-  "lastUpdated": "2026-04-14T01:02:15.213Z",
+  "schema_version": 4,
+  "lastUpdated": "2026-04-14T01:10:15.118Z",
   "resetDay": 3,
   "resetHour": 13,
   "weeklyBudget": 12900,
@@ -12,7 +12,14 @@
       "pctOfWeeklyBudget": 0.57,
       "byProject": {
         "App (TTD)": 74
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-02-22 12",
@@ -21,7 +28,14 @@
       "pctOfWeeklyBudget": 0.65,
       "byProject": {
         "App (TTD)": 84
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-02-22 15",
@@ -30,7 +44,14 @@
       "pctOfWeeklyBudget": 1.64,
       "byProject": {
         "App (TTD)": 212
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-02-22 16",
@@ -39,7 +60,14 @@
       "pctOfWeeklyBudget": 0.26,
       "byProject": {
         "App (TTD)": 33
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-02-23 13",
@@ -48,7 +76,14 @@
       "pctOfWeeklyBudget": 0.71,
       "byProject": {
         "App (TTD)": 91
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-05 12",
@@ -57,7 +92,14 @@
       "pctOfWeeklyBudget": 3.21,
       "byProject": {
         "Worktree": 414
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-05 13",
@@ -66,7 +108,14 @@
       "pctOfWeeklyBudget": 0.61,
       "byProject": {
         "Worktree": 79
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-05 14",
@@ -75,7 +124,14 @@
       "pctOfWeeklyBudget": 0.73,
       "byProject": {
         "Worktree": 94
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-05 19",
@@ -84,7 +140,14 @@
       "pctOfWeeklyBudget": 0.5,
       "byProject": {
         "Worktree": 65
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-05 20",
@@ -93,7 +156,14 @@
       "pctOfWeeklyBudget": 2.12,
       "byProject": {
         "Worktree": 274
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-05 21",
@@ -102,7 +172,14 @@
       "pctOfWeeklyBudget": 2.4,
       "byProject": {
         "Worktree": 310
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-05 22",
@@ -111,7 +188,14 @@
       "pctOfWeeklyBudget": 0.99,
       "byProject": {
         "Worktree": 128
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 08",
@@ -120,7 +204,14 @@
       "pctOfWeeklyBudget": 0.3,
       "byProject": {
         "Worktree": 39
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 09",
@@ -129,7 +220,14 @@
       "pctOfWeeklyBudget": 3.84,
       "byProject": {
         "App (game-host)": 495
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 10",
@@ -138,7 +236,14 @@
       "pctOfWeeklyBudget": 2.06,
       "byProject": {
         "App (game-host)": 266
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 11",
@@ -147,7 +252,14 @@
       "pctOfWeeklyBudget": 2.64,
       "byProject": {
         "App (game-host)": 340
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 12",
@@ -156,7 +268,14 @@
       "pctOfWeeklyBudget": 5.29,
       "byProject": {
         "App (game-host)": 683
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 13",
@@ -166,7 +285,14 @@
       "byProject": {
         "App (game-host)": 735,
         "App (web)": 202
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 14",
@@ -176,7 +302,14 @@
       "byProject": {
         "App (game-host)": 16,
         "App (web)": 24
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 15",
@@ -186,7 +319,14 @@
       "byProject": {
         "App (game-host)": 206,
         "App (web)": 134
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 16",
@@ -196,7 +336,14 @@
       "byProject": {
         "App (game-host)": 306,
         "App (web)": 346
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 17",
@@ -206,7 +353,14 @@
       "byProject": {
         "App (game-host)": 142,
         "App (web)": 282
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 19",
@@ -216,7 +370,14 @@
       "byProject": {
         "App (game-host)": 268,
         "App (web)": 162
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 20",
@@ -225,7 +386,14 @@
       "pctOfWeeklyBudget": 1.22,
       "byProject": {
         "App (game-host)": 158
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-06 21",
@@ -235,7 +403,14 @@
       "byProject": {
         "App (game-host)": 216,
         "App (web)": 116
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 07",
@@ -245,7 +420,14 @@
       "byProject": {
         "App (game-host)": 218,
         "App (web)": 80
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 08",
@@ -255,7 +437,14 @@
       "byProject": {
         "App (game-host)": 512,
         "App (web)": 106
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 09",
@@ -265,7 +454,14 @@
       "byProject": {
         "App (game-host)": 196,
         "App (web)": 88
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 10",
@@ -274,7 +470,14 @@
       "pctOfWeeklyBudget": 2.79,
       "byProject": {
         "App (game-host)": 360
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 11",
@@ -284,7 +487,14 @@
       "byProject": {
         "App (game-host)": 388,
         "App (web)": 116
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 12",
@@ -294,7 +504,14 @@
       "byProject": {
         "App (game-host)": 512,
         "App (web)": 361
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 13",
@@ -304,7 +521,14 @@
       "byProject": {
         "App (game-host)": 446,
         "App (web)": 434
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 14",
@@ -314,7 +538,14 @@
       "byProject": {
         "App (game-host)": 513,
         "App (web)": 416
-      }
+      },
+      "commits": 4,
+      "insertions": 4078,
+      "deletions": 266,
+      "churn": 4344,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 15",
@@ -324,7 +555,14 @@
       "byProject": {
         "App (game-host)": 228,
         "App (web)": 241
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 16",
@@ -334,7 +572,14 @@
       "byProject": {
         "App (game-host)": 118,
         "App (web)": 160
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 17",
@@ -344,7 +589,14 @@
       "byProject": {
         "App (game-host)": 53,
         "App (web)": 165
-      }
+      },
+      "commits": 5,
+      "insertions": 3144,
+      "deletions": 234,
+      "churn": 3378,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 19",
@@ -354,7 +606,14 @@
       "byProject": {
         "App (game-host)": 64,
         "App (web)": 171
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 20",
@@ -364,7 +623,14 @@
       "byProject": {
         "App (game-host)": 98,
         "App (web)": 135
-      }
+      },
+      "commits": 1,
+      "insertions": 484,
+      "deletions": 68,
+      "churn": 552,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-07 21",
@@ -374,7 +640,14 @@
       "byProject": {
         "App (game-host)": 91,
         "App (web)": 173
-      }
+      },
+      "commits": 1,
+      "insertions": 285,
+      "deletions": 174,
+      "churn": 459,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 09",
@@ -384,7 +657,14 @@
       "byProject": {
         "App (game-host)": 284,
         "App (web)": 261
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 10",
@@ -394,7 +674,14 @@
       "byProject": {
         "App (game-host)": 116,
         "App (web)": 78
-      }
+      },
+      "commits": 1,
+      "insertions": 694,
+      "deletions": 34,
+      "churn": 728,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 11",
@@ -404,7 +691,14 @@
       "byProject": {
         "App (game-host)": 245,
         "App (web)": 72
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 12",
@@ -414,7 +708,14 @@
       "byProject": {
         "App (game-host)": 22,
         "App (web)": 29
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 13",
@@ -425,7 +726,14 @@
         "App (game-host)": 345,
         "App (web)": 118,
         "Worktree": 1
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 14",
@@ -435,7 +743,14 @@
       "byProject": {
         "App (game-host)": 217,
         "App (web)": 108
-      }
+      },
+      "commits": 2,
+      "insertions": 913,
+      "deletions": 272,
+      "churn": 1185,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 15",
@@ -445,7 +760,14 @@
       "byProject": {
         "App (game-host)": 424,
         "App (web)": 185
-      }
+      },
+      "commits": 2,
+      "insertions": 86,
+      "deletions": 48,
+      "churn": 134,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 16",
@@ -455,7 +777,14 @@
       "byProject": {
         "App (game-host)": 302,
         "App (web)": 114
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 17",
@@ -465,7 +794,14 @@
       "byProject": {
         "App (game-host)": 53,
         "App (web)": 17
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 18",
@@ -475,7 +811,14 @@
       "byProject": {
         "App (game-host)": 93,
         "App (web)": 16
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 19",
@@ -485,7 +828,14 @@
       "byProject": {
         "App (game-host)": 191,
         "App (web)": 20
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 20",
@@ -495,7 +845,14 @@
       "byProject": {
         "App (game-host)": 145,
         "App (web)": 25
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-08 21",
@@ -504,7 +861,14 @@
       "pctOfWeeklyBudget": 0.08,
       "byProject": {
         "App (game-host)": 10
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 03",
@@ -514,7 +878,14 @@
       "byProject": {
         "App (game-host)": 366,
         "App (web)": 114
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 04",
@@ -525,7 +896,14 @@
         "App (game-host)": 169,
         "Docker setup": 36,
         "App (web)": 82
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 05",
@@ -534,7 +912,14 @@
       "pctOfWeeklyBudget": 0.22,
       "byProject": {
         "Docker setup": 29
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 06",
@@ -543,7 +928,14 @@
       "pctOfWeeklyBudget": 0.39,
       "byProject": {
         "Docker setup": 50
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 08",
@@ -552,7 +944,14 @@
       "pctOfWeeklyBudget": 0.12,
       "byProject": {
         "Docker setup": 16
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 09",
@@ -561,7 +960,14 @@
       "pctOfWeeklyBudget": 1.6,
       "byProject": {
         "App (web)": 207
-      }
+      },
+      "commits": 2,
+      "insertions": 1443,
+      "deletions": 843,
+      "churn": 2286,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 10",
@@ -570,7 +976,14 @@
       "pctOfWeeklyBudget": 0.47,
       "byProject": {
         "App (web)": 61
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 11",
@@ -579,7 +992,14 @@
       "pctOfWeeklyBudget": 0.94,
       "byProject": {
         "App (web)": 121
-      }
+      },
+      "commits": 3,
+      "insertions": 17,
+      "deletions": 12,
+      "churn": 29,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 12",
@@ -588,7 +1008,14 @@
       "pctOfWeeklyBudget": 0.02,
       "byProject": {
         "App (web)": 2
-      }
+      },
+      "commits": 1,
+      "insertions": 38,
+      "deletions": 28,
+      "churn": 66,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 13",
@@ -597,7 +1024,14 @@
       "pctOfWeeklyBudget": 0.13,
       "byProject": {
         "App (web)": 17
-      }
+      },
+      "commits": 1,
+      "insertions": 6,
+      "deletions": 1,
+      "churn": 7,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 14",
@@ -606,7 +1040,14 @@
       "pctOfWeeklyBudget": 0.57,
       "byProject": {
         "App (web)": 74
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 15",
@@ -616,7 +1057,14 @@
       "byProject": {
         "Docker setup": 6,
         "App (web)": 231
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 16",
@@ -626,7 +1074,14 @@
       "byProject": {
         "Docker setup": 18,
         "App (web)": 79
-      }
+      },
+      "commits": 11,
+      "insertions": 102429,
+      "deletions": 552,
+      "churn": 102981,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 17",
@@ -635,7 +1090,14 @@
       "pctOfWeeklyBudget": 0.68,
       "byProject": {
         "App (web)": 88
-      }
+      },
+      "commits": 5,
+      "insertions": 212,
+      "deletions": 22,
+      "churn": 234,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 19",
@@ -644,7 +1106,14 @@
       "pctOfWeeklyBudget": 0.22,
       "byProject": {
         "App (web)": 29
-      }
+      },
+      "commits": 2,
+      "insertions": 54,
+      "deletions": 10,
+      "churn": 64,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 20",
@@ -653,7 +1122,14 @@
       "pctOfWeeklyBudget": 0.13,
       "byProject": {
         "App (web)": 17
-      }
+      },
+      "commits": 4,
+      "insertions": 1449,
+      "deletions": 17,
+      "churn": 1466,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-09 21",
@@ -663,7 +1139,28 @@
       "byProject": {
         "Docker setup": 4,
         "App (web)": 19
-      }
+      },
+      "commits": 5,
+      "insertions": 583,
+      "deletions": 27,
+      "churn": 610,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
+    },
+    {
+      "hour": "2026-04-09 22",
+      "weekStart": "2026-04-08",
+      "messages": 0,
+      "pctOfWeeklyBudget": 0,
+      "byProject": {},
+      "commits": 1,
+      "insertions": 76,
+      "deletions": 3,
+      "churn": 79,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 07",
@@ -672,7 +1169,14 @@
       "pctOfWeeklyBudget": 0.3,
       "byProject": {
         "App (web)": 39
-      }
+      },
+      "commits": 1,
+      "insertions": 157,
+      "deletions": 36,
+      "churn": 193,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 08",
@@ -681,7 +1185,14 @@
       "pctOfWeeklyBudget": 0.69,
       "byProject": {
         "App (web)": 89
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 09",
@@ -690,7 +1201,14 @@
       "pctOfWeeklyBudget": 2.24,
       "byProject": {
         "App (web)": 289
-      }
+      },
+      "commits": 4,
+      "insertions": 4490,
+      "deletions": 361,
+      "churn": 4851,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 10",
@@ -699,7 +1217,14 @@
       "pctOfWeeklyBudget": 0.85,
       "byProject": {
         "App (web)": 110
-      }
+      },
+      "commits": 6,
+      "insertions": 891,
+      "deletions": 141,
+      "churn": 1032,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 11",
@@ -708,7 +1233,14 @@
       "pctOfWeeklyBudget": 1.34,
       "byProject": {
         "App (web)": 173
-      }
+      },
+      "commits": 1,
+      "insertions": 999,
+      "deletions": 160,
+      "churn": 1159,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 12",
@@ -717,7 +1249,14 @@
       "pctOfWeeklyBudget": 0.59,
       "byProject": {
         "App (web)": 76
-      }
+      },
+      "commits": 2,
+      "insertions": 758,
+      "deletions": 3,
+      "churn": 761,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 13",
@@ -726,7 +1265,14 @@
       "pctOfWeeklyBudget": 1.22,
       "byProject": {
         "App (web)": 158
-      }
+      },
+      "commits": 2,
+      "insertions": 463,
+      "deletions": 25,
+      "churn": 488,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 14",
@@ -735,7 +1281,14 @@
       "pctOfWeeklyBudget": 0.53,
       "byProject": {
         "App (web)": 68
-      }
+      },
+      "commits": 1,
+      "insertions": 272,
+      "deletions": 2,
+      "churn": 274,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 15",
@@ -744,7 +1297,14 @@
       "pctOfWeeklyBudget": 0.8,
       "byProject": {
         "App (web)": 103
-      }
+      },
+      "commits": 2,
+      "insertions": 2187,
+      "deletions": 299,
+      "churn": 2486,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 16",
@@ -753,7 +1313,14 @@
       "pctOfWeeklyBudget": 0.26,
       "byProject": {
         "App (web)": 33
-      }
+      },
+      "commits": 2,
+      "insertions": 749,
+      "deletions": 35,
+      "churn": 784,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 17",
@@ -762,7 +1329,14 @@
       "pctOfWeeklyBudget": 0.53,
       "byProject": {
         "App (web)": 68
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 18",
@@ -771,7 +1345,14 @@
       "pctOfWeeklyBudget": 0.38,
       "byProject": {
         "App (web)": 49
-      }
+      },
+      "commits": 2,
+      "insertions": 14,
+      "deletions": 19,
+      "churn": 33,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 19",
@@ -780,7 +1361,14 @@
       "pctOfWeeklyBudget": 0.58,
       "byProject": {
         "App (web)": 75
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 20",
@@ -789,7 +1377,28 @@
       "pctOfWeeklyBudget": 0.42,
       "byProject": {
         "App (web)": 54
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
+    },
+    {
+      "hour": "2026-04-10 21",
+      "weekStart": "2026-04-08",
+      "messages": 0,
+      "pctOfWeeklyBudget": 0,
+      "byProject": {},
+      "commits": 10,
+      "insertions": 3043,
+      "deletions": 620,
+      "churn": 3663,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-10 22",
@@ -798,7 +1407,14 @@
       "pctOfWeeklyBudget": 0.07,
       "byProject": {
         "App (web)": 9
-      }
+      },
+      "commits": 6,
+      "insertions": 370,
+      "deletions": 412,
+      "churn": 782,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 08",
@@ -807,7 +1423,28 @@
       "pctOfWeeklyBudget": 0.12,
       "byProject": {
         "App (web)": 15
-      }
+      },
+      "commits": 3,
+      "insertions": 322,
+      "deletions": 182,
+      "churn": 504,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
+    },
+    {
+      "hour": "2026-04-11 09",
+      "weekStart": "2026-04-08",
+      "messages": 0,
+      "pctOfWeeklyBudget": 0,
+      "byProject": {},
+      "commits": 4,
+      "insertions": 264,
+      "deletions": 9,
+      "churn": 273,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 11",
@@ -816,7 +1453,14 @@
       "pctOfWeeklyBudget": 0.39,
       "byProject": {
         "App (web)": 50
-      }
+      },
+      "commits": 9,
+      "insertions": 17163,
+      "deletions": 36,
+      "churn": 17199,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 14",
@@ -826,7 +1470,14 @@
       "byProject": {
         "App (game-host)": 3,
         "App (web)": 176
-      }
+      },
+      "commits": 11,
+      "insertions": 3132,
+      "deletions": 180,
+      "churn": 3312,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 15",
@@ -835,7 +1486,14 @@
       "pctOfWeeklyBudget": 1.03,
       "byProject": {
         "App (web)": 133
-      }
+      },
+      "commits": 9,
+      "insertions": 4038,
+      "deletions": 83,
+      "churn": 4121,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 16",
@@ -844,7 +1502,14 @@
       "pctOfWeeklyBudget": 0.16,
       "byProject": {
         "App (web)": 21
-      }
+      },
+      "commits": 5,
+      "insertions": 2340,
+      "deletions": 11,
+      "churn": 2351,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 17",
@@ -853,7 +1518,14 @@
       "pctOfWeeklyBudget": 1.73,
       "byProject": {
         "App (web)": 223
-      }
+      },
+      "commits": 10,
+      "insertions": 4679,
+      "deletions": 59,
+      "churn": 4738,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 18",
@@ -862,7 +1534,14 @@
       "pctOfWeeklyBudget": 1.29,
       "byProject": {
         "App (web)": 166
-      }
+      },
+      "commits": 8,
+      "insertions": 2137,
+      "deletions": 104,
+      "churn": 2241,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 19",
@@ -871,7 +1550,14 @@
       "pctOfWeeklyBudget": 1.43,
       "byProject": {
         "App (web)": 184
-      }
+      },
+      "commits": 3,
+      "insertions": 1598,
+      "deletions": 120,
+      "churn": 1718,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 20",
@@ -880,7 +1566,14 @@
       "pctOfWeeklyBudget": 2.19,
       "byProject": {
         "App (web)": 283
-      }
+      },
+      "commits": 15,
+      "insertions": 3587,
+      "deletions": 247,
+      "churn": 3834,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 21",
@@ -889,7 +1582,14 @@
       "pctOfWeeklyBudget": 1.29,
       "byProject": {
         "App (web)": 167
-      }
+      },
+      "commits": 4,
+      "insertions": 1206,
+      "deletions": 54,
+      "churn": 1260,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-11 22",
@@ -898,7 +1598,28 @@
       "pctOfWeeklyBudget": 0.42,
       "byProject": {
         "App (web)": 54
-      }
+      },
+      "commits": 8,
+      "insertions": 1898,
+      "deletions": 320,
+      "churn": 2218,
+      "ticketsDone": 0,
+      "ticketsMoved": 2,
+      "efficiencyCycles": 0
+    },
+    {
+      "hour": "2026-04-11 23",
+      "weekStart": "2026-04-08",
+      "messages": 0,
+      "pctOfWeeklyBudget": 0,
+      "byProject": {},
+      "commits": 12,
+      "insertions": 1235,
+      "deletions": 29,
+      "churn": 1264,
+      "ticketsDone": 0,
+      "ticketsMoved": 7,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-12 02",
@@ -907,7 +1628,14 @@
       "pctOfWeeklyBudget": 0.13,
       "byProject": {
         "App (web)": 17
-      }
+      },
+      "commits": 7,
+      "insertions": 2849,
+      "deletions": 22,
+      "churn": 2871,
+      "ticketsDone": 1,
+      "ticketsMoved": 4,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-12 03",
@@ -916,7 +1644,14 @@
       "pctOfWeeklyBudget": 0.46,
       "byProject": {
         "App (web)": 59
-      }
+      },
+      "commits": 3,
+      "insertions": 802,
+      "deletions": 0,
+      "churn": 802,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-12 07",
@@ -925,7 +1660,14 @@
       "pctOfWeeklyBudget": 1.26,
       "byProject": {
         "App (web)": 163
-      }
+      },
+      "commits": 8,
+      "insertions": 2630,
+      "deletions": 61,
+      "churn": 2691,
+      "ticketsDone": 1,
+      "ticketsMoved": 4,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-12 08",
@@ -934,7 +1676,14 @@
       "pctOfWeeklyBudget": 0.02,
       "byProject": {
         "App (web)": 2
-      }
+      },
+      "commits": 1,
+      "insertions": 392,
+      "deletions": 65,
+      "churn": 457,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-12 12",
@@ -943,7 +1692,14 @@
       "pctOfWeeklyBudget": 0.07,
       "byProject": {
         "App (web)": 9
-      }
+      },
+      "commits": 1,
+      "insertions": 17,
+      "deletions": 29,
+      "churn": 46,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-12 13",
@@ -952,7 +1708,14 @@
       "pctOfWeeklyBudget": 0.64,
       "byProject": {
         "App (web)": 82
-      }
+      },
+      "commits": 4,
+      "insertions": 452,
+      "deletions": 95,
+      "churn": 547,
+      "ticketsDone": 0,
+      "ticketsMoved": 12,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-12 14",
@@ -961,7 +1724,14 @@
       "pctOfWeeklyBudget": 0.25,
       "byProject": {
         "App (web)": 32
-      }
+      },
+      "commits": 4,
+      "insertions": 333,
+      "deletions": 105,
+      "churn": 438,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-12 15",
@@ -970,7 +1740,28 @@
       "pctOfWeeklyBudget": 0.36,
       "byProject": {
         "App (web)": 46
-      }
+      },
+      "commits": 6,
+      "insertions": 435,
+      "deletions": 73,
+      "churn": 508,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
+    },
+    {
+      "hour": "2026-04-12 16",
+      "weekStart": "2026-04-08",
+      "messages": 0,
+      "pctOfWeeklyBudget": 0,
+      "byProject": {},
+      "commits": 1,
+      "insertions": 2,
+      "deletions": 1,
+      "churn": 3,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-13 09",
@@ -979,7 +1770,14 @@
       "pctOfWeeklyBudget": 0.57,
       "byProject": {
         "App (web)": 74
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-13 11",
@@ -988,7 +1786,14 @@
       "pctOfWeeklyBudget": 1.43,
       "byProject": {
         "App (web)": 184
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-13 12",
@@ -997,7 +1802,14 @@
       "pctOfWeeklyBudget": 2.15,
       "byProject": {
         "App (web)": 277
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-13 13",
@@ -1006,7 +1818,14 @@
       "pctOfWeeklyBudget": 1.74,
       "byProject": {
         "App (web)": 224
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 0,
+      "efficiencyCycles": 1
     },
     {
       "hour": "2026-04-13 14",
@@ -1015,7 +1834,14 @@
       "pctOfWeeklyBudget": 1.92,
       "byProject": {
         "App (web)": 248
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 7,
+      "efficiencyCycles": 2
     },
     {
       "hour": "2026-04-13 15",
@@ -1024,7 +1850,14 @@
       "pctOfWeeklyBudget": 1.67,
       "byProject": {
         "App (web)": 215
-      }
+      },
+      "commits": 5,
+      "insertions": 2780,
+      "deletions": 389,
+      "churn": 3169,
+      "ticketsDone": 0,
+      "ticketsMoved": 5,
+      "efficiencyCycles": 2
     },
     {
       "hour": "2026-04-13 16",
@@ -1033,7 +1866,14 @@
       "pctOfWeeklyBudget": 0.15,
       "byProject": {
         "App (web)": 19
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 5,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-13 17",
@@ -1042,7 +1882,28 @@
       "pctOfWeeklyBudget": 0.02,
       "byProject": {
         "App (web)": 3
-      }
+      },
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 1,
+      "ticketsMoved": 9,
+      "efficiencyCycles": 0
+    },
+    {
+      "hour": "2026-04-13 18",
+      "weekStart": "2026-04-08",
+      "messages": 0,
+      "pctOfWeeklyBudget": 0,
+      "byProject": {},
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 25,
+      "efficiencyCycles": 1
     },
     {
       "hour": "2026-04-13 19",
@@ -1051,7 +1912,14 @@
       "pctOfWeeklyBudget": 0.09,
       "byProject": {
         "App (web)": 12
-      }
+      },
+      "commits": 1,
+      "insertions": 264,
+      "deletions": 4,
+      "churn": 268,
+      "ticketsDone": 0,
+      "ticketsMoved": 7,
+      "efficiencyCycles": 6
     },
     {
       "hour": "2026-04-13 20",
@@ -1060,33 +1928,110 @@
       "pctOfWeeklyBudget": 1.46,
       "byProject": {
         "App (web)": 188
-      }
+      },
+      "commits": 7,
+      "insertions": 550,
+      "deletions": 49,
+      "churn": 599,
+      "ticketsDone": 0,
+      "ticketsMoved": 10,
+      "efficiencyCycles": 0
     },
     {
       "hour": "2026-04-13 21",
       "weekStart": "2026-04-08",
-      "messages": 13,
-      "pctOfWeeklyBudget": 0.1,
+      "messages": 37,
+      "pctOfWeeklyBudget": 0.29,
       "byProject": {
-        "App (web)": 13
-      }
+        "App (web)": 37
+      },
+      "commits": 2,
+      "insertions": 248,
+      "deletions": 41,
+      "churn": 289,
+      "ticketsDone": 3,
+      "ticketsMoved": 16,
+      "efficiencyCycles": 1
+    },
+    {
+      "hour": "2026-04-13 22",
+      "weekStart": "2026-04-08",
+      "messages": 0,
+      "pctOfWeeklyBudget": 0,
+      "byProject": {},
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 1,
+      "ticketsMoved": 7,
+      "efficiencyCycles": 2
+    },
+    {
+      "hour": "2026-04-13 23",
+      "weekStart": "2026-04-08",
+      "messages": 0,
+      "pctOfWeeklyBudget": 0,
+      "byProject": {},
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "ticketsMoved": 9,
+      "efficiencyCycles": 3
+    },
+    {
+      "hour": "2026-04-14 00",
+      "weekStart": "2026-04-08",
+      "messages": 0,
+      "pctOfWeeklyBudget": 0,
+      "byProject": {},
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 4,
+      "ticketsMoved": 7,
+      "efficiencyCycles": 1
     }
   ],
   "weeks": [
     {
       "weekStart": "2026-02-18",
       "messages": 494,
-      "pctOfWeeklyBudget": 4
+      "pctOfWeeklyBudget": 4,
+      "commits": 0,
+      "insertions": 0,
+      "deletions": 0,
+      "churn": 0,
+      "ticketsDone": 0,
+      "msgPerCommit": null,
+      "msgPerTicket": null
     },
     {
       "weekStart": "2026-04-01",
       "messages": 14050,
-      "pctOfWeeklyBudget": 109
+      "pctOfWeeklyBudget": 109,
+      "commits": 12,
+      "insertions": 8685,
+      "deletions": 776,
+      "churn": 9461,
+      "ticketsDone": 0,
+      "msgPerCommit": 1171,
+      "msgPerTicket": null
     },
     {
       "weekStart": "2026-04-08",
-      "messages": 8954,
-      "pctOfWeeklyBudget": 69
+      "messages": 8978,
+      "pctOfWeeklyBudget": 70,
+      "commits": 229,
+      "insertions": 177052,
+      "deletions": 6316,
+      "churn": 183368,
+      "ticketsDone": 11,
+      "msgPerCommit": 39,
+      "msgPerTicket": 816
     }
   ]
 }

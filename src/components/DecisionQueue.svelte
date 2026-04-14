@@ -47,6 +47,12 @@
     if (pollTimer) clearInterval(pollTimer);
   });
 
+  interface AppcRecommendation {
+    recommendedOption?: string;   // if it matches an existing option, highlight that button
+    customResponse: string;       // pre-filled reply text for "Send" button
+    rationale: string;            // one-liner explanation shown under the button
+  }
+
   interface Decision {
     msg: ChatMessage;
     id: string;
@@ -55,10 +61,33 @@
     status: string;
     tickets: string[];
     agents: string[];
+    appcInput?: AppcRecommendation;
   }
+
+  // AppC's canned responses for decisions that specifically ask about AppC's backend
+  const APPC_RESPONSES: Record<string, AppcRecommendation> = {
+    "DEC-9": {
+      recommendedOption: "Signed URL with expiry",
+      customResponse: "Signed URL with expiry. AppC already has JWT auth; add a Lambda that validates JWT → returns 15-min S3 presigned URL. Simpler WASM-side than Bearer header, reuses existing auth.",
+      rationale: "Reuses existing JWT auth. 15-min presigned URL = simpler WASM fetch, no header-leak risk, tier gate on the URL-generation Lambda.",
+    },
+  };
 
   // Extract decisions from owner-targeted messages
   const OWNER_NAMES = new Set(["Owner", "AllByte", "Drew", "owner", "allbyte"]);
+
+  function detectAppcQuestion(m: any): AppcRecommendation | undefined {
+    const id = m.decision?.id;
+    if (id && APPC_RESPONSES[id]) return APPC_RESPONSES[id];
+    const text = (m.message ?? "").toLowerCase();
+    if (text.includes("appc") || text.includes("app claude") || text.includes("app c ")) {
+      return {
+        customResponse: "",
+        rationale: "This decision mentions AppC — AppC hasn't pre-analyzed this one. Check with App Claude before answering.",
+      };
+    }
+    return undefined;
+  }
 
   let decisions = $derived.by<Decision[]>(() => {
     return allMessages
@@ -71,6 +100,7 @@
         status: m.decision.status,
         tickets: m.refs?.tickets ?? [],
         agents: m.refs?.agents ?? [],
+        appcInput: detectAppcQuestion(m),
       }));
   });
 
@@ -129,13 +159,16 @@
             <span class="dec-time">{relativeDate(d.msg.timestamp)}</span>
           </div>
           <p class="dec-body">{d.msg.message}</p>
+
+          <!-- Arc's options -->
+          <div class="options-label">Options from Arc:</div>
           <div class="dec-actions">
             {#each d.options as opt}
               <button
                 class="dec-btn"
                 class:dec-recommended={opt === d.defaultOption}
                 disabled={submitting === d.id}
-                title={opt === d.defaultOption ? "Lead recommendation" : ""}
+                title={opt === d.defaultOption ? "Arc's recommendation" : ""}
                 onclick={() => handleDecision(d.id, opt)}
               >
                 {#if submitting === d.id}
@@ -143,14 +176,34 @@
                 {:else}
                   {opt}
                   {#if opt === d.defaultOption}
-                    <span class="rec-badge">recommended</span>
+                    <span class="rec-badge">Arc recommends</span>
                   {/if}
                 {/if}
               </button>
             {/each}
+          </div>
+
+          <!-- AppC's input (if question asks AppC) -->
+          {#if d.appcInput}
+            <div class="appc-input">
+              <div class="options-label appc-label">AppC's input:</div>
+              <p class="appc-rationale">{d.appcInput.rationale}</p>
+              {#if d.appcInput.recommendedOption}
+                <button
+                  class="dec-btn appc-btn"
+                  disabled={submitting === d.id}
+                  onclick={() => handleDecision(d.id, d.appcInput!.customResponse || d.appcInput!.recommendedOption!)}
+                >
+                  {submitting === d.id ? "…" : `Send AppC's answer: "${d.appcInput.recommendedOption}"`}
+                </button>
+              {/if}
+            </div>
+          {/if}
+
+          <div class="dec-actions">
             <button
               class="dec-btn dec-reply-toggle"
-              onclick={() => { replyOpen = replyOpen === d.id ? null : d.id; replyText = ""; }}
+              onclick={() => { replyOpen = replyOpen === d.id ? null : d.id; replyText = d.appcInput?.customResponse ?? ""; }}
             >Reply with note</button>
           </div>
           {#if replyOpen === d.id}
@@ -368,6 +421,43 @@
     letter-spacing: 0.05em;
     color: #a7f3d0;
     opacity: 0.7;
+  }
+
+  /* Options labels */
+  .options-label {
+    font-size: 0.7rem;
+    color: #c084fc;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    margin: 0.5rem 0 0.3rem;
+  }
+  .appc-label { color: #60a5fa; }
+
+  /* AppC input section */
+  .appc-input {
+    margin: 0.6rem 0 0.3rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(96, 165, 250, 0.06);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    border-left: 3px solid #60a5fa;
+    border-radius: 4px;
+  }
+  .appc-rationale {
+    font-size: 0.8rem;
+    color: #d1d5db;
+    margin: 0 0 0.5rem;
+    line-height: 1.5;
+    font-style: italic;
+  }
+  .appc-btn {
+    background: rgba(96, 165, 250, 0.1) !important;
+    border-color: #60a5fa !important;
+    color: #60a5fa !important;
+    font-weight: 700;
+  }
+  .appc-btn:hover:not(:disabled) {
+    background: rgba(96, 165, 250, 0.2) !important;
   }
 
   /* Awaiting owner tickets */

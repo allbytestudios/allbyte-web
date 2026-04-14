@@ -84,13 +84,15 @@ No merge. No rebase. Just `cp` followed by a verification command and a commit. 
 
 The agent never gets to commit. Every briefing prompt includes "do not commit" explicitly — agents sometimes commit in their worktree thinking it helps, but it doesn't, because I can't cherry-pick from a branch, I can only copy files.
 
-## The 300-500 word briefing floor
+## The 300-500 word briefing floor (tickets all the way down)
 
 The single biggest lesson from the first few parallel sessions: **one-line agent prompts produce bad work.**
 
-An agent arrives with zero context. It has to infer the scope, the files to avoid, the verification strategy, and the deliverable format. Without a proper brief, it does the obvious thing — which is usually not what I wanted — and then I spend fifteen minutes translating its output into something usable. By then I could have done the task myself.
+That lesson applies at every level of the hierarchy. When Arc briefs Nix on a ticket, the same rules apply. When Nix spawns a subagent to write tests, the same rules again. An agent arriving with zero context has to infer the scope, the files to avoid, the verification strategy, and the deliverable format. Without a proper brief, it does the obvious thing — which is usually not what anyone wanted — and then someone upstream spends fifteen minutes translating its output into something usable. By then they could have done the task themselves.
 
-A 300-500 word brief includes six things:
+The shape settled on 300-500 words per brief. That wasn't a guess — Arc and I iterated on what a ticket should look like, and I basically replicated how I've built tickets in my career before this. Good tickets have always needed the same things: why the work matters, scope boundaries, technical context, what "done" looks like. Humans don't usually struggle with ticket size (we tend to write just enough to do the work). Claude is more at risk of both under-and over-scoping — hence the explicit floor and the explicit ceiling.
+
+A well-formed brief includes six things:
 
 1. **What the agent is doing and why** — not "write tests for the dialogue system," but "the owner wants every event command type to have coverage. You're taking a slice: `delay`, `face`, `faceCharacter`, `position`, `speed`, `visibility`. The goal is to catch regressions in `SceneTemplate.gd`'s command-match statement if someone reorders or breaks an arm."
 
@@ -104,7 +106,27 @@ A 300-500 word brief includes six things:
 
 6. **Time budget** — 30-45 minutes typical, 60-90 for larger refactors. The agent uses this to decide how much exploration is acceptable before starting the actual write.
 
-The report shape is load-bearing. I use the file list for cherry-picking and the verification command to confirm the agent's claims before I trust its report. The work doesn't cross the worktree boundary until the verification passes on my terminal.
+The report shape is load-bearing. Whoever sent the brief uses the file list for cherry-picking and the verification command to confirm the agent's claims before trusting the output. The work doesn't cross the worktree boundary until verification passes.
+
+## Pushback, questions, and the terminal overflow
+
+The briefing floor works — when I've actually met it. In practice I don't always. My playtesting descriptions are hand-wavy. I skip technical details I assume are obvious. I leave UI decisions ambiguous because I haven't made them yet.
+
+So I built in two mechanisms with Arc.
+
+**Arc pushes back on me.** If my ticket description is too vague, if a technical detail isn't specified, if there's an implicit UI decision I haven't called out — Arc asks before the ticket goes anywhere. Tech Review is the formal gate, but the pushback starts earlier, in the conversation where I'm still dictating the idea. The goal is that every ticket leaving my terminal has everything a lead needs, no follow-up questions required.
+
+**Leads can surface questions back to me.** We won't get requirements right every time — that's fine. When Nix hits a missing criterion, or Vera realizes the test specs are ambiguous, they raise the question in their ticket comment. Arc aggregates those into a queue for me.
+
+That last mechanism broke my terminal almost immediately. I'd be three pages deep in a conversation with Arc about one feature's scope when Nix raised three concerns about a different ticket, Vera flagged missing tests on a third, and Port asked about pack-build timing on a fourth. My original Arc conversation was now five pages up in the scrollback. I was context-switching constantly just to read the latest updates, and half the time I missed them entirely.
+
+Since we have Claude, we can just build what we need. So I designed a ticketing system:
+
+- **Arc writes the state** — every ticket, every phase transition, every lead signoff — to JSON files. Cross-agent chat goes to a separate NDJSON stream. Decisions pointed at me go to a dedicated channel.
+- **[The webapp](/devlog/dev-console-agent-dashboard/)** (App Claude's side) reads those files and renders them live. I see ticket state, lead status, and agent chat in visually separated places instead of one scrolling terminal.
+- **The decision queue** is the key piece — a curated list of specific questions with pre-framed options. When I have ten minutes, I can run through five unblocks instead of hunting them across three Claude sessions.
+
+I'm still training Arc to route lead updates through the ticket system instead of dumping them into our conversation. Occasionally he slips and I get a lead's status report mid-dialogue about something else. That'll improve — or at some point I'll just add a rule to his CLAUDE.md forbidding it.
 
 ## Context inheritance: why named specialists work
 

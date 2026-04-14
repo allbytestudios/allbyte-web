@@ -12,7 +12,13 @@ A few weeks ago my engineering team was two Claudes. [App Claude](/devlog/two-cl
 
 It became clear when I was playtesting the game and listing bugs, new features, and odd behavior all to Claude at once. He literally said "wait, slow down" — because he was doing all the work. Testing the game, developing against my bug reports, talking to me about priority, documenting findings. One context doing four jobs. That's when it clicked: I needed specialists.
 
-The fix wasn't a bigger model. It was more Claudes, each narrower.
+The shape I was reaching for was the one I'd spent my career inside of. Strong engineering teams run on experts in their own region — a data scientist, a DevOps engineer, a backend developer, a test engineer — plus a light hierarchy to govern decision-making: a technical lead who understands all the domains enough to route work, and someone (owner, product, me) defining priority. Each person owns their specialty. Nobody is asked to context-switch across everything simultaneously.
+
+So I started discussing with Claude what experts we actually needed on this project. A **tester** was obvious — the Playwright+GUT test suite had grown to the point where it deserved a dedicated voice that wouldn't be tempted to skip a case. **Gamedev** (the GDScript lead) was obvious too — scene ports, event logic, and runtime bugs are a distinct domain from everything else. A **web-export specialist** wasn't on my initial list, but after weeks of deep debugging WASM hangs, shader quirks, pack-loading races, and Godot→HTML5 translation rules, I had a decent repository of web-export complications. That was clearly its own expertise; the context required to debug a WASM freeze is not the same context required to write a save/load test.
+
+The fourth lead I wasn't sure about. A dedicated Claude just for talking to *me*? It felt indulgent until a few iterations in. Responsibilities stacked up quickly — ticket grooming, cross-lead coordination, resource allocation, priority calls, deciding what shippable looked like this week. Getting everything out of my head into the computer turned out to be a heavy task. It's always been a heavy task. Agile, Jira, Scrum, Kanban, tickets, standups — these are all elaborate mechanisms humans built to solve exactly one problem: getting an idea from one person's head into another's. I needed that mechanism here too. An orchestrator, an owner-interface. A technical lead who could hold the plan, translate my playtesting hand-waves into scoped tickets, and enforce the quality gates that keep the other leads from shipping half-baked work.
+
+So: **Arc** (orchestrator) + **Nix** (gamedev) + **Vera** (tester) + **Port** (web-export). Four leads. Under them, as much parallel subagent work as a session can sustain. The fix wasn't a bigger model. It was more Claudes, each narrower.
 
 Today the team is five:
 

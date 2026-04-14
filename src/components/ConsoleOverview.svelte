@@ -263,26 +263,6 @@
     <FixturePicker />
   {/if}
 
-  <!-- Recent activity (Legend+ only) -->
-  {#if dashboard?.recentActivity?.length}
-    {#if viewerIsLegend}
-      <h3 class="section-title">Recent Activity</h3>
-      <div class="activity">
-        {#each dashboard.recentActivity.slice(0, 8) as entry}
-          <div class="activity-row">
-            <span class="act-time">{new Date(entry.time).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
-            <span class="act-text">{entry.action}</span>
-          </div>
-        {/each}
-      </div>
-    {:else}
-      <div class="legend-gate">
-        <span>Deployment activity feed is a <strong>Legend</strong> tier perk.</span>
-        <a href="/subscribe/">Upgrade →</a>
-      </div>
-    {/if}
-  {/if}
-
   <!-- Historical usage chart (Legend only) -->
   <!-- Current-week usage bars (above the history chart) -->
   {#if usageData && viewerIsLegend}
@@ -359,6 +339,26 @@
         <span>{usageHistory.hours.length} active hours across {usageHistory.weeks.length} weeks. Hover a bar for the hour's count.</span>
       </div>
     </div>
+  {/if}
+
+  <!-- Recent activity (Legend+ only) -->
+  {#if dashboard?.recentActivity?.length}
+    {#if viewerIsLegend}
+      <h3 class="section-title">Recent Activity</h3>
+      <div class="activity">
+        {#each dashboard.recentActivity.slice(0, 8) as entry}
+          <div class="activity-row">
+            <span class="act-time">{new Date(entry.time).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
+            <span class="act-text">{entry.action}</span>
+          </div>
+        {/each}
+      </div>
+    {:else}
+      <div class="legend-gate">
+        <span>Deployment activity feed is a <strong>Legend</strong> tier perk.</span>
+        <a href="/subscribe/">Upgrade →</a>
+      </div>
+    {/if}
   {/if}
 </div>
 

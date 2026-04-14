@@ -31,11 +31,38 @@
     { key: "ticketsDone",  label: "Tickets Done",  color: "#c084fc", field: "ticketsDone" },
   ];
   let activeSeries = $state<Set<SeriesKey>>(new Set(["messages", "outputTokens", "commits", "ticketsDone"]));
+  let maWindow = $state<number>(7); // hours in moving-average window
   function toggleSeries(k: SeriesKey) {
     const s = new Set(activeSeries);
     if (s.has(k)) s.delete(k);
     else s.add(k);
     activeSeries = s;
+  }
+
+  // Centered moving average with window size n
+  function movingAverage(arr: number[], window: number): number[] {
+    const out: number[] = [];
+    const half = Math.floor(window / 2);
+    for (let i = 0; i < arr.length; i++) {
+      const lo = Math.max(0, i - half);
+      const hi = Math.min(arr.length, i + half + 1);
+      let sum = 0;
+      for (let j = lo; j < hi; j++) sum += arr[j];
+      out.push(sum / (hi - lo));
+    }
+    return out;
+  }
+
+  // Build an SVG polyline points string, y inverted so 0 is at bottom
+  function mavgPoints(values: number[], maxVal: number, window: number): string {
+    if (!values.length || maxVal <= 0) return "";
+    const ma = movingAverage(values, window);
+    const n = values.length;
+    return ma.map((v, i) => {
+      const x = n > 1 ? (i / (n - 1)) * 100 : 50;
+      const y = 100 - (v / maxVal) * 100;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    }).join(" ");
   }
 
   let index = $state<TestIndex | null>(null);
@@ -295,7 +322,7 @@
   {#if viewerIsLegend && usageHistory?.hours?.length > 0}
     <h3 class="section-title">Usage History</h3>
     <div class="history-chart">
-      <!-- Legend toggles -->
+      <!-- Legend toggles + moving-average window -->
       <div class="chart-legend-toggles">
         {#each SERIES as s}
           <button
@@ -308,6 +335,15 @@
             {s.label}
           </button>
         {/each}
+        <span class="ma-window-ctrl">
+          Trend:
+          <select bind:value={maWindow} class="ma-window-select">
+            <option value={3}>3h</option>
+            <option value={7}>7h</option>
+            <option value={12}>12h</option>
+            <option value={24}>24h</option>
+          </select>
+        </span>
       </div>
 
       <!-- One row per active series (small multiples) -->
@@ -334,6 +370,17 @@
                 ></div>
               </div>
             {/each}
+            <!-- Moving-average overlay -->
+            <svg class="ma-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polyline
+                points={mavgPoints(values, maxVal, maWindow)}
+                stroke={s.color}
+                stroke-width="1.5"
+                vector-effect="non-scaling-stroke"
+                fill="none"
+                opacity="0.95"
+              />
+            </svg>
           </div>
         </div>
       {/each}
@@ -632,6 +679,7 @@
   }
 
   .chart-bars {
+    position: relative;
     display: flex;
     align-items: flex-end;
     gap: 1px;
@@ -639,6 +687,32 @@
     padding: 0.15rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     overflow-x: auto;
+  }
+  .ma-overlay {
+    position: absolute;
+    inset: 0.15rem 0;
+    width: 100%;
+    height: calc(100% - 0.3rem);
+    pointer-events: none;
+    overflow: visible;
+  }
+  .ma-window-ctrl {
+    margin-left: auto;
+    font-size: 0.72rem;
+    color: #6b7280;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .ma-window-select {
+    background: #0d1117;
+    color: #d1d5db;
+    border: 1px solid rgba(167, 243, 208, 0.2);
+    border-radius: 3px;
+    padding: 0.15rem 0.3rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    cursor: pointer;
   }
   .hour-bar-wrap {
     flex: 0 0 3px;

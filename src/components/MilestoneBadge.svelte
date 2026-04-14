@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { TestingRoadmap, Milestone } from "../lib/testingRoadmap";
-  import { fetchRoadmap } from "../lib/testDataSource";
+  import type { TicketsFile, EpicsFile } from "../lib/ticketTypes";
+  import { effectivePhase } from "../lib/ticketTypes";
+  import { fetchRoadmap, fetchTickets, fetchEpics } from "../lib/testDataSource";
   import { onMount } from "svelte";
 
   interface Props {
@@ -11,17 +13,18 @@
   let { roadmap: initialRoadmap = null }: Props = $props();
 
   let roadmap = $state<TestingRoadmap | null>(initialRoadmap);
+  let tickets = $state<TicketsFile | null>(null);
+  let epics = $state<EpicsFile | null>(null);
 
   onMount(() => {
     if (!roadmap) {
-      fetchRoadmap()
-        .then((r) => {
-          roadmap = r;
-        })
-        .catch(() => {
-          // Silent fail: badge hides if the roadmap is missing
-        });
+      fetchRoadmap().then((r) => { roadmap = r; }).catch(() => {});
     }
+    // Fetch live ticket data so we can compute real progress instead of the
+    // stale `percent_complete` in test_roadmap.json (that number didn't
+    // update after the ticket schema expanded).
+    fetchTickets().then((t) => { tickets = t; }).catch(() => {});
+    fetchEpics().then((e) => { epics = e; }).catch(() => {});
   });
 
   // Pick the "current" milestone: first in_progress, else first planned, else first.
@@ -31,6 +34,40 @@
       roadmap?.milestones[0] ??
       null
   );
+
+  // Compute weighted completion from tickets+epics for the current milestone.
+  // done=100%, testing=75%, in_progress=50%, else 0. Falls back to the
+  // roadmap's percent_complete if ticket data isn't available.
+  let weightedPct = $derived.by<number>(() => {
+    if (!current || !tickets || !epics) return current?.percent_complete ?? 0;
+    const epicIds = new Set(
+      epics.epics.filter((e) => e && e.milestone === current.id).map((e) => e.id)
+    );
+    if (epicIds.size === 0) return current.percent_complete;
+    // Collect all ticket IDs under those epics (from both epic.ticketIds and
+    // ticket.epic back-ref, matching TicketsApp/ConsoleOverview logic).
+    const milestoneTicketIds = new Set<string>();
+    for (const e of epics.epics) {
+      if (!e || !epicIds.has(e.id)) continue;
+      for (const tid of e.ticketIds ?? []) milestoneTicketIds.add(tid);
+    }
+    for (const t of tickets.tickets) {
+      if (t.epic && epicIds.has(t.epic)) milestoneTicketIds.add(t.id);
+    }
+    if (milestoneTicketIds.size === 0) return current.percent_complete;
+    let total = 0;
+    let weighted = 0;
+    for (const tid of milestoneTicketIds) {
+      const t = tickets.tickets.find((x) => x.id === tid);
+      if (!t) continue;
+      total++;
+      const p = effectivePhase(t);
+      if (p === "done") weighted += 1;
+      else if (p === "testing") weighted += 0.75;
+      else if (p === "in_progress") weighted += 0.5;
+    }
+    return total > 0 ? Math.round((weighted / total) * 100) : current.percent_complete;
+  });
 
   function statusLabel(s: Milestone["status"]): string {
     switch (s) {
@@ -58,7 +95,7 @@
   <a
     class="milestone-badge status-{current.status}"
     href="/test/milestones/view/?id={current.id}&from=home"
-    title="{current.label} — {statusLabel(current.status)} — {current.percent_complete}%"
+    title="{current.label} — {statusLabel(current.status)} — {weightedPct}%"
     onclick={(e) => e.stopPropagation()}
   >
     <div class="row row-top">
@@ -67,9 +104,9 @@
       <span class="status">{statusLabel(current.status)}</span>
     </div>
     <div class="row row-bottom">
-      <span class="pct">{current.percent_complete}%</span>
+      <span class="pct">{weightedPct}%</span>
       <span class="progress" aria-hidden="true">
-        <span class="fill" style="width: {current.percent_complete}%"></span>
+        <span class="fill" style="width: {weightedPct}%"></span>
       </span>
     </div>
   </a>

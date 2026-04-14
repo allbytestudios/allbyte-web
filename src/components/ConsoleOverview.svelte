@@ -9,6 +9,7 @@
     fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat,
     fetchDashboard, fetchTickets, fetchEpics,
   } from "../lib/testDataSource";
+  import usageData from "../data/claude-usage.json";
   import MilestoneStrip from "./MilestoneStrip.svelte";
   import TestStatusCard from "./TestStatusCard.svelte";
   import FixturePicker from "./FixturePicker.svelte";
@@ -149,6 +150,31 @@
       <span class="commit" title={index.repo.commit}>@{index.repo.commit.slice(0, 7)}</span>
     {/if}
   </div>
+
+  <!-- Usage vs Time Elapsed -->
+  {#if usageData && viewerIsLegend}
+    <div class="usage-bars">
+      <div class="usage-row">
+        <span class="usage-label">Usage</span>
+        <div class="usage-bar"><div class="usage-fill usage-blue" style="width: {usageData.usage.usagePct}%"></div></div>
+        <span class="usage-pct">{usageData.usage.usagePct}%</span>
+      </div>
+      <div class="usage-row">
+        <span class="usage-label">Time Elapsed</span>
+        <div class="usage-bar"><div class="usage-fill usage-grey" style="width: {usageData.week.progressPct}%"></div></div>
+        <span class="usage-pct">{usageData.week.progressPct}%</span>
+      </div>
+      <div class="usage-note" class:usage-ahead={usageData.paceDeltaPct > 5} class:usage-behind={usageData.paceDeltaPct < -5}>
+        {#if usageData.paceDeltaPct > 5}
+          {usageData.paceDeltaPct}% ahead of pace
+        {:else if usageData.paceDeltaPct < -5}
+          {Math.abs(usageData.paceDeltaPct)}% behind pace
+        {:else}
+          on pace
+        {/if}
+      </div>
+    </div>
+  {/if}
 
   <!-- Milestone progress -->
   {#if milestoneEstimates.length > 0}
@@ -407,6 +433,59 @@
   }
   .act-time { color: #4b5563; flex-shrink: 0; width: 3.5rem; }
   .act-text { color: #d1d5db; }
+
+  /* Usage vs Time Elapsed */
+  .usage-bars {
+    margin: 0.75rem 0;
+    padding: 0.75rem 1rem;
+    background: #12161e;
+    border: 1px solid rgba(167, 243, 208, 0.1);
+    border-radius: 6px;
+  }
+  .usage-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+  .usage-label {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    min-width: 6.5rem;
+  }
+  .usage-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .usage-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  .usage-blue { background: #60a5fa; }
+  .usage-grey { background: #6b7280; }
+  .usage-pct {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #d1d5db;
+    min-width: 3rem;
+    text-align: right;
+  }
+  .usage-note {
+    font-size: 0.72rem;
+    color: #6b7280;
+    text-align: right;
+    margin-top: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .usage-note.usage-ahead { color: #fbbf24; }
+  .usage-note.usage-behind { color: #a7f3d0; }
 
   /* Milestone progress */
   .ms-progress {

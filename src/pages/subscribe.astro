@@ -63,6 +63,15 @@ const tiers = [
         ))}
       </div>
 
+      <div class="support-section">
+        <h2 class="support-title">What Your Donation Provides</h2>
+        <p class="support-body">
+          Donations allow me to spend more time focusing on developing and
+          porting the game and devlog content. If you like anything that this
+          site provides, please consider donating or subscribing.
+        </p>
+      </div>
+
       <div class="donate-section">
         <h2 class="donate-title">One-Time Donation</h2>
         <p class="donate-sub">Not ready to subscribe? A one-time contribution helps just as much.</p>
@@ -284,8 +293,33 @@ const tiers = [
     margin-bottom: 1.5rem;
   }
 
-  .donate-section {
+  .support-section {
     margin-top: 3rem;
+    text-align: center;
+    padding: 1.75rem 2rem;
+    background: #12161c;
+    border: 1px solid rgba(167, 243, 208, 0.15);
+    border-radius: 6px;
+  }
+
+  .support-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.5rem;
+    color: #a7f3d0;
+    margin: 0 0 0.75rem;
+  }
+
+  .support-body {
+    font-family: "Courier New", monospace;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: rgba(224, 231, 255, 0.75);
+    margin: 0 auto;
+    max-width: 620px;
+  }
+
+  .donate-section {
+    margin-top: 1.5rem;
     text-align: center;
     padding: 2rem;
     background: #1a1e26;

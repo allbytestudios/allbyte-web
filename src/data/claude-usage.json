@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "lastUpdated": "2026-04-14T00:46:42.665Z",
+  "lastUpdated": "2026-04-14T00:59:11.401Z",
   "week": {
     "startedAt": "2026-04-08T17:00:00.000Z",
     "progressPct": 76
   },
   "usage": {
     "activeHours": 70,
-    "messages": 8914,
+    "messages": 8931,
     "budgetMessages": 12900,
     "usagePct": 69
   },

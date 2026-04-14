@@ -10,6 +10,7 @@
     fetchDashboard, fetchTickets, fetchEpics,
   } from "../lib/testDataSource";
   import usageData from "../data/claude-usage.json";
+  import usageHistory from "../data/claude-usage-history.json";
   import MilestoneStrip from "./MilestoneStrip.svelte";
   import TestStatusCard from "./TestStatusCard.svelte";
   import FixturePicker from "./FixturePicker.svelte";
@@ -290,6 +291,40 @@
       </div>
     {/if}
   {/if}
+
+  <!-- Historical usage chart (Legend only) -->
+  {#if viewerIsLegend && usageHistory?.days?.length > 0}
+    {@const maxPct = Math.max(...usageHistory.days.map((d: any) => d.pctOfWeeklyBudget), 20)}
+    <h3 class="section-title">Usage History</h3>
+    <div class="history-chart">
+      <div class="chart-bars" style="--chart-max: {maxPct}">
+        {#each usageHistory.days as d, i}
+          {@const prevWeek = i > 0 ? usageHistory.days[i-1].weekStart : null}
+          {@const isWeekStart = prevWeek !== d.weekStart}
+          {#if isWeekStart && i > 0}
+            <div class="week-divider" title="Week {d.weekStart}"></div>
+          {/if}
+          <div class="day-bar-wrap" title="{d.date}: {d.messages} msg ({d.pctOfWeeklyBudget}% of weekly)">
+            <div
+              class="day-bar"
+              style="height: {(d.pctOfWeeklyBudget / maxPct) * 100}%"
+            ></div>
+          </div>
+        {/each}
+      </div>
+      <div class="chart-weeks">
+        {#each usageHistory.weeks as w}
+          <div class="chart-week">
+            <span class="chart-week-label">{w.weekStart.slice(5)}</span>
+            <span class="chart-week-pct" class:chart-week-over={w.pctOfWeeklyBudget > 100}>{w.pctOfWeeklyBudget}%</span>
+          </div>
+        {/each}
+      </div>
+      <div class="chart-legend">
+        <span>Each bar = one day, height = % of weekly budget ({usageHistory.weeklyBudget} msg)</span>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -486,6 +521,69 @@
   }
   .usage-note.usage-ahead { color: #fbbf24; }
   .usage-note.usage-behind { color: #a7f3d0; }
+
+  /* Historical chart */
+  .history-chart {
+    margin: 0.5rem 0 1rem;
+    padding: 0.75rem 1rem;
+    background: #12161e;
+    border: 1px solid rgba(167, 243, 208, 0.1);
+    border-radius: 6px;
+  }
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 100px;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    overflow-x: auto;
+  }
+  .day-bar-wrap {
+    flex: 0 0 10px;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    cursor: default;
+  }
+  .day-bar {
+    width: 100%;
+    background: linear-gradient(180deg, #60a5fa, #3b82f6);
+    border-radius: 1px;
+    min-height: 1px;
+    transition: opacity 0.15s;
+  }
+  .day-bar-wrap:hover .day-bar { opacity: 0.7; }
+  .week-divider {
+    flex: 0 0 1px;
+    background: rgba(167, 243, 208, 0.25);
+    height: 100%;
+    margin: 0 3px;
+  }
+  .chart-weeks {
+    display: flex;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+    font-size: 0.72rem;
+    flex-wrap: wrap;
+  }
+  .chart-week {
+    display: flex;
+    gap: 0.3rem;
+    align-items: baseline;
+  }
+  .chart-week-label { color: #6b7280; }
+  .chart-week-pct {
+    color: #60a5fa;
+    font-weight: 700;
+  }
+  .chart-week-pct.chart-week-over { color: #f87171; }
+  .chart-legend {
+    margin-top: 0.4rem;
+    font-size: 0.7rem;
+    color: #4b5563;
+    font-style: italic;
+  }
 
   /* Milestone progress */
   .ms-progress {

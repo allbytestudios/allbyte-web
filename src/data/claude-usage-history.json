@@ -1,0 +1,133 @@
+{
+  "schema_version": 2,
+  "lastUpdated": "2026-04-14T00:59:12.305Z",
+  "resetDay": 3,
+  "resetHour": 13,
+  "weeklyBudget": 12900,
+  "days": [
+    {
+      "date": "2026-02-22",
+      "weekStart": "2026-02-18",
+      "messages": 403,
+      "pctOfWeeklyBudget": 3.1,
+      "byProject": {
+        "App (TTD)": 403
+      }
+    },
+    {
+      "date": "2026-02-23",
+      "weekStart": "2026-02-18",
+      "messages": 91,
+      "pctOfWeeklyBudget": 0.7,
+      "byProject": {
+        "App (TTD)": 91
+      }
+    },
+    {
+      "date": "2026-04-05",
+      "weekStart": "2026-04-01",
+      "messages": 1364,
+      "pctOfWeeklyBudget": 10.6,
+      "byProject": {
+        "Worktree": 1364
+      }
+    },
+    {
+      "date": "2026-04-06",
+      "weekStart": "2026-04-01",
+      "messages": 5136,
+      "pctOfWeeklyBudget": 39.8,
+      "byProject": {
+        "App (game-host)": 3831,
+        "App (web)": 1266,
+        "Worktree": 39
+      }
+    },
+    {
+      "date": "2026-04-07",
+      "weekStart": "2026-04-01",
+      "messages": 6443,
+      "pctOfWeeklyBudget": 49.9,
+      "byProject": {
+        "App (game-host)": 3797,
+        "App (web)": 2646
+      }
+    },
+    {
+      "date": "2026-04-08",
+      "weekStart": "2026-04-01",
+      "messages": 3491,
+      "pctOfWeeklyBudget": 27.1,
+      "byProject": {
+        "App (game-host)": 2447,
+        "App (web)": 1043,
+        "Worktree": 1
+      }
+    },
+    {
+      "date": "2026-04-09",
+      "weekStart": "2026-04-08",
+      "messages": 1835,
+      "pctOfWeeklyBudget": 14.2,
+      "byProject": {
+        "App (game-host)": 535,
+        "Docker setup": 159,
+        "App (web)": 1141
+      }
+    },
+    {
+      "date": "2026-04-10",
+      "weekStart": "2026-04-08",
+      "messages": 1393,
+      "pctOfWeeklyBudget": 10.8,
+      "byProject": {
+        "App (web)": 1393
+      }
+    },
+    {
+      "date": "2026-04-11",
+      "weekStart": "2026-04-08",
+      "messages": 1475,
+      "pctOfWeeklyBudget": 11.4,
+      "byProject": {
+        "App (game-host)": 3,
+        "App (web)": 1472
+      }
+    },
+    {
+      "date": "2026-04-12",
+      "weekStart": "2026-04-08",
+      "messages": 410,
+      "pctOfWeeklyBudget": 3.2,
+      "byProject": {
+        "App (web)": 410
+      }
+    },
+    {
+      "date": "2026-04-13",
+      "weekStart": "2026-04-08",
+      "messages": 1434,
+      "pctOfWeeklyBudget": 11.1,
+      "byProject": {
+        "App (web)": 1434
+      }
+    }
+  ],
+  "weeks": [
+    {
+      "weekStart": "2026-02-18",
+      "messages": 494,
+      "pctOfWeeklyBudget": 4
+    },
+    {
+      "weekStart": "2026-04-01",
+      "messages": 16434,
+      "pctOfWeeklyBudget": 127
+    },
+    {
+      "weekStart": "2026-04-08",
+      "messages": 6547,
+      "pctOfWeeklyBudget": 51
+    }
+  ]
+}

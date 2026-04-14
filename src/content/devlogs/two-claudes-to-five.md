@@ -1,6 +1,6 @@
 ---
 title: "From 2 Claudes to 5: The Whole Engineering Team"
-description: "My engineering team went from two Claudes to five. Arc orchestrates four specialist leads — Nix, Vera, Port, and App Claude — each with strict domain boundaries, context inheritance, and the ability to spin up ephemeral subagents for parallel work. Here's how the team actually coordinates."
+description: "My engineering team went from two Claudes to five. How I split my game development Claude into 4 specialist leads — each with strict domain boundaries, context inheritance, and the ability to spin up ephemeral subagents for parallel work. Here's how the team actually coordinates."
 pubDate: 2026-04-14T12:00:00Z
 category: "workflow"
 devlog: "studio"

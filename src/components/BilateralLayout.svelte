@@ -368,6 +368,16 @@
     </div>
   {/if}
 
+  <!-- Hidden SSR mount of PlayOverlay so Astro's Vite build extracts its
+       scoped CSS into a linked stylesheet. Without this, PlayOverlay is
+       only rendered inside {#if playMode} which is false at build time, so
+       its CSS never ships — the client-side mount has the hashed class but
+       no matching rules, and the overlay renders completely unstyled. This
+       mount uses display:none to stay invisible at runtime. -->
+  <div style="display:none" aria-hidden="true">
+    <PlayOverlay onExit={() => {}} />
+  </div>
+
   <div class="demo-section" class:play-active={playMode}>
   {#if playMode}
     <div class="play-container">

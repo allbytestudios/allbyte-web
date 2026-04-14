@@ -20,6 +20,22 @@
 
   let viewerIsLegend = $derived(isTierAtLeast(auth.currentUser, "legend"));
 
+  // History chart series toggles
+  type SeriesKey = "messages" | "commits" | "churn" | "ticketsDone";
+  const SERIES: { key: SeriesKey; label: string; color: string; field: string }[] = [
+    { key: "messages",    label: "Messages",    color: "#60a5fa", field: "messages" },
+    { key: "commits",     label: "Commits",     color: "#34d399", field: "commits" },
+    { key: "churn",       label: "LOC Changed", color: "#fbbf24", field: "churn" },
+    { key: "ticketsDone", label: "Tickets Done",color: "#c084fc", field: "ticketsDone" },
+  ];
+  let activeSeries = $state<Set<SeriesKey>>(new Set(["messages"]));
+  function toggleSeries(k: SeriesKey) {
+    const s = new Set(activeSeries);
+    if (s.has(k)) s.delete(k);
+    else s.add(k);
+    activeSeries = s;
+  }
+
   let index = $state<TestIndex | null>(null);
   let status = $state<TestRunStatus | null>(null);
   let roadmap = $state<TestingRoadmap | null>(null);
@@ -295,24 +311,50 @@
   {/if}
 
   {#if viewerIsLegend && usageHistory?.hours?.length > 0}
-    {@const maxPct = Math.max(...usageHistory.hours.map((h: any) => h.pctOfWeeklyBudget), 5)}
     <h3 class="section-title">Usage History</h3>
     <div class="history-chart">
-      <div class="chart-bars" style="--chart-max: {maxPct}">
-        {#each usageHistory.hours as h, i}
-          {@const prevWeek = i > 0 ? usageHistory.hours[i-1].weekStart : null}
-          {@const isWeekStart = prevWeek !== h.weekStart}
-          {#if isWeekStart && i > 0}
-            <div class="week-divider" title="Week {h.weekStart}"></div>
-          {/if}
-          <div class="hour-bar-wrap" title="{h.hour}:00 — {h.messages} msg ({h.pctOfWeeklyBudget.toFixed(1)}% of weekly)">
-            <div
-              class="hour-bar"
-              style="height: {(h.pctOfWeeklyBudget / maxPct) * 100}%"
-            ></div>
-          </div>
+      <!-- Legend toggles -->
+      <div class="chart-legend-toggles">
+        {#each SERIES as s}
+          <button
+            class="series-toggle"
+            class:series-active={activeSeries.has(s.key)}
+            style="--series-color: {s.color}"
+            onclick={() => toggleSeries(s.key)}
+          >
+            <span class="series-swatch"></span>
+            {s.label}
+          </button>
         {/each}
       </div>
+
+      <!-- One row per active series (small multiples) -->
+      {#each SERIES.filter(s => activeSeries.has(s.key)) as s}
+        {@const values = usageHistory.hours.map((h: any) => h[s.field] ?? 0)}
+        {@const maxVal = Math.max(...values, 1)}
+        <div class="series-row">
+          <div class="series-label" style="color: {s.color}">
+            {s.label}
+            <span class="series-max">max {maxVal.toLocaleString()}/hr</span>
+          </div>
+          <div class="chart-bars">
+            {#each usageHistory.hours as h, i}
+              {@const prevWeek = i > 0 ? usageHistory.hours[i-1].weekStart : null}
+              {@const isWeekStart = prevWeek !== h.weekStart}
+              {@const v = h[s.field] ?? 0}
+              {#if isWeekStart && i > 0}
+                <div class="week-divider" title="Week {h.weekStart}"></div>
+              {/if}
+              <div class="hour-bar-wrap" title="{h.hour}:00 — {s.label}: {v.toLocaleString()}">
+                <div
+                  class="hour-bar"
+                  style="height: {maxVal > 0 ? (v / maxVal) * 100 : 0}%; background: {s.color};"
+                ></div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/each}
       <div class="chart-weeks-grid">
         {#each usageHistory.weeks as w}
           <div class="chart-week-card">
@@ -569,12 +611,69 @@
     border: 1px solid rgba(167, 243, 208, 0.1);
     border-radius: 6px;
   }
+  .chart-legend-toggles {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+  }
+  .series-toggle {
+    background: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    color: #6b7280;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    opacity: 0.5;
+    transition: all 0.15s;
+  }
+  .series-toggle:hover { opacity: 0.8; }
+  .series-toggle.series-active {
+    opacity: 1;
+    color: var(--series-color);
+    border-color: var(--series-color);
+    background: rgba(0, 0, 0, 0.3);
+  }
+  .series-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--series-color);
+    display: inline-block;
+  }
+  .series-row {
+    margin-bottom: 0.5rem;
+  }
+  .series-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .series-max {
+    font-size: 0.68rem;
+    color: #6b7280;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
   .chart-bars {
     display: flex;
     align-items: flex-end;
     gap: 1px;
-    height: 100px;
-    padding: 0.25rem 0;
+    height: 70px;
+    padding: 0.15rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     overflow-x: auto;
   }

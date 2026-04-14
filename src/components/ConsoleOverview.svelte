@@ -28,7 +28,7 @@
     { key: "churn",       label: "LOC Changed", color: "#fbbf24", field: "churn" },
     { key: "ticketsDone", label: "Tickets Done",color: "#c084fc", field: "ticketsDone" },
   ];
-  let activeSeries = $state<Set<SeriesKey>>(new Set(["messages"]));
+  let activeSeries = $state<Set<SeriesKey>>(new Set(["messages", "commits", "churn", "ticketsDone"]));
   function toggleSeries(k: SeriesKey) {
     const s = new Set(activeSeries);
     if (s.has(k)) s.delete(k);

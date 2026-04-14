@@ -1,6 +1,6 @@
 {
   "schema_version": 4,
-  "lastUpdated": "2026-04-14T01:16:12.841Z",
+  "lastUpdated": "2026-04-14T01:21:18.782Z",
   "resetDay": 3,
   "resetHour": 13,
   "weeklyBudget": 12900,
@@ -109,10 +109,10 @@
       "byProject": {
         "Worktree": 79
       },
-      "commits": 0,
-      "insertions": 0,
-      "deletions": 0,
-      "churn": 0,
+      "commits": 1,
+      "insertions": 848,
+      "deletions": 94,
+      "churn": 942,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -286,10 +286,10 @@
         "App (game-host)": 735,
         "App (web)": 202
       },
-      "commits": 0,
-      "insertions": 0,
-      "deletions": 0,
-      "churn": 0,
+      "commits": 2,
+      "insertions": 1282,
+      "deletions": 150,
+      "churn": 1432,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -488,10 +488,10 @@
         "App (game-host)": 388,
         "App (web)": 116
       },
-      "commits": 0,
-      "insertions": 0,
-      "deletions": 0,
-      "churn": 0,
+      "commits": 1,
+      "insertions": 480,
+      "deletions": 64,
+      "churn": 544,
       "ticketsDone": 0,
       "ticketsMoved": 0,
       "efficiencyCycles": 0
@@ -505,7 +505,7 @@
         "App (game-host)": 512,
         "App (web)": 361
       },
-      "commits": 0,
+      "commits": 3,
       "insertions": 0,
       "deletions": 0,
       "churn": 0,
@@ -1940,15 +1940,15 @@
     {
       "hour": "2026-04-13 21",
       "weekStart": "2026-04-08",
-      "messages": 76,
-      "pctOfWeeklyBudget": 0.59,
+      "messages": 103,
+      "pctOfWeeklyBudget": 0.8,
       "byProject": {
-        "App (web)": 76
+        "App (web)": 103
       },
-      "commits": 4,
-      "insertions": 597,
-      "deletions": 110,
-      "churn": 707,
+      "commits": 6,
+      "insertions": 645,
+      "deletions": 206,
+      "churn": 851,
       "ticketsDone": 3,
       "ticketsMoved": 16,
       "efficiencyCycles": 1
@@ -2013,25 +2013,25 @@
       "weekStart": "2026-04-01",
       "messages": 14050,
       "pctOfWeeklyBudget": 109,
-      "commits": 12,
-      "insertions": 7818,
-      "deletions": 426,
-      "churn": 8244,
+      "commits": 19,
+      "insertions": 10428,
+      "deletions": 734,
+      "churn": 11162,
       "ticketsDone": 0,
-      "msgPerCommit": 1171,
+      "msgPerCommit": 739,
       "msgPerTicket": null
     },
     {
       "weekStart": "2026-04-08",
-      "messages": 9017,
+      "messages": 9044,
       "pctOfWeeklyBudget": 70,
-      "commits": 229,
-      "insertions": 43681,
-      "deletions": 5134,
-      "churn": 48815,
+      "commits": 231,
+      "insertions": 43729,
+      "deletions": 5230,
+      "churn": 48959,
       "ticketsDone": 11,
       "msgPerCommit": 39,
-      "msgPerTicket": 820
+      "msgPerTicket": 822
     }
   ]
 }

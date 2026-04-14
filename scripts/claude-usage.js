@@ -222,6 +222,9 @@ const hourKeys = [...hourly.keys()].sort();
 const REPOS = [
   resolve("."), // allbyte-web (this repo)
   resolve(process.env.CHRONICLES_DIR || "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis"),
+  // TacticalTestDev — the pre-Arc Chronicles sibling. Commits here reflect
+  // real Claude-driven work during April 5-9 that would otherwise be missing.
+  "C:/Users/drew/Documents/GitHub/TacticalTestDev",
 ];
 
 const gitByHour = new Map(); // hourKey → { commits, insertions, deletions }
@@ -409,7 +412,16 @@ const history = {
   weeks,
 };
 
-writeFileSync(HISTORY_PATH, JSON.stringify(history, null, 2));
+// Safety: verify output doesn't accidentally leak paths/names before writing
+const outStr = JSON.stringify(history, null, 2);
+const LEAK_PATTERNS = [/drew/i, /bruce/i, /beitman/i, /C:[\\/]/i, /\/home\//i, /AppData/i];
+for (const p of LEAK_PATTERNS) {
+  if (p.test(outStr)) {
+    console.error(`ERROR: output matches leak pattern ${p} — refusing to write`);
+    process.exit(1);
+  }
+}
+writeFileSync(HISTORY_PATH, outStr);
 console.log(`wrote ${HISTORY_PATH}`);
 console.log(`  ${hours.length} hours across ${weeks.length} weeks`);
 for (const w of weeks.slice(-6)) {

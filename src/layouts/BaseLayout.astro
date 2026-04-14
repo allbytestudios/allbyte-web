@@ -39,8 +39,20 @@ const {
       // inspection, etc.) can reveal tier-gated content without a server
       // round-trip per element. Re-runs on every client-side navigation.
       function syncTierClasses() {
-        const token = localStorage.getItem("allbyte_token");
         document.body.classList.remove("is-admin", "is-hero-plus");
+
+        // Localhost dev: match the auto-login in auth.svelte.ts. Gives the
+        // admin/legend preview without needing a real JWT.
+        const isLocalDev =
+          typeof window !== "undefined" &&
+          (window.location.hostname === "localhost" ||
+            window.location.hostname === "127.0.0.1");
+        if (isLocalDev) {
+          document.body.classList.add("is-hero-plus", "is-admin");
+          return;
+        }
+
+        const token = localStorage.getItem("allbyte_token");
         if (!token) return;
         fetch("https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/me", {
           headers: { Authorization: `Bearer ${token}` },

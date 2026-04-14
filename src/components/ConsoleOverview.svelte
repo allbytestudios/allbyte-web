@@ -293,21 +293,21 @@
   {/if}
 
   <!-- Historical usage chart (Legend only) -->
-  {#if viewerIsLegend && usageHistory?.days?.length > 0}
-    {@const maxPct = Math.max(...usageHistory.days.map((d: any) => d.pctOfWeeklyBudget), 20)}
+  {#if viewerIsLegend && usageHistory?.hours?.length > 0}
+    {@const maxPct = Math.max(...usageHistory.hours.map((h: any) => h.pctOfWeeklyBudget), 5)}
     <h3 class="section-title">Usage History</h3>
     <div class="history-chart">
       <div class="chart-bars" style="--chart-max: {maxPct}">
-        {#each usageHistory.days as d, i}
-          {@const prevWeek = i > 0 ? usageHistory.days[i-1].weekStart : null}
-          {@const isWeekStart = prevWeek !== d.weekStart}
+        {#each usageHistory.hours as h, i}
+          {@const prevWeek = i > 0 ? usageHistory.hours[i-1].weekStart : null}
+          {@const isWeekStart = prevWeek !== h.weekStart}
           {#if isWeekStart && i > 0}
-            <div class="week-divider" title="Week {d.weekStart}"></div>
+            <div class="week-divider" title="Week {h.weekStart}"></div>
           {/if}
-          <div class="day-bar-wrap" title="{d.date}: {d.messages} msg ({d.pctOfWeeklyBudget}% of weekly)">
+          <div class="hour-bar-wrap" title="{h.hour}:00 — {h.messages} msg ({h.pctOfWeeklyBudget.toFixed(1)}% of weekly)">
             <div
-              class="day-bar"
-              style="height: {(d.pctOfWeeklyBudget / maxPct) * 100}%"
+              class="hour-bar"
+              style="height: {(h.pctOfWeeklyBudget / maxPct) * 100}%"
             ></div>
           </div>
         {/each}
@@ -321,7 +321,7 @@
         {/each}
       </div>
       <div class="chart-legend">
-        <span>Each bar = one day, height = % of weekly budget ({usageHistory.weeklyBudget} msg)</span>
+        <span>Each bar = one hour, height = % of weekly budget ({usageHistory.weeklyBudget} msg). {usageHistory.hours.length} active hours across {usageHistory.weeks.length} weeks.</span>
       </div>
     </div>
   {/if}
@@ -533,27 +533,26 @@
   .chart-bars {
     display: flex;
     align-items: flex-end;
-    gap: 2px;
+    gap: 1px;
     height: 100px;
     padding: 0.25rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     overflow-x: auto;
   }
-  .day-bar-wrap {
-    flex: 0 0 10px;
+  .hour-bar-wrap {
+    flex: 0 0 3px;
     height: 100%;
     display: flex;
     align-items: flex-end;
     cursor: default;
   }
-  .day-bar {
+  .hour-bar {
     width: 100%;
     background: linear-gradient(180deg, #60a5fa, #3b82f6);
-    border-radius: 1px;
     min-height: 1px;
     transition: opacity 0.15s;
   }
-  .day-bar-wrap:hover .day-bar { opacity: 0.7; }
+  .hour-bar-wrap:hover .hour-bar { opacity: 0.5; background: #fbbf24; }
   .week-divider {
     flex: 0 0 1px;
     background: rgba(167, 243, 208, 0.25);

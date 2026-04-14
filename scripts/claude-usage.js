@@ -176,17 +176,18 @@ function weekBucketFor(ts) {
   return reset.toISOString().slice(0, 10);
 }
 
-// Day key (YYYY-MM-DD local)
-function dayBucketFor(ts) {
+// Hour key (YYYY-MM-DD HH local)
+function hourBucketFor(ts) {
   const d = new Date(ts);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  const hr = String(d.getHours()).padStart(2, "0");
+  return `${y}-${m}-${day} ${hr}`;
 }
 
-// Collect daily message counts + project split
-const daily = new Map(); // dayKey → { total, byProject: Map, weekKey }
+// Collect hourly message counts + project split
+const hourly = new Map(); // hourKey → { total, byProject: Map, weekKey }
 
 for (const file of files) {
   const parts = file.split(/[\\/]/);
@@ -205,36 +206,34 @@ for (const file of files) {
     const ts = obj.timestamp ? Date.parse(obj.timestamp) : null;
     if (!ts) continue;
 
-    const dk = dayBucketFor(ts);
-    if (!daily.has(dk)) daily.set(dk, { total: 0, byProject: new Map(), weekKey: weekBucketFor(ts) });
-    const bucket = daily.get(dk);
+    const hk = hourBucketFor(ts);
+    if (!hourly.has(hk)) hourly.set(hk, { total: 0, byProject: new Map(), weekKey: weekBucketFor(ts) });
+    const bucket = hourly.get(hk);
     bucket.total++;
     bucket.byProject.set(projectLabel, (bucket.byProject.get(projectLabel) ?? 0) + 1);
   }
 }
 
-// Build sorted day array (oldest first)
-const dayKeys = [...daily.keys()].sort();
-const days = dayKeys.map((dk) => {
-  const b = daily.get(dk);
+// Build sorted hour array (oldest first)
+const hourKeys = [...hourly.keys()].sort();
+const hours = hourKeys.map((hk) => {
+  const b = hourly.get(hk);
   const byProject = {};
   for (const [k, v] of b.byProject) byProject[k] = v;
   return {
-    date: dk,
+    hour: hk, // YYYY-MM-DD HH
     weekStart: b.weekKey,
     messages: b.total,
-    pctOfWeeklyBudget: Math.round((b.total / WEEKLY_BUDGET_MESSAGES) * 100 * 10) / 10, // 1 decimal
+    pctOfWeeklyBudget: Math.round((b.total / WEEKLY_BUDGET_MESSAGES) * 100 * 100) / 100, // 2 decimals
     byProject,
   };
 });
 
-// Weekly summary (for the x-axis week boundaries)
+// Weekly summary (for boundaries and totals)
 const weekly = new Map();
-for (const d of days) {
-  if (!weekly.has(d.weekStart)) weekly.set(d.weekStart, { messages: 0, days: 0 });
-  const w = weekly.get(d.weekStart);
-  w.messages += d.messages;
-  w.days++;
+for (const h of hours) {
+  if (!weekly.has(h.weekStart)) weekly.set(h.weekStart, { messages: 0 });
+  weekly.get(h.weekStart).messages += h.messages;
 }
 const weeks = [...weekly.keys()].sort().map((wk) => ({
   weekStart: wk,
@@ -243,19 +242,19 @@ const weeks = [...weekly.keys()].sort().map((wk) => ({
 }));
 
 const history = {
-  schema_version: 2,
+  schema_version: 3,
   lastUpdated: new Date().toISOString(),
   resetDay: RESET_DAY,
   resetHour: RESET_HOUR,
   weeklyBudget: WEEKLY_BUDGET_MESSAGES,
-  days,
+  hours,
   weeks,
 };
 
 writeFileSync(HISTORY_PATH, JSON.stringify(history, null, 2));
 console.log(`wrote ${HISTORY_PATH}`);
-console.log(`  ${days.length} days across ${weeks.length} weeks`);
+console.log(`  ${hours.length} hours across ${weeks.length} weeks`);
 for (const w of weeks.slice(-6)) {
-  const daysInWeek = days.filter((d) => d.weekStart === w.weekStart).length;
-  console.log(`    week ${w.weekStart}: ${w.messages} msg = ${w.pctOfWeeklyBudget}% (${daysInWeek} days)`);
+  const hoursInWeek = hours.filter((h) => h.weekStart === w.weekStart).length;
+  console.log(`    week ${w.weekStart}: ${w.messages} msg = ${w.pctOfWeeklyBudget}% (${hoursInWeek} active hours)`);
 }

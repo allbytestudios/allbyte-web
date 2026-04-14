@@ -1,115 +1,1074 @@
 {
-  "schema_version": 2,
-  "lastUpdated": "2026-04-14T00:59:12.305Z",
+  "schema_version": 3,
+  "lastUpdated": "2026-04-14T01:02:15.213Z",
   "resetDay": 3,
   "resetHour": 13,
   "weeklyBudget": 12900,
-  "days": [
+  "hours": [
     {
-      "date": "2026-02-22",
+      "hour": "2026-02-22 09",
       "weekStart": "2026-02-18",
-      "messages": 403,
-      "pctOfWeeklyBudget": 3.1,
+      "messages": 74,
+      "pctOfWeeklyBudget": 0.57,
       "byProject": {
-        "App (TTD)": 403
+        "App (TTD)": 74
       }
     },
     {
-      "date": "2026-02-23",
+      "hour": "2026-02-22 12",
+      "weekStart": "2026-02-18",
+      "messages": 84,
+      "pctOfWeeklyBudget": 0.65,
+      "byProject": {
+        "App (TTD)": 84
+      }
+    },
+    {
+      "hour": "2026-02-22 15",
+      "weekStart": "2026-02-18",
+      "messages": 212,
+      "pctOfWeeklyBudget": 1.64,
+      "byProject": {
+        "App (TTD)": 212
+      }
+    },
+    {
+      "hour": "2026-02-22 16",
+      "weekStart": "2026-02-18",
+      "messages": 33,
+      "pctOfWeeklyBudget": 0.26,
+      "byProject": {
+        "App (TTD)": 33
+      }
+    },
+    {
+      "hour": "2026-02-23 13",
       "weekStart": "2026-02-18",
       "messages": 91,
-      "pctOfWeeklyBudget": 0.7,
+      "pctOfWeeklyBudget": 0.71,
       "byProject": {
         "App (TTD)": 91
       }
     },
     {
-      "date": "2026-04-05",
+      "hour": "2026-04-05 12",
       "weekStart": "2026-04-01",
-      "messages": 1364,
-      "pctOfWeeklyBudget": 10.6,
+      "messages": 414,
+      "pctOfWeeklyBudget": 3.21,
       "byProject": {
-        "Worktree": 1364
+        "Worktree": 414
       }
     },
     {
-      "date": "2026-04-06",
+      "hour": "2026-04-05 13",
       "weekStart": "2026-04-01",
-      "messages": 5136,
-      "pctOfWeeklyBudget": 39.8,
+      "messages": 79,
+      "pctOfWeeklyBudget": 0.61,
       "byProject": {
-        "App (game-host)": 3831,
-        "App (web)": 1266,
+        "Worktree": 79
+      }
+    },
+    {
+      "hour": "2026-04-05 14",
+      "weekStart": "2026-04-01",
+      "messages": 94,
+      "pctOfWeeklyBudget": 0.73,
+      "byProject": {
+        "Worktree": 94
+      }
+    },
+    {
+      "hour": "2026-04-05 19",
+      "weekStart": "2026-04-01",
+      "messages": 65,
+      "pctOfWeeklyBudget": 0.5,
+      "byProject": {
+        "Worktree": 65
+      }
+    },
+    {
+      "hour": "2026-04-05 20",
+      "weekStart": "2026-04-01",
+      "messages": 274,
+      "pctOfWeeklyBudget": 2.12,
+      "byProject": {
+        "Worktree": 274
+      }
+    },
+    {
+      "hour": "2026-04-05 21",
+      "weekStart": "2026-04-01",
+      "messages": 310,
+      "pctOfWeeklyBudget": 2.4,
+      "byProject": {
+        "Worktree": 310
+      }
+    },
+    {
+      "hour": "2026-04-05 22",
+      "weekStart": "2026-04-01",
+      "messages": 128,
+      "pctOfWeeklyBudget": 0.99,
+      "byProject": {
+        "Worktree": 128
+      }
+    },
+    {
+      "hour": "2026-04-06 08",
+      "weekStart": "2026-04-01",
+      "messages": 39,
+      "pctOfWeeklyBudget": 0.3,
+      "byProject": {
         "Worktree": 39
       }
     },
     {
-      "date": "2026-04-07",
+      "hour": "2026-04-06 09",
       "weekStart": "2026-04-01",
-      "messages": 6443,
-      "pctOfWeeklyBudget": 49.9,
+      "messages": 495,
+      "pctOfWeeklyBudget": 3.84,
       "byProject": {
-        "App (game-host)": 3797,
-        "App (web)": 2646
+        "App (game-host)": 495
       }
     },
     {
-      "date": "2026-04-08",
+      "hour": "2026-04-06 10",
       "weekStart": "2026-04-01",
-      "messages": 3491,
-      "pctOfWeeklyBudget": 27.1,
+      "messages": 266,
+      "pctOfWeeklyBudget": 2.06,
       "byProject": {
-        "App (game-host)": 2447,
-        "App (web)": 1043,
+        "App (game-host)": 266
+      }
+    },
+    {
+      "hour": "2026-04-06 11",
+      "weekStart": "2026-04-01",
+      "messages": 340,
+      "pctOfWeeklyBudget": 2.64,
+      "byProject": {
+        "App (game-host)": 340
+      }
+    },
+    {
+      "hour": "2026-04-06 12",
+      "weekStart": "2026-04-01",
+      "messages": 683,
+      "pctOfWeeklyBudget": 5.29,
+      "byProject": {
+        "App (game-host)": 683
+      }
+    },
+    {
+      "hour": "2026-04-06 13",
+      "weekStart": "2026-04-01",
+      "messages": 937,
+      "pctOfWeeklyBudget": 7.26,
+      "byProject": {
+        "App (game-host)": 735,
+        "App (web)": 202
+      }
+    },
+    {
+      "hour": "2026-04-06 14",
+      "weekStart": "2026-04-01",
+      "messages": 40,
+      "pctOfWeeklyBudget": 0.31,
+      "byProject": {
+        "App (game-host)": 16,
+        "App (web)": 24
+      }
+    },
+    {
+      "hour": "2026-04-06 15",
+      "weekStart": "2026-04-01",
+      "messages": 340,
+      "pctOfWeeklyBudget": 2.64,
+      "byProject": {
+        "App (game-host)": 206,
+        "App (web)": 134
+      }
+    },
+    {
+      "hour": "2026-04-06 16",
+      "weekStart": "2026-04-01",
+      "messages": 652,
+      "pctOfWeeklyBudget": 5.05,
+      "byProject": {
+        "App (game-host)": 306,
+        "App (web)": 346
+      }
+    },
+    {
+      "hour": "2026-04-06 17",
+      "weekStart": "2026-04-01",
+      "messages": 424,
+      "pctOfWeeklyBudget": 3.29,
+      "byProject": {
+        "App (game-host)": 142,
+        "App (web)": 282
+      }
+    },
+    {
+      "hour": "2026-04-06 19",
+      "weekStart": "2026-04-01",
+      "messages": 430,
+      "pctOfWeeklyBudget": 3.33,
+      "byProject": {
+        "App (game-host)": 268,
+        "App (web)": 162
+      }
+    },
+    {
+      "hour": "2026-04-06 20",
+      "weekStart": "2026-04-01",
+      "messages": 158,
+      "pctOfWeeklyBudget": 1.22,
+      "byProject": {
+        "App (game-host)": 158
+      }
+    },
+    {
+      "hour": "2026-04-06 21",
+      "weekStart": "2026-04-01",
+      "messages": 332,
+      "pctOfWeeklyBudget": 2.57,
+      "byProject": {
+        "App (game-host)": 216,
+        "App (web)": 116
+      }
+    },
+    {
+      "hour": "2026-04-07 07",
+      "weekStart": "2026-04-01",
+      "messages": 298,
+      "pctOfWeeklyBudget": 2.31,
+      "byProject": {
+        "App (game-host)": 218,
+        "App (web)": 80
+      }
+    },
+    {
+      "hour": "2026-04-07 08",
+      "weekStart": "2026-04-01",
+      "messages": 618,
+      "pctOfWeeklyBudget": 4.79,
+      "byProject": {
+        "App (game-host)": 512,
+        "App (web)": 106
+      }
+    },
+    {
+      "hour": "2026-04-07 09",
+      "weekStart": "2026-04-01",
+      "messages": 284,
+      "pctOfWeeklyBudget": 2.2,
+      "byProject": {
+        "App (game-host)": 196,
+        "App (web)": 88
+      }
+    },
+    {
+      "hour": "2026-04-07 10",
+      "weekStart": "2026-04-01",
+      "messages": 360,
+      "pctOfWeeklyBudget": 2.79,
+      "byProject": {
+        "App (game-host)": 360
+      }
+    },
+    {
+      "hour": "2026-04-07 11",
+      "weekStart": "2026-04-01",
+      "messages": 504,
+      "pctOfWeeklyBudget": 3.91,
+      "byProject": {
+        "App (game-host)": 388,
+        "App (web)": 116
+      }
+    },
+    {
+      "hour": "2026-04-07 12",
+      "weekStart": "2026-04-01",
+      "messages": 873,
+      "pctOfWeeklyBudget": 6.77,
+      "byProject": {
+        "App (game-host)": 512,
+        "App (web)": 361
+      }
+    },
+    {
+      "hour": "2026-04-07 13",
+      "weekStart": "2026-04-01",
+      "messages": 880,
+      "pctOfWeeklyBudget": 6.82,
+      "byProject": {
+        "App (game-host)": 446,
+        "App (web)": 434
+      }
+    },
+    {
+      "hour": "2026-04-07 14",
+      "weekStart": "2026-04-01",
+      "messages": 929,
+      "pctOfWeeklyBudget": 7.2,
+      "byProject": {
+        "App (game-host)": 513,
+        "App (web)": 416
+      }
+    },
+    {
+      "hour": "2026-04-07 15",
+      "weekStart": "2026-04-01",
+      "messages": 469,
+      "pctOfWeeklyBudget": 3.64,
+      "byProject": {
+        "App (game-host)": 228,
+        "App (web)": 241
+      }
+    },
+    {
+      "hour": "2026-04-07 16",
+      "weekStart": "2026-04-01",
+      "messages": 278,
+      "pctOfWeeklyBudget": 2.16,
+      "byProject": {
+        "App (game-host)": 118,
+        "App (web)": 160
+      }
+    },
+    {
+      "hour": "2026-04-07 17",
+      "weekStart": "2026-04-01",
+      "messages": 218,
+      "pctOfWeeklyBudget": 1.69,
+      "byProject": {
+        "App (game-host)": 53,
+        "App (web)": 165
+      }
+    },
+    {
+      "hour": "2026-04-07 19",
+      "weekStart": "2026-04-01",
+      "messages": 235,
+      "pctOfWeeklyBudget": 1.82,
+      "byProject": {
+        "App (game-host)": 64,
+        "App (web)": 171
+      }
+    },
+    {
+      "hour": "2026-04-07 20",
+      "weekStart": "2026-04-01",
+      "messages": 233,
+      "pctOfWeeklyBudget": 1.81,
+      "byProject": {
+        "App (game-host)": 98,
+        "App (web)": 135
+      }
+    },
+    {
+      "hour": "2026-04-07 21",
+      "weekStart": "2026-04-01",
+      "messages": 264,
+      "pctOfWeeklyBudget": 2.05,
+      "byProject": {
+        "App (game-host)": 91,
+        "App (web)": 173
+      }
+    },
+    {
+      "hour": "2026-04-08 09",
+      "weekStart": "2026-04-01",
+      "messages": 545,
+      "pctOfWeeklyBudget": 4.22,
+      "byProject": {
+        "App (game-host)": 284,
+        "App (web)": 261
+      }
+    },
+    {
+      "hour": "2026-04-08 10",
+      "weekStart": "2026-04-01",
+      "messages": 194,
+      "pctOfWeeklyBudget": 1.5,
+      "byProject": {
+        "App (game-host)": 116,
+        "App (web)": 78
+      }
+    },
+    {
+      "hour": "2026-04-08 11",
+      "weekStart": "2026-04-01",
+      "messages": 317,
+      "pctOfWeeklyBudget": 2.46,
+      "byProject": {
+        "App (game-host)": 245,
+        "App (web)": 72
+      }
+    },
+    {
+      "hour": "2026-04-08 12",
+      "weekStart": "2026-04-01",
+      "messages": 51,
+      "pctOfWeeklyBudget": 0.4,
+      "byProject": {
+        "App (game-host)": 22,
+        "App (web)": 29
+      }
+    },
+    {
+      "hour": "2026-04-08 13",
+      "weekStart": "2026-04-08",
+      "messages": 464,
+      "pctOfWeeklyBudget": 3.6,
+      "byProject": {
+        "App (game-host)": 345,
+        "App (web)": 118,
         "Worktree": 1
       }
     },
     {
-      "date": "2026-04-09",
+      "hour": "2026-04-08 14",
       "weekStart": "2026-04-08",
-      "messages": 1835,
-      "pctOfWeeklyBudget": 14.2,
+      "messages": 325,
+      "pctOfWeeklyBudget": 2.52,
       "byProject": {
-        "App (game-host)": 535,
-        "Docker setup": 159,
-        "App (web)": 1141
+        "App (game-host)": 217,
+        "App (web)": 108
       }
     },
     {
-      "date": "2026-04-10",
+      "hour": "2026-04-08 15",
       "weekStart": "2026-04-08",
-      "messages": 1393,
-      "pctOfWeeklyBudget": 10.8,
+      "messages": 609,
+      "pctOfWeeklyBudget": 4.72,
       "byProject": {
-        "App (web)": 1393
+        "App (game-host)": 424,
+        "App (web)": 185
       }
     },
     {
-      "date": "2026-04-11",
+      "hour": "2026-04-08 16",
       "weekStart": "2026-04-08",
-      "messages": 1475,
-      "pctOfWeeklyBudget": 11.4,
+      "messages": 416,
+      "pctOfWeeklyBudget": 3.22,
+      "byProject": {
+        "App (game-host)": 302,
+        "App (web)": 114
+      }
+    },
+    {
+      "hour": "2026-04-08 17",
+      "weekStart": "2026-04-08",
+      "messages": 70,
+      "pctOfWeeklyBudget": 0.54,
+      "byProject": {
+        "App (game-host)": 53,
+        "App (web)": 17
+      }
+    },
+    {
+      "hour": "2026-04-08 18",
+      "weekStart": "2026-04-08",
+      "messages": 109,
+      "pctOfWeeklyBudget": 0.84,
+      "byProject": {
+        "App (game-host)": 93,
+        "App (web)": 16
+      }
+    },
+    {
+      "hour": "2026-04-08 19",
+      "weekStart": "2026-04-08",
+      "messages": 211,
+      "pctOfWeeklyBudget": 1.64,
+      "byProject": {
+        "App (game-host)": 191,
+        "App (web)": 20
+      }
+    },
+    {
+      "hour": "2026-04-08 20",
+      "weekStart": "2026-04-08",
+      "messages": 170,
+      "pctOfWeeklyBudget": 1.32,
+      "byProject": {
+        "App (game-host)": 145,
+        "App (web)": 25
+      }
+    },
+    {
+      "hour": "2026-04-08 21",
+      "weekStart": "2026-04-08",
+      "messages": 10,
+      "pctOfWeeklyBudget": 0.08,
+      "byProject": {
+        "App (game-host)": 10
+      }
+    },
+    {
+      "hour": "2026-04-09 03",
+      "weekStart": "2026-04-08",
+      "messages": 480,
+      "pctOfWeeklyBudget": 3.72,
+      "byProject": {
+        "App (game-host)": 366,
+        "App (web)": 114
+      }
+    },
+    {
+      "hour": "2026-04-09 04",
+      "weekStart": "2026-04-08",
+      "messages": 287,
+      "pctOfWeeklyBudget": 2.22,
+      "byProject": {
+        "App (game-host)": 169,
+        "Docker setup": 36,
+        "App (web)": 82
+      }
+    },
+    {
+      "hour": "2026-04-09 05",
+      "weekStart": "2026-04-08",
+      "messages": 29,
+      "pctOfWeeklyBudget": 0.22,
+      "byProject": {
+        "Docker setup": 29
+      }
+    },
+    {
+      "hour": "2026-04-09 06",
+      "weekStart": "2026-04-08",
+      "messages": 50,
+      "pctOfWeeklyBudget": 0.39,
+      "byProject": {
+        "Docker setup": 50
+      }
+    },
+    {
+      "hour": "2026-04-09 08",
+      "weekStart": "2026-04-08",
+      "messages": 16,
+      "pctOfWeeklyBudget": 0.12,
+      "byProject": {
+        "Docker setup": 16
+      }
+    },
+    {
+      "hour": "2026-04-09 09",
+      "weekStart": "2026-04-08",
+      "messages": 207,
+      "pctOfWeeklyBudget": 1.6,
+      "byProject": {
+        "App (web)": 207
+      }
+    },
+    {
+      "hour": "2026-04-09 10",
+      "weekStart": "2026-04-08",
+      "messages": 61,
+      "pctOfWeeklyBudget": 0.47,
+      "byProject": {
+        "App (web)": 61
+      }
+    },
+    {
+      "hour": "2026-04-09 11",
+      "weekStart": "2026-04-08",
+      "messages": 121,
+      "pctOfWeeklyBudget": 0.94,
+      "byProject": {
+        "App (web)": 121
+      }
+    },
+    {
+      "hour": "2026-04-09 12",
+      "weekStart": "2026-04-08",
+      "messages": 2,
+      "pctOfWeeklyBudget": 0.02,
+      "byProject": {
+        "App (web)": 2
+      }
+    },
+    {
+      "hour": "2026-04-09 13",
+      "weekStart": "2026-04-08",
+      "messages": 17,
+      "pctOfWeeklyBudget": 0.13,
+      "byProject": {
+        "App (web)": 17
+      }
+    },
+    {
+      "hour": "2026-04-09 14",
+      "weekStart": "2026-04-08",
+      "messages": 74,
+      "pctOfWeeklyBudget": 0.57,
+      "byProject": {
+        "App (web)": 74
+      }
+    },
+    {
+      "hour": "2026-04-09 15",
+      "weekStart": "2026-04-08",
+      "messages": 237,
+      "pctOfWeeklyBudget": 1.84,
+      "byProject": {
+        "Docker setup": 6,
+        "App (web)": 231
+      }
+    },
+    {
+      "hour": "2026-04-09 16",
+      "weekStart": "2026-04-08",
+      "messages": 97,
+      "pctOfWeeklyBudget": 0.75,
+      "byProject": {
+        "Docker setup": 18,
+        "App (web)": 79
+      }
+    },
+    {
+      "hour": "2026-04-09 17",
+      "weekStart": "2026-04-08",
+      "messages": 88,
+      "pctOfWeeklyBudget": 0.68,
+      "byProject": {
+        "App (web)": 88
+      }
+    },
+    {
+      "hour": "2026-04-09 19",
+      "weekStart": "2026-04-08",
+      "messages": 29,
+      "pctOfWeeklyBudget": 0.22,
+      "byProject": {
+        "App (web)": 29
+      }
+    },
+    {
+      "hour": "2026-04-09 20",
+      "weekStart": "2026-04-08",
+      "messages": 17,
+      "pctOfWeeklyBudget": 0.13,
+      "byProject": {
+        "App (web)": 17
+      }
+    },
+    {
+      "hour": "2026-04-09 21",
+      "weekStart": "2026-04-08",
+      "messages": 23,
+      "pctOfWeeklyBudget": 0.18,
+      "byProject": {
+        "Docker setup": 4,
+        "App (web)": 19
+      }
+    },
+    {
+      "hour": "2026-04-10 07",
+      "weekStart": "2026-04-08",
+      "messages": 39,
+      "pctOfWeeklyBudget": 0.3,
+      "byProject": {
+        "App (web)": 39
+      }
+    },
+    {
+      "hour": "2026-04-10 08",
+      "weekStart": "2026-04-08",
+      "messages": 89,
+      "pctOfWeeklyBudget": 0.69,
+      "byProject": {
+        "App (web)": 89
+      }
+    },
+    {
+      "hour": "2026-04-10 09",
+      "weekStart": "2026-04-08",
+      "messages": 289,
+      "pctOfWeeklyBudget": 2.24,
+      "byProject": {
+        "App (web)": 289
+      }
+    },
+    {
+      "hour": "2026-04-10 10",
+      "weekStart": "2026-04-08",
+      "messages": 110,
+      "pctOfWeeklyBudget": 0.85,
+      "byProject": {
+        "App (web)": 110
+      }
+    },
+    {
+      "hour": "2026-04-10 11",
+      "weekStart": "2026-04-08",
+      "messages": 173,
+      "pctOfWeeklyBudget": 1.34,
+      "byProject": {
+        "App (web)": 173
+      }
+    },
+    {
+      "hour": "2026-04-10 12",
+      "weekStart": "2026-04-08",
+      "messages": 76,
+      "pctOfWeeklyBudget": 0.59,
+      "byProject": {
+        "App (web)": 76
+      }
+    },
+    {
+      "hour": "2026-04-10 13",
+      "weekStart": "2026-04-08",
+      "messages": 158,
+      "pctOfWeeklyBudget": 1.22,
+      "byProject": {
+        "App (web)": 158
+      }
+    },
+    {
+      "hour": "2026-04-10 14",
+      "weekStart": "2026-04-08",
+      "messages": 68,
+      "pctOfWeeklyBudget": 0.53,
+      "byProject": {
+        "App (web)": 68
+      }
+    },
+    {
+      "hour": "2026-04-10 15",
+      "weekStart": "2026-04-08",
+      "messages": 103,
+      "pctOfWeeklyBudget": 0.8,
+      "byProject": {
+        "App (web)": 103
+      }
+    },
+    {
+      "hour": "2026-04-10 16",
+      "weekStart": "2026-04-08",
+      "messages": 33,
+      "pctOfWeeklyBudget": 0.26,
+      "byProject": {
+        "App (web)": 33
+      }
+    },
+    {
+      "hour": "2026-04-10 17",
+      "weekStart": "2026-04-08",
+      "messages": 68,
+      "pctOfWeeklyBudget": 0.53,
+      "byProject": {
+        "App (web)": 68
+      }
+    },
+    {
+      "hour": "2026-04-10 18",
+      "weekStart": "2026-04-08",
+      "messages": 49,
+      "pctOfWeeklyBudget": 0.38,
+      "byProject": {
+        "App (web)": 49
+      }
+    },
+    {
+      "hour": "2026-04-10 19",
+      "weekStart": "2026-04-08",
+      "messages": 75,
+      "pctOfWeeklyBudget": 0.58,
+      "byProject": {
+        "App (web)": 75
+      }
+    },
+    {
+      "hour": "2026-04-10 20",
+      "weekStart": "2026-04-08",
+      "messages": 54,
+      "pctOfWeeklyBudget": 0.42,
+      "byProject": {
+        "App (web)": 54
+      }
+    },
+    {
+      "hour": "2026-04-10 22",
+      "weekStart": "2026-04-08",
+      "messages": 9,
+      "pctOfWeeklyBudget": 0.07,
+      "byProject": {
+        "App (web)": 9
+      }
+    },
+    {
+      "hour": "2026-04-11 08",
+      "weekStart": "2026-04-08",
+      "messages": 15,
+      "pctOfWeeklyBudget": 0.12,
+      "byProject": {
+        "App (web)": 15
+      }
+    },
+    {
+      "hour": "2026-04-11 11",
+      "weekStart": "2026-04-08",
+      "messages": 50,
+      "pctOfWeeklyBudget": 0.39,
+      "byProject": {
+        "App (web)": 50
+      }
+    },
+    {
+      "hour": "2026-04-11 14",
+      "weekStart": "2026-04-08",
+      "messages": 179,
+      "pctOfWeeklyBudget": 1.39,
       "byProject": {
         "App (game-host)": 3,
-        "App (web)": 1472
+        "App (web)": 176
       }
     },
     {
-      "date": "2026-04-12",
+      "hour": "2026-04-11 15",
       "weekStart": "2026-04-08",
-      "messages": 410,
-      "pctOfWeeklyBudget": 3.2,
+      "messages": 133,
+      "pctOfWeeklyBudget": 1.03,
       "byProject": {
-        "App (web)": 410
+        "App (web)": 133
       }
     },
     {
-      "date": "2026-04-13",
+      "hour": "2026-04-11 16",
       "weekStart": "2026-04-08",
-      "messages": 1434,
-      "pctOfWeeklyBudget": 11.1,
+      "messages": 21,
+      "pctOfWeeklyBudget": 0.16,
       "byProject": {
-        "App (web)": 1434
+        "App (web)": 21
+      }
+    },
+    {
+      "hour": "2026-04-11 17",
+      "weekStart": "2026-04-08",
+      "messages": 223,
+      "pctOfWeeklyBudget": 1.73,
+      "byProject": {
+        "App (web)": 223
+      }
+    },
+    {
+      "hour": "2026-04-11 18",
+      "weekStart": "2026-04-08",
+      "messages": 166,
+      "pctOfWeeklyBudget": 1.29,
+      "byProject": {
+        "App (web)": 166
+      }
+    },
+    {
+      "hour": "2026-04-11 19",
+      "weekStart": "2026-04-08",
+      "messages": 184,
+      "pctOfWeeklyBudget": 1.43,
+      "byProject": {
+        "App (web)": 184
+      }
+    },
+    {
+      "hour": "2026-04-11 20",
+      "weekStart": "2026-04-08",
+      "messages": 283,
+      "pctOfWeeklyBudget": 2.19,
+      "byProject": {
+        "App (web)": 283
+      }
+    },
+    {
+      "hour": "2026-04-11 21",
+      "weekStart": "2026-04-08",
+      "messages": 167,
+      "pctOfWeeklyBudget": 1.29,
+      "byProject": {
+        "App (web)": 167
+      }
+    },
+    {
+      "hour": "2026-04-11 22",
+      "weekStart": "2026-04-08",
+      "messages": 54,
+      "pctOfWeeklyBudget": 0.42,
+      "byProject": {
+        "App (web)": 54
+      }
+    },
+    {
+      "hour": "2026-04-12 02",
+      "weekStart": "2026-04-08",
+      "messages": 17,
+      "pctOfWeeklyBudget": 0.13,
+      "byProject": {
+        "App (web)": 17
+      }
+    },
+    {
+      "hour": "2026-04-12 03",
+      "weekStart": "2026-04-08",
+      "messages": 59,
+      "pctOfWeeklyBudget": 0.46,
+      "byProject": {
+        "App (web)": 59
+      }
+    },
+    {
+      "hour": "2026-04-12 07",
+      "weekStart": "2026-04-08",
+      "messages": 163,
+      "pctOfWeeklyBudget": 1.26,
+      "byProject": {
+        "App (web)": 163
+      }
+    },
+    {
+      "hour": "2026-04-12 08",
+      "weekStart": "2026-04-08",
+      "messages": 2,
+      "pctOfWeeklyBudget": 0.02,
+      "byProject": {
+        "App (web)": 2
+      }
+    },
+    {
+      "hour": "2026-04-12 12",
+      "weekStart": "2026-04-08",
+      "messages": 9,
+      "pctOfWeeklyBudget": 0.07,
+      "byProject": {
+        "App (web)": 9
+      }
+    },
+    {
+      "hour": "2026-04-12 13",
+      "weekStart": "2026-04-08",
+      "messages": 82,
+      "pctOfWeeklyBudget": 0.64,
+      "byProject": {
+        "App (web)": 82
+      }
+    },
+    {
+      "hour": "2026-04-12 14",
+      "weekStart": "2026-04-08",
+      "messages": 32,
+      "pctOfWeeklyBudget": 0.25,
+      "byProject": {
+        "App (web)": 32
+      }
+    },
+    {
+      "hour": "2026-04-12 15",
+      "weekStart": "2026-04-08",
+      "messages": 46,
+      "pctOfWeeklyBudget": 0.36,
+      "byProject": {
+        "App (web)": 46
+      }
+    },
+    {
+      "hour": "2026-04-13 09",
+      "weekStart": "2026-04-08",
+      "messages": 74,
+      "pctOfWeeklyBudget": 0.57,
+      "byProject": {
+        "App (web)": 74
+      }
+    },
+    {
+      "hour": "2026-04-13 11",
+      "weekStart": "2026-04-08",
+      "messages": 184,
+      "pctOfWeeklyBudget": 1.43,
+      "byProject": {
+        "App (web)": 184
+      }
+    },
+    {
+      "hour": "2026-04-13 12",
+      "weekStart": "2026-04-08",
+      "messages": 277,
+      "pctOfWeeklyBudget": 2.15,
+      "byProject": {
+        "App (web)": 277
+      }
+    },
+    {
+      "hour": "2026-04-13 13",
+      "weekStart": "2026-04-08",
+      "messages": 224,
+      "pctOfWeeklyBudget": 1.74,
+      "byProject": {
+        "App (web)": 224
+      }
+    },
+    {
+      "hour": "2026-04-13 14",
+      "weekStart": "2026-04-08",
+      "messages": 248,
+      "pctOfWeeklyBudget": 1.92,
+      "byProject": {
+        "App (web)": 248
+      }
+    },
+    {
+      "hour": "2026-04-13 15",
+      "weekStart": "2026-04-08",
+      "messages": 215,
+      "pctOfWeeklyBudget": 1.67,
+      "byProject": {
+        "App (web)": 215
+      }
+    },
+    {
+      "hour": "2026-04-13 16",
+      "weekStart": "2026-04-08",
+      "messages": 19,
+      "pctOfWeeklyBudget": 0.15,
+      "byProject": {
+        "App (web)": 19
+      }
+    },
+    {
+      "hour": "2026-04-13 17",
+      "weekStart": "2026-04-08",
+      "messages": 3,
+      "pctOfWeeklyBudget": 0.02,
+      "byProject": {
+        "App (web)": 3
+      }
+    },
+    {
+      "hour": "2026-04-13 19",
+      "weekStart": "2026-04-08",
+      "messages": 12,
+      "pctOfWeeklyBudget": 0.09,
+      "byProject": {
+        "App (web)": 12
+      }
+    },
+    {
+      "hour": "2026-04-13 20",
+      "weekStart": "2026-04-08",
+      "messages": 188,
+      "pctOfWeeklyBudget": 1.46,
+      "byProject": {
+        "App (web)": 188
+      }
+    },
+    {
+      "hour": "2026-04-13 21",
+      "weekStart": "2026-04-08",
+      "messages": 13,
+      "pctOfWeeklyBudget": 0.1,
+      "byProject": {
+        "App (web)": 13
       }
     }
   ],
@@ -121,13 +1080,13 @@
     },
     {
       "weekStart": "2026-04-01",
-      "messages": 16434,
-      "pctOfWeeklyBudget": 127
+      "messages": 14050,
+      "pctOfWeeklyBudget": 109
     },
     {
       "weekStart": "2026-04-08",
-      "messages": 6547,
-      "pctOfWeeklyBudget": 51
+      "messages": 8954,
+      "pctOfWeeklyBudget": 69
     }
   ]
 }

@@ -5,7 +5,7 @@ pubDate: 2026-04-14T12:00:00Z
 category: "workflow"
 devlog: "studio"
 tags: ["claude", "agents", "subagents", "ai-pair-programming", "workflow"]
-draft: true
+draft: false
 ---
 
 A few weeks ago my engineering team was two Claudes. [App Claude](/devlog/two-claudes-talking/) drove the web portal you're reading this on; CON Claude drove the Godot game. They coordinated through markdown files and a shared tmux session, which worked for small-scoped back-and-forth but buckled the moment either side had a queue longer than three items. One Claude thrashing on five parallel tasks still has only one context to think with.
@@ -53,7 +53,7 @@ Multi-agent work collapses the moment the agents step on each other. I lost a fu
 The other rules fell into place around that first one:
 
 **Good delegation targets** — independent, deterministic, independently verifiable:
-- Tier 1 unit tests for a new code area
+- Tier 1 unit tests for a new code area (tier system covered in a [separate post](/devlog/test-framework-four-tiers/))
 - Playwright coverage for one event command type
 - Documentation and roadmap writes (pure reads)
 - Dependency audits ("what sprites does MainSquare reference that aren't in the pack yet?")
@@ -130,7 +130,7 @@ Since we have Claude, we can just build what we need. So I designed a ticketing 
 - **App Claude built the webapp side** — reads those files and renders them live. I see ticket state, lead status, and agent chat in visually separated places instead of one scrolling terminal.
 - **The decision queue** is the key piece — a curated list of specific questions with pre-framed options. When I have ten minutes, I can run through five unblocks instead of hunting them across three Claude sessions.
 
-That webapp — the **Dev Console** — became the thing that actually unblocks day-to-day work. Without it I was the bottleneck, missing lead questions for hours because they'd scrolled off the top of my terminal. With it I can glance at the Questions tab and clear six pending decisions in a coffee break. **[A Real-Time Dashboard for an AI Development Team](/devlog/dev-console-agent-dashboard/)** walks through how the dashboard is built — the data contract, the tabs, the decision write-back loop, and how App Claude contributes its own recommendations when Arc asks the backend for input. That post is the *how*; this one is the *why*.
+That webapp — the **Dev Console** — became the thing that actually unblocks day-to-day work. Without it I was the bottleneck for requirements creation (and with Playwright we're closing the validation side) — now things can start going real\* fast. With the Console I can glance at the Questions tab and clear six pending decisions in a coffee break instead of hunting them across three Claude sessions. **[A Real-Time Dashboard for an AI Development Team](/devlog/dev-console-agent-dashboard/)** walks through how the dashboard is built — the data contract, the tabs, the decision write-back loop, and how App Claude contributes its own recommendations when Arc asks the backend for input. That post is the *how*; this one is the *why*.
 
 I'm still training Arc to route lead updates through the ticket system instead of dumping them into our conversation. Occasionally he slips and I get a lead's status report mid-dialogue about something else. That'll improve — or at some point I'll just add a rule to his CLAUDE.md forbidding it.
 
@@ -221,3 +221,9 @@ The system is still young. The real test is whether the async workflow holds up 
 But the shape is clear. A single Claude was a capable solo developer. Arc, Nix, Vera, and Port are a specialist team, and the whole is already doing more than the parts.
 
 The work lives in the repo. The infrastructure — ticket system, webapp dashboard, efficiency tracking — gets its own posts. This one was about the agents.
+
+## The moment it clicked
+
+With the scaffolding in place, the benefits got very real, very fast. I scatter-shot five to eight bugs and small issues at Arc — wrong sprite on the character subpanel, missing data on the menu screen, dialogue button misaligned when options were showing — just terse human descriptions. He said "got it," and within minutes the things I'd described were getting fixed in the live web export. Back to back, rapid fire, from brief prompts.
+
+That moment felt like a glimpse of what I'm actually building toward: rapid game development from a single prompt. Not because any one Claude got smarter — but because the team around the prompt finally existed.

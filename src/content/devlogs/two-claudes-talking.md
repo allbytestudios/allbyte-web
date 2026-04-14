@@ -30,7 +30,7 @@ But splitting work across team leads creates a problem the moment they need to c
 
 ## When team leads fan out
 
-Both team leads can spawn subagents within their own sessions — not just spawn each other. App Claude reaches for them occasionally (parallel codebase searches, an independent review pass, a focused exploration of a subsystem). CON Claude lives on them, because tests are embarrassingly parallel: a Tier 1 GUT batch, a Tier 3 Playwright batch, a documentation generator, and a fixture regenerator can all run at once with no shared state.
+Both team leads can spawn subagents within their own sessions — not just spawn each other. App Claude reaches for them occasionally (parallel codebase searches, an independent review pass, a focused exploration of a subsystem). CON Claude lives on them, because tests are embarrassingly parallel: a Tier 1 GUT batch, a Tier 3 Playwright batch, a documentation generator, and a fixture regenerator can all run at once with no shared state. (The full four-tier framework gets its own [post](/devlog/test-framework-four-tiers/).)
 
 I've seen four or five CON subagents live at once and I'd run more if I could. The ceiling isn't intelligence — it's my desktop. Each subagent is a real process holding state, and the host has finite RAM and CPU. When CON's subagents saturate the box, App Claude (running on the host directly, not in the container) feels it too, and I have to throttle one team lead so the other can breathe. In practice I keep CON Claude as the one that gets to fan out — its work parallelizes more naturally — and I keep App Claude lean.
 

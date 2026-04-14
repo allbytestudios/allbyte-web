@@ -93,6 +93,46 @@ const breadcrumbs = [
     </article>
   </main>
   <Footer theme="engine" />
+  <script>
+    // Render ```mermaid code blocks as SVG diagrams. Loaded on demand —
+    // only runs when a devlog page actually has a .language-mermaid block.
+    (async function renderMermaid() {
+      const blocks = document.querySelectorAll('pre code.language-mermaid');
+      if (!blocks.length) return;
+      const { default: mermaid } = await import(
+        "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"
+      );
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "dark",
+        themeVariables: {
+          primaryColor: "#12161c",
+          primaryTextColor: "#e0e7ff",
+          primaryBorderColor: "#a7f3d0",
+          lineColor: "#a7f3d0",
+          secondaryColor: "#1a1e26",
+          tertiaryColor: "#22272e",
+          fontFamily: "Courier New, monospace",
+        },
+        securityLevel: "loose",
+      });
+      let i = 0;
+      for (const block of blocks) {
+        const src = block.textContent || "";
+        const id = `mermaid-${++i}`;
+        try {
+          const { svg } = await mermaid.render(id, src);
+          const wrap = document.createElement("div");
+          wrap.className = "mermaid-diagram";
+          wrap.innerHTML = svg;
+          const pre = block.parentElement;
+          if (pre && pre.parentElement) pre.parentElement.replaceChild(wrap, pre);
+        } catch (err) {
+          console.error("mermaid render failed:", err);
+        }
+      }
+    })();
+  </script>
 </BaseLayout>
 
 <style is:global>
@@ -334,5 +374,20 @@ const breadcrumbs = [
     padding: 0.5rem 0.75rem;
     border-bottom: 1px solid rgba(167, 243, 208, 0.08);
     color: #eaeaea;
+  }
+
+  .mermaid-diagram {
+    background: #12161c;
+    border: 1px solid rgba(167, 243, 208, 0.15);
+    border-radius: 4px;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    text-align: center;
+    overflow-x: auto;
+  }
+  .mermaid-diagram svg {
+    max-width: 100%;
+    height: auto;
+    display: inline-block;
   }
 </style>

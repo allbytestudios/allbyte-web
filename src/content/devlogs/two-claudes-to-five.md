@@ -134,6 +134,45 @@ That webapp — the **Dev Console** — became the thing that actually unblocks 
 
 I'm still training Arc to route lead updates through the ticket system instead of dumping them into our conversation. Occasionally he slips and I get a lead's status report mid-dialogue about something else. That'll improve — or at some point I'll just add a rule to his CLAUDE.md forbidding it.
 
+### How a ticket actually flows
+
+```mermaid
+flowchart LR
+    O([Owner]) -- idea / bug / feature --> A(Arc)
+    A -- cuts ticket --> P[PLANNING]
+    P --> TR{TECH<br/>REVIEW}
+    TR -. needed/watch/clear .-> N(Nix)
+    TR -. needed/watch/clear .-> V(Vera)
+    TR -. needed/watch/clear .-> Pt(Port)
+    N -- test specs --> V
+    Pt -. web-compat flag .-> A
+    TR -- all signoffs,<br/>success criteria<br/>paired with tests --> B[BUNDLING]
+    B -- related tickets<br/>grouped --> R[READY]
+    R -- lead picks up --> IP[IN PROGRESS]
+    IP -- may spawn --> Sub[subagents]
+    IP --> T[TESTING]
+    T -- Vera verifies --> D[DONE]
+    IP -- scope change --> TR
+    T -- regression --> IP
+
+    classDef phase fill:#12161c,stroke:#a7f3d0,color:#e0e7ff
+    classDef review fill:#1a1e26,stroke:#fbbf24,color:#fbbf24
+    classDef done fill:#12161c,stroke:#34d399,color:#34d399
+    classDef agent fill:#1a1e26,stroke:#60a5fa,color:#93c5fd
+    classDef owner fill:#1a1e26,stroke:#c4b5fd,color:#c4b5fd
+    class P,B,R,IP,T phase
+    class TR review
+    class D done
+    class N,V,Pt,A,Sub agent
+    class O owner
+```
+
+Three things worth calling out in this flow:
+
+- **Tech Review is the three-lead gut check.** Each lead marks the ticket `needed`, `watch`, or `clear` for their domain. Vera also writes test specs paired to every success criterion — that's the TDD-style quality gate.
+- **Bundling is new** (added Session 13 based on token-efficiency measurements). Tickets that share files, root cause, or domain get grouped so a lead can load context once and work the whole group. [Efficiency devlog coming soon covers the data.](/devlog/ai-efficiency/)
+- **Loop-backs are fine.** If scope changes mid-work or a regression surfaces in testing, the ticket moves backward, not sideways. That's how the pushback mechanism stays honest — nothing pretends to be done that isn't.
+
 ## Context inheritance: why named specialists work
 
 The four-agent team didn't work well until I changed how context loaded.

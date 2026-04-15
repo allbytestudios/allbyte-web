@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fetchIndex, fetchDashboard, fetchTickets, fetchAgentChat, fetchEpics, fetchAgentActivity } from "../lib/testDataSource";
+  import { fetchIndex, fetchDashboard, fetchTickets, fetchAgentChat, fetchEpics, fetchAgentActivity, fetchOwnerQuestions } from "../lib/testDataSource";
   import { effectivePhase } from "../lib/ticketTypes";
   import { onMount } from "svelte";
 
@@ -26,13 +26,14 @@
   let questionsPending = $state<number | null>(null);
 
   onMount(async () => {
-    const [idx, dash, tix, chat, epics, agentAct] = await Promise.all([
+    const [idx, dash, tix, chat, epics, agentAct, oq] = await Promise.all([
       fetchIndex().catch(() => null),
       fetchDashboard().catch(() => null),
       fetchTickets().catch(() => null),
       fetchAgentChat().catch(() => []),
       fetchEpics().catch(() => null),
       fetchAgentActivity().catch(() => null),
+      fetchOwnerQuestions().catch(() => null),
     ]);
     testCount = idx?.summary?.total_tests ?? null;
 
@@ -71,13 +72,22 @@
       chatTotalDisplay = String(totalChat);
     }
 
-    // Agent Questions: pending decisions + awaiting owner tickets
-    const ownerNames = new Set(["Owner", "AllByte", "Drew", "owner", "allbyte"]);
-    const ownerDecs = chat.filter((m: any) => ownerNames.has(m.to) && m.decision);
-    const pendingDecs = ownerDecs.filter((m: any) => m.decision.status === "pending");
-    const awaitingCount = tix ? tix.tickets.filter(t => t.awaitingOwner && effectivePhase(t) !== "done").length : 0;
-    questionsPending = (pendingDecs.length + awaitingCount) || null;
-    questionsTotal = (ownerDecs.length + awaitingCount) || null;
+    // Agent Questions: read Arc's synthesized owner_questions.json.
+    // Falls back to the legacy chat-based count for projects that haven't
+    // published owner_questions.json yet.
+    if (oq && Array.isArray(oq.questions)) {
+      const pending = oq.questions.filter((q: any) => q.status === "pending").length;
+      const total = oq.questions.length;
+      questionsPending = pending > 0 ? pending : null;
+      questionsTotal = total > 0 ? total : null;
+    } else {
+      const ownerNames = new Set(["Owner", "AllByte", "Drew", "owner", "allbyte"]);
+      const ownerDecs = chat.filter((m: any) => ownerNames.has(m.to) && m.decision);
+      const pendingDecs = ownerDecs.filter((m: any) => m.decision.status === "pending");
+      const awaitingCount = tix ? tix.tickets.filter(t => t.awaitingOwner && effectivePhase(t) !== "done").length : 0;
+      questionsPending = (pendingDecs.length + awaitingCount) || null;
+      questionsTotal = (ownerDecs.length + awaitingCount) || null;
+    }
   });
 </script>
 

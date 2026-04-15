@@ -391,7 +391,7 @@
       ></iframe>
     </div>
   {:else}
-    <div class="demo-row" style="position: relative;" onclick={launchGame}>
+    <div class="demo-row" style="position: relative;" onclick={launchGame} onmouseenter={onDemoEnter} onmouseleave={onDemoLeave}>
       <div class="overlay-badges" onclick={(e) => e.stopPropagation()}>
         <MilestoneBadge />
       </div>

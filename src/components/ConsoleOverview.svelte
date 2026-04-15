@@ -166,10 +166,17 @@
         }
       }
     }
-    return msOrder.filter(ms => msMap.has(ms)).map(ms => {
-      const g = msMap.get(ms)!;
+    // Always render all 3 milestones (pre_alpha / alpha / beta) so the
+    // progression is visible even before later milestones are scoped.
+    // Only pre_alpha is scoped — alpha + beta are marked "not scoped yet"
+    // so their partial epics don't read as meaningful estimation.
+    const SCOPED = new Set(["pre_alpha"]);
+    return msOrder.map(ms => {
+      const g = msMap.get(ms) ?? { epics: 0, tickets: 0, done: 0, weighted: 0, hours: 0 };
       return {
+        key: ms,
         name: ms.replace(/_/g, " "),
+        scoped: SCOPED.has(ms),
         epicCount: g.epics,
         ticketCount: g.tickets,
         doneCount: g.done,
@@ -201,17 +208,33 @@
   {#if milestoneEstimates.length > 0}
     <div class="ms-progress">
       {#each milestoneEstimates as ms}
-        <div class="ms-card">
+        <div class="ms-card" class:ms-card-unscoped={!ms.scoped}>
           <div class="ms-header">
             <span class="ms-name">{ms.name}</span>
-            <span class="ms-pct">{ms.pctDone}%</span>
+            {#if ms.scoped}
+              <span class="ms-pct">{ms.pctDone}%</span>
+            {:else}
+              <span class="ms-scope-tag">Not scoped yet</span>
+            {/if}
           </div>
-          <div class="ms-bar"><div class="ms-bar-fill" style="width: {ms.pctDone}%"></div></div>
-          <div class="ms-detail">
-            <span>{ms.epicCount} epics</span>
-            <span>{ms.doneCount}/{ms.ticketCount} tickets</span>
-            {#if ms.totalHours > 0}<span>~{Math.round(ms.weightedDone / ms.ticketCount * ms.totalHours)}h / {ms.totalHours}h</span>{/if}
-          </div>
+          {#if ms.scoped}
+            <div class="ms-bar"><div class="ms-bar-fill" style="width: {ms.pctDone}%"></div></div>
+            <div class="ms-detail">
+              <span>{ms.epicCount} epics</span>
+              <span>{ms.doneCount}/{ms.ticketCount} tickets</span>
+              {#if ms.totalHours > 0}<span>~{Math.round(ms.weightedDone / ms.ticketCount * ms.totalHours)}h / {ms.totalHours}h</span>{/if}
+            </div>
+          {:else}
+            <div class="ms-bar ms-bar-empty"><div class="ms-bar-fill ms-bar-fill-muted" style="width: 0%"></div></div>
+            <div class="ms-detail ms-detail-muted">
+              {#if ms.epicCount > 0}
+                <span>{ms.epicCount} epic{ms.epicCount === 1 ? "" : "s"} sketched</span>
+              {:else}
+                <span>No epics yet</span>
+              {/if}
+              <span class="ms-scope-hint">estimates meaningful once scoped</span>
+            </div>
+          {/if}
         </div>
       {/each}
     </div>
@@ -795,6 +818,41 @@
     gap: 0.6rem;
     font-size: 0.75rem;
     color: #6b7280;
+  }
+
+  /* Unscoped milestones (Alpha / Beta before they're broken into epics).
+     Muted styling signals "this is a placeholder; estimation isn't
+     meaningful yet" — visible in the progression but obviously not
+     tracking live work. */
+  .ms-card-unscoped {
+    border-color: rgba(156, 163, 175, 0.18);
+    background: rgba(18, 22, 30, 0.5);
+  }
+  .ms-card-unscoped .ms-name {
+    color: #9ca3af;
+  }
+  .ms-scope-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+    border: 1px dashed rgba(156, 163, 175, 0.45);
+    padding: 0.1rem 0.45rem;
+    border-radius: 2px;
+  }
+  .ms-bar-empty {
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .ms-bar-fill-muted {
+    background: rgba(156, 163, 175, 0.25);
+  }
+  .ms-detail-muted {
+    color: rgba(156, 163, 175, 0.7);
+  }
+  .ms-scope-hint {
+    font-style: italic;
+    color: rgba(156, 163, 175, 0.55);
   }
 
   .estimation {

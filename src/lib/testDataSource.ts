@@ -171,6 +171,42 @@ export async function submitDecision(decisionId: string, choice: string): Promis
   return res.json();
 }
 
+/** Owner Questions queue — Arc's synthesized "waiting on AllByte" file. */
+export async function fetchOwnerQuestions(
+  signal?: AbortSignal
+): Promise<import("./ticketTypes").OwnerQuestionsFile | null> {
+  const res = await fetch(`${TEST_DATA_BASE}/tickets/owner_questions.json`, {
+    cache: "no-store",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+/**
+ * Submit an answer to an owner question. Body shape mirrors OwnerAnswer
+ * minus the timestamp/answeredBy fields — the middleware fills those.
+ * Exactly one of choice/verified/freeText should be populated based on
+ * the question's answerType.
+ */
+export async function submitOwnerAnswer(answer: {
+  questionId: string;
+  answerType: import("./ticketTypes").OwnerQuestionAnswerType;
+  choice?: string | null;
+  verified?: boolean | null;
+  issueNote?: string | null;
+  freeText?: string | null;
+}): Promise<{ ok: boolean }> {
+  const res = await fetch(`/api/answers/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(answer),
+  });
+  if (!res.ok) throw new Error(`Answer submit failed: ${res.status}`);
+  return res.json();
+}
+
 export function fixtureUrl(savePath: string): string {
   return `${TEST_DATA_BASE}/${savePath.replace(/^\/+/, "")}`;
 }

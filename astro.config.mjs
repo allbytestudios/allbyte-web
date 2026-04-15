@@ -181,11 +181,121 @@ function decisionWriteback() {
   };
 }
 
+// Dev-only POST endpoint for owner answer write-back. Append-only NDJSON
+// stream at tickets/owner_answers.ndjson — Arc tails this and applies
+// answers to the source-of-truth files (tickets, epics, agent_chat).
+// Kept separate from agent_chat.ndjson so verification + freeText answers
+// don't pollute the conversation stream. Choice answers are mirrored to
+// BOTH this file AND agent_chat.ndjson during a transition window so the
+// existing decision-resolved flow keeps working.
+function ownerAnswerWriteback() {
+  return {
+    name: "allbyte-owner-answer-writeback",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.replace(/\/$/, "") ?? "";
+        if (req.method !== "POST" || url !== "/api/answers") return next();
+        const MAX_BODY = 16 * 1024;
+        let body = "";
+        let tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
+        req.on("end", () => {
+          if (tooLarge) return;
+          try {
+            const parsed = JSON.parse(body);
+            const { questionId, answerType, choice, verified, issueNote, freeText } = parsed;
+            if (!questionId || !answerType) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "questionId and answerType required" }));
+            }
+            // Validate questionId — same rule as decisionId
+            if (typeof questionId !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(questionId)) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "invalid questionId format" }));
+            }
+            if (!["choice", "verification", "freeText"].includes(answerType)) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "invalid answerType" }));
+            }
+            // Per-type field validation. Exactly one payload field per type.
+            if (answerType === "choice") {
+              if (typeof choice !== "string" || choice.length === 0 || choice.length > 4096) {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: "choice must be 1-4096 char string" }));
+              }
+            } else if (answerType === "verification") {
+              if (typeof verified !== "boolean") {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: "verified must be boolean" }));
+              }
+              if (verified === false && issueNote != null && (typeof issueNote !== "string" || issueNote.length > 4096)) {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: "issueNote must be 0-4096 char string when present" }));
+              }
+            } else if (answerType === "freeText") {
+              if (typeof freeText !== "string" || freeText.length === 0 || freeText.length > 4096) {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: "freeText must be 1-4096 char string" }));
+              }
+            }
+            const answersPath = normalize(join(chroniclesRoot, "tickets", "owner_answers.ndjson"));
+            const entry = {
+              questionId,
+              answeredAt: new Date().toISOString(),
+              answeredBy: "AllByte",
+              answerType,
+              choice: answerType === "choice" ? choice : null,
+              verified: answerType === "verification" ? verified : null,
+              issueNote: answerType === "verification" && verified === false ? (issueNote ?? null) : null,
+              freeText: answerType === "freeText" ? freeText : null,
+            };
+            appendFileSync(answersPath, JSON.stringify(entry) + "\n");
+
+            // Mirror choice answers to agent_chat.ndjson so the existing
+            // decision-resolved flow keeps working during transition.
+            if (answerType === "choice") {
+              const chatPath = normalize(join(chroniclesRoot, "tickets", "agent_chat.ndjson"));
+              const msg = {
+                timestamp: entry.answeredAt,
+                from: "Owner",
+                to: "Arc",
+                channel: "decisions",
+                message: `Answer ${questionId}: ${choice}`,
+                decision: { id: questionId, choice, status: "resolved", chosenBy: "Owner" },
+              };
+              try {
+                appendFileSync(chatPath, JSON.stringify(msg) + "\n");
+              } catch {
+                // Mirror is best-effort; primary write already succeeded.
+              }
+            }
+
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true, questionId, answerType }));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: String(err?.message ?? err) }));
+          }
+        });
+      });
+    },
+  };
+}
+
 export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
   vite: {
-    plugins: [tailwindcss(), decisionWriteback(), chroniclesProxy()],
+    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), chroniclesProxy()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

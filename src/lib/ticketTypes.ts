@@ -298,3 +298,98 @@ export function subtaskProgress(t: Ticket): { done: number; total: number } {
     total: t.subtasks.length,
   };
 }
+
+// =====================================================================
+// Owner Questions Queue
+//
+// Synthesized "things waiting on AllByte" file Arc maintains and AppC
+// reads. Aggregates 5 source types (decisions, tickets needing review,
+// epic outstanding questions, leads blocked on owner, verification
+// requests) into a single queue rendered at /test/questions/.
+//
+// Design contract: schema CON_CLAUDE_OWNER_QUESTIONS_CONFIRMED.md.
+// Source of truth is always the originating file (tickets.json,
+// agent_chat.ndjson, etc.) — owner_questions.json is a derived view.
+// =====================================================================
+
+export type OwnerQuestionSource =
+  | "decision"
+  | "ticket"
+  | "epic"
+  | "blocker"
+  | "verification";
+
+export type OwnerQuestionAnswerType = "choice" | "verification" | "freeText";
+
+export type OwnerQuestionStatus = "pending" | "resolved" | "obsolete";
+
+export interface OwnerQuestionArtifact {
+  type: string; // "screenshot" | "test" | "scene" | "ticket" | etc.
+  path: string;
+}
+
+export interface OwnerQuestion {
+  // Required core
+  id: string;
+  source: OwnerQuestionSource;
+  answerType: OwnerQuestionAnswerType;
+  question: string;
+  status: OwnerQuestionStatus;
+  createdAt: string;
+  createdBy: string;
+
+  // Optional render enrichment
+  context?: string;
+  priority?: "P0" | "P1" | "P2" | "P3";
+  ticket?: string;
+  epic?: string;
+  options?: string[];      // required when answerType === "choice"
+  default?: string;        // optional, only meaningful for choice
+  sourceFile?: string;
+  sourceId?: string;
+  relatedArtifacts?: OwnerQuestionArtifact[];
+
+  // Set by Arc when status flips
+  resolvedAt?: string;
+  resolvedAnswer?: unknown;
+}
+
+export interface OwnerQuestionsFile {
+  schema_version: number;
+  lastUpdated: string;
+  questions: OwnerQuestion[];
+}
+
+// Write-back shape: what the webapp POSTs to /api/answers and what Arc
+// tails out of owner_answers.ndjson. One entry per answer.
+export interface OwnerAnswer {
+  questionId: string;
+  answeredAt: string;
+  answeredBy: string;       // hardcoded "AllByte" for now (Pre-Alpha)
+  answerType: OwnerQuestionAnswerType;
+  // Exactly one of these is populated per answer, matching answerType:
+  choice?: string | null;
+  verified?: boolean | null;
+  issueNote?: string | null;     // populated when verified === false
+  freeText?: string | null;
+}
+
+export const SOURCE_META: Record<OwnerQuestionSource, { label: string; color: string }> = {
+  decision: { label: "Decision", color: "#fbbf24" },
+  ticket: { label: "Ticket", color: "#60a5fa" },
+  epic: { label: "Epic", color: "#c084fc" },
+  blocker: { label: "Blocker", color: "#f87171" },
+  verification: { label: "Verify", color: "#a7f3d0" },
+};
+
+const PRIORITY_RANK: Record<string, number> = { P0: 0, P1: 1, P2: 2, P3: 3 };
+
+/** Sort: priority first (P0 → P3, missing last), then createdAt ascending (oldest first). */
+export function sortOwnerQuestions(qs: OwnerQuestion[]): OwnerQuestion[] {
+  return [...qs].sort((a, b) => {
+    const pa = a.priority ? PRIORITY_RANK[a.priority] : 99;
+    const pb = b.priority ? PRIORITY_RANK[b.priority] : 99;
+    if (pa !== pb) return pa - pb;
+    return a.createdAt.localeCompare(b.createdAt);
+  });
+}

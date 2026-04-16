@@ -1,8 +1,9 @@
 import { defineConfig } from "astro/config";
 import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
-import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, writeFileSync, realpathSync } from "node:fs";
-import { join, normalize, resolve, sep } from "node:path";
+import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, writeFileSync, realpathSync, watch as fsWatch } from "node:fs";
+import { join, normalize, resolve, sep, relative } from "node:path";
+import chokidar from "chokidar";
 
 const chroniclesRoot = resolve(
   process.env.CHRONICLES_DIR ||
@@ -291,17 +292,158 @@ function ownerAnswerWriteback() {
   };
 }
 
+// Shared SSE client set + broadcast. Used by both testDataEvents (Chronicles
+// file changes) and godotReload (public/godot/ deploy detection). Hoisted to
+// module scope so both plugins can push to connected browsers.
+const sseClients = new Set();
+function sseBroadcast(relPath) {
+  const payload = JSON.stringify({ path: relPath, at: Date.now() });
+  const msg = `event: change\ndata: ${payload}\n\n`;
+  for (const res of sseClients) {
+    try { res.write(msg); } catch {}
+  }
+}
+
+// Dev-only SSE endpoint pushing file-change events from the Chronicles repo
+// to connected browsers, so the dashboard updates within ~200ms of Arc's daemon
+// mutating state instead of waiting for the next 5s poll. Polling remains as
+// fallback if the SSE connection drops.
+function testDataEvents() {
+  // Files we broadcast. Everything else in Chronicles is ignored to keep the
+  // event stream quiet and the subscriber surface small.
+  const WATCHED_RELS = [
+    "tickets/owner_questions.json",
+    "tickets/tickets.json",
+    "tickets/dashboard.json",
+    "tickets/epics.json",
+    "tickets/agents.json",
+    "tickets/agent_activity.json",
+    "tickets/agent_chat.ndjson",
+    "tickets/owner_answers.ndjson",
+    "tickets/.answer_daemon_heartbeat.json",
+    "test_index.json",
+    "test_roadmap.json",
+  ];
+
+  // Debounce map: relPath -> timer. fs.watch fires multiple events per write
+  // (rename + change on atomic replace). Coalesce to one broadcast per ~50ms.
+  const pending = new Map();
+
+  function scheduleBroadcast(relPath) {
+    if (pending.has(relPath)) return;
+    const t = setTimeout(() => {
+      pending.delete(relPath);
+      sseBroadcast(relPath);
+    }, 50);
+    pending.set(relPath, t);
+  }
+
+  function startWatchers() {
+    const dirs = new Map(); // dir -> Set<basename we care about>
+    for (const rel of WATCHED_RELS) {
+      const full = normalize(join(chroniclesRoot, rel));
+      const dir = full.substring(0, full.lastIndexOf(sep));
+      const base = full.substring(full.lastIndexOf(sep) + 1);
+      if (!dirs.has(dir)) dirs.set(dir, new Set());
+      dirs.get(dir).add(base);
+    }
+    for (const [dir, bases] of dirs) {
+      if (!existsSync(dir)) continue; // Chronicles not present, skip silently
+      try {
+        fsWatch(dir, { persistent: false }, (_event, filename) => {
+          if (!filename) return;
+          if (!bases.has(filename)) return;
+          const relPath = relative(chroniclesRoot, join(dir, filename)).replace(/\\/g, "/");
+          scheduleBroadcast(relPath);
+        });
+      } catch {
+        // fs.watch can fail on some mounts; fall through — clients still poll.
+      }
+    }
+  }
+
+  let watchersStarted = false;
+
+  return {
+    name: "allbyte-test-data-events",
+    configureServer(server) {
+      server.middlewares.use("/test-data-events", (req, res, next) => {
+        if (req.method !== "GET") return next();
+        if (!watchersStarted) {
+          watchersStarted = true;
+          startWatchers();
+        }
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-store, no-transform");
+        res.setHeader("Connection", "keep-alive");
+        res.setHeader("X-Accel-Buffering", "no");
+        res.flushHeaders?.();
+        res.write(`event: ready\ndata: {}\n\n`);
+        sseClients.add(res);
+        // Heartbeat every 15s so proxies / browsers don't close idle connections
+        const hb = setInterval(() => {
+          try { res.write(`event: ping\ndata: {}\n\n`); } catch {}
+        }, 15000);
+        req.on("close", () => {
+          clearInterval(hb);
+          sseClients.delete(res);
+        });
+      });
+    },
+  };
+}
+
+// Dev-only: watch public/godot/** and push a full-reload to connected clients
+// when Arc's redeploy_web.sh finishes syncing. Debounced so one deploy (~8
+// files copied in quick succession) produces one reload, not eight.
+// awaitWriteFinish guards against partial reads of the large index.pck file.
+function godotReload() {
+  return {
+    name: "allbyte-godot-reload",
+    configureServer(server) {
+      let timer = null;
+      let changed = 0;
+      const godotDir = resolve("public/godot");
+      console.log(`[godot-reload] watching ${godotDir}`);
+      const watcher = chokidar.watch(godotDir, {
+        ignoreInitial: true,
+        usePolling: true,
+        interval: 500,
+        awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 },
+      });
+      const trigger = () => {
+        console.log(`[godot-reload] reload iframe (${changed} file(s))`);
+        sseBroadcast("godot/reload");
+        changed = 0;
+      };
+      watcher.on("all", () => {
+        changed++;
+        clearTimeout(timer);
+        timer = setTimeout(trigger, 250);
+      });
+      server.httpServer?.once("close", () => watcher.close());
+    },
+  };
+}
+
 export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
   vite: {
-    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), chroniclesProxy()],
+    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,
       headers: {
         "Cross-Origin-Opener-Policy": "same-origin",
         "Cross-Origin-Embedder-Policy": "require-corp",
+      },
+      watch: {
+        // Exclude public/godot/ from Vite's built-in watcher. Without this,
+        // Vite detects changes to public/ and does a full program reload
+        // (tearing down HMR) before our godot-reload plugin can send its
+        // custom iframe-only reload event.
+        ignored: ["**/public/godot/**"],
       },
     },
   },

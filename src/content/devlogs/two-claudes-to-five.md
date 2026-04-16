@@ -227,3 +227,5 @@ The work lives in the repo. The infrastructure — ticket system, webapp dashboa
 With the scaffolding in place, the benefits got very real, very fast. I scatter-shot five to eight bugs and small issues at Arc — wrong sprite on the character subpanel, missing data on the menu screen, dialogue button misaligned when options were showing — just terse human descriptions. He said "got it," and within minutes the things I'd described were getting fixed in the live web export. Back to back, rapid fire, from brief prompts.
 
 That moment felt like a glimpse of what I'm actually building toward: rapid game development from a single prompt. Not because any one Claude got smarter — but because the team around the prompt finally existed.
+
+I recorded one of these sessions — a single bug report through the full pipeline: Arc cutting the ticket, Nix and Vera working in parallel, the fix deploying, and the game live-reloading in my browser without losing my playtest position. Under four minutes, no cuts: [Bug Report to Live Fix in Under 4 Minutes](https://www.youtube.com/watch?v=l3B92iLAXKM). (Separate devlog post in the works on the magic behind live-reloading.)

@@ -8,7 +8,9 @@
   import {
     fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat,
     fetchDashboard, fetchTickets, fetchEpics,
+    fetchUserAnalytics, fetchBudgetStatus,
   } from "../lib/testDataSource";
+  import type { UserAnalytics, BudgetStatus } from "../lib/testDataSource";
   import usageData from "../data/claude-usage.json";
   import usageHistory from "../data/claude-usage-history.json";
   import MilestoneStrip from "./MilestoneStrip.svelte";
@@ -19,6 +21,7 @@
   import { onMount, onDestroy } from "svelte";
 
   let viewerIsLegend = $derived(isTierAtLeast(auth.currentUser, "legend"));
+  let viewerIsAdmin = $derived(auth.currentUser?.tier === "admin");
 
   // History chart series toggles
   type SeriesKey = "messages" | "outputTokens" | "freshTokens" | "commits" | "churn" | "ticketsDone";
@@ -72,6 +75,8 @@
   let dashboard = $state<DashboardFile | null>(null);
   let ticketsData = $state<TicketsFile | null>(null);
   let epicsData = $state<EpicsFile | null>(null);
+  let userAnalytics = $state<UserAnalytics | null>(null);
+  let budgetStatus = $state<BudgetStatus | null>(null);
   let nowTs = $state<number>(Date.now());
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -96,14 +101,29 @@
     epicsData = ep;
   }
 
+  async function loadAnalytics() {
+    if (auth.currentUser?.tier !== "admin") return;
+    const [ua, bs] = await Promise.all([
+      fetchUserAnalytics().catch(() => null),
+      fetchBudgetStatus().catch(() => null),
+    ]);
+    userAnalytics = ua;
+    budgetStatus = bs;
+  }
+
+  let analyticsTimer: ReturnType<typeof setInterval> | null = null;
+
   onMount(() => {
     loadAll();
+    loadAnalytics();
     pollTimer = setInterval(loadAll, 10_000);
+    analyticsTimer = setInterval(loadAnalytics, 300_000);
     tickTimer = setInterval(() => (nowTs = Date.now()), 5000);
   });
 
   onDestroy(() => {
     if (pollTimer) clearInterval(pollTimer);
+    if (analyticsTimer) clearInterval(analyticsTimer);
     if (tickTimer) clearInterval(tickTimer);
   });
 
@@ -307,8 +327,70 @@
         <div class="card-stat">—</div>
       {/if}
     </a>
+
+    {#if viewerIsAdmin}
+    <!-- Budget -->
+    <div class="card">
+      <h3 class="card-title">Budget</h3>
+      {#if budgetStatus}
+        <div class="card-stat">{budgetStatus.pctUsed}<span class="stat-label">%</span></div>
+        <div class="budget-bar">
+          <div
+            class="budget-fill"
+            class:budget-warn={budgetStatus.pctUsed >= 60}
+            class:budget-danger={budgetStatus.pctUsed >= 80}
+            style="width: {Math.min(budgetStatus.pctUsed, 100)}%"
+          ></div>
+        </div>
+        <span class="card-sub">${budgetStatus.spent} / ${budgetStatus.budget} · {budgetStatus.daysRemaining}d left</span>
+      {:else}
+        <div class="card-stat">—</div>
+      {/if}
+    </div>
+    {/if}
   </div>
 
+  <!-- Users graph (7-day history, admin only) -->
+  {#if viewerIsAdmin && userAnalytics?.dailyHistory?.length}
+    {@const history = userAnalytics.dailyHistory}
+    {@const maxNew = Math.max(...history.map(d => d.new), 1)}
+    {@const minTotal = Math.min(...history.map(d => d.total))}
+    {@const totalRange = Math.max(...history.map(d => d.total)) - minTotal || 1}
+    <div class="users-chart-section">
+      <h3 class="section-title">Users <span class="section-subtitle">{userAnalytics.totalRegistered} total · +{userAnalytics.newThisWeek} this week</span></h3>
+      <div class="users-chart">
+        <svg viewBox="0 0 700 160" class="users-svg">
+          <polyline
+            fill="none"
+            stroke="#60a5fa"
+            stroke-width="2"
+            points={history.map((d, i) => {
+              const x = 50 + i * (600 / (history.length - 1 || 1));
+              const y = 140 - ((d.total - minTotal) / totalRange) * 120;
+              return `${x},${y}`;
+            }).join(" ")}
+          />
+          {#each history as d, i}
+            {@const x = 50 + i * (600 / (history.length - 1 || 1))}
+            {@const y = 140 - ((d.total - minTotal) / totalRange) * 120}
+            {@const barH = (d.new / maxNew) * 40}
+            <circle cx={x} cy={y} r="3" fill="#60a5fa" />
+            <text x={x} y={y - 8} fill="#60a5fa" font-size="10" text-anchor="middle">{d.total}</text>
+            <rect x={x - 12} y={140 - barH} width="24" height={barH} fill="rgba(52, 211, 153, 0.4)" rx="2" />
+            {#if d.new > 0}
+              <text x={x} y={140 - barH - 3} fill="#34d399" font-size="9" text-anchor="middle">+{d.new}</text>
+            {/if}
+            <text x={x} y={156} fill="#6b7280" font-size="9" text-anchor="middle">{d.date.slice(5)}</text>
+          {/each}
+        </svg>
+        <div class="users-chart-legend">
+          <span class="legend-item"><span class="legend-dot" style="background: #60a5fa"></span> Total users</span>
+          <span class="legend-item"><span class="legend-dot" style="background: #34d399"></span> New signups</span>
+          <span class="legend-item" style="color: #9ca3af">{userAnalytics.oauthUsers} OAuth · {userAnalytics.emailPasswordUsers} email</span>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   <!-- Fixture picker (Legend+ only) -->
   {#if viewerIsLegend}
@@ -487,7 +569,7 @@
 
   .cards {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 0.75rem;
     margin: 1rem 0;
   }
@@ -536,6 +618,61 @@
     color: #6b7280;
   }
   .card-sub.blocker { color: #f87171; }
+
+  .budget-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(167, 243, 208, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0.3rem 0;
+  }
+  .budget-fill {
+    height: 100%;
+    background: #34d399;
+    border-radius: 3px;
+    transition: width 0.5s;
+  }
+  .budget-fill.budget-warn { background: #fbbf24; }
+  .budget-fill.budget-danger { background: #f87171; }
+
+  .users-chart-section {
+    margin: 1.5rem 0;
+  }
+  .section-subtitle {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 400;
+    margin-left: 0.5rem;
+  }
+  .users-chart {
+    background: #12161e;
+    border: 1px solid rgba(167, 243, 208, 0.12);
+    border-radius: 6px;
+    padding: 1rem;
+  }
+  .users-svg {
+    width: 100%;
+    height: auto;
+  }
+  .users-chart-legend {
+    display: flex;
+    gap: 1.2rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
 
   .expert-list {
     flex-direction: column;

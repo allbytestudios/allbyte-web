@@ -226,3 +226,50 @@ export async function fetchRoadmap(
   assertSupportedRoadmapSchema(data);
   return data;
 }
+
+const API_BASE = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";
+
+export interface UserAnalytics {
+  totalRegistered: number;
+  newThisWeek: number;
+  newThisMonth: number;
+  byTier: Record<string, number>;
+  activeSubscriptions: { initiate: number; hero: number; legend: number };
+  oauthUsers: number;
+  emailPasswordUsers: number;
+  dailyHistory: { date: string; total: number; new: number }[];
+}
+
+export async function fetchUserAnalytics(signal?: AbortSignal): Promise<UserAnalytics | null> {
+  try {
+    const res = await fetch(`${API_BASE}/analytics/users`, { signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export interface BudgetStatus {
+  spent: number;
+  budget: number;
+  pctUsed: number;
+  forecast: number;
+  dailyRate: number;
+  daysRemaining: number;
+  daysInMonth: number;
+  period: string;
+}
+
+export async function fetchBudgetStatus(signal?: AbortSignal): Promise<BudgetStatus | null> {
+  try {
+    const res = await fetch(`${API_BASE}/analytics/budget`, {
+      signal,
+      headers: { Authorization: `Bearer ${localStorage.getItem("allbyte_token") ?? ""}` },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}

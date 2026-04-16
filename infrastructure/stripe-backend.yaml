@@ -158,6 +158,10 @@ Resources:
                   - s3:GetObject
                 Resource:
                   - !Sub "arn:aws:s3:::allbyte-studio-packs/*"
+              - Effect: Allow
+                Action:
+                  - ce:GetCostAndUsage
+                Resource: "*"
 
   # --- Lambda: Auth Signup ---
   SignupFunction:
@@ -1778,6 +1782,193 @@ Resources:
                   "body": json.dumps(counts),
               }
 
+  # --- Lambda: User analytics (public, cached) ---
+  UserAnalyticsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-user-analytics
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          TABLE_NAME: !Ref SubscriptionsTable
+          PRICE_INITIATE: !Ref StripePriceInitiate
+          PRICE_HERO: !Ref StripePriceHero
+          PRICE_LEGEND: !Ref StripePriceLegend
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          from datetime import datetime, timedelta, timezone
+
+          CORS = {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Allow-Methods": "GET,OPTIONS",
+          }
+
+          users_table = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+          subs_table = boto3.resource("dynamodb").Table(os.environ["TABLE_NAME"])
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              now = datetime.now(timezone.utc)
+              week_ago = (now - timedelta(days=7)).isoformat()
+              month_ago = (now - timedelta(days=30)).isoformat()
+
+              price_to_tier = {
+                  os.environ["PRICE_INITIATE"]: "initiate",
+                  os.environ["PRICE_HERO"]: "hero",
+                  os.environ["PRICE_LEGEND"]: "legend",
+              }
+
+              user_resp = users_table.scan(
+                  ProjectionExpression="userId, createdAt, tier, oauthProvider",
+              )
+              all_users = user_resp.get("Items", [])
+
+              total = len(all_users)
+              new_this_week = sum(1 for u in all_users if u.get("createdAt", "") >= week_ago)
+              new_this_month = sum(1 for u in all_users if u.get("createdAt", "") >= month_ago)
+
+              tier_counts = {}
+              oauth_count = 0
+              daily_signups = {}
+              for i in range(7):
+                  d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+                  daily_signups[d] = 0
+
+              for u in all_users:
+                  t = u.get("tier", "free")
+                  tier_counts[t] = tier_counts.get(t, 0) + 1
+                  if u.get("oauthProvider"):
+                      oauth_count += 1
+                  created = u.get("createdAt", "")[:10]
+                  if created in daily_signups:
+                      daily_signups[created] += 1
+
+              daily_series = [
+                  {"date": d, "count": daily_signups[d]}
+                  for d in sorted(daily_signups.keys())
+              ]
+
+              cumulative = []
+              running = total - new_this_week
+              for entry in daily_series:
+                  running += entry["count"]
+                  cumulative.append({"date": entry["date"], "total": running, "new": entry["count"]})
+
+              sub_resp = subs_table.scan(
+                  FilterExpression="#s = :active AND attribute_exists(priceId)",
+                  ExpressionAttributeNames={"#s": "status"},
+                  ExpressionAttributeValues={":active": "active"},
+              )
+              active_subs = {"initiate": 0, "hero": 0, "legend": 0}
+              for item in sub_resp.get("Items", []):
+                  tier = price_to_tier.get(item.get("priceId", ""))
+                  if tier:
+                      active_subs[tier] += 1
+
+              return {
+                  "statusCode": 200,
+                  "headers": {**CORS, "Cache-Control": "public, max-age=3600"},
+                  "body": json.dumps({
+                      "totalRegistered": total,
+                      "newThisWeek": new_this_week,
+                      "newThisMonth": new_this_month,
+                      "byTier": tier_counts,
+                      "activeSubscriptions": active_subs,
+                      "oauthUsers": oauth_count,
+                      "emailPasswordUsers": total - oauth_count,
+                      "dailyHistory": cumulative,
+                  }),
+              }
+
+  # --- Lambda: Budget status (admin, queries Cost Explorer) ---
+  BudgetStatusFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-budget-status
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          BUDGET_LIMIT: !Ref MonthlyBudgetLimit
+          SITE_DOMAIN: !Ref SiteDomain
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          from datetime import datetime, timezone
+
+          CORS = {
+              "Access-Control-Allow-Origin": os.environ.get("SITE_DOMAIN", "*"),
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "GET,OPTIONS",
+          }
+
+          ce = boto3.client("ce")
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              now = datetime.now(timezone.utc)
+              start = now.strftime("%Y-%m-01")
+              end = now.strftime("%Y-%m-%d")
+
+              try:
+                  resp = ce.get_cost_and_usage(
+                      TimePeriod={"Start": start, "End": end},
+                      Granularity="MONTHLY",
+                      Metrics=["UnblendedCost"],
+                  )
+
+                  results = resp.get("ResultsByTime", [])
+                  spent = 0.0
+                  if results:
+                      spent = float(results[0]["Total"]["UnblendedCost"]["Amount"])
+
+                  budget = float(os.environ.get("BUDGET_LIMIT", "25"))
+                  pct = (spent / budget * 100) if budget > 0 else 0
+
+                  day_of_month = now.day
+                  import calendar
+                  days_in_month = calendar.monthrange(now.year, now.month)[1]
+                  days_remaining = days_in_month - day_of_month
+                  daily_rate = spent / max(day_of_month, 1)
+                  forecast = daily_rate * days_in_month
+
+                  return {
+                      "statusCode": 200,
+                      "headers": {**CORS, "Cache-Control": "public, max-age=3600"},
+                      "body": json.dumps({
+                          "spent": round(spent, 2),
+                          "budget": budget,
+                          "pctUsed": round(pct, 1),
+                          "forecast": round(forecast, 2),
+                          "dailyRate": round(daily_rate, 2),
+                          "daysRemaining": days_remaining,
+                          "daysInMonth": days_in_month,
+                          "period": start,
+                      }),
+                  }
+              except Exception as e:
+                  return {
+                      "statusCode": 500,
+                      "headers": CORS,
+                      "body": json.dumps({"error": str(e)}),
+                  }
+
   # --- Lambda: Admin — list all users (admin tier only) ---
   AdminListUsersFunction:
     Type: AWS::Lambda::Function
@@ -2492,6 +2683,54 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref AdminListUsersFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # User analytics route
+  UserAnalyticsIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt UserAnalyticsFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  UserAnalyticsRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /analytics/users"
+      Target: !Sub "integrations/${UserAnalyticsIntegration}"
+
+  UserAnalyticsPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UserAnalyticsFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Budget status route
+  BudgetStatusIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt BudgetStatusFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  BudgetStatusRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /analytics/budget"
+      Target: !Sub "integrations/${BudgetStatusIntegration}"
+
+  BudgetStatusPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BudgetStatusFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"

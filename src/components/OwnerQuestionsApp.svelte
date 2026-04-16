@@ -2,6 +2,7 @@
   import type { OwnerQuestion, OwnerQuestionsFile, OwnerQuestionAnswerType } from "../lib/ticketTypes";
   import { SOURCE_META, sortOwnerQuestions } from "../lib/ticketTypes";
   import { fetchOwnerQuestions, submitOwnerAnswer } from "../lib/testDataSource";
+  import { subscribeToFile } from "../lib/testEvents";
   import { auth } from "../lib/auth.svelte.ts";
   import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
@@ -31,13 +32,22 @@
     }
   }
 
+  let unsubOQ: (() => void) | null = null;
+  let unsubAnswers: (() => void) | null = null;
+
   onMount(() => {
     load();
-    pollTimer = setInterval(load, 5000);
+    // SSE push for near-instant refresh when the daemon mutates state.
+    // Polling stays as a fallback; interval relaxed since SSE covers the hot path.
+    pollTimer = setInterval(load, 15000);
+    unsubOQ = subscribeToFile("tickets/owner_questions.json", load);
+    unsubAnswers = subscribeToFile("tickets/owner_answers.ndjson", load);
   });
 
   onDestroy(() => {
     if (pollTimer) clearInterval(pollTimer);
+    unsubOQ?.();
+    unsubAnswers?.();
   });
 
   async function answerChoice(q: OwnerQuestion, choice: string) {
@@ -145,7 +155,7 @@
 
       <div class="question-list">
         {#each pending() as q (q.id)}
-          {@const srcMeta = SOURCE_META[q.source]}
+          {@const srcMeta = SOURCE_META[q.source] ?? { label: q.source ?? "Unknown", color: "#9ca3af" }}
           {@const link = deepLinkFor(q)}
           {@const subText = submitting[q.id]}
           <div class="question-card">

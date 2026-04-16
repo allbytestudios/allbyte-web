@@ -390,6 +390,6 @@ export function sortOwnerQuestions(qs: OwnerQuestion[]): OwnerQuestion[] {
     const pa = a.priority ? PRIORITY_RANK[a.priority] : 99;
     const pb = b.priority ? PRIORITY_RANK[b.priority] : 99;
     if (pa !== pb) return pa - pb;
-    return a.createdAt.localeCompare(b.createdAt);
+    return (a.createdAt ?? "").localeCompare(b.createdAt ?? "");
   });
 }

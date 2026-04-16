@@ -1,7 +1,8 @@
 <script lang="ts">
   import { fetchIndex, fetchDashboard, fetchTickets, fetchAgentChat, fetchEpics, fetchAgentActivity, fetchOwnerQuestions } from "../lib/testDataSource";
   import { effectivePhase } from "../lib/ticketTypes";
-  import { onMount } from "svelte";
+  import { subscribeToFile } from "../lib/testEvents";
+  import { onMount, onDestroy } from "svelte";
 
   interface Props {
     active: "roadmap" | "tickets" | "agents" | "tests" | "chat" | "decisions";
@@ -25,7 +26,9 @@
   let questionsTotal = $state<number | null>(null);
   let questionsPending = $state<number | null>(null);
 
-  onMount(async () => {
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+  async function refresh() {
     const [idx, dash, tix, chat, epics, agentAct, oq] = await Promise.all([
       fetchIndex().catch(() => null),
       fetchDashboard().catch(() => null),
@@ -88,6 +91,29 @@
       questionsPending = (pendingDecs.length + awaitingCount) || null;
       questionsTotal = (ownerDecs.length + awaitingCount) || null;
     }
+  }
+
+  const WATCHED = [
+    "tickets/owner_questions.json",
+    "tickets/tickets.json",
+    "tickets/dashboard.json",
+    "tickets/epics.json",
+    "tickets/agent_activity.json",
+    "tickets/agent_chat.ndjson",
+    "test_index.json",
+  ];
+  let unsubs: Array<() => void> = [];
+
+  onMount(() => {
+    refresh();
+    pollTimer = setInterval(refresh, 15000);
+    unsubs = WATCHED.map((p) => subscribeToFile(p, refresh));
+  });
+
+  onDestroy(() => {
+    if (pollTimer) clearInterval(pollTimer);
+    for (const u of unsubs) u();
+    unsubs = [];
   });
 </script>
 

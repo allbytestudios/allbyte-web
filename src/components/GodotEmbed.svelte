@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { onMount, onDestroy } from "svelte";
+  import { subscribeToFile } from "../lib/testEvents";
+
   interface Props {
     fixture?: string;
   }
@@ -11,6 +14,66 @@
   // Served from /godot/ in both dev and prod. Astro dev sets the required
   // COOP/COEP headers via vite.server.headers; CloudFront sets them in prod.
   let gameUrl = $state("/godot/index.html");
+
+  // Dev-only: listen for SSE file-change event from the godot-reload plugin
+  // and reload just the iframe when Arc redeploys.
+  //
+  // Reload-state handshake (Phase 1 per APP_CLAUDE_FIXTURE_SAVE_SYNC_PROPOSAL):
+  // 1. Post `allbyte:prepare-reload` to the game.
+  // 2. Wait for `allbyte:reload-ready` from game (or 2s timeout).
+  // 3. Reload iframe. Godot side checks a localStorage marker on boot and
+  //    auto-loads the reserved reload slot if fresh (<60s).
+  let sseUnsub: (() => void) | null = null;
+  let messageOff: (() => void) | null = null;
+  let reloadReadyResolve: (() => void) | null = null;
+
+  function awaitReloadReady(timeoutMs = 2000): Promise<void> {
+    return new Promise((resolve) => {
+      reloadReadyResolve = resolve;
+      setTimeout(() => {
+        if (reloadReadyResolve) {
+          console.warn("[godot-reload] reload-ready timed out, reloading anyway");
+          reloadReadyResolve();
+          reloadReadyResolve = null;
+        }
+      }, timeoutMs);
+    });
+  }
+
+  async function doReload() {
+    if (!iframeEl?.contentWindow) return;
+    console.log("[godot-reload] SSE event received, starting reload handshake");
+    try {
+      iframeEl.contentWindow.postMessage({ type: "allbyte:prepare-reload" }, "*");
+      await awaitReloadReady(2000);
+    } catch (err) {
+      console.warn("[godot-reload] handshake failed, reloading anyway", err);
+    }
+    if (!iframeEl) return;
+    loading = true;
+    error = "";
+    iframeEl.src = `/godot/index.html?t=${Date.now()}`;
+  }
+
+  onMount(() => {
+    if (!import.meta.env.DEV) return;
+
+    sseUnsub = subscribeToFile("godot/reload", doReload);
+
+    const onMessage = (ev: MessageEvent) => {
+      if (!iframeEl || ev.source !== iframeEl.contentWindow) return;
+      if (ev.data?.type === "allbyte:reload-ready" && reloadReadyResolve) {
+        reloadReadyResolve();
+        reloadReadyResolve = null;
+      }
+    };
+    window.addEventListener("message", onMessage);
+    messageOff = () => window.removeEventListener("message", onMessage);
+  });
+  onDestroy(() => {
+    sseUnsub?.();
+    messageOff?.();
+  });
 
   function onLoad() {
     loading = false;

@@ -30,6 +30,10 @@ Parameters:
     Type: String
     Default: allbytestudios@gmail.com
     Description: Email of the user to auto-promote to admin tier on next /auth/me call. One-time bootstrap; idempotent.
+  MonthlyBudgetLimit:
+    Type: Number
+    Default: 25
+    Description: Monthly AWS budget in USD for the budget status endpoint.
 
 Resources:
   # --- DynamoDB Tables ---

@@ -261,6 +261,21 @@ export interface BudgetStatus {
   period: string;
 }
 
+export interface SiteTraffic {
+  totalRequests7d: number;
+  dailyRequests: { date: string; requests: number }[];
+}
+
+export async function fetchSiteTraffic(signal?: AbortSignal): Promise<SiteTraffic | null> {
+  try {
+    const res = await fetch(`${API_BASE}/analytics/traffic`, { signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchBudgetStatus(signal?: AbortSignal): Promise<BudgetStatus | null> {
   try {
     const res = await fetch(`${API_BASE}/analytics/budget`, {

@@ -166,6 +166,10 @@ Resources:
                 Action:
                   - ce:GetCostAndUsage
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricStatistics
+                Resource: "*"
 
   # --- Lambda: Auth Signup ---
   SignupFunction:
@@ -1973,6 +1977,82 @@ Resources:
                       "body": json.dumps({"error": str(e)}),
                   }
 
+  # --- Lambda: Site traffic (CloudWatch CloudFront metrics, public) ---
+  SiteTrafficFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-site-traffic
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          DISTRIBUTION_ID: E1M9YWY7UW7130
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import boto3
+          from datetime import datetime, timedelta, timezone
+
+          CORS = {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Allow-Methods": "GET,OPTIONS",
+          }
+
+          cw = boto3.client("cloudwatch")
+
+          def handler(event, context):
+              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+
+              dist_id = os.environ["DISTRIBUTION_ID"]
+              now = datetime.now(timezone.utc)
+              start = now - timedelta(days=7)
+
+              try:
+                  resp = cw.get_metric_statistics(
+                      Namespace="AWS/CloudFront",
+                      MetricName="Requests",
+                      Dimensions=[
+                          {"Name": "DistributionId", "Value": dist_id},
+                          {"Name": "Region", "Value": "Global"},
+                      ],
+                      StartTime=start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                      EndTime=now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                      Period=86400,
+                      Statistics=["Sum"],
+                  )
+
+                  by_date = {}
+                  for dp in resp.get("Datapoints", []):
+                      d = dp["Timestamp"].strftime("%Y-%m-%d") if hasattr(dp["Timestamp"], "strftime") else str(dp["Timestamp"])[:10]
+                      by_date[d] = int(dp["Sum"])
+
+                  daily = []
+                  for i in range(7):
+                      d = (now - timedelta(days=6 - i)).strftime("%Y-%m-%d")
+                      daily.append({"date": d, "requests": by_date.get(d, 0)})
+
+                  total = sum(e["requests"] for e in daily)
+
+                  return {
+                      "statusCode": 200,
+                      "headers": {**CORS, "Cache-Control": "public, max-age=3600"},
+                      "body": json.dumps({
+                          "totalRequests7d": total,
+                          "dailyRequests": daily,
+                      }),
+                  }
+              except Exception as e:
+                  return {
+                      "statusCode": 500,
+                      "headers": CORS,
+                      "body": json.dumps({"error": str(e)}),
+                  }
+
   # --- Lambda: Admin — list all users (admin tier only) ---
   AdminListUsersFunction:
     Type: AWS::Lambda::Function
@@ -2735,6 +2815,30 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref BudgetStatusFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Site traffic route
+  SiteTrafficIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt SiteTrafficFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  SiteTrafficRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /analytics/traffic"
+      Target: !Sub "integrations/${SiteTrafficIntegration}"
+
+  SiteTrafficPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SiteTrafficFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"

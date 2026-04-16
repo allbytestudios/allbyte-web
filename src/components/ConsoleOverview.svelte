@@ -8,9 +8,9 @@
   import {
     fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat,
     fetchDashboard, fetchTickets, fetchEpics,
-    fetchUserAnalytics, fetchBudgetStatus,
+    fetchUserAnalytics, fetchBudgetStatus, fetchSiteTraffic,
   } from "../lib/testDataSource";
-  import type { UserAnalytics, BudgetStatus } from "../lib/testDataSource";
+  import type { UserAnalytics, BudgetStatus, SiteTraffic } from "../lib/testDataSource";
   import usageData from "../data/claude-usage.json";
   import usageHistory from "../data/claude-usage-history.json";
   import MilestoneStrip from "./MilestoneStrip.svelte";
@@ -77,6 +77,7 @@
   let epicsData = $state<EpicsFile | null>(null);
   let userAnalytics = $state<UserAnalytics | null>(null);
   let budgetStatus = $state<BudgetStatus | null>(null);
+  let siteTraffic = $state<SiteTraffic | null>(null);
   let nowTs = $state<number>(Date.now());
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -103,12 +104,14 @@
 
   async function loadAnalytics() {
     if (auth.currentUser?.tier !== "admin") return;
-    const [ua, bs] = await Promise.all([
+    const [ua, bs, st] = await Promise.all([
       fetchUserAnalytics().catch(() => null),
       fetchBudgetStatus().catch(() => null),
+      fetchSiteTraffic().catch(() => null),
     ]);
     userAnalytics = ua;
     budgetStatus = bs;
+    siteTraffic = st;
   }
 
   let analyticsTimer: ReturnType<typeof setInterval> | null = null;
@@ -388,6 +391,26 @@
           <span class="legend-item"><span class="legend-dot" style="background: #34d399"></span> New signups</span>
           <span class="legend-item" style="color: #9ca3af">{userAnalytics.oauthUsers} OAuth · {userAnalytics.emailPasswordUsers} email</span>
         </div>
+      </div>
+    </div>
+  {/if}
+
+  <!-- Site traffic graph (7-day, admin only) -->
+  {#if viewerIsAdmin && siteTraffic?.dailyRequests?.length}
+    {@const traffic = siteTraffic.dailyRequests}
+    {@const maxReq = Math.max(...traffic.map(d => d.requests), 1)}
+    <div class="users-chart-section">
+      <h3 class="section-title">Site Traffic <span class="section-subtitle">{siteTraffic.totalRequests7d.toLocaleString()} requests (7 days)</span></h3>
+      <div class="users-chart">
+        <svg viewBox="0 0 700 140" class="users-svg">
+          {#each traffic as d, i}
+            {@const x = 50 + i * (600 / (traffic.length - 1 || 1))}
+            {@const barH = (d.requests / maxReq) * 100}
+            <rect x={x - 20} y={120 - barH} width="40" height={barH} fill="rgba(96, 165, 250, 0.5)" rx="3" />
+            <text x={x} y={120 - barH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{d.requests > 999 ? (d.requests / 1000).toFixed(1) + "k" : d.requests}</text>
+            <text x={x} y={136} fill="#6b7280" font-size="9" text-anchor="middle">{d.date.slice(5)}</text>
+          {/each}
+        </svg>
       </div>
     </div>
   {/if}

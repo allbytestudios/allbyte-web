@@ -436,7 +436,7 @@ export default defineConfig({
       allowedHosts: true,
       headers: {
         "Cross-Origin-Opener-Policy": "same-origin",
-        "Cross-Origin-Embedder-Policy": "require-corp",
+        "Cross-Origin-Embedder-Policy": "credentialless",
       },
       watch: {
         // Exclude public/godot/ from Vite's built-in watcher. Without this,

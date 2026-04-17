@@ -31,6 +31,25 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
 
+  # --- S3 Bucket for CloudFront access logs ---
+  AccessLogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${DomainName}-access-logs"
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireLogs
+            Status: Enabled
+            ExpirationInDays: 90
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
   SiteBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -129,6 +148,9 @@ Resources:
             ResponseCode: 200
             ResponsePagePath: /index.html
             ErrorCachingMinTTL: 10
+        Logging:
+          Bucket: !GetAtt AccessLogBucket.DomainName
+          Prefix: cf-logs/
         HttpVersion: http2and3
         PriceClass: PriceClass_100
 

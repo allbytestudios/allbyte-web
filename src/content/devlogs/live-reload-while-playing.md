@@ -2,7 +2,7 @@
 title: "Live Reload While Playing: How My Agents Update the Game Without Interrupting My Tests"
 description: "Fixes were landing faster than I could restart the game. So I built a live-reload pipeline that lets my AI agents deploy new builds while I'm mid-playtest — preserving my exact game state across each reload."
 pubDate: 2026-04-16T18:00:00Z
-category: "technical"
+category: "engineering"
 devlog: "godot-and-claude"
 tags: ["godot", "live-reload", "agents", "workflow", "web-export", "testing"]
 draft: false

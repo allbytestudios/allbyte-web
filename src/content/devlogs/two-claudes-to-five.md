@@ -230,4 +230,4 @@ That moment felt like a glimpse of what I'm actually building toward: rapid game
 
 I recorded one of these sessions — a single bug report through the full pipeline: Arc cutting the ticket, Nix and Vera working in parallel, the fix deploying, and the game live-reloading in my browser without losing my playtest position. Under four minutes, no cuts. (Separate devlog post in the works on the magic behind live-reloading.)
 
-<iframe width="100%" height="400" src="https://www.youtube.com/embed/l3B92iLAXKM" title="Bug Report to Live Fix in Under 4 Minutes" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius: 6px; margin-top: 1rem;"></iframe>
+<iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/l3B92iLAXKM" title="Bug Report to Live Fix in Under 4 Minutes" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius: 6px; margin-top: 1rem;"></iframe>

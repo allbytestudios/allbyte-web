@@ -139,6 +139,8 @@ Resources:
           FunctionAssociations:
             - EventType: viewer-request
               FunctionARN: !GetAtt IndexRewriteFunction.FunctionARN
+            - EventType: viewer-response
+              FunctionARN: !GetAtt GodotHeadersFunction.FunctionARN
         CustomErrorResponses:
           - ErrorCode: 404
             ResponseCode: 200
@@ -154,7 +156,7 @@ Resources:
         HttpVersion: http2and3
         PriceClass: PriceClass_100
 
-  # --- Response Headers (SharedArrayBuffer for Godot) ---
+  # --- Response Headers (security defaults — no COOP/COEP here) ---
   ResponseHeadersPolicy:
     Type: AWS::CloudFront::ResponseHeadersPolicy
     Properties:
@@ -169,14 +171,27 @@ Resources:
             IncludeSubdomains: true
             Override: true
             Preload: true
-        CustomHeadersConfig:
-          Items:
-            - Header: Cross-Origin-Opener-Policy
-              Value: same-origin
-              Override: true
-            - Header: Cross-Origin-Embedder-Policy
-              Value: credentialless
-              Override: true
+
+  # --- CloudFront Function: add COOP/COEP only for /godot/ paths ---
+  GodotHeadersFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: allbyte-studio-godot-headers
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Add cross-origin isolation headers for Godot WASM (SharedArrayBuffer)
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var response = event.response;
+          var uri = event.request.uri;
+          if (uri.startsWith('/godot/')) {
+            response.headers['cross-origin-opener-policy'] = { value: 'same-origin' };
+            response.headers['cross-origin-embedder-policy'] = { value: 'require-corp' };
+            response.headers['cross-origin-resource-policy'] = { value: 'same-origin' };
+          }
+          return response;
+        }
 
   # --- GitHub OIDC Provider ---
   GitHubOIDCProvider:

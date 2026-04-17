@@ -18,7 +18,7 @@
   import FixturePicker from "./FixturePicker.svelte";
   import { auth } from "../lib/auth.svelte.ts";
   import { isTierAtLeast } from "../lib/tier";
-  import { onMount, onDestroy, tick } from "svelte";
+  import { onMount, onDestroy } from "svelte";
 
   let viewerIsLegend = $derived(isTierAtLeast(auth.currentUser, "legend"));
   let viewerIsAdmin = $derived(auth.currentUser?.tier === "admin");
@@ -102,11 +102,7 @@
     epicsData = ep;
   }
 
-  let analyticsLoaded = false;
-
   async function loadAnalytics() {
-    if (auth.currentUser?.tier !== "admin") return;
-    analyticsLoaded = true;
     const [ua, bs, st] = await Promise.all([
       fetchUserAnalytics().catch(() => null),
       fetchBudgetStatus().catch(() => null),
@@ -116,13 +112,6 @@
     budgetStatus = bs;
     siteTraffic = st;
   }
-
-  // Re-trigger analytics fetch when auth resolves (async, not available at mount)
-  $effect(() => {
-    if (auth.currentUser?.tier === "admin" && !analyticsLoaded) {
-      loadAnalytics();
-    }
-  });
 
   let analyticsTimer: ReturnType<typeof setInterval> | null = null;
 

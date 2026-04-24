@@ -242,7 +242,9 @@ export interface UserAnalytics {
 
 export async function fetchUserAnalytics(signal?: AbortSignal): Promise<UserAnalytics | null> {
   try {
-    const res = await fetch(`${API_BASE}/analytics/users`, { signal });
+    // no-store: backend currently sends `cache-control: public, max-age=3600`
+    // which caused stale 204s to be served to already-authenticated browsers.
+    const res = await fetch(`${API_BASE}/analytics/users`, { signal, cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -268,7 +270,7 @@ export interface SiteTraffic {
 
 export async function fetchSiteTraffic(signal?: AbortSignal): Promise<SiteTraffic | null> {
   try {
-    const res = await fetch(`${API_BASE}/analytics/traffic`, { signal });
+    const res = await fetch(`${API_BASE}/analytics/traffic`, { signal, cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -280,6 +282,7 @@ export async function fetchBudgetStatus(signal?: AbortSignal): Promise<BudgetSta
   try {
     const res = await fetch(`${API_BASE}/analytics/budget`, {
       signal,
+      cache: "no-store",
       headers: { Authorization: `Bearer ${localStorage.getItem("allbyte_token") ?? ""}` },
     });
     if (!res.ok) return null;

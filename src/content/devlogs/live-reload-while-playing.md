@@ -5,7 +5,7 @@ pubDate: 2026-04-16T18:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
 tags: ["godot", "live-reload", "agents", "workflow", "web-export", "testing"]
-draft: false
+draft: true
 ---
 
 When I'm playtesting Chronicles of Nesis in the browser, I notice things fast. Sprite is in the wrong spot. Menu subpanel isn't showing. Text should be on the far right. I rapid-fire these to Arc — my orchestrator agent — who cuts tickets and routes them to the right lead. Nix fixes the GDScript, Port rebuilds the web export, Arc redeploys. The whole cycle from "that looks wrong" to "fix is built" often takes under two minutes.

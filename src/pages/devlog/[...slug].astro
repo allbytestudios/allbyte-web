@@ -19,15 +19,8 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content, headings } = await render(post);
 
-const devlogShortNames: Record<string, string> = {
-  chronicles: "Chronicles of Nesis Devlog",
-  "godot-and-claude": "Godot & Claude Devlog",
-  studio: "AllByte Studios Devlog",
-};
-// Unified devlog index with pre-selected tag filter (skips the 301 from
-// /devlog/<series>/ → /devlog/?tag=<series>).
-const backHref = `/devlog/?tag=${post.data.devlog}`;
-const categoryLabel = devlogShortNames[post.data.devlog] || "Devlog";
+const backHref = "/devlog/";
+const categoryLabel = "Devlog";
 
 const breadcrumbs = [
   { href: "/", label: "Home" },

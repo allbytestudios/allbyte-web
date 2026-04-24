@@ -89,9 +89,12 @@ export function buildSyncCommands({
   const results = toPosix(join(chroniclesDir, "test_results"));
   const cacheCtrl = "public, max-age=30, must-revalidate";
 
+  const ticketsDir = toPosix(join(chroniclesDir, "tickets"));
+  const fixturesDir = toPosix(join(chroniclesDir, "test_fixtures"));
   const cmds = [];
   cmds.push({
     label: "test_index.json",
+    localPath: idx,
     argv: [
       "aws",
       "s3",
@@ -108,6 +111,7 @@ export function buildSyncCommands({
   });
   cmds.push({
     label: "test_roadmap.json",
+    localPath: road,
     argv: [
       "aws",
       "s3",
@@ -124,6 +128,7 @@ export function buildSyncCommands({
   });
   cmds.push({
     label: "test_results/",
+    localPath: results,
     argv: [
       "aws",
       "s3",
@@ -142,11 +147,12 @@ export function buildSyncCommands({
   });
   cmds.push({
     label: "tickets/",
+    localPath: ticketsDir,
     argv: [
       "aws",
       "s3",
       "sync",
-      toPosix(join(chroniclesDir, "tickets")),
+      ticketsDir,
       `s3://${bucket}/test-snapshot/tickets`,
       "--region",
       region,
@@ -158,11 +164,12 @@ export function buildSyncCommands({
   });
   cmds.push({
     label: "test_fixtures/",
+    localPath: fixturesDir,
     argv: [
       "aws",
       "s3",
       "sync",
-      toPosix(join(chroniclesDir, "test_fixtures")),
+      fixturesDir,
       `s3://${bucket}/test-snapshot/test_fixtures`,
       "--region",
       region,
@@ -395,9 +402,13 @@ async function runSync({ dryRun, chroniclesDir, bucket, region, breaker }) {
 
   const cmds = buildSyncCommands({ chroniclesDir, bucket, region });
   let allOk = true;
-  for (const { label, argv } of cmds) {
+  for (const { label, argv, localPath } of cmds) {
     if (dryRun) {
       log("..", `[dry-run] ${label}: ${argv.slice(0, 4).join(" ")} …`);
+      continue;
+    }
+    if (localPath && !existsSync(localPath)) {
+      log("warn", `${label}: source ${localPath} does not exist — skipping`);
       continue;
     }
     const display = label;
@@ -724,6 +735,18 @@ async function main() {
     const { ok } = await runSync({
       dryRun: args.dryRun,
       chroniclesDir: CHRONICLES_DIR,
+      bucket: BUCKET,
+      region: REGION,
+    });
+    await uploadHeartbeat({
+      state: {
+        startedAt: Date.now(),
+        lastSyncAt: Date.now(),
+        lastSyncOk: ok,
+        lastChangeAt: null,
+        consecutiveFailures: ok ? 0 : 1,
+      },
+      dryRun: args.dryRun,
       bucket: BUCKET,
       region: REGION,
     });

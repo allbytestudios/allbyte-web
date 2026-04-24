@@ -1,7 +1,7 @@
 """
 E2E tests for the Dev Console (/test/) pages.
 Covers accessibility, mobile responsiveness, and basic functionality.
-Dev server must be running (npm run dev) and auto-logins as Legend on localhost.
+Dev server must be running (npm run dev); auto-logins as Admin on any dev build.
 """
 import pytest
 

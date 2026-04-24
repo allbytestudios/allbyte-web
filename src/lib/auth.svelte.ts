@@ -26,13 +26,17 @@ export function oauthLogin(provider: "google" | "discord") {
 }
 
 export async function initAuth() {
-  // Auto-login as admin on localhost dev server
-  if (import.meta.env.DEV && window.location.hostname === "localhost") {
+  // Auto-login as admin on any dev build (import.meta.env.DEV is always
+  // false in production bundles, so this never leaks to prod). Hostname is
+  // intentionally NOT checked — dev servers accessed via host.docker.internal,
+  // LAN IPs, or tunneling (e.g., Playwright from a container) all need this
+  // to work so test automation gets the full admin surface by default.
+  if (import.meta.env.DEV) {
     auth.currentUser = {
       userId: "dev-local",
       email: "dev@localhost",
       username: "dev",
-      tier: "legend",
+      tier: "admin",
       stripeCustomerId: null,
       notificationPreferences: null,
     };

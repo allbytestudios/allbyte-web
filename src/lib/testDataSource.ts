@@ -242,9 +242,11 @@ export interface UserAnalytics {
 
 export async function fetchUserAnalytics(signal?: AbortSignal): Promise<UserAnalytics | null> {
   try {
-    // no-store: backend currently sends `cache-control: public, max-age=3600`
-    // which caused stale 204s to be served to already-authenticated browsers.
-    const res = await fetch(`${API_BASE}/analytics/users`, { signal, cache: "no-store" });
+    // /admin/stats/* aliases the /analytics/* routes. /analytics/ is on
+    // common ad-blocker/Pi-hole/corporate filter lists, which silently
+    // returned synthetic 204s to affected browsers (admin dashboard hid
+    // the Budget + Users cards with no network-level indication why).
+    const res = await fetch(`${API_BASE}/admin/stats/users`, { signal, cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -270,7 +272,7 @@ export interface SiteTraffic {
 
 export async function fetchSiteTraffic(signal?: AbortSignal): Promise<SiteTraffic | null> {
   try {
-    const res = await fetch(`${API_BASE}/analytics/traffic`, { signal, cache: "no-store" });
+    const res = await fetch(`${API_BASE}/admin/stats/traffic`, { signal, cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -280,7 +282,7 @@ export async function fetchSiteTraffic(signal?: AbortSignal): Promise<SiteTraffi
 
 export async function fetchBudgetStatus(signal?: AbortSignal): Promise<BudgetStatus | null> {
   try {
-    const res = await fetch(`${API_BASE}/analytics/budget`, {
+    const res = await fetch(`${API_BASE}/admin/stats/budget`, {
       signal,
       cache: "no-store",
       headers: { Authorization: `Bearer ${localStorage.getItem("allbyte_token") ?? ""}` },

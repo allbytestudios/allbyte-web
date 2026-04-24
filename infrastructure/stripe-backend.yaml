@@ -2843,6 +2843,35 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
 
+  # --- Alias routes under /admin/stats/* ---------------------------------
+  # The /analytics/* paths above are on public ad-blocker/Pi-hole/corporate
+  # filter lists, so browsers on filtered networks receive synthetic 204s
+  # and admins lose the dashboard. These aliases point to the same
+  # integrations under a path that isn't on filter lists. Frontend calls
+  # the /admin/stats/* routes; /analytics/* remain for transition safety
+  # and can be removed once no clients reference them.
+
+  UserAnalyticsAliasRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /admin/stats/users"
+      Target: !Sub "integrations/${UserAnalyticsIntegration}"
+
+  BudgetStatusAliasRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /admin/stats/budget"
+      Target: !Sub "integrations/${BudgetStatusIntegration}"
+
+  SiteTrafficAliasRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /admin/stats/traffic"
+      Target: !Sub "integrations/${SiteTrafficIntegration}"
+
   # Admin: set a user's tier
   AdminSetTierIntegration:
     Type: AWS::ApiGatewayV2::Integration

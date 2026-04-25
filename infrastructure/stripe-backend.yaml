@@ -2026,10 +2026,20 @@ Resources:
                       Statistics=["Sum"],
                   )
 
+                  # Each datapoint's Timestamp marks the START of the 24-hour
+                  # bucket. boto3 returns it tz-aware in UTC, but if we ever
+                  # got a naive datetime back we'd silently format in the
+                  # Lambda runtime's local tz — which has historically shifted
+                  # today's traffic into yesterday's column on the dashboard.
+                  # Force-UTC before formatting eliminates that class of bug.
                   by_date = {}
                   for dp in resp.get("Datapoints", []):
-                      d = dp["Timestamp"].strftime("%Y-%m-%d") if hasattr(dp["Timestamp"], "strftime") else str(dp["Timestamp"])[:10]
-                      by_date[d] = int(dp["Sum"])
+                      ts = dp["Timestamp"]
+                      if ts.tzinfo is None:
+                          ts = ts.replace(tzinfo=timezone.utc)
+                      else:
+                          ts = ts.astimezone(timezone.utc)
+                      by_date[ts.strftime("%Y-%m-%d")] = int(dp["Sum"])
 
                   daily = []
                   for i in range(7):

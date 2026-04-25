@@ -115,18 +115,44 @@
 
   let analyticsTimer: ReturnType<typeof setInterval> | null = null;
 
+  // Polling pauses when the tab is hidden. The dashboard fetches 7
+  // /test-snapshot/* files every 10s (loadAll) which is ~2,500 req/hr per
+  // open tab; a backgrounded tab needs none of that until the user comes
+  // back. Resumes with an immediate fetch on visibilitychange so the user
+  // doesn't see stale data on tab refocus.
+  function startTimers() {
+    if (!pollTimer) pollTimer = setInterval(loadAll, 10_000);
+    if (!analyticsTimer) analyticsTimer = setInterval(loadAnalytics, 300_000);
+    if (!tickTimer) tickTimer = setInterval(() => (nowTs = Date.now()), 5000);
+  }
+
+  function stopTimers() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    if (analyticsTimer) { clearInterval(analyticsTimer); analyticsTimer = null; }
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+  }
+
+  function handleVisibility() {
+    if (document.hidden) {
+      stopTimers();
+    } else {
+      loadAll();
+      loadAnalytics();
+      nowTs = Date.now();
+      startTimers();
+    }
+  }
+
   onMount(() => {
     loadAll();
     loadAnalytics();
-    pollTimer = setInterval(loadAll, 10_000);
-    analyticsTimer = setInterval(loadAnalytics, 300_000);
-    tickTimer = setInterval(() => (nowTs = Date.now()), 5000);
+    if (!document.hidden) startTimers();
+    document.addEventListener("visibilitychange", handleVisibility);
   });
 
   onDestroy(() => {
-    if (pollTimer) clearInterval(pollTimer);
-    if (analyticsTimer) clearInterval(analyticsTimer);
-    if (tickTimer) clearInterval(tickTimer);
+    stopTimers();
+    document.removeEventListener("visibilitychange", handleVisibility);
   });
 
   function tierCount(tier: number): number {

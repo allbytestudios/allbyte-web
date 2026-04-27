@@ -1,16 +1,17 @@
 <script lang="ts">
   import type { TestIndex, TestRunStatus } from "../lib/testIndex";
   import type { TestingRoadmap } from "../lib/testingRoadmap";
-  import type { DashboardFile, TicketsFile, EpicsFile } from "../lib/ticketTypes";
-  import type { SyncHeartbeat } from "../lib/testDataSource";
+  import type { DashboardFile, TicketsFile, EpicsFile, Epic, AgentActivity } from "../lib/ticketTypes";
+  import type { SyncHeartbeat, TempoSearchResponse, TempoTrace } from "../lib/testDataSource";
   import { TIER_META } from "../lib/testIndex";
   import { PRIORITY_META, EXPERT_META, effectivePhase, subtaskProgress } from "../lib/ticketTypes";
   import {
     fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat,
-    fetchDashboard, fetchTickets, fetchEpics,
-    fetchUserAnalytics, fetchBudgetStatus, fetchSiteTraffic,
+    fetchDashboard, fetchTickets, fetchEpics, fetchAgentActivity, fetchInFlightSpans,
+    fetchUserAnalytics, fetchBudgetStatus, fetchSiteTraffic, attrString,
   } from "../lib/testDataSource";
   import type { UserAnalytics, BudgetStatus, SiteTraffic } from "../lib/testDataSource";
+  import { subscribeToFile } from "../lib/testEvents";
   import usageData from "../data/claude-usage.json";
   import usageHistory from "../data/claude-usage-history.json";
   import MilestoneStrip from "./MilestoneStrip.svelte";
@@ -78,13 +79,15 @@
   let userAnalytics = $state<UserAnalytics | null>(null);
   let budgetStatus = $state<BudgetStatus | null>(null);
   let siteTraffic = $state<SiteTraffic | null>(null);
+  let activity = $state<AgentActivity | null>(null);
+  let traces = $state<TempoTrace[]>([]);
   let nowTs = $state<number>(Date.now());
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let tickTimer: ReturnType<typeof setInterval> | null = null;
 
   async function loadAll() {
-    const [idx, st, rm, hb, db, tx, ep] = await Promise.all([
+    const promises: Array<Promise<unknown>> = [
       fetchIndex().catch(() => null),
       fetchStatus().catch(() => null),
       fetchRoadmap().catch(() => null),
@@ -92,14 +95,25 @@
       fetchDashboard().catch(() => null),
       fetchTickets().catch(() => null),
       fetchEpics().catch(() => null),
-    ]);
-    index = idx;
-    status = st;
-    roadmap = rm;
-    heartbeat = hb;
-    dashboard = db;
-    ticketsData = tx;
-    epicsData = ep;
+      fetchAgentActivity().catch(() => null),
+    ];
+    // Tempo only useful for admin (contains prompt content) and only
+    // reachable on local dev. Skip for non-admins or when proxy 404s.
+    if (viewerIsAdmin) {
+      promises.push(fetchInFlightSpans().catch(() => null));
+    }
+    const [idx, st, rm, hb, db, tx, ep, act, tempoResp] = await Promise.all(promises);
+    index = idx as TestIndex | null;
+    status = st as TestRunStatus | null;
+    roadmap = rm as TestingRoadmap | null;
+    heartbeat = hb as SyncHeartbeat | null;
+    dashboard = db as DashboardFile | null;
+    ticketsData = tx as TicketsFile | null;
+    epicsData = ep as EpicsFile | null;
+    activity = (act as AgentActivity | null) ?? null;
+    if (tempoResp && typeof tempoResp === "object" && "traces" in (tempoResp as object)) {
+      traces = (tempoResp as TempoSearchResponse).traces ?? [];
+    }
   }
 
   async function loadAnalytics() {
@@ -143,16 +157,31 @@
     }
   }
 
+  // SSE — push updates from the dev-server file-watcher land in <200ms, vs
+  // the 10s pollTimer. Polling stays as fallback for prod (no SSE there) and
+  // for SSE-drop recovery. Subscribing the high-churn files (agent_activity,
+  // tickets, dashboard, epics) covers everything the headline sections render.
+  let sseUnsubs: Array<() => void> = [];
+  const SSE_WATCHED = [
+    "tickets/agent_activity.json",
+    "tickets/tickets.json",
+    "tickets/dashboard.json",
+    "tickets/epics.json",
+  ];
+
   onMount(() => {
     loadAll();
     loadAnalytics();
     if (!document.hidden) startTimers();
     document.addEventListener("visibilitychange", handleVisibility);
+    sseUnsubs = SSE_WATCHED.map((p) => subscribeToFile(p, loadAll));
   });
 
   onDestroy(() => {
     stopTimers();
     document.removeEventListener("visibilitychange", handleVisibility);
+    for (const u of sseUnsubs) u();
+    sseUnsubs = [];
   });
 
   function tierCount(tier: number): number {
@@ -166,6 +195,251 @@
   let blockerCount = $derived(
     ticketsData?.tickets.filter((t) => t.blocksDemo).length ?? 0
   );
+
+  // ---- Three-section overview (Epics in progress / Agents / Epics on deck) ----
+  // Until Arc's tools/aggregate_dashboard.py ships, derive epic-level state
+  // client-side from epics.json + tickets.json. Each epic's "activeStatus" is:
+  //   - "active":   any owned ticket has phase/status === in_progress
+  //   - "review":   no in_progress, but at least one in testing/pending_review
+  //   - "queued":   no work yet, only planning/tech_review/ready
+  //   - "complete": all tickets done (or none)
+  type EpicActiveStatus = "active" | "review" | "queued" | "complete";
+
+  interface EpicSummary {
+    epic: Epic;
+    activeStatus: EpicActiveStatus;
+    inProgress: number;
+    review: number;
+    queued: number;
+    done: number;
+    total: number;
+    pctDone: number;
+    leads: string[]; // unique lead names across in-progress tickets
+  }
+
+  function ticketPhase(t: { phase?: string; status?: string }): string {
+    return (t.phase ?? t.status ?? "").toLowerCase();
+  }
+
+  let epicSummaries = $derived.by<EpicSummary[]>(() => {
+    if (!epicsData || !ticketsData) return [];
+    const ticketById = new Map(ticketsData.tickets.map((t) => [t.id, t]));
+    const summaries: EpicSummary[] = [];
+    for (const e of epicsData.epics) {
+      if (!e) continue;
+      // Resolve tickets via both directions: epic.ticketIds AND ticket.epic backref.
+      const ids = new Set<string>(e.ticketIds ?? []);
+      for (const t of ticketsData.tickets) {
+        if (t.epic === e.id) ids.add(t.id);
+      }
+      let inProgress = 0, review = 0, queued = 0, done = 0;
+      const leads = new Set<string>();
+      for (const id of ids) {
+        const t = ticketById.get(id);
+        if (!t) continue;
+        const phase = ticketPhase(t);
+        if (phase === "in_progress") {
+          inProgress++;
+          for (const lead of t.leads ?? []) leads.add(lead);
+        } else if (phase === "testing" || phase === "pending_review") {
+          review++;
+        } else if (phase === "done") {
+          done++;
+        } else {
+          // planning, tech_review, ready, bundling, blocked, …
+          queued++;
+        }
+      }
+      const total = inProgress + review + queued + done;
+      let activeStatus: EpicActiveStatus;
+      if (inProgress > 0) activeStatus = "active";
+      else if (review > 0) activeStatus = "review";
+      else if (queued > 0) activeStatus = "queued";
+      else activeStatus = "complete";
+      summaries.push({
+        epic: e,
+        activeStatus,
+        inProgress, review, queued, done, total,
+        pctDone: total > 0 ? Math.round((done / total) * 100) : 0,
+        leads: [...leads],
+      });
+    }
+    return summaries;
+  });
+
+  // Sorting: priority asc (P0 first), then queueOrder if Arc has populated it,
+  // then total tickets desc as a tiebreak so big epics float up.
+  function compareEpicSummary(a: EpicSummary, b: EpicSummary): number {
+    const pri = (e: EpicSummary): number => {
+      const p = (e.epic as unknown as Record<string, string>).priority;
+      if (p === "P0") return 0;
+      if (p === "P1") return 1;
+      if (p === "P2") return 2;
+      if (p === "P3") return 3;
+      return 9;
+    };
+    const qo = (e: EpicSummary): number => {
+      const q = (e.epic as unknown as Record<string, number | undefined>).queueOrder;
+      return typeof q === "number" ? q : 999;
+    };
+    return pri(a) - pri(b) || qo(a) - qo(b) || b.total - a.total;
+  }
+
+  let epicsActive = $derived(
+    epicSummaries.filter((s) => s.activeStatus === "active").sort(compareEpicSummary)
+  );
+  let epicsOnDeck = $derived(
+    epicSummaries.filter((s) => s.activeStatus === "queued").sort(compareEpicSummary)
+  );
+
+  // ---- Agents in progress (per-instance, OTel-correlated) ----
+  // Same data shape as the /test/agents/ page. Console shows the headline
+  // count + a compact list (top 5) with a click-through to the full view.
+
+  // OTel corroboration windows (owner-set):
+  //   age ≤ 10s : corroborated — definitively live
+  //   age ≤ 60s : quiet — paused or mid-long-op, possibly OK
+  //   age > 60s : stale — definitely out of bounds (treat as suspicious)
+  const FRESH_WINDOW_MS = 10_000;
+  const STALE_WINDOW_MS = 60_000;
+
+  // Map of every observed session.id → last span end time. No cutoff filter
+  // here; entryCorroboration() classifies into tiers using the windows above.
+  let sessionLastActivity = $derived.by<Map<string, number>>(() => {
+    const last = new Map<string, number>();
+    for (const t of traces) {
+      const spans = t.spanSet?.spans ?? [];
+      for (const s of spans) {
+        const sid = attrString(s, "session.id");
+        if (!sid) continue;
+        const startMs = s.startTimeUnixNano
+          ? Number(BigInt(s.startTimeUnixNano) / 1_000_000n) : 0;
+        const durMs = s.durationNanos
+          ? Number(BigInt(s.durationNanos) / 1_000_000n) : 0;
+        const endMs = startMs + durMs;
+        const prev = last.get(sid) ?? 0;
+        if (endMs > prev) last.set(sid, endMs);
+      }
+    }
+    return last;
+  });
+
+  // Backward-compat: many call sites still reference `liveSessions` for the
+  // count of "definitely-fresh" sessions. Keep that as a derived view.
+  let liveSessions = $derived.by<Map<string, number>>(() => {
+    const cutoff = nowTs - FRESH_WINDOW_MS;
+    const live = new Map<string, number>();
+    for (const [sid, lastMs] of sessionLastActivity) {
+      if (lastMs >= cutoff) live.set(sid, lastMs);
+    }
+    return live;
+  });
+
+  function entrySessionId(a: AgentActivity["activeAgents"][number]): string | undefined {
+    const x = a as unknown as Record<string, unknown>;
+    const v = x.session_id ?? x.sessionId ?? x["session.id"];
+    return typeof v === "string" ? v : undefined;
+  }
+
+  // OTel corroboration of an entry. Three tiers based on age of last span:
+  //   "corroborated" : ≤10s — definitively live
+  //   "quiet"        : 10–60s — paused or mid-long-op (not alarming)
+  //   "stale"        : >60s — definitely out of bounds (file likely wrong)
+  //   "unverified"   : no session_id on the entry (can't cross-check)
+  // Caveat (the upstream gap surfaced by inventorying claude_code span attrs):
+  // OTel reflects PROCESS reality, not PERSONA reality. When subagents are
+  // bundled in-process under one Claude Code session.id, every entry sharing
+  // that session_id corroborates together — one signal, many cards. We can't
+  // disentangle Nix-vs-Vera-vs-Arc within a single session today.
+  // See ANTHROPIC_FEATURE_REQUEST_OTEL_SUBAGENT_ATTRIBUTION.md.
+  function entryCorroboration(
+    a: AgentActivity["activeAgents"][number]
+  ): "corroborated" | "quiet" | "stale" | "unverified" {
+    const sid = entrySessionId(a);
+    if (!sid) return "unverified";
+    const lastMs = sessionLastActivity.get(sid);
+    if (lastMs == null) return "stale";
+    const age = nowTs - lastMs;
+    if (age <= FRESH_WINDOW_MS) return "corroborated";
+    if (age <= STALE_WINDOW_MS) return "quiet";
+    return "stale";
+  }
+
+  let corroborationCounts = $derived.by(() => {
+    let ok = 0, quiet = 0, bad = 0, unk = 0;
+    for (const a of activeAgentEntries) {
+      const c = entryCorroboration(a);
+      if (c === "corroborated") ok++;
+      else if (c === "quiet") quiet++;
+      else if (c === "stale") bad++;
+      else unk++;
+    }
+    return { ok, quiet, bad, unk };
+  });
+
+  let activeAgentEntries = $derived(
+    (activity?.activeAgents ?? []).filter((a) => a.status === "working")
+  );
+
+  // OTel is the truth source. For each live session, try to look up the
+  // matching agent_activity entry by session_id and hydrate. If no entry,
+  // we still show the session — just with "no details" instead of fabricating.
+  interface LiveSessionRow {
+    sessionId: string;
+    lastActivityMs: number;
+    entry: AgentActivity["activeAgents"][number] | undefined;
+  }
+
+  let liveSessionRows = $derived.by<LiveSessionRow[]>(() => {
+    const rows: LiveSessionRow[] = [];
+    for (const [sid, lastActivityMs] of liveSessions) {
+      const entry = activeAgentEntries.find((a) => entrySessionId(a) === sid);
+      rows.push({ sessionId: sid, lastActivityMs, entry });
+    }
+    rows.sort((a, b) => b.lastActivityMs - a.lastActivityMs);
+    return rows;
+  });
+
+  function elapsedSinceIso(iso: string): string {
+    const ms = Math.max(0, nowTs - Date.parse(iso));
+    if (ms < 60_000) return `${Math.round(ms / 1000)}s`;
+    if (ms < 3_600_000) return `${Math.round(ms / 60_000)}m`;
+    return `${(ms / 3_600_000).toFixed(1)}h`;
+  }
+
+  function agentColor(name: string): string {
+    return EXPERT_META[name.toLowerCase()]?.color ?? "#9ca3af";
+  }
+
+  function epicPriority(e: Epic): string {
+    return (e as unknown as Record<string, string>).priority ?? "—";
+  }
+
+  function epicPriorityColor(e: Epic): string {
+    const p = epicPriority(e);
+    return PRIORITY_META[p as keyof typeof PRIORITY_META]?.color ?? "#9ca3af";
+  }
+
+  // Resolve the epic for an agent_activity entry. Per the realtime contract,
+  // entries should carry an `epic` field directly (Arc derives it at write
+  // time). Until that ships, fall back to the entry's first ticket → ticket.epic.
+  function epicLabelForEntry(entry: AgentActivity["activeAgents"][number] | undefined): string {
+    if (!entry) return "—";
+    const direct = (entry as unknown as Record<string, unknown>).epic;
+    if (typeof direct === "string" && direct.length > 0) {
+      // Try to resolve the epic id to a title for nicer display, fall back to id.
+      const ep = epicsData?.epics.find((e) => e?.id === direct);
+      return ep?.title ?? direct;
+    }
+    // Fallback: derive from first ticket
+    if (!entry.tickets || entry.tickets.length === 0) return "—";
+    if (!ticketsData || !epicsData) return "—";
+    const firstTicketId = entry.tickets[0];
+    const ticket = ticketsData.tickets.find((t) => t.id === firstTicketId);
+    if (!ticket || !ticket.epic) return "—";
+    const ep = epicsData.epics.find((e) => e?.id === ticket.epic);
+    return ep?.title ?? ticket.epic;
+  }
 
   function syncAge(): string {
     if (!heartbeat) return "offline";
@@ -250,6 +524,130 @@
     {#if index}
       <span class="commit" title={index.repo.commit}>@{index.repo.commit.slice(0, 7)}</span>
     {/if}
+  </div>
+
+  <!-- ============================================================
+       LIVE AGENTS STRIP — one card per active agent.
+       Content from agent_activity.activeAgents (truth-source per
+       Arc's realtime contract). OTel corroborates via session_id —
+       small corner indicator per card + rollup pill in the header.
+       ============================================================ -->
+  {#if activeAgentEntries.length > 0}
+    <div class="agent-strip-header">
+      <span class="strip-rollup" title="OTel corroboration: ✓ ≤10s (live), ⚠ 10–60s (quiet/paused), 🚨 >60s (definitely out of bounds), ◯ no session_id (can't validate). Note: OTel is process-level, not per-subagent — see ANTHROPIC_FEATURE_REQUEST_OTEL_SUBAGENT_ATTRIBUTION.md.">
+        OTel:
+        {#if corroborationCounts.ok > 0}<span class="rollup-ok">✓ {corroborationCounts.ok}</span>{/if}
+        {#if corroborationCounts.quiet > 0}<span class="rollup-quiet">⚠ {corroborationCounts.quiet}</span>{/if}
+        {#if corroborationCounts.bad > 0}<span class="rollup-bad">🚨 {corroborationCounts.bad}</span>{/if}
+        {#if corroborationCounts.unk > 0}<span class="rollup-unk">◯ {corroborationCounts.unk}</span>{/if}
+      </span>
+    </div>
+  {/if}
+  <div class="agent-strip">
+    {#each activeAgentEntries as a (a.agent + (a.started ?? '') + ((a as any).session_id ?? ''))}
+      {@const epicLabel = epicLabelForEntry(a)}
+      {@const corro = entryCorroboration(a)}
+      <div
+        class="agent-card-mini"
+        class:agent-card-quiet={corro === "quiet"}
+        class:agent-card-stale={corro === "stale"}
+        class:agent-card-unverified={corro === "unverified"}
+        style="--agent-color: {agentColor(a.agent)}"
+        title={
+          corro === 'corroborated' ? `OTel: session emitted in last 10s · ${a.task ?? ''}` :
+          corro === 'quiet' ? `OTel: session quiet 10–60s — paused or mid-long-op · ${a.task ?? ''}` :
+          corro === 'stale'  ? `OTel: session quiet >60s — definitely out of bounds · ${a.task ?? ''}` :
+          `OTel: no session_id, can't validate · ${a.task ?? ''}`
+        }
+      >
+        <span class="agent-card-corro agent-card-corro-{corro}" aria-label="OTel corroboration">
+          {corro === "corroborated" ? "✓" : corro === "quiet" ? "⚠" : corro === "stale" ? "🚨" : "◯"}
+        </span>
+        <div class="agent-card-name" style="color: {agentColor(a.agent)}">{a.agent}</div>
+        <div class="agent-card-epic" class:agent-card-epic-multi={epicLabel === 'MULTI'}>{epicLabel}</div>
+      </div>
+    {/each}
+    {#if activeAgentEntries.length === 0}
+      <div class="agent-strip-empty">No agents are currently working.</div>
+    {/if}
+  </div>
+
+  <!-- ============================================================
+       EPIC ROW: in progress | on deck (50/50 side-by-side)
+       Layout: Epics in Progress | Epics on Deck (50/50 row)
+               Agents in Progress (full width below)
+       Stacks vertically on narrow screens (<900px).
+       ============================================================ -->
+  <div class="overview-epics-row">
+  <section class="overview-section overview-half">
+    <h2 class="overview-title">
+      <span class="overview-marker overview-marker-active"></span>
+      Epics in Progress
+      <span class="overview-count" class:overview-count-zero={epicsActive.length === 0}>{epicsActive.length}</span>
+      <a class="overview-link" href="/test/tickets/">tickets ↗</a>
+    </h2>
+    {#if epicsActive.length === 0}
+      <p class="overview-empty">No epics with work in progress.</p>
+    {:else}
+      <ul class="epic-list">
+        {#each epicsActive as s (s.epic.id)}
+          {@const pri = epicPriority(s.epic)}
+          <li class="epic-card epic-active">
+            <div class="epic-head">
+              <span class="epic-pri" style="color: {epicPriorityColor(s.epic)}">{pri}</span>
+              <span class="epic-id">{s.epic.id}</span>
+              <span class="epic-title">{s.epic.title}</span>
+              <span class="epic-pct">{s.pctDone}% done</span>
+            </div>
+            <div class="epic-meta">
+              <span class="epic-stat epic-stat-active">{s.inProgress} in progress</span>
+              {#if s.review > 0}<span class="epic-stat epic-stat-review">{s.review} in review</span>{/if}
+              {#if s.queued > 0}<span class="epic-stat epic-stat-queued">{s.queued} queued</span>{/if}
+              <span class="epic-stat epic-stat-total">{s.total} total</span>
+              {#if s.leads.length > 0}
+                <span class="epic-leads">
+                  {#each s.leads as lead (lead)}
+                    <span class="epic-lead-chip" style="color: {agentColor(lead)}">{lead}</span>
+                  {/each}
+                </span>
+              {/if}
+            </div>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </section>
+
+  <section class="overview-section overview-half">
+    <h2 class="overview-title">
+      <span class="overview-marker overview-marker-deck"></span>
+      Epics on Deck
+      <span class="overview-count" class:overview-count-zero={epicsOnDeck.length === 0}>{epicsOnDeck.length}</span>
+      <span class="overview-hint">queued — no in-progress tickets yet</span>
+    </h2>
+    {#if epicsOnDeck.length === 0}
+      <p class="overview-empty">Queue is empty.</p>
+    {:else}
+      <ul class="epic-list">
+        {#each epicsOnDeck.slice(0, 10) as s (s.epic.id)}
+          {@const pri = epicPriority(s.epic)}
+          <li class="epic-card epic-deck">
+            <div class="epic-head">
+              <span class="epic-pri" style="color: {epicPriorityColor(s.epic)}">{pri}</span>
+              <span class="epic-id">{s.epic.id}</span>
+              <span class="epic-title">{s.epic.title}</span>
+              {#if s.total > 0}
+                <span class="epic-pct">{s.queued} queued / {s.total}</span>
+              {/if}
+            </div>
+          </li>
+        {/each}
+      </ul>
+      {#if epicsOnDeck.length > 10}
+        <p class="overview-more">+{epicsOnDeck.length - 10} more</p>
+      {/if}
+    {/if}
+  </section>
   </div>
 
   <!-- Milestone progress -->
@@ -952,6 +1350,379 @@
     font-size: 0.7rem;
     color: #4b5563;
     font-style: italic;
+  }
+
+  /* ===== Live agents strip (top of console) ===== */
+  .agent-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0.5rem;
+  }
+  .agent-strip-empty {
+    color: #6b7280;
+    font-style: italic;
+    font-size: 0.82rem;
+    padding: 0.4rem 0;
+  }
+  .agent-card-mini {
+    background: #12161e;
+    border: 1px solid rgba(167, 243, 208, 0.1);
+    border-left: 3px solid var(--agent-color);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    min-width: 160px;
+    max-width: 280px;
+  }
+  .agent-card-name {
+    font-weight: 700;
+    font-size: 0.88rem;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+  .agent-card-epic {
+    color: #9ca3af;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .agent-card-epic-multi {
+    color: #6b7280;
+    font-style: italic;
+  }
+  .agent-card-mini {
+    position: relative;
+  }
+  .agent-card-quiet {
+    border-left-color: #fbbf24;
+  }
+  .agent-card-stale {
+    border-left-color: #f87171;
+    background: #1a0d0d;
+  }
+  .agent-card-unverified {
+    border-left-color: #6b7280;
+    opacity: 0.85;
+  }
+  .agent-card-corro {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.4rem;
+    font-size: 0.7rem;
+    line-height: 1;
+    font-weight: 700;
+  }
+  .agent-card-corro-corroborated { color: #34d399; }
+  .agent-card-corro-quiet        { color: #fbbf24; }
+  .agent-card-corro-stale        { color: #f87171; }
+  .agent-card-corro-unverified   { color: #6b7280; }
+
+  .agent-strip-header {
+    display: flex;
+    align-items: center;
+    margin: 0.4rem 0 0.1rem;
+  }
+  .strip-rollup {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+    cursor: help;
+  }
+  .strip-rollup .rollup-ok    { color: #34d399; font-weight: 700; }
+  .strip-rollup .rollup-quiet { color: #fbbf24; font-weight: 700; }
+  .strip-rollup .rollup-bad   { color: #f87171; font-weight: 700; }
+  .strip-rollup .rollup-unk   { color: #6b7280; font-weight: 700; }
+
+  /* ===== Three-section headline overview ===== */
+  .overview-epics-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin: 0.75rem 0 0;
+  }
+  .overview-epics-row .overview-section {
+    margin: 0;
+  }
+  .overview-half {
+    min-width: 0; /* allow ellipsis on long titles inside flex/grid columns */
+  }
+  @media (max-width: 900px) {
+    .overview-epics-row { grid-template-columns: 1fr; gap: 0.5rem; }
+  }
+  .agent-name-unknown {
+    color: #9ca3af !important;
+    font-style: italic;
+    font-weight: 400;
+  }
+  .agent-tickets-missing {
+    color: #6b7280;
+    font-style: italic;
+  }
+  .agent-tickets-missing code {
+    color: #9ca3af;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0 0.25rem;
+    border-radius: 2px;
+    font-style: normal;
+  }
+  .overview-section {
+    margin: 0.75rem 0 1.25rem;
+  }
+  .overview-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    color: #d1d5db;
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.01em;
+  }
+  .overview-marker {
+    width: 4px;
+    height: 1.05rem;
+    border-radius: 2px;
+    flex: 0 0 auto;
+  }
+  .overview-marker-active { background: #34d399; box-shadow: 0 0 6px rgba(52, 211, 153, 0.5); }
+  .overview-marker-agent  { background: #f472b6; box-shadow: 0 0 6px rgba(244, 114, 182, 0.5); }
+  .overview-marker-deck   { background: #60a5fa; }
+  .overview-count {
+    background: rgba(167, 243, 208, 0.12);
+    color: #a7f3d0;
+    border: 1px solid rgba(167, 243, 208, 0.3);
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .overview-count-zero {
+    background: rgba(75, 85, 99, 0.2);
+    color: #6b7280;
+    border-color: #374151;
+  }
+  .overview-count-live {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+    border-color: rgba(52, 211, 153, 0.4);
+  }
+  .overview-count-file {
+    background: rgba(96, 165, 250, 0.12);
+    color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.4);
+  }
+  .overview-link {
+    margin-left: auto;
+    color: #60a5fa;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 400;
+  }
+  .overview-link:hover { text-decoration: underline; }
+  .overview-hint {
+    margin-left: auto;
+    color: #6b7280;
+    font-size: 0.78rem;
+    font-weight: 400;
+  }
+  .overview-empty {
+    color: #6b7280;
+    font-style: italic;
+    font-size: 0.85rem;
+    margin: 0.25rem 0 0;
+  }
+  .overview-more {
+    margin: 0.5rem 0 0;
+    font-size: 0.78rem;
+    color: #6b7280;
+  }
+  .overview-more a {
+    color: #60a5fa;
+    text-decoration: none;
+  }
+  .overview-more a:hover { text-decoration: underline; }
+
+  .epic-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .epic-card {
+    background: #12161e;
+    border: 1px solid rgba(167, 243, 208, 0.1);
+    border-radius: 4px;
+    padding: 0.55rem 0.85rem;
+  }
+  .epic-active {
+    border-left: 3px solid #34d399;
+  }
+  .epic-deck {
+    border-left: 3px solid #60a5fa;
+    opacity: 0.95;
+  }
+  .epic-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .epic-pri {
+    font-weight: 700;
+    font-size: 0.78rem;
+    min-width: 1.6rem;
+  }
+  .epic-id {
+    font-family: "Courier New", monospace;
+    font-size: 0.78rem;
+    color: #6b7280;
+  }
+  .epic-title {
+    color: #e5e7eb;
+    font-size: 0.88rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .epic-pct {
+    color: #9ca3af;
+    font-size: 0.78rem;
+    font-family: "Courier New", monospace;
+    flex-shrink: 0;
+  }
+  .epic-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.4rem;
+  }
+  .epic-stat {
+    font-size: 0.74rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 2px;
+    font-family: "Courier New", monospace;
+  }
+  .epic-stat-active {
+    background: rgba(52, 211, 153, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+  }
+  .epic-stat-review {
+    background: rgba(251, 191, 36, 0.1);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+  }
+  .epic-stat-queued {
+    background: rgba(96, 165, 250, 0.1);
+    color: #60a5fa;
+    border: 1px solid rgba(96, 165, 250, 0.3);
+  }
+  .epic-stat-total {
+    color: #6b7280;
+  }
+  .epic-leads {
+    display: inline-flex;
+    gap: 0.3rem;
+    margin-left: auto;
+  }
+  .epic-lead-chip {
+    font-weight: 700;
+    font-size: 0.74rem;
+    padding: 0 0.3rem;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .agent-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .agent-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.75rem;
+    background: #12161e;
+    border-left: 3px solid var(--agent-color);
+    border-radius: 3px;
+    font-size: 0.82rem;
+    flex-wrap: wrap;
+  }
+  .agent-row-stale {
+    opacity: 0.75;
+    border-left-color: #fbbf24;
+    background: rgba(251, 191, 36, 0.04);
+  }
+  .agent-row-unknown {
+    opacity: 0.7;
+    border-left-color: #6b7280;
+  }
+  .agent-state-live {
+    background: #34d399;
+    color: #052e1a;
+    padding: 0.05rem 0.4rem;
+    border-radius: 2px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .agent-state-stale {
+    background: #fbbf24;
+    color: #422006;
+    padding: 0.05rem 0.4rem;
+    border-radius: 2px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .agent-state-unknown {
+    background: #6b7280;
+    color: #111827;
+    padding: 0.05rem 0.4rem;
+    border-radius: 2px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .agent-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .agent-tickets {
+    color: #d1d5db;
+    font-family: "Courier New", monospace;
+    font-size: 0.78rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .agent-elapsed {
+    color: #34d399;
+    font-weight: 600;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+  .agent-row-stale .agent-elapsed { color: #fbbf24; }
+  .agent-subagents {
+    color: #6b7280;
+    font-size: 0.74rem;
+    flex-shrink: 0;
   }
 
   /* Milestone progress */

@@ -214,17 +214,49 @@ export interface AgentSubagents {
   workers: { id: string; task: string; started: string; status: string }[];
 }
 
+/**
+ * A pending question raised by a worker that needs owner attention.
+ * Mirrors the entry created in `owner_questions.json` by `report_question`;
+ * the question_id ties the two records together. `urgency` drives the
+ * dashboard's color tier (low=blue, medium=amber, high=red).
+ */
+export interface AgentActiveQuestion {
+  question_id: string;
+  text: string;
+  prompted_at: string;
+  urgency?: "low" | "medium" | "high";
+}
+
+/**
+ * One entry in `activeAgents[]`. Per CON_CLAUDE_MCP_AGENT_STANDARD.md, the
+ * schema is the public contract for arc-mcp::agent_activity_op. All fields
+ * after `subagents?` are NEW (Phase B / additive); legacy entries without
+ * them render in the dashboard's 2-line baseline view.
+ */
+export interface ActiveAgentEntry {
+  agent: string;
+  task: string;
+  tickets: string[];
+  started: string;
+  status: string;
+  subagents?: AgentSubagents;
+
+  // Phase B additions — all optional during migration window.
+  agent_id?: string;              // Agent tool's returned id; primary key for Arc-side lookup
+  session_id?: string;            // worker's Claude Code OTel session.id (snake_case canonical)
+  epic?: string;                  // auto-derived from tickets[]; "MULTI" sentinel for cross-epic
+  worker_status?: string;         // granular phase string (e.g. "investigating_root_cause")
+  progress_pct?: number;          // 0-100
+  eta_seconds?: number;           // worker's estimate in seconds
+  eta_updated_at?: string;        // when the worker last refreshed eta_seconds
+  active_question?: AgentActiveQuestion | null;  // null when no pending question
+  blockers?: string[];            // free-text list of external waits
+}
+
 export interface AgentActivity {
   schema_version: number;
   lastUpdated: string;
-  activeAgents: {
-    agent: string;
-    task: string;
-    tickets: string[];
-    started: string;
-    status: string;
-    subagents?: AgentSubagents;
-  }[];
+  activeAgents: ActiveAgentEntry[];
   recentActivity: {
     agent: string;
     task: string;

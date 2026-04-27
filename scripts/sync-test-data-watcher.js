@@ -51,6 +51,11 @@ const CIRCUIT_PAUSE_MS = Number(process.env.SYNC_CIRCUIT_PAUSE_MS) || 60000;
 const FAILURE_THRESHOLD = 3;
 // Heartbeat upload cadence. Dashboard flags >2x this as stale, >10x as offline.
 const HEARTBEAT_MS = Number(process.env.SYNC_HEARTBEAT_MS) || 60000;
+// Claude usage stats refresh cadence. The /test/ Console reads
+// src/data/claude-usage*.json; without this, the JSON files only
+// regenerate when someone runs `npm run usage` manually, and the
+// "current week" stats drift from reality.
+const USAGE_REFRESH_MS = Number(process.env.SYNC_USAGE_REFRESH_MS) || 15 * 60 * 1000;
 
 // Watch targets — relative to CHRONICLES_DIR. Each entry is { rel, kind }.
 // `kind: "json"` means the file change triggers a sync. `kind: "results"` is
@@ -339,6 +344,37 @@ export function checkSanity({ chroniclesDir, files }) {
 async function checkAwsCli() {
   const r = await runCommand(["aws", "--version"]);
   return r.ok;
+}
+
+/**
+ * Regenerate src/data/claude-usage*.json by invoking the existing usage
+ * script. Logs success / failure but never throws — usage stats are nice
+ * to have, not load-bearing, so we don't want a broken Claude transcript
+ * directory to take down the whole watcher.
+ */
+async function regenerateUsageStats() {
+  const usageScript = join(ROOT, "scripts", "claude-usage.js");
+  if (!existsSync(usageScript)) {
+    log("warn", `usage script missing: ${usageScript}`);
+    return;
+  }
+  const r = await runCommand(["node", usageScript]);
+  if (r.ok) {
+    // Pull the headline message off the script's stdout (last 2-3 lines
+    // typically have "Usage: X msg / Y budget = Z%"). Trim aggressively
+    // so the watcher log stays readable.
+    const summary = r.stdout
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith("Usage:") || l.startsWith("Pace:"))
+      .join(" · ");
+    log("ok", `usage stats refreshed${summary ? " — " + summary : ""}`);
+  } else {
+    log(
+      "warn",
+      `usage stats refresh failed (exit ${r.code}): ${r.stderr.split("\n")[0] || "(no stderr)"}`
+    );
+  }
 }
 
 // --- heartbeat ------------------------------------------------------------
@@ -831,10 +867,22 @@ async function main() {
     });
   }, HEARTBEAT_MS);
 
+  // Refresh src/data/claude-usage*.json on a cadence so the Console tab's
+  // weekly stats track reality without anyone running `npm run usage`.
+  // Fire once immediately so a fresh watcher start picks up data right away.
+  if (!args.dryRun) {
+    regenerateUsageStats();
+  }
+  const usageInterval = setInterval(() => {
+    if (args.dryRun) return;
+    regenerateUsageStats();
+  }, USAGE_REFRESH_MS);
+
   // Graceful shutdown
   const shutdown = () => {
     log("..", "shutdown — closing watchers");
     clearInterval(hbInterval);
+    clearInterval(usageInterval);
     debouncer.cancel();
     for (const w of watchers) {
       try {

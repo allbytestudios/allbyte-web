@@ -293,3 +293,119 @@ export async function fetchBudgetStatus(signal?: AbortSignal): Promise<BudgetSta
     return null;
   }
 }
+
+// --- Tempo (in-flight spans) -----------------------------------------------
+//
+// Tempo's HTTP query API returns trace summaries. We fetch through the
+// Astro dev-server proxy at /tempo-api/* (see tempoProxy() in astro.config.mjs)
+// so we don't need CORS configured on Tempo's port. In prod the proxy doesn't
+// exist, so this fetch returns null silently and the InFlightApp shows empty.
+
+export interface TempoAttributeValue {
+  stringValue?: string;
+  intValue?: string | number;
+  boolValue?: boolean;
+  doubleValue?: number;
+}
+export interface TempoAttribute {
+  key: string;
+  value: TempoAttributeValue;
+}
+
+export interface TempoSpan {
+  spanID: string;
+  startTimeUnixNano?: string;
+  durationNanos?: string;
+  name?: string;
+  attributes?: TempoAttribute[];
+}
+
+export interface TempoTrace {
+  traceID: string;
+  rootServiceName?: string;
+  rootTraceName?: string;
+  startTimeUnixNano?: string;
+  durationMs?: number;
+  spanSet?: { spans?: TempoSpan[]; matched?: number };
+}
+
+export interface TempoSearchResponse {
+  traces?: TempoTrace[];
+  metrics?: { inspectedTraces?: number; inspectedBytes?: string; completedJobs?: number };
+}
+
+export interface TempoErrorResponse {
+  error: string;
+}
+
+/**
+ * Search Tempo for recent Claude Code traces. Returns null if Tempo is
+ * unreachable (typical on prod, where /tempo-api/ doesn't exist), or an
+ * error object if Tempo responded with non-200, or the parsed search payload.
+ *
+ * Uses TraceQL with `select` so the response carries per-span attributes
+ * inline (tool_name, full_command, user_prompt, session.id, …) rather than
+ * forcing N follow-up /api/traces/<id> fetches per row. Search window is
+ * the last 15 minutes.
+ */
+export async function fetchInFlightSpans(
+  signal?: AbortSignal
+): Promise<TempoSearchResponse | TempoErrorResponse | null> {
+  try {
+    const end = Math.floor(Date.now() / 1000);
+    const start = end - 15 * 60;
+    // Pull every Claude Code span and select the attributes we render.
+    // Filtering by span name happens client-side in InFlightApp (cheaper
+    // than a more complex TraceQL filter; one query feeds both views).
+    const traceql =
+      '{ resource.service.name="claude-code" } | select(' +
+      [
+        "span.tool_name",
+        "span.full_command",
+        "span.user_prompt",
+        "span.interaction.sequence",
+        "span.interaction.duration_ms",
+        "span.session.id",
+      ].join(", ") +
+      ")";
+    // Trailing slash before the query is required for the dev-server proxy
+    // to match the request — see astro.config.mjs vite.server.proxy comment.
+    const url =
+      `/tempo-api/search/?q=${encodeURIComponent(traceql)}` +
+      `&start=${start}&end=${end}&limit=30`;
+    const res = await fetch(url, { signal, cache: "no-store" });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      let bodyText = "";
+      try {
+        bodyText = await res.text();
+      } catch {}
+      return { error: `Tempo HTTP ${res.status}${bodyText ? ": " + bodyText.slice(0, 120) : ""}` };
+    }
+    return (await res.json()) as TempoSearchResponse;
+  } catch (err) {
+    // Network error, AbortError, or proxy 502. All are "unreachable" — return
+    // null so the UI renders an empty state rather than a red error.
+    return null;
+  }
+}
+
+/**
+ * Pull a string attribute off a Tempo span (or undefined). Tempo serializes
+ * values as `{stringValue|intValue|boolValue|doubleValue}` so we coerce to
+ * string for display.
+ */
+export function attrString(
+  span: TempoSpan | undefined,
+  key: string
+): string | undefined {
+  if (!span?.attributes) return undefined;
+  const a = span.attributes.find((x) => x.key === key);
+  if (!a) return undefined;
+  const v = a.value;
+  if (v.stringValue != null) return v.stringValue;
+  if (v.intValue != null) return String(v.intValue);
+  if (v.boolValue != null) return String(v.boolValue);
+  if (v.doubleValue != null) return String(v.doubleValue);
+  return undefined;
+}

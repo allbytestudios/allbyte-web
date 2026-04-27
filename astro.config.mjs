@@ -445,6 +445,26 @@ export default defineConfig({
         // custom iframe-only reload event.
         ignored: ["**/public/godot/**"],
       },
+      // Dev-only proxy: forwards /tempo-api/* to http://localhost:3200/api/*.
+      // Tempo's HTTP query API has no built-in CORS, so the InFlightApp svelte
+      // component fetches through this proxy instead of hitting Tempo directly.
+      // In prod (allbyte.studio) this proxy doesn't exist; fetches 404 and the
+      // in-flight UI silently shows empty — the desired behavior since Tempo
+      // is bound 127.0.0.1-only and never reachable from the public site.
+      //
+      // Subtle: Astro's `trailingSlash: "always"` only routes through this
+      // proxy when the request path itself carries a trailing slash before the
+      // query string (e.g. /tempo-api/search/?tags=...). Tempo, however,
+      // returns 404 for /api/search/ — it expects /api/search. So we strip
+      // the trailing slash before forwarding. The InFlightApp client must
+      // request paths in /tempo-api/<endpoint>/ form.
+      proxy: {
+        "/tempo-api": {
+          target: "http://localhost:3200",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/tempo-api/, "/api").replace(/\/(\?|$)/, "$1"),
+        },
+      },
     },
   },
 });

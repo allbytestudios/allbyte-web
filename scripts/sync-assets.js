@@ -17,48 +17,47 @@ if (!existsSync(godot)) {
 }
 
 // --- 1. Extract game version + build date ---
-// Read from CON Claude's dashboard.json (the live source of truth for the
-// deployed web export version). Falls back to World.gd if dashboard missing.
+// Version: read const WEB_VERSION from Chronicles' World.gd.
+// Build date: mtime of the exported web pck (the actual deployed artifact).
+// dashboard.json is deprecated (Arc no longer maintains it post bd-migration);
+// kept as a last-resort fallback only.
 let version = "unknown";
 let buildDate = null;
 
 if (manifest.chroniclesProject && existsSync(manifest.chroniclesProject)) {
-  const dashPath = join(manifest.chroniclesProject, "tickets/dashboard.json");
-  if (existsSync(dashPath)) {
-    try {
-      const dash = JSON.parse(readFileSync(dashPath, "utf-8"));
-      if (dash.deployedVersion) {
-        version = dash.deployedVersion;
-        console.log(`Version (dashboard): ${version}`);
-      }
-      if (dash.lastUpdated) {
-        buildDate = dash.lastUpdated;
-        console.log(`Build date (dashboard): ${buildDate}`);
-      }
-    } catch {
-      console.log("⚠ Failed to parse dashboard.json, falling back");
+  const vFile = join(manifest.chroniclesProject, manifest.chroniclesVersionFile || manifest.versionFile);
+  if (existsSync(vFile)) {
+    const src = readFileSync(vFile, "utf-8");
+    const m = src.match(new RegExp(manifest.versionRegex));
+    if (m) {
+      version = "v" + m[1].replace(/^v/, "");
+      console.log(`Version (World.gd): ${version}`);
     }
   }
 
-  // Fallback: read from World.gd if dashboard didn't have a version
-  if (version === "unknown") {
-    const vFile = join(manifest.chroniclesProject, manifest.chroniclesVersionFile || manifest.versionFile);
-    if (existsSync(vFile)) {
-      const src = readFileSync(vFile, "utf-8");
-      const m = src.match(new RegExp(manifest.versionRegex));
-      if (m) {
-        version = m[1];
-        console.log(`Version (World.gd fallback): ${version}`);
-      }
-    }
-  }
-
-  // Build date fallback: mtime of the web export .pck
-  if (!buildDate && manifest.chroniclesWebExportFile) {
+  if (manifest.chroniclesWebExportFile) {
     const exportPath = join(manifest.chroniclesProject, manifest.chroniclesWebExportFile);
     if (existsSync(exportPath)) {
       buildDate = statSync(exportPath).mtime.toISOString();
-      console.log(`Build date (pck mtime fallback): ${buildDate}`);
+      console.log(`Build date (pck mtime): ${buildDate}`);
+    }
+  }
+
+  // Last-resort fallback: dashboard.json (deprecated; left in for legacy projects).
+  if (version === "unknown" || !buildDate) {
+    const dashPath = join(manifest.chroniclesProject, "tickets/dashboard.json");
+    if (existsSync(dashPath)) {
+      try {
+        const dash = JSON.parse(readFileSync(dashPath, "utf-8"));
+        if (version === "unknown" && dash.deployedVersion) {
+          version = dash.deployedVersion;
+          console.log(`Version (dashboard.json fallback): ${version}`);
+        }
+        if (!buildDate && dash.lastUpdated) {
+          buildDate = dash.lastUpdated;
+          console.log(`Build date (dashboard.json fallback): ${buildDate}`);
+        }
+      } catch {}
     }
   }
 }

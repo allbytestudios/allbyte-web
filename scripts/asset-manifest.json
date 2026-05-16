@@ -1,10 +1,10 @@
 {
   "godotProject": "C:/Users/drew/Documents/GitHub/TacticalTestDev",
   "versionFile": "Autoload/World.gd",
-  "versionRegex": "var version := \"(.+?)\"",
-  "_chroniclesNote": "CON Claude bumps the version in Chronicles of Nesis; sync reads from here first and falls back to godotProject if missing.",
+  "versionRegex": "(?:const WEB_VERSION|var version) :?= \"v?([^\"\\s#]+)\"",
+  "_chroniclesNote": "Chronicles is the live web build source. Sync reads version via versionRegex from chroniclesVersionFile and buildDate from chroniclesWebExportFile mtime. dashboard.json is deprecated post bd-migration.",
   "chroniclesProject": "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis",
-  "chroniclesVersionFile": "Autoload/World.gd",
+  "chroniclesVersionFile": "WebBootstrap/Autoload/World.gd",
   "chroniclesWebExportFile": "WebBootstrap/export/index.pck",
   "music": {
     "sourceDir": "Music",

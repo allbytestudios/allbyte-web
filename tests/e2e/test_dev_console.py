@@ -11,9 +11,7 @@ import pytest
 DEV_CONSOLE_PAGES = [
     "/test/",
     "/test/tickets/",
-    "/test/agents/",
     "/test/tests/",
-    "/test/agent-chat/",
     "/test/decisions/",
 ]
 
@@ -36,7 +34,7 @@ def test_dev_console_nav_visible(page, base_url, path):
     nav = page.locator(".test-nav")
     assert nav.is_visible(), f"Nav not visible on {path}"
     tabs = nav.locator(".nav-tab")
-    assert tabs.count() >= 5, f"Expected at least 5 tabs, got {tabs.count()}"
+    assert tabs.count() >= 4, f"Expected at least 4 tabs, got {tabs.count()}"
 
 
 # === Tickets Page ===
@@ -91,35 +89,6 @@ def test_tickets_expand_ticket(page, base_url):
         assert card.is_visible(), "Ticket card not visible after expand"
 
 
-# === Agent Chat Page ===
-
-def test_agent_chat_messages_render(page, base_url):
-    """Agent chat feed shows messages."""
-    page.goto(f"{base_url}/test/agent-chat/", wait_until="networkidle")
-    messages = page.locator(".chat-msg")
-    assert messages.count() > 0, "No chat messages rendered"
-
-
-def test_agent_chat_filter_buttons(page, base_url):
-    """Agent filter buttons are present."""
-    page.goto(f"{base_url}/test/agent-chat/", wait_until="networkidle")
-    buttons = page.locator(".agent-filters .agent-btn")
-    assert buttons.count() >= 2, "Expected agent filter buttons"
-
-
-def test_agent_chat_filter_by_agent(page, base_url):
-    """Clicking an agent filter reduces visible messages."""
-    page.goto(f"{base_url}/test/agent-chat/", wait_until="networkidle")
-    all_count = page.locator(".chat-msg").count()
-    # Click second button (first specific agent, not "All")
-    buttons = page.locator(".agent-filters .agent-btn")
-    if buttons.count() > 1:
-        buttons.nth(1).click()
-        page.wait_for_timeout(300)
-        filtered_count = page.locator(".chat-msg").count()
-        assert filtered_count <= all_count, "Filter didn't reduce messages"
-
-
 # === Questions Page ===
 
 def test_questions_page_renders(page, base_url):
@@ -133,25 +102,6 @@ def test_questions_page_renders(page, base_url):
         or page.locator(".resolved-fold").count() > 0
     )
     assert has_content, "Questions page has no content"
-
-
-# === Agents Page ===
-
-def test_agents_expert_cards(page, base_url):
-    """Agent expert cards are visible."""
-    page.goto(f"{base_url}/test/agents/", wait_until="networkidle")
-    cards = page.locator(".expert-card")
-    assert cards.count() >= 3, f"Expected at least 3 agent cards, got {cards.count()}"
-
-
-def test_agents_click_profile(page, base_url):
-    """Clicking an agent card shows the profile."""
-    page.goto(f"{base_url}/test/agents/", wait_until="networkidle")
-    first_card = page.locator(".expert-card").first
-    first_card.click()
-    page.wait_for_timeout(300)
-    profile = page.locator(".agent-profile")
-    assert profile.is_visible(), "Agent profile not visible after click"
 
 
 # === Mobile Responsiveness ===

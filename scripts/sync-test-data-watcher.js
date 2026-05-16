@@ -62,15 +62,11 @@ const USAGE_REFRESH_MS = Number(process.env.SYNC_USAGE_REFRESH_MS) || 15 * 60 * 
 // the directory sync target — we don't watch it, we just upload it as part
 // of every sync.
 const WATCH_FILES = [
+  ".beads/issues.jsonl",
   "test_index.json",
   "test_roadmap.json",
   "test_results/test_run_status.json",
-  "tickets/tickets.json",
-  "tickets/dashboard.json",
-  "tickets/agents.json",
-  "tickets/epics.json",
-  "tickets/agent_chat.ndjson",
-  "tickets/agent_activity.json",
+  "tickets/owner_questions.json",
   "test_fixtures/manifest.json",
 ];
 
@@ -94,92 +90,98 @@ export function buildSyncCommands({
   const results = toPosix(join(chroniclesDir, "test_results"));
   const cacheCtrl = "public, max-age=30, must-revalidate";
 
-  const ticketsDir = toPosix(join(chroniclesDir, "tickets"));
   const fixturesDir = toPosix(join(chroniclesDir, "test_fixtures"));
+  const beadsIssues = toPosix(join(chroniclesDir, ".beads", "issues.jsonl"));
+  const ownerQuestions = toPosix(join(chroniclesDir, "tickets", "owner_questions.json"));
+  const ownerAnswers = toPosix(join(chroniclesDir, "tickets", "owner_answers.ndjson"));
+  const daemonHeartbeat = toPosix(join(chroniclesDir, "tickets", ".answer_daemon_heartbeat.json"));
   const cmds = [];
   cmds.push({
     label: "test_index.json",
     localPath: idx,
     argv: [
-      "aws",
-      "s3",
-      "cp",
-      idx,
+      "aws", "s3", "cp", idx,
       `s3://${bucket}/test-snapshot/test_index.json`,
-      "--region",
-      region,
-      "--cache-control",
-      cacheCtrl,
-      "--content-type",
-      "application/json",
+      "--region", region,
+      "--cache-control", cacheCtrl,
+      "--content-type", "application/json",
     ],
   });
   cmds.push({
     label: "test_roadmap.json",
     localPath: road,
     argv: [
-      "aws",
-      "s3",
-      "cp",
-      road,
+      "aws", "s3", "cp", road,
       `s3://${bucket}/test-snapshot/test_roadmap.json`,
-      "--region",
-      region,
-      "--cache-control",
-      cacheCtrl,
-      "--content-type",
-      "application/json",
+      "--region", region,
+      "--cache-control", cacheCtrl,
+      "--content-type", "application/json",
     ],
   });
   cmds.push({
     label: "test_results/",
     localPath: results,
     argv: [
-      "aws",
-      "s3",
-      "sync",
-      results,
+      "aws", "s3", "sync", results,
       `s3://${bucket}/test-snapshot/test_results`,
-      "--region",
-      region,
-      "--cache-control",
-      cacheCtrl,
-      "--exclude",
-      ".gdignore",
-      "--exclude",
-      "*.import",
+      "--region", region,
+      "--cache-control", cacheCtrl,
+      "--exclude", ".gdignore",
+      "--exclude", "*.import",
     ],
   });
   cmds.push({
-    label: "tickets/",
-    localPath: ticketsDir,
+    label: ".beads/issues.jsonl",
+    localPath: beadsIssues,
     argv: [
-      "aws",
-      "s3",
-      "sync",
-      ticketsDir,
-      `s3://${bucket}/test-snapshot/tickets`,
-      "--region",
-      region,
-      "--cache-control",
-      cacheCtrl,
-      "--exclude",
-      "README.md",
+      "aws", "s3", "cp", beadsIssues,
+      `s3://${bucket}/test-snapshot/.beads/issues.jsonl`,
+      "--region", region,
+      "--cache-control", cacheCtrl,
+      "--content-type", "application/x-ndjson",
+    ],
+  });
+  cmds.push({
+    label: "tickets/owner_questions.json",
+    localPath: ownerQuestions,
+    argv: [
+      "aws", "s3", "cp", ownerQuestions,
+      `s3://${bucket}/test-snapshot/tickets/owner_questions.json`,
+      "--region", region,
+      "--cache-control", cacheCtrl,
+      "--content-type", "application/json",
+    ],
+  });
+  cmds.push({
+    label: "tickets/owner_answers.ndjson",
+    localPath: ownerAnswers,
+    argv: [
+      "aws", "s3", "cp", ownerAnswers,
+      `s3://${bucket}/test-snapshot/tickets/owner_answers.ndjson`,
+      "--region", region,
+      "--cache-control", cacheCtrl,
+      "--content-type", "application/x-ndjson",
+    ],
+  });
+  cmds.push({
+    label: "tickets/.answer_daemon_heartbeat.json",
+    localPath: daemonHeartbeat,
+    argv: [
+      "aws", "s3", "cp", daemonHeartbeat,
+      `s3://${bucket}/test-snapshot/tickets/.answer_daemon_heartbeat.json`,
+      "--region", region,
+      "--cache-control", cacheCtrl,
+      "--content-type", "application/json",
     ],
   });
   cmds.push({
     label: "test_fixtures/",
     localPath: fixturesDir,
     argv: [
-      "aws",
-      "s3",
-      "sync",
-      fixturesDir,
+      "aws", "s3", "sync", fixturesDir,
       `s3://${bucket}/test-snapshot/test_fixtures`,
-      "--region",
-      region,
-      "--cache-control",
-      cacheCtrl,
+      "--region", region,
+      "--cache-control", cacheCtrl,
     ],
   });
   return cmds;
@@ -508,14 +510,14 @@ async function runSelfTest() {
 
   console.log("buildSyncCommands");
   ok =
-    t("returns 5 commands", () => {
+    t("returns 8 commands", () => {
       const cmds = buildSyncCommands({
         chroniclesDir: "/tmp/chr",
         bucket: "b",
         region: "r",
       });
-      if (cmds.length !== 5)
-        throw new Error(`expected 5, got ${cmds.length}`);
+      if (cmds.length !== 8)
+        throw new Error(`expected 8, got ${cmds.length}`);
     }) && ok;
   ok =
     t("first cmd uploads test_index.json", () => {
@@ -552,6 +554,20 @@ async function runSelfTest() {
         throw new Error("missing .gdignore exclude");
       if (!args.includes("*.import"))
         throw new Error("missing *.import exclude");
+    }) && ok;
+  ok =
+    t("uploads .beads/issues.jsonl", () => {
+      const cmds = buildSyncCommands({
+        chroniclesDir: "/tmp/chr",
+        bucket: "b",
+        region: "r",
+      });
+      const beads = cmds.find((c) => c.label === ".beads/issues.jsonl");
+      if (!beads) throw new Error("no .beads/issues.jsonl command");
+      if (!beads.argv.includes("s3://b/test-snapshot/.beads/issues.jsonl"))
+        throw new Error("wrong destination");
+      if (!beads.argv.includes("application/x-ndjson"))
+        throw new Error("wrong content-type");
     }) && ok;
 
   console.log("\nmakeDebouncer");

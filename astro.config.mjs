@@ -261,25 +261,6 @@ function ownerAnswerWriteback() {
             };
             appendFileSync(answersPath, JSON.stringify(entry) + "\n");
 
-            // Mirror choice answers to agent_chat.ndjson so the existing
-            // decision-resolved flow keeps working during transition.
-            if (answerType === "choice") {
-              const chatPath = normalize(join(chroniclesRoot, "tickets", "agent_chat.ndjson"));
-              const msg = {
-                timestamp: entry.answeredAt,
-                from: "Owner",
-                to: "Arc",
-                channel: "decisions",
-                message: `Answer ${questionId}: ${choice}`,
-                decision: { id: questionId, choice, status: "resolved", chosenBy: "Owner" },
-              };
-              try {
-                appendFileSync(chatPath, JSON.stringify(msg) + "\n");
-              } catch {
-                // Mirror is best-effort; primary write already succeeded.
-              }
-            }
-
             res.setHeader("Content-Type", "application/json");
             res.end(JSON.stringify({ ok: true, questionId, answerType }));
           } catch (err) {
@@ -312,13 +293,8 @@ function testDataEvents() {
   // Files we broadcast. Everything else in Chronicles is ignored to keep the
   // event stream quiet and the subscriber surface small.
   const WATCHED_RELS = [
+    ".beads/issues.jsonl",
     "tickets/owner_questions.json",
-    "tickets/tickets.json",
-    "tickets/dashboard.json",
-    "tickets/epics.json",
-    "tickets/agents.json",
-    "tickets/agent_activity.json",
-    "tickets/agent_chat.ndjson",
     "tickets/owner_answers.ndjson",
     "tickets/.answer_daemon_heartbeat.json",
     "test_index.json",

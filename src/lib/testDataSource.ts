@@ -88,7 +88,7 @@ export async function fetchHeartbeat(
   }
 }
 
-import type { TicketsFile, DashboardFile, AgentsFile, EpicsFile, FixtureManifest } from "./ticketTypes";
+import type { TicketsFile, DashboardFile, EpicsFile, FixtureManifest } from "./ticketTypes";
 
 export async function fetchTickets(signal?: AbortSignal): Promise<TicketsFile | null> {
   const res = await fetch(`${TEST_DATA_BASE}/tickets/tickets.json`, {
@@ -110,16 +110,6 @@ export async function fetchDashboard(signal?: AbortSignal): Promise<DashboardFil
   return (await res.json()) as DashboardFile;
 }
 
-export async function fetchAgents(signal?: AbortSignal): Promise<AgentsFile | null> {
-  const res = await fetch(`${TEST_DATA_BASE}/tickets/agents.json`, {
-    cache: "no-store",
-    signal,
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) return null;
-  return (await res.json()) as AgentsFile;
-}
-
 export async function fetchEpics(signal?: AbortSignal): Promise<EpicsFile | null> {
   const res = await fetch(`${TEST_DATA_BASE}/tickets/epics.json`, {
     cache: "no-store",
@@ -138,27 +128,6 @@ export async function fetchFixtureManifest(signal?: AbortSignal): Promise<Fixtur
   if (res.status === 404) return null;
   if (!res.ok) return null;
   return (await res.json()) as FixtureManifest;
-}
-
-export async function fetchAgentChat(signal?: AbortSignal): Promise<import("./ticketTypes").ChatMessage[]> {
-  const res = await fetch(`${TEST_DATA_BASE}/tickets/agent_chat.ndjson`, {
-    cache: "no-store",
-    signal,
-  });
-  if (res.status === 404) return [];
-  if (!res.ok) return [];
-  const text = await res.text();
-  return text.trim().split("\n").filter(Boolean).map((line) => JSON.parse(line));
-}
-
-export async function fetchAgentActivity(signal?: AbortSignal): Promise<import("./ticketTypes").AgentActivity | null> {
-  const res = await fetch(`${TEST_DATA_BASE}/tickets/agent_activity.json`, {
-    cache: "no-store",
-    signal,
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) return null;
-  return await res.json();
 }
 
 export async function submitDecision(decisionId: string, choice: string): Promise<{ ok: boolean }> {

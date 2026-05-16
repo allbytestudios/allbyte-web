@@ -12,6 +12,7 @@
     "sync:test": "node scripts/sync-test-data-watcher.js --self-test",
     "usage": "node scripts/claude-usage.js",
     "push-packs": "node scripts/push-packs.js",
+    "obfuscate-godot": "node scripts/obfuscate-godot-export.js",
     "dev": "astro dev --host 0.0.0.0",
     "build": "node scripts/sync-assets.js && astro build",
     "preview": "astro preview",

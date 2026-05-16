@@ -14,11 +14,16 @@ Web portal for AllByte Studios, an indie game studio building **The Chronicles o
 
 ## Commands
 ```bash
-npm run dev                           # Start dev server (localhost:4321)
+# Daily
+npm run dev                           # Astro dev server, binds 0.0.0.0:4321 (reachable on LAN)
 npm run build                         # Sync assets + production build → dist/
 npm run preview                       # Preview production build locally
+
+# Asset / data sync
 npm run sync                          # Pull assets from Godot project
 npm run push-assets                   # Upload generated assets to S3
+npm run push-packs                    # Upload game packs to S3
+npm run usage                         # Refresh Claude usage data → src/data/claude-usage*.json
 python scripts/spritesheet-to-gif.py  # Convert sprite sheets to animated GIFs
 
 # Test data sync (Arc → web console)
@@ -79,18 +84,41 @@ The `Footer.astro` component accepts a `theme` prop (`"engine"` | `"heart"`) to 
   - `/devlog/godot-and-claude/` — Godot + AI pair-programming
   - `/devlog/studio/` — Studio platform & infrastructure
 - `/devlog/[...slug]/` — Individual devlog posts (dynamic route)
-- `/test/` — Dev Console (engine-themed dashboard for tests, agents, tickets, milestones)
-  - `/test/tickets/` — Collapsible tree view of milestones → epics → tickets
-  - `/test/tests/`, `/test/agents/` — Test and agent management views
+- `/self-hosting-with-claude/` — Long-form architecture/cost writeup linked from README
+- `/test/` — Dev Console (engine-themed dashboard for tests, tickets, milestones)
+  - `/test/tickets/` — Collapsible tree view of milestones → epics → tickets (Arc-fed today; switches to `bd_dashboard.json` once the beads bridge lands)
+  - `/test/tests/` — Test management view
+  - `/test/decisions/` — Owner Q&A queue (`owner_questions.json` → `OwnerQuestionsApp`)
+  - `/test/milestones/view/`, `/test/view/` — Detail views
 - `/admin/users` — Admin user management
 
 ### Content Collections
 - **Devlogs** (`src/content/devlogs/`): Markdown posts with frontmatter schema
-  - `category`: `"technical"` | `"creative"`
+  - `category`: `"engineering"` | `"workflow"` | `"strategy"` | `"narrative"` | `"craft"`
   - `devlog`: `"chronicles"` | `"godot-and-claude"` | `"studio"` — determines which sub-blog the post appears under
   - `tags`: string array (optional)
   - `heroImage`: string (optional)
+  - `draft`: boolean (optional, defaults to `false`)
   - See `src/content.config.ts` for full schema
+
+### Dev-Only Vite Middlewares (`astro.config.mjs`)
+Five custom plugins run in `npm run dev` only — none ship to prod, where the equivalent paths come from S3/CloudFront. Misdiagnosing a dev-only behavior as a bug is easy if you don't know these exist:
+- **`chroniclesProxy`** — serves `/test-data/*` and `/godot/*` straight from `CHRONICLES_DIR` (default `C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis`). Path-traversal guarded with both normalized-path and resolved-symlink checks. In prod, the dashboard reads `/test-snapshot/*` from S3 (populated by `npm run push-assets`) and `/godot/*` from `public/godot/`.
+- **`POST /api/decisions`** (`decisionWriteback`) — appends owner decisions to `tickets/agent_chat.ndjson` and marks the matching pending decision resolved. 16 KB body cap; `decisionId` must match `^[A-Za-z0-9_-]{1,64}$`.
+- **`POST /api/answers`** (`ownerAnswerWriteback`) — append-only stream at `tickets/owner_answers.ndjson` for `choice`/`verification`/`freeText` answer types. All answer types stay in this single stream; Arc tails it and applies to source-of-truth files.
+- **`/test-data-events`** (`testDataEvents`) — SSE endpoint that broadcasts file-change events from a fixed allowlist (`tickets/owner_questions.json`, `tickets.json`, `dashboard.json`, `epics.json`, `owner_answers.ndjson`, `.answer_daemon_heartbeat.json`, plus `test_index.json`, `test_roadmap.json`). Debounced ~50ms; 15s heartbeat. Dashboard updates ~200ms after Arc writes; polling stays as fallback if the connection drops.
+- **`godotReload`** — chokidar-watches `public/godot/` and broadcasts a single `godot/reload` SSE event per debounced batch when Arc's `redeploy_web.sh` finishes. Vite's built-in watcher is told to ignore `public/godot/**` so it doesn't tear down HMR before this fires.
+- **`/tempo-api/*` proxy** — forwards to `localhost:3200/api/*` for the in-flight observability UI. Tempo has no CORS and is bound 127.0.0.1-only; in prod this proxy doesn't exist and fetches 404 by design.
+
+### Middleware (`src/middleware.js`)
+Sets COOP `same-origin` + COEP `require-corp` on every dev response so `/play/` can host a cross-origin-isolated iframe (Godot HTML5 needs `SharedArrayBuffer`). `/test/in-flight*` is exempted because it embeds Grafana, which doesn't send `Cross-Origin-Resource-Policy`. Note the asymmetry: `astro.config.mjs` server-level header is `COEP: credentialless`, but middleware tightens it per-response to `require-corp`. SSG strips middleware, so prod parity comes from CloudFront response-headers policy.
+
+### `src/lib/` — Reactive State and Shared Types
+- `auth.svelte.ts` — Svelte 5 reactive auth store (`initAuth`, `login`, `signup`, `logout`, `oauthLogin`)
+- `saves.svelte.ts` — save-sync state for `/play/` ↔ Godot postMessage protocol
+- `testDataSource.ts`, `testEvents.ts`, `testIndex.ts`, `testingRoadmap.ts` — Dev Console data layer (dev proxy vs prod S3, SSE subscription)
+- `ticketTypes.ts` — TypeScript types for Arc's tickets/epics/dashboard/agents JSON
+- `tier.ts` — Subscription tier helpers shared between subscribe and gated pages
 
 ### Asset Sync
 Game assets are pulled from the local Godot project (`TacticalTestDev`) via `scripts/sync-assets.js`.
@@ -158,6 +186,7 @@ GitHub Actions (`.github/workflows/deploy.yml`): push to `main` triggers build +
 ## Infrastructure
 - **Frontend**: `infrastructure/cloudformation.yaml` — S3 bucket, CloudFront with OAC, ACM cert, budget alerts with auto-shutoff Lambda
 - **Backend**: `infrastructure/stripe-backend.yaml` — Lambda functions, DynamoDB tables, API Gateway, IAM roles
+- **GPU inference (planned, not deployed)**: `infrastructure/qwen-spot/README.md` — Qwen2.5-Coder-32B on EC2 Spot (g6.12xlarge, vLLM, multi-stream concurrent batching) sized for 2–3 concurrent leads. Recommended architecture: Arc stays on Claude Max, Nix/Port/Vera leads route to Qwen via `OPENAI_API_BASE`. Mirrors `allbyte-studio-cost-shutoff` pattern under `allbyte-studio-qwen-*`. Full plan: `~/.claude/plans/no-i-don-t-have-vivid-metcalfe.md`. Arc handoff: `C:/Users/drew/Desktop/GameDev/APP_CLAUDE_QWEN_AB_PROPOSAL.md`.
 
 ### Deploying Backend Changes
 ```bash
@@ -198,15 +227,23 @@ Two Claude instances work together on this project:
 Arc is Drew's primary interface for the game side. Tickets follow: `PLANNING → TECH REVIEW → READY → IN PROGRESS → TESTING → DONE`. Each lead can spawn workers within a slot budget.
 
 ### Data Files Arc Publishes
-The webapp consumes these from `ChroniclesOfNesis/tickets/`:
+The webapp consumes these from `ChroniclesOfNesis/tickets/` (and a couple from the repo root). The dev SSE allowlist in `astro.config.mjs` is the source of truth for which files trigger live updates:
 | File | Purpose | Schema version |
 |------|---------|---------------|
-| `tickets.json` | All tickets with phase, leads, success criteria, test specs | v2 |
-| `epics.json` | Epic groupings (Milestone → Epic → Ticket) with `estimatedHours`, `acceptanceCriteria` | v1 |
-| `dashboard.json` | Live expert/worker status, recent activity, test suite stats | — |
-| `agents.json` | Expert definitions, prompt files, worker history | v1 |
+| `tickets/tickets.json` | All tickets with phase, leads, success criteria, test specs | v2 |
+| `tickets/epics.json` | Epic groupings (Milestone → Epic → Ticket) with `estimatedHours`, `acceptanceCriteria` | v1 |
+| `tickets/dashboard.json` | Live expert/worker status, recent activity, test suite stats | — |
+| `tickets/owner_questions.json` | Questions awaiting owner input (drives `/test/decisions/`) | — |
+| `tickets/owner_answers.ndjson` | Append-only owner-answer stream (Arc tails this and applies to source-of-truth files) | — |
+| `tickets/.answer_daemon_heartbeat.json` | Liveness signal for Arc's answer daemon | — |
+| `test_index.json`, `test_roadmap.json` | Test catalog and roadmap | — |
 
-Additionally, `test_fixtures/manifest.json` will list save-state fixtures for the fixture picker.
+A `verified:false` answer does **not** reopen the original ticket — Arc cuts a new ticket that references it.
+
+`test_fixtures/manifest.json` lists save-state fixtures for the fixture picker.
+
+### Migration in progress: beads (`bd`) → `bd_dashboard.json`
+Arc is moving ticket tracking off the bespoke `tickets.json`/`epics.json`/`agents.json`/`agent_chat.ndjson`/`agent_activity.json` sprawl and onto [gastownhall/beads](https://github.com/gastownhall/beads) (`bd` CLI). Per-agent visibility (the old `/test/agents/` + `/test/agent-chat/` surfaces) was labelled a failed experiment on 2026-05-16 and removed; the dev console now surfaces epic-level state only. Once Arc's bridge ships, `bd_dashboard.json` will collapse `tickets.json` + `epics.json` + `dashboard.json` into one read; `/test/tickets/` and ConsoleOverview's epic section will rewire to it. Spec: `Desktop\GameDev\CON_CLAUDE_BEADS_DASHBOARD_BRIDGE_SPEC.md`. AppC reply: `APP_CLAUDE_BEADS_DASHBOARD_BRIDGE_REPLY.md` in the same dir.
 
 ### Cross-Claude Communication
 Coordination files live in `C:\Users\drew\Desktop\GameDev\` (host-side mount of `/workspace/GameDev/`):

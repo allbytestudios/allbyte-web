@@ -1,105 +1,53 @@
 <script lang="ts">
-  import { fetchIndex, fetchDashboard, fetchTickets, fetchAgentChat, fetchEpics, fetchAgentActivity, fetchOwnerQuestions } from "../lib/testDataSource";
-  import { effectivePhase } from "../lib/ticketTypes";
+  import { fetchIndex, fetchOwnerQuestions } from "../lib/testDataSource";
+  import { fetchBeadsIssues } from "../lib/beadsSource";
+  import { epicsOnly, isOpen, isClosed } from "../lib/beadsTypes";
   import { subscribeToFile } from "../lib/testEvents";
   import { onMount, onDestroy } from "svelte";
 
   interface Props {
-    active: "roadmap" | "tickets" | "agents" | "tests" | "chat" | "decisions";
+    active: "roadmap" | "tickets" | "tests" | "decisions";
   }
   let { active }: Props = $props();
 
   let testCount = $state<number | null>(null);
-  let commentCount = $state<number | null>(null);
-  // Tickets: green=in_progress, yellow=awaiting owner, grey=total open
-  let ticketsTotal = $state<number | null>(null);
-  let ticketsActive = $state<number | null>(null);
-  let ticketsWaiting = $state<number | null>(null);
-  // Agents: green=active/working, yellow=waiting, grey=total
-  let agentsTotal = $state<number | null>(null);
-  let agentsActive = $state<number | null>(null);
-  let agentsWaiting = $state<number | null>(null);
-  // Agent Chat: green=new since last visit, grey=total
-  let chatNew = $state<number | null>(null);
-  let chatTotalDisplay = $state<string | null>(null);
-  // Agent Questions: yellow=pending, grey=total
+  // Tickets tab (leads to /test/tickets/, which surfaces bd epics): grey = open count.
+  let epicsOpenCount = $state<number | null>(null);
+  let epicsDoneCount = $state<number | null>(null);
+  // Owner Questions: yellow=pending, grey=total
   let questionsTotal = $state<number | null>(null);
   let questionsPending = $state<number | null>(null);
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;
 
   async function refresh() {
-    const [idx, dash, tix, chat, epics, agentAct, oq] = await Promise.all([
+    const [idx, bd, oq] = await Promise.all([
       fetchIndex().catch(() => null),
-      fetchDashboard().catch(() => null),
-      fetchTickets().catch(() => null),
-      fetchAgentChat().catch(() => []),
-      fetchEpics().catch(() => null),
-      fetchAgentActivity().catch(() => null),
+      fetchBeadsIssues().catch(() => []),
       fetchOwnerQuestions().catch(() => null),
     ]);
     testCount = idx?.summary?.total_tests ?? null;
 
-    // Tickets: total open, active (in_progress/testing), waiting (awaitingOwner)
-    if (tix) {
-      const open = tix.tickets.filter(t => effectivePhase(t) !== "done" && effectivePhase(t) !== "deferred");
-      ticketsTotal = open.length || null;
-      const active = open.filter(t => effectivePhase(t) === "in_progress" || effectivePhase(t) === "testing").length;
-      ticketsActive = active > 0 ? active : null;
-      const waiting = open.filter(t => t.awaitingOwner).length;
-      ticketsWaiting = waiting > 0 ? waiting : null;
-      commentCount = null; // set from chat below
-    }
+    const epics = epicsOnly(bd);
+    const open = epics.filter(isOpen).length;
+    const closed = epics.filter(isClosed).length;
+    epicsOpenCount = open > 0 ? open : null;
+    epicsDoneCount = closed > 0 ? closed : null;
 
-    // Agents: always 4 total (Arc, Nix, Vera, Port), active/waiting from activity
-    agentsTotal = 4;
-    if (agentAct) {
-      const active = agentAct.activeAgents.filter(a => a.status === "active" || a.status === "working").length;
-      agentsActive = active;
-      const waiting = agentAct.activeAgents.filter(a => a.status.startsWith("waiting")).length;
-      agentsWaiting = waiting;
-    }
-
-    // Agent Chat: count from NDJSON, not ticket comments
-    const totalChat = chat.length;
-    commentCount = totalChat;
-    const CHAT_SEEN_KEY = "agent-chat-seen";
-    const lastSeen = parseInt(sessionStorage.getItem(CHAT_SEEN_KEY) ?? "0", 10);
-    // Update seen count when chat tab is active
-    if (active === "chat") sessionStorage.setItem(CHAT_SEEN_KEY, String(totalChat));
-    chatNew = Math.max(0, totalChat - lastSeen);
-    // Round to 3 significant digits
-    if (totalChat >= 1000) {
-      chatTotalDisplay = (totalChat / 1000).toFixed(1) + "k";
-    } else {
-      chatTotalDisplay = String(totalChat);
-    }
-
-    // Agent Questions: read Arc's synthesized owner_questions.json.
-    // Falls back to the legacy chat-based count for projects that haven't
-    // published owner_questions.json yet.
     if (oq && Array.isArray(oq.questions)) {
       const pending = oq.questions.filter((q: any) => q.status === "pending").length;
       const total = oq.questions.length;
       questionsPending = pending > 0 ? pending : null;
       questionsTotal = total > 0 ? total : null;
     } else {
-      const ownerNames = new Set(["Owner", "AllByte", "Drew", "owner", "allbyte"]);
-      const ownerDecs = chat.filter((m: any) => ownerNames.has(m.to) && m.decision);
-      const pendingDecs = ownerDecs.filter((m: any) => m.decision.status === "pending");
-      const awaitingCount = tix ? tix.tickets.filter(t => t.awaitingOwner && effectivePhase(t) !== "done").length : 0;
-      questionsPending = (pendingDecs.length + awaitingCount) || null;
-      questionsTotal = (ownerDecs.length + awaitingCount) || null;
+      questionsPending = null;
+      questionsTotal = null;
     }
   }
 
   const WATCHED = [
     "tickets/owner_questions.json",
-    "tickets/tickets.json",
-    "tickets/dashboard.json",
-    "tickets/epics.json",
-    "tickets/agent_activity.json",
-    "tickets/agent_chat.ndjson",
+    ".beads/issues.jsonl",
     "test_index.json",
   ];
   let unsubs: Array<() => void> = [];
@@ -128,27 +76,16 @@
   </a>
   <a href="/test/tickets/" class="nav-tab" class:active={active === "tickets"}>
     Tickets
-    <span class="nav-count nav-green">{ticketsActive ?? 0}</span>
-    <span class="nav-count nav-yellow">{ticketsWaiting ?? 0}</span>
-    <span class="nav-count nav-grey">{ticketsTotal ?? 0}</span>
-  </a>
-  <a href="/test/agents/" class="nav-tab" class:active={active === "agents"}>
-    Agents
-    <span class="nav-count nav-green">{agentsActive ?? 0}</span>
-    <span class="nav-count nav-yellow">{agentsWaiting ?? 0}</span>
-    <span class="nav-count nav-grey">{agentsTotal ?? 0}</span>
+    <span class="nav-count nav-grey">{epicsOpenCount ?? 0}</span>
+    {#if epicsDoneCount}
+      <span class="nav-count nav-green">{epicsDoneCount}</span>
+    {/if}
   </a>
   <a href="/test/tests/" class="nav-tab" class:active={active === "tests"}>
     Tests
     <span class="nav-count nav-green">0</span>
     <span class="nav-count nav-red">0</span>
     <span class="nav-count nav-grey">{testCount ?? 0}</span>
-  </a>
-  <a href="/test/agent-chat/" class="nav-tab" class:active={active === "chat"}>
-    Agent Chat
-    <span class="nav-count nav-green">{chatNew ?? 0}</span>
-    <span class="nav-count nav-yellow">0</span>
-    <span class="nav-count nav-grey">{chatTotalDisplay ?? 0}</span>
   </a>
 </nav>
 
@@ -220,11 +157,10 @@
     font-weight: 700;
   }
 
-  /* Mobile: 3-column grid, 2 rows for 6 tabs */
   @media (max-width: 640px) {
     .test-nav {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 0.25rem;
       padding: 0.5rem;
     }

@@ -316,14 +316,16 @@
   <header class="site-header">
     <div class="header-row">
       <div class="header-left">
-        <div class="tier-counts">
-        <span class="tier-label">Subscribers</span>
-        <div class="tier-pips">
-          <span class="tier-pip" style="--tier-color: #a7f3d0;"><img src="/tier-initiate.png" alt="" class="tier-icon" /><span class="pip-name">Initiate</span><span class="pip-count">{tierCounts.initiate}</span></span>
-          <span class="tier-pip" style="--tier-color: #fbbf24;"><img src="/tier-hero.png" alt="" class="tier-icon" /><span class="pip-name">Hero</span><span class="pip-count">{tierCounts.hero}</span></span>
-          <span class="tier-pip" style="--tier-color: #f97316;"><img src="/tier-legend.png" alt="" class="tier-icon" /><span class="pip-name">Legend</span><span class="pip-count">{tierCounts.legend}</span></span>
+        {#if isAdmin(auth.currentUser)}
+          <div class="tier-counts">
+          <span class="tier-label">Subscribers</span>
+          <div class="tier-pips">
+            <span class="tier-pip" style="--tier-color: #a7f3d0;"><img src="/tier-initiate.png" alt="" class="tier-icon" /><span class="pip-name">Initiate</span><span class="pip-count">{tierCounts.initiate}</span></span>
+            <span class="tier-pip" style="--tier-color: #fbbf24;"><img src="/tier-hero.png" alt="" class="tier-icon" /><span class="pip-name">Hero</span><span class="pip-count">{tierCounts.hero}</span></span>
+            <span class="tier-pip" style="--tier-color: #f97316;"><img src="/tier-legend.png" alt="" class="tier-icon" /><span class="pip-name">Legend</span><span class="pip-count">{tierCounts.legend}</span></span>
+            </div>
           </div>
-        </div>
+        {/if}
       </div>
       <h1 class="site-title">
         <img src="/icon.png" alt="" class="site-icon" />

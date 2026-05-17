@@ -1,0 +1,80 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Footer from "../components/Footer.astro";
+import GodotEmbed from "../components/GodotEmbed.svelte";
+
+// Marketing-friendly alias for /play/ — same Godot embed, named after the
+// game so external links (allbyte.studio/chronicles_of_nesis/) are
+// self-describing. Both routes work; share whichever fits the context.
+
+const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
+---
+
+<BaseLayout
+  title="Play Chronicles of Nesis — AllByte Studios"
+  description="Play Chronicles of Nesis — a tactical turn-based RPG in your browser. No download required."
+>
+  <main class="play-page">
+    <nav class="play-nav">
+      <a href="/" class="back-link">&larr; Back</a>
+      {fixture && <span class="fixture-label">Fixture: {fixture}</span>}
+    </nav>
+    <GodotEmbed client:load {fixture} />
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .play-page {
+    background: #0a0e17;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .play-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    background: #0a0e17;
+    padding: 0.4rem 1rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    margin-bottom: 1rem;
+  }
+
+  .play-nav .back-link {
+    color: #a7f3d0;
+    text-decoration: none;
+    font-family: "Courier New", monospace;
+    font-size: 1rem;
+    background: rgba(167, 243, 208, 0.08);
+    border: 1px solid rgba(167, 243, 208, 0.25);
+    border-radius: 4px;
+    padding: 0.5rem 0.9rem;
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .play-nav .back-link:hover {
+    background: rgba(167, 243, 208, 0.18);
+    border-color: rgba(167, 243, 208, 0.5);
+  }
+
+  .fixture-label {
+    color: #fbbf24;
+    font-family: "Courier New", monospace;
+    font-size: 0.82rem;
+    margin-left: 1rem;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 3px;
+    background: rgba(251, 191, 36, 0.08);
+  }
+</style>

@@ -1,0 +1,231 @@
+{
+  "_comment": "Historical Pre-Alpha epics, snapshotted from ChroniclesOfNesis/tickets/epics.json. Pre-Alpha shipped before the bd migration; this file preserves the epic list for the Completed section of /test/tickets/. All entries marked status=closed per owner direction (the milestone is complete regardless of any individual epic's mid-flight state at migration time). Replace with bd-migrated entries when Arc backfills.",
+  "snapshottedAt": "2026-05-17T14:27:10.408Z",
+  "epics": [
+    {
+      "id": "SAVE-LOAD-GUI",
+      "title": "Save/Load Menu Full Feature",
+      "description": "Get save and load menus working end-to-end with visual polish, screenshot persistence, play time tracking, and post-load gameplay verification.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-12T17:00:00Z",
+      "updated_at": "2026-04-13T22:00:00Z",
+      "closed_at": "2026-04-13T22:00:00Z",
+      "_historical": true
+    },
+    {
+      "id": "LARIA-TOWN",
+      "title": "Laria Town Experience",
+      "description": "Core town systems: inventory from treasure chests, character status view, graceful menu states. Shop is a separate epic.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-13T19:00:00Z",
+      "updated_at": "2026-04-13T22:00:00Z",
+      "closed_at": "2026-04-13T22:00:00Z",
+      "_historical": true
+    },
+    {
+      "id": "SHOP-SYSTEM",
+      "title": "Shop & Economy",
+      "description": "Port shop system for GeneralStore. Buy/sell items with currency.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-12T07:00:00Z",
+      "updated_at": "2026-04-13T22:00:00Z",
+      "closed_at": "2026-04-13T22:00:00Z",
+      "_historical": true
+    },
+    {
+      "id": "MENU-PORT",
+      "title": "Menu System Polish",
+      "description": "Port ConsumeItemMenu, implement unified WASD+mouse navigation, fix menu bugs.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-12T07:00:00Z",
+      "updated_at": "2026-04-13T22:00:00Z",
+      "closed_at": "2026-04-13T22:00:00Z",
+      "_historical": true
+    },
+    {
+      "id": "VISUAL-POLISH",
+      "title": "Visual Polish & Rendering Fixes",
+      "description": "Fix sprite rendering issues (fuzzy NPCs, filter settings).",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-12T07:00:00Z",
+      "updated_at": "2026-04-13T22:00:00Z",
+      "closed_at": "2026-04-13T22:00:00Z",
+      "_historical": true
+    },
+    {
+      "id": "EVENT-SYSTEM",
+      "title": "Event System Web Compatibility",
+      "description": "Get all intro events (1-8) running in the web export without hangs or missing assets.",
+      "status": "closed",
+      "priority": 0,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-12T07:00:00Z",
+      "updated_at": "2026-04-12T11:52:00Z",
+      "closed_at": "2026-04-12T11:52:00Z",
+      "_historical": true
+    },
+    {
+      "id": "FIRST-VISIT-EVENTS",
+      "title": "First-visit scene event triggers",
+      "description": "Per-scene first-visit event triggers (e.g. Naphtali intro on first Church entry). Distinct from EVENT-SYSTEM (web-compat of runtime event execution); this is about the trigger condition + event-not-yet-played gating.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-26T23:53:02Z",
+      "updated_at": "2026-04-26T23:53:02Z",
+      "closed_at": "2026-04-26T23:53:02Z",
+      "_historical": true
+    },
+    {
+      "id": "MENU-NAVIGATION",
+      "title": "Menu navigation — WASD/keyboard consistent across all menus",
+      "description": "Every menu (MenuOverlay, OptionsMenu at Title, OptionsMenu at New Game, Save/Load, Items/Equipment/Skills, dialogue options, etc.) opens with the top interactable highlighted by default; up/down keys navigate to next/prev interactable button or option, skipping disabled ones; ui_accept selects. Currently partial on MenuOverlay, broken on Title→Options + New Game OptionsMenu.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-27T02:19:48Z",
+      "updated_at": "2026-04-27T02:19:48Z",
+      "closed_at": "2026-04-27T02:19:48Z",
+      "_historical": true
+    },
+    {
+      "id": "WEB-DEPLOY",
+      "title": "Web deploy pipeline + hosting + OTel observability",
+      "description": "Evergreen concern — deploy pipeline, CORS server, AppC sync, OTel/Tempo observability. Distinct from G4-MIGRATION which closes after migration done.",
+      "status": "closed",
+      "priority": 3,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-27T18:16:56Z",
+      "updated_at": "2026-04-27T18:16:56Z",
+      "closed_at": "2026-04-27T18:16:56Z",
+      "_historical": true
+    },
+    {
+      "id": "MIGRATION-PHASE1-FRAMEWORK",
+      "title": "Migration Phase 1: framework/game separation design",
+      "description": "Phase distinction preserved per owner direction.",
+      "status": "closed",
+      "priority": 3,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-27T18:16:56Z",
+      "updated_at": "2026-04-27T18:16:56Z",
+      "closed_at": "2026-04-27T18:16:56Z",
+      "_historical": true
+    },
+    {
+      "id": "MIGRATION-PHASE2-CHRONICLES",
+      "title": "Migration Phase 2: Chronicles G4 conversion (packs, tests, deploy)",
+      "description": "Phase distinction preserved per owner direction.",
+      "status": "closed",
+      "priority": 3,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-27T18:16:56Z",
+      "updated_at": "2026-04-27T18:16:56Z",
+      "closed_at": "2026-04-27T18:16:56Z",
+      "_historical": true
+    },
+    {
+      "id": "COLLISION-NPC",
+      "title": "NPC Collision Tuning",
+      "description": "NPC collision capsule is too narrow — player can walk through or barely brush NPCs. Needs to be substantially wider (2x+) so bumping into NPCs feels natural. Three successive attempts (V1 pending_review, V2 testing, V3 testing — each wider than last).",
+      "status": "closed",
+      "priority": 99,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": null,
+      "updated_at": "2026-04-29T00:00:00Z",
+      "closed_at": "2026-04-29T00:00:00Z",
+      "_historical": true
+    },
+    {
+      "id": "EVENT-DELAYS",
+      "title": "Event Delay Reduction — tighten all cinematic pauses",
+      "description": "All scene-event step delays (commandFadeIn, commandMoveTo, commandDialogue waits) are too long — stretching 1-2s steps to 4s+. Audit and tighten across all events to ~0.3-1s where feasible.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-29T00:00:00Z",
+      "updated_at": "2026-04-29T00:00:00Z",
+      "closed_at": "2026-04-29T00:00:00Z",
+      "_historical": true
+    },
+    {
+      "id": "ARCH-REFACTOR-PHASE0",
+      "title": "Major Architecture Refactor — Menus, Dialogue, Event System",
+      "description": "Phase 0 (test baseline) → Phase 1 (MenuBase) → Phase 2 (DialogueDisplay + EventDirector). PlayerCharacter/combat explicitly out of scope. See MAJOR_REFACTOR_PLAN.md for full plan.",
+      "status": "closed",
+      "priority": 1,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-29T00:00:00Z",
+      "updated_at": "2026-04-29T00:00:00Z",
+      "closed_at": "2026-04-29T00:00:00Z",
+      "_historical": true
+    },
+    {
+      "id": "TOOLING-TOKEN-EFFICIENCY",
+      "title": "Token efficiency tooling — MCP tools + skills to reduce agent dispatch cost",
+      "description": "Four tools: arc-mcp pre_dispatch_context (front-load findings), vera-mcp xfail_manifest (eliminate discovery), confirm-spec skill (UI gate), arc-mcp session_efficiency_report (burn visibility). See session 2026-04-29 token analysis.",
+      "status": "closed",
+      "priority": 2,
+      "issue_type": "epic",
+      "labels": [
+        "milestone:pre_alpha"
+      ],
+      "created_at": "2026-04-29T00:00:00Z",
+      "updated_at": "2026-04-29T00:00:00Z",
+      "closed_at": "2026-04-29T00:00:00Z",
+      "_historical": true
+    }
+  ]
+}

@@ -3,33 +3,42 @@
 // `.beads/issues.jsonl` is reachable at `/test-data/.beads/issues.jsonl`.
 // In prod, `sync-test-data-watcher.js` copies the same file to
 // s3://bucket/test-snapshot/.beads/issues.jsonl and we read it from there.
+//
+// Pre-Alpha epics shipped before the bd migration, so we also bundle a
+// static snapshot (`src/data/historical_epics.json`) and merge it in. Once
+// Arc backfills Pre-Alpha into bd, this snapshot can go.
 
 import type { BdIssue } from "./beadsTypes";
+import historicalData from "../data/historical_epics.json";
 
 const BASE = import.meta.env.DEV ? "/test-data" : "/test-snapshot";
 const ISSUES_PATH = "/.beads/issues.jsonl";
+
+const HISTORICAL_EPICS: BdIssue[] = (historicalData.epics ?? []) as BdIssue[];
 
 export async function fetchBeadsIssues(signal?: AbortSignal): Promise<BdIssue[]> {
   const res = await fetch(`${BASE}${ISSUES_PATH}`, {
     cache: "no-store",
     signal,
   });
-  if (res.status === 404) return [];
-  if (!res.ok) return [];
-  const text = await res.text();
-  if (!text.trim()) return [];
-  const out: BdIssue[] = [];
-  for (const line of text.split("\n")) {
-    const t = line.trim();
-    if (!t) continue;
-    try {
-      out.push(JSON.parse(t) as BdIssue);
-    } catch {
-      // Skip malformed lines — JSONL is line-delimited; a partial write
-      // shouldn't break the dashboard for the rest.
+  const live: BdIssue[] = [];
+  if (res.ok) {
+    const text = await res.text();
+    for (const line of text.split("\n")) {
+      const t = line.trim();
+      if (!t) continue;
+      try {
+        live.push(JSON.parse(t) as BdIssue);
+      } catch {
+        // Skip malformed lines — JSONL is line-delimited; a partial write
+        // shouldn't break the dashboard for the rest.
+      }
     }
   }
-  return out;
+  // Historical Pre-Alpha epics always merged in; safe to concat because
+  // id namespaces never collide (bd uses "ChroniclesOfNesis-<short>",
+  // historical uses uppercase semantic ids like "SAVE-LOAD-GUI").
+  return [...live, ...HISTORICAL_EPICS];
 }
 
 export const BEADS_SSE_PATH = "tickets/.beads/issues.jsonl";

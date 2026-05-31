@@ -64,6 +64,7 @@ context. Messages have the shape `{ type: "allbyte:<verb>", ...payload }`.
 | `allbyte:request-saves` | — | Reply with `allbyte:all-saves`. |
 | `allbyte:load-saves` | `saves, options, keymapping` | Load these into game slots. Reply with `allbyte:load-complete`. |
 | `allbyte:sync-status` | `status: "idle"\|"syncing"\|"synced"\|"error"\|"unsynced"`, `lastSyncedAt: number\|null`, `errorMessage: string\|null` | Update any in-game sync indicator. Broadcast on every state change and once on `ready`. |
+| `allbyte:visibility` | `visible: boolean` | Page visibility (phone screen on/off, tab background/foreground). Game should pause audio + sims when `visible: false` and resume when `visible: true`. Broadcast on every `document.visibilitychange`. |
 
 ### Direct same-origin calls (synchronous, user-gesture preserving)
 

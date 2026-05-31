@@ -125,16 +125,39 @@
     }
   }
 
+  // Pause when the tab / PWA goes hidden (phone screen off, app
+  // backgrounded, tab switched). Resume when it becomes visible again,
+  // but only if we were the one who paused it (so a manual user-pause
+  // before screen-off doesn't get overridden).
+  let pausedByVisibility = false;
+  function handleVisibilityChange() {
+    if (!audio) return;
+    if (document.visibilityState === "hidden") {
+      if (isPlaying) {
+        audio.pause();
+        isPlaying = false;
+        pausedByVisibility = true;
+      }
+    } else {
+      if (pausedByVisibility) {
+        pausedByVisibility = false;
+        audio.play().then(() => { isPlaying = true; }).catch(() => {});
+      }
+    }
+  }
+
   $effect(() => {
     window.addEventListener("music-player:load", handleLoadTracks);
     window.addEventListener("music-player:play", handlePlayTrack);
     window.addEventListener("beforeunload", saveState);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     restoreState();
 
     return () => {
       window.removeEventListener("music-player:load", handleLoadTracks);
       window.removeEventListener("music-player:play", handlePlayTrack);
       window.removeEventListener("beforeunload", saveState);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   });
 

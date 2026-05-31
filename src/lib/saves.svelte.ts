@@ -59,6 +59,12 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBr
   saves.gameReady = false;
   if (typeof window === "undefined") return;
   window.addEventListener("message", handleGameMessage);
+  // Broadcast page visibility to the game so it can pause audio/state when
+  // the phone screen turns off or the tab is backgrounded. Game-side
+  // handler is Arc/Port's — until they wire it, this is a no-op. The web
+  // MusicPlayer pauses its own audio independently via the same
+  // visibilitychange event.
+  document.addEventListener("visibilitychange", broadcastVisibility);
 
   // Hidden file input lives in the parent document. Game triggers it via
   // window.allbyteRequestImport (same-origin direct call) so the click()
@@ -110,6 +116,7 @@ export function teardownSaveBridge() {
   preReadyQueue.length = 0;
   if (typeof window === "undefined") return;
   window.removeEventListener("message", handleGameMessage);
+  document.removeEventListener("visibilitychange", broadcastVisibility);
   if (importFileInput) {
     importFileInput.removeEventListener("change", handleImportFileChosen);
     importFileInput.remove();
@@ -122,6 +129,18 @@ export function teardownSaveBridge() {
     clearTimeout(pendingPushTimer);
     pendingPushTimer = null;
   }
+}
+
+/** Send the current page visibility to the game. Posted on every
+ *  visibilitychange so the game can pause audio + sims when backgrounded
+ *  and resume when foregrounded. No queueing — out-of-date visibility
+ *  state would be worse than skipping while the game is still booting. */
+function broadcastVisibility() {
+  if (typeof document === "undefined") return;
+  postToGame({
+    type: "allbyte:visibility",
+    visible: document.visibilityState === "visible",
+  });
 }
 
 /** Called when the user picks a file in the browser's file picker (triggered

@@ -56,6 +56,17 @@
    *  if a touch lingers or multitouch jitters. */
   const held = new Set<string>();
 
+  // === D-pad gesture state ===
+  // Reactive flags so the visual arrows highlight what the engine sees.
+  let dpadUp = $state(false);
+  let dpadDown = $state(false);
+  let dpadLeft = $state(false);
+  let dpadRight = $state(false);
+  // Which touch identifier (if any) is currently driving the d-pad. Lets us
+  // ignore touches that landed on other elements and only update from the
+  // one finger that's on the d-pad zone.
+  let dpadTouchId: number | null = null;
+
   function dispatchKey(type: "keydown" | "keyup", k: { key: string; code: string; keyCode: number }) {
     if (!iframe || !iframe.contentWindow) return;
 
@@ -103,112 +114,294 @@
     dispatchKey("keyup", mapping);
   }
 
-  function dpadStart(dir: DpadDir, e: TouchEvent | MouseEvent) {
-    e.preventDefault();
-    press(`d-${dir}`, DPAD_KEYS[dir]);
+  // === D-pad handling ===
+  //
+  // The d-pad is one touch zone, not four buttons. A finger anywhere in the
+  // zone resolves to a direction via the angle from the zone center, which
+  // gives us two things real-controller d-pads have but our old per-button
+  // implementation didn't:
+  //
+  //   1. Diagonals from a single finger (NE = up + right held simultaneously).
+  //   2. Sliding between directions without lifting (touchmove rewrites the
+  //      held set; old direction releases, new direction presses).
+  //
+  // Face buttons stay discrete — they're momentary inputs and Drew said the
+  // per-button feel is fine there.
+
+  /** Update the held-direction set based on touch position relative to the
+   *  zone center. Pure side-effect function: diffs against the current
+   *  $state booleans and fires keydown/keyup for the deltas. */
+  function updateDpadFromOffset(dx: number, dy: number) {
+    // Deadzone in pixels. Below this, no direction is held — lets the user
+    // touch the center and slide outward without spurious presses while
+    // their finger is near the middle.
+    const DEADZONE = 14;
+    const dist = Math.hypot(dx, dy);
+
+    let nUp = false, nDown = false, nLeft = false, nRight = false;
+    if (dist >= DEADZONE) {
+      // Screen y is inverted (positive = down), so use -dy for natural math.
+      // 8 sectors of 45deg each: cardinals fire one direction, diagonals
+      // fire two adjacent cardinals (which is how real d-pads work — the
+      // engine's input map then combines them into ui_up + ui_right etc.).
+      const angle = Math.atan2(-dy, dx);
+      const P = Math.PI;
+      const S = P / 8;
+      if      (angle >  -S && angle <=   S) { nRight = true; }
+      else if (angle >   S && angle <= 3*S) { nUp = true;   nRight = true; }
+      else if (angle > 3*S && angle <= 5*S) { nUp = true; }
+      else if (angle > 5*S && angle <= 7*S) { nUp = true;   nLeft = true; }
+      else if (angle > 7*S || angle <= -7*S) { nLeft = true; }
+      else if (angle > -7*S && angle <= -5*S) { nDown = true; nLeft = true; }
+      else if (angle > -5*S && angle <= -3*S) { nDown = true; }
+      else if (angle > -3*S && angle <=  -S) { nDown = true; nRight = true; }
+    }
+
+    // Diff current vs new and fire the appropriate key events.
+    if (dpadUp && !nUp) release("d-up", DPAD_KEYS.up);
+    if (!dpadUp && nUp) press("d-up", DPAD_KEYS.up);
+    if (dpadDown && !nDown) release("d-down", DPAD_KEYS.down);
+    if (!dpadDown && nDown) press("d-down", DPAD_KEYS.down);
+    if (dpadLeft && !nLeft) release("d-left", DPAD_KEYS.left);
+    if (!dpadLeft && nLeft) press("d-left", DPAD_KEYS.left);
+    if (dpadRight && !nRight) release("d-right", DPAD_KEYS.right);
+    if (!dpadRight && nRight) press("d-right", DPAD_KEYS.right);
+
+    dpadUp = nUp;
+    dpadDown = nDown;
+    dpadLeft = nLeft;
+    dpadRight = nRight;
   }
-  function dpadEnd(dir: DpadDir, e: TouchEvent | MouseEvent) {
-    e.preventDefault();
-    release(`d-${dir}`, DPAD_KEYS[dir]);
+
+  function getTrackedTouch(e: TouchEvent): Touch | null {
+    if (dpadTouchId === null) return null;
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === dpadTouchId) return e.touches[i];
+    }
+    return null;
   }
-  function faceStart(btn: FaceBtn, e: TouchEvent | MouseEvent) {
+
+  function dpadTouchStart(e: TouchEvent) {
     e.preventDefault();
-    press(`f-${btn}`, FACE_KEYS[btn]);
+    // Adopt the first changed touch as our active finger. Once tracked we
+    // ignore other touches on this zone, so a second finger landing here
+    // doesn't yank the first finger's tracking.
+    if (dpadTouchId === null && e.changedTouches.length > 0) {
+      dpadTouchId = e.changedTouches[0].identifier;
+    }
+    const t = getTrackedTouch(e);
+    if (!t) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    updateDpadFromOffset(
+      t.clientX - rect.left - rect.width / 2,
+      t.clientY - rect.top - rect.height / 2,
+    );
   }
-  function faceEnd(btn: FaceBtn, e: TouchEvent | MouseEvent) {
+
+  function dpadTouchMove(e: TouchEvent) {
+    if (dpadTouchId === null) return;
     e.preventDefault();
-    release(`f-${btn}`, FACE_KEYS[btn]);
+    const t = getTrackedTouch(e);
+    if (!t) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    updateDpadFromOffset(
+      t.clientX - rect.left - rect.width / 2,
+      t.clientY - rect.top - rect.height / 2,
+    );
+  }
+
+  function dpadTouchEnd(e: TouchEvent) {
+    // Only release if the lifted touch is the one we were tracking.
+    let lifted = false;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === dpadTouchId) {
+        lifted = true;
+        break;
+      }
+    }
+    if (!lifted) return;
+    e.preventDefault();
+    dpadTouchId = null;
+    updateDpadFromOffset(0, 0); // releases everything
+  }
+
+  // Mouse fallback for desktop testing of the gamepad (e.g. browser dev
+  // tools in a small-viewport simulation). Simpler than touch — single
+  // pointer, follow the mouse while button is held.
+  let dpadMouseDown = false;
+  function dpadMouseDownH(e: MouseEvent) {
+    e.preventDefault();
+    dpadMouseDown = true;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    updateDpadFromOffset(
+      e.clientX - rect.left - rect.width / 2,
+      e.clientY - rect.top - rect.height / 2,
+    );
+  }
+  function dpadMouseMoveH(e: MouseEvent) {
+    if (!dpadMouseDown) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    updateDpadFromOffset(
+      e.clientX - rect.left - rect.width / 2,
+      e.clientY - rect.top - rect.height / 2,
+    );
+  }
+  function dpadMouseEndH() {
+    if (!dpadMouseDown) return;
+    dpadMouseDown = false;
+    updateDpadFromOffset(0, 0);
+  }
+
+  // === Face button handling ===
+  //
+  // Mirror of the d-pad zone but exclusive — only one face button held at a
+  // time. Lets the user slide from B to A (or anywhere between adjacent
+  // buttons) without lifting; the previously-held button releases and the
+  // new one presses. Drew's UX call: "I would like to slide between b and a,
+  // but we don't want multiple buttons pressed at the same time like d-pad".
+  //
+  // Direction → button mapping (diamond layout: Y top, A bottom, X left, B
+  // right). We use dominant-axis quadrant detection rather than nearest-
+  // center distance, so the boundary between two buttons is cleanly the
+  // 45° line and slides feel predictable.
+
+  let faceHeld = $state<FaceBtn | null>(null);
+  let faceTouchId: number | null = null;
+
+  function updateFaceFromOffset(dx: number, dy: number) {
+    const DEADZONE = 8;
+    const dist = Math.hypot(dx, dy);
+    let next: FaceBtn | null = null;
+    if (dist >= DEADZONE) {
+      if (Math.abs(dy) > Math.abs(dx)) {
+        next = dy < 0 ? "Y" : "A";
+      } else {
+        next = dx > 0 ? "B" : "X";
+      }
+    }
+    if (next === faceHeld) return;
+    if (faceHeld !== null) release(`f-${faceHeld}`, FACE_KEYS[faceHeld]);
+    if (next !== null) press(`f-${next}`, FACE_KEYS[next]);
+    faceHeld = next;
+  }
+
+  function getTrackedFaceTouch(e: TouchEvent): Touch | null {
+    if (faceTouchId === null) return null;
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === faceTouchId) return e.touches[i];
+    }
+    return null;
+  }
+
+  function faceTouchStart(e: TouchEvent) {
+    e.preventDefault();
+    if (faceTouchId === null && e.changedTouches.length > 0) {
+      faceTouchId = e.changedTouches[0].identifier;
+    }
+    const t = getTrackedFaceTouch(e);
+    if (!t) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    updateFaceFromOffset(
+      t.clientX - rect.left - rect.width / 2,
+      t.clientY - rect.top - rect.height / 2,
+    );
+  }
+
+  function faceTouchMove(e: TouchEvent) {
+    if (faceTouchId === null) return;
+    e.preventDefault();
+    const t = getTrackedFaceTouch(e);
+    if (!t) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    updateFaceFromOffset(
+      t.clientX - rect.left - rect.width / 2,
+      t.clientY - rect.top - rect.height / 2,
+    );
+  }
+
+  function faceTouchEnd(e: TouchEvent) {
+    let lifted = false;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === faceTouchId) {
+        lifted = true;
+        break;
+      }
+    }
+    if (!lifted) return;
+    e.preventDefault();
+    faceTouchId = null;
+    updateFaceFromOffset(0, 0);
+  }
+
+  // Mouse fallback for desktop testing.
+  let faceMouseDown = false;
+  function faceMouseDownH(e: MouseEvent) {
+    e.preventDefault();
+    faceMouseDown = true;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    updateFaceFromOffset(
+      e.clientX - rect.left - rect.width / 2,
+      e.clientY - rect.top - rect.height / 2,
+    );
+  }
+  function faceMouseMoveH(e: MouseEvent) {
+    if (!faceMouseDown) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    updateFaceFromOffset(
+      e.clientX - rect.left - rect.width / 2,
+      e.clientY - rect.top - rect.height / 2,
+    );
+  }
+  function faceMouseEndH() {
+    if (!faceMouseDown) return;
+    faceMouseDown = false;
+    updateFaceFromOffset(0, 0);
   }
 </script>
 
-<!-- Two clusters — left (d-pad) and right (face buttons). Container is
+<!-- Two zones — left (d-pad) and right (face buttons). Each zone is a single
+     touch capture area that handles a finger anywhere inside it, so the
+     user can hold a direction and slide to a different one without lifting,
+     and hold diagonals on the d-pad with one finger. Container is
      pointer-events:none so touches on the game canvas in the middle still
-     reach the iframe. -->
+     reach the iframe; the zones below opt back in. -->
 <div class="gamepad-overlay" aria-hidden="false">
-  <div class="dpad-cluster">
-    <button
-      class="dpad-btn dpad-up"
-      ontouchstart={(e) => dpadStart("up", e)}
-      ontouchend={(e) => dpadEnd("up", e)}
-      ontouchcancel={(e) => dpadEnd("up", e)}
-      onmousedown={(e) => dpadStart("up", e)}
-      onmouseup={(e) => dpadEnd("up", e)}
-      onmouseleave={(e) => dpadEnd("up", e)}
-      aria-label="Move up"
-    >▲</button>
-    <button
-      class="dpad-btn dpad-left"
-      ontouchstart={(e) => dpadStart("left", e)}
-      ontouchend={(e) => dpadEnd("left", e)}
-      ontouchcancel={(e) => dpadEnd("left", e)}
-      onmousedown={(e) => dpadStart("left", e)}
-      onmouseup={(e) => dpadEnd("left", e)}
-      onmouseleave={(e) => dpadEnd("left", e)}
-      aria-label="Move left"
-    >◀</button>
-    <button
-      class="dpad-btn dpad-right"
-      ontouchstart={(e) => dpadStart("right", e)}
-      ontouchend={(e) => dpadEnd("right", e)}
-      ontouchcancel={(e) => dpadEnd("right", e)}
-      onmousedown={(e) => dpadStart("right", e)}
-      onmouseup={(e) => dpadEnd("right", e)}
-      onmouseleave={(e) => dpadEnd("right", e)}
-      aria-label="Move right"
-    >▶</button>
-    <button
-      class="dpad-btn dpad-down"
-      ontouchstart={(e) => dpadStart("down", e)}
-      ontouchend={(e) => dpadEnd("down", e)}
-      ontouchcancel={(e) => dpadEnd("down", e)}
-      onmousedown={(e) => dpadStart("down", e)}
-      onmouseup={(e) => dpadEnd("down", e)}
-      onmouseleave={(e) => dpadEnd("down", e)}
-      aria-label="Move down"
-    >▼</button>
+  <div
+    class="dpad-zone"
+    role="group"
+    aria-label="Directional pad"
+    ontouchstart={dpadTouchStart}
+    ontouchmove={dpadTouchMove}
+    ontouchend={dpadTouchEnd}
+    ontouchcancel={dpadTouchEnd}
+    onmousedown={dpadMouseDownH}
+    onmousemove={dpadMouseMoveH}
+    onmouseup={dpadMouseEndH}
+    onmouseleave={dpadMouseEndH}
+  >
+    <span class="dpad-arrow dpad-up" class:active={dpadUp}>▲</span>
+    <span class="dpad-arrow dpad-left" class:active={dpadLeft}>◀</span>
+    <span class="dpad-arrow dpad-right" class:active={dpadRight}>▶</span>
+    <span class="dpad-arrow dpad-down" class:active={dpadDown}>▼</span>
   </div>
 
-  <div class="face-cluster">
-    <button
-      class="face-btn face-y"
-      ontouchstart={(e) => faceStart("Y", e)}
-      ontouchend={(e) => faceEnd("Y", e)}
-      ontouchcancel={(e) => faceEnd("Y", e)}
-      onmousedown={(e) => faceStart("Y", e)}
-      onmouseup={(e) => faceEnd("Y", e)}
-      onmouseleave={(e) => faceEnd("Y", e)}
-      aria-label="Y button (secondary)"
-    >Y</button>
-    <button
-      class="face-btn face-x"
-      ontouchstart={(e) => faceStart("X", e)}
-      ontouchend={(e) => faceEnd("X", e)}
-      ontouchcancel={(e) => faceEnd("X", e)}
-      onmousedown={(e) => faceStart("X", e)}
-      onmouseup={(e) => faceEnd("X", e)}
-      onmouseleave={(e) => faceEnd("X", e)}
-      aria-label="X button (select)"
-    >X</button>
-    <button
-      class="face-btn face-b"
-      ontouchstart={(e) => faceStart("B", e)}
-      ontouchend={(e) => faceEnd("B", e)}
-      ontouchcancel={(e) => faceEnd("B", e)}
-      onmousedown={(e) => faceStart("B", e)}
-      onmouseup={(e) => faceEnd("B", e)}
-      onmouseleave={(e) => faceEnd("B", e)}
-      aria-label="B button (cancel)"
-    >B</button>
-    <button
-      class="face-btn face-a"
-      ontouchstart={(e) => faceStart("A", e)}
-      ontouchend={(e) => faceEnd("A", e)}
-      ontouchcancel={(e) => faceEnd("A", e)}
-      onmousedown={(e) => faceStart("A", e)}
-      onmouseup={(e) => faceEnd("A", e)}
-      onmouseleave={(e) => faceEnd("A", e)}
-      aria-label="A button (confirm)"
-    >A</button>
+  <div
+    class="face-zone"
+    role="group"
+    aria-label="Action buttons"
+    ontouchstart={faceTouchStart}
+    ontouchmove={faceTouchMove}
+    ontouchend={faceTouchEnd}
+    ontouchcancel={faceTouchEnd}
+    onmousedown={faceMouseDownH}
+    onmousemove={faceMouseMoveH}
+    onmouseup={faceMouseEndH}
+    onmouseleave={faceMouseEndH}
+  >
+    <span class="face-btn face-y" class:active={faceHeld === "Y"} aria-label="Y button (secondary)">Y</span>
+    <span class="face-btn face-x" class:active={faceHeld === "X"} aria-label="X button (select)">X</span>
+    <span class="face-btn face-b" class:active={faceHeld === "B"} aria-label="B button (cancel)">B</span>
+    <span class="face-btn face-a" class:active={faceHeld === "A"} aria-label="A button (confirm)">A</span>
   </div>
 </div>
 
@@ -232,26 +425,38 @@
     }
   }
 
-  .dpad-cluster,
-  .face-cluster {
+  /* Single touch zones, one per side. The zone captures any finger inside
+     its bounds (pointer-events: auto) and the visible button glyphs inside
+     are decorative (pointer-events: none) — touches always go to the parent
+     zone, never to a specific button, which is what lets a finger move
+     between buttons without lifting. */
+  .dpad-zone,
+  .face-zone {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     width: 144px;
     height: 144px;
-    pointer-events: none;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
   }
 
-  .dpad-cluster {
+  .dpad-zone {
     left: max(8px, env(safe-area-inset-left, 0px));
   }
 
-  .face-cluster {
+  .face-zone {
     right: max(8px, env(safe-area-inset-right, 0px));
   }
 
-  /* Buttons themselves opt back in to pointer events. */
-  .dpad-btn,
+  /* Arrow / button glyphs inside the zones — visuals only, never receive
+     events directly. .active is toggled by the touch handler when the
+     finger is currently mapped to that direction/button. */
+  .dpad-arrow,
   .face-btn {
     position: absolute;
     width: 56px;
@@ -267,28 +472,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: auto;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: none;
+    pointer-events: none;
     transition: background 0.08s, transform 0.08s;
   }
 
-  .dpad-btn:active,
-  .face-btn:active {
+  .dpad-arrow.active,
+  .face-btn.active {
     background: rgba(167, 243, 208, 0.35);
     transform: scale(0.93);
   }
 
-  /* D-pad layout — cross shape, 144x144 cluster bounds. */
+  /* D-pad cross layout — 144x144 zone bounds. */
   .dpad-up    { top: 0;    left: 44px; }
   .dpad-down  { bottom: 0; left: 44px; }
   .dpad-left  { top: 44px; left: 0;    }
   .dpad-right { top: 44px; right: 0;   }
 
-  /* Face cluster — diamond layout, A bottom (confirm = most common). */
+  /* Face diamond layout, A bottom (confirm = most common). */
   .face-y { top: 0;    left: 44px; }
   .face-a { bottom: 0; left: 44px; }
   .face-x { top: 44px; left: 0;    }
@@ -300,14 +500,14 @@
   .face-y { border-color: rgba(251, 191, 36, 0.7); }
 
   /* On very narrow phones (iPhone SE landscape ~ 75pt bars) shrink the
-     cluster so it doesn't overhang into the game canvas. */
+     zone so it doesn't overhang into the game canvas. */
   @media (max-width: 700px) {
-    .dpad-cluster,
-    .face-cluster {
+    .dpad-zone,
+    .face-zone {
       width: 120px;
       height: 120px;
     }
-    .dpad-btn,
+    .dpad-arrow,
     .face-btn {
       width: 46px;
       height: 46px;

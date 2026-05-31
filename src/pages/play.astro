@@ -26,17 +26,28 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
 -->
 
 <style>
+  /* Reset body defaults so the play page can sit flush against the
+     viewport edges. Without this, body's default 8px margin would push
+     the play container 8px down and 8px right, and the matching 8px on
+     the bottom edge gets clipped — the "20px off at the bottom" Drew
+     was seeing on mobile. Scoped via :global() to this page only. */
+  :global(html),
+  :global(body) {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Fixed-positioned so the play container is pinned to viewport corners,
+     bypassing any residual padding/margin in ancestor elements (Astro
+     wrappers, Footer-related layout, etc.). dvh would still be subject
+     to body offsets; inset:0 is layout-immune. */
   .play-page {
     background: #0a0e17;
-    /* Fill the viewport. 100dvh handles mobile chrome (Safari URL bar)
-       better than 100vh would. */
-    height: 100dvh;
-    width: 100%;
+    position: fixed;
+    inset: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* No padding — game iframe and virtual gamepad consume the full
-       screen so PWA users don't see any web chrome. */
   }
 
   .fixture-label {

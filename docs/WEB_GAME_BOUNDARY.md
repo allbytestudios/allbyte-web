@@ -31,7 +31,7 @@ postMessage; we use both where appropriate.
 | Browser file download for save export | **Web** | Same gesture-context constraint. |
 | Closing the play iframe ("back to home") | **Web** action, **game** trigger | Game's own "Quit" button posts the request; web tears down the iframe. |
 | Touch-to-keyboard translation (virtual gamepad) | **Web** | Game has no touch input layer. Web overlays an HTML d-pad + face buttons and translates touches into synthetic `KeyboardEvent`s. |
-| Top header (Back / Save / Load / Sync) | **Game** (Phase 2+) | Moves into in-game UI; web's `PlayOverlay` will be removed in Phase 3. |
+| Top header (Back / Save / Load / Sync) | **Game** | Web's `PlayOverlay` was removed 2026-05-31. ESC key still exits play mode on desktop as a fallback. All other actions are game-side. |
 | Save/load slot management | **Game** | The game owns its save schema and slot semantics. Web only sees opaque per-slot blobs. |
 | Confirmation dialogs ("are you sure?") | **Game** | Per owner spec — web never prompts; game asks first if needed. |
 | Camera pan / zoom on touch | **Web** (deferred) | Two-finger pan + pinch zoom will live in the same touch layer as the gamepad. Not in v1. |
@@ -146,23 +146,28 @@ events don't work.
 
 ## Phasing
 
-1. **Phase 1 (web — done):**
+1. **Phase 1 (web — done 2026-05-31):**
    - Extended postMessage protocol with sync-status broadcast and
      game-initiated request types.
    - `window.allbyteRequest*` direct call surface for gesture-dependent
      actions.
    - `VirtualGamepad.svelte` overlay.
-   - `PlayOverlay.svelte` retained unchanged; nothing breaks.
 
-2. **Phase 2 (game — Arc/Port):**
+2. **Phase 3 (web — done 2026-05-31):**
+   - `PlayOverlay.svelte` deleted. The 52px header is gone on both
+     desktop and mobile. The game iframe gets the full play container.
+   - Owner spec: "Back is synonymous with Quit in-game now." Until
+     Arc's in-game quit ships, desktop users use ESC and mobile users
+     close the tab / PWA window.
+   - Done out of order with Phase 2 (game side) because Drew prioritized
+     clean UI now; Arc will add the in-game equivalents in Phase 2.
+
+3. **Phase 2 (game — Arc/Port, pending):**
    - Add Import / Download buttons to in-game load screen.
-   - Add Quit / Back option in title or pause menu.
+   - Add Quit / Back option in title or pause menu. Wire to
+     `parent.allbyteRequestExit()`.
    - Render a sync-status indicator wherever fits the game's visual
      language; subscribe to `allbyte:sync-status`.
-
-3. **Phase 3 (web — after Arc ships):**
-   - Remove `PlayOverlay.svelte`. The header goes away and both desktop
-     and mobile reclaim that 52px.
 
 ## Future expansion
 

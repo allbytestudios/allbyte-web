@@ -81,40 +81,13 @@ def get_save_store_state(page, key):
     return page.evaluate(f"() => window.__saves_test.{key}()")
 
 
-# === Phase 1: PlayOverlay UI ===
+# PlayOverlay was removed in Phase 3 (2026-05-31). Back/Save/Load are now
+# game-side; quit comes through the allbyte:request-exit / parent.allbyteRequestExit
+# protocol. See docs/WEB_GAME_BOUNDARY.md for the contract. The
+# UI-level tests that lived here were deleted with the component.
 
 
-def test_play_overlay_appears(page, base_url):
-    """Clicking the demo banner shows the play overlay header bar."""
-    enter_play_mode(page, base_url)
-
-    # Header bar exists with the three buttons
-    header = page.query_selector(".play-overlay-header")
-    assert header is not None, "PlayOverlay header bar not visible"
-
-    back = page.query_selector(".back-btn")
-    assert back is not None
-    save = page.query_selector('button[aria-label="Download saves to file"]')
-    assert save is not None
-    load = page.query_selector('button[aria-label="Upload saves from file"]')
-    assert load is not None
-
-    # All buttons meet 44x44 minimum
-    for selector in [".back-btn", 'button[aria-label="Download saves to file"]', 'button[aria-label="Upload saves from file"]']:
-        box = page.query_selector(selector).bounding_box()
-        assert box["height"] >= 44, f"{selector} height {box['height']} < 44"
-        assert box["width"] >= 44, f"{selector} width {box['width']} < 44"
-
-
-def test_play_overlay_back_exits(page, base_url):
-    """Clicking Back exits play mode and returns to home."""
-    enter_play_mode(page, base_url)
-    page.click(".back-btn")
-    # Header bar should be gone
-    page.wait_for_function("() => document.querySelector('.play-overlay-header') === null", timeout=2000)
-
-
-# === Phase 2: postMessage protocol ===
+# === postMessage protocol ===
 
 
 def test_bridge_captures_ready(page, base_url):

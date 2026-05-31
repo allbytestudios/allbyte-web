@@ -1,7 +1,6 @@
 <script lang="ts">
   import EnginePanel from "./EnginePanel.svelte";
   import HeartPanel from "./HeartPanel.svelte";
-  import PlayOverlay from "./PlayOverlay.svelte";
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import MilestoneBadge from "./MilestoneBadge.svelte";
   import gameVersion from "../data/game-version.json";
@@ -510,14 +509,12 @@
        CSS never ships — the client-side mount has the hashed class but no
        matching rules. Mount uses display:none to stay invisible at runtime. -->
   <div style="display:none" aria-hidden="true">
-    <PlayOverlay onExit={() => {}} />
     <VirtualGamepad iframe={null} />
   </div>
 
   <div class="demo-section" class:play-active={playMode}>
   {#if playMode}
     <div class="play-container">
-      <PlayOverlay onExit={exitGame} />
       <iframe
         src={gameUrl}
         title="The Chronicles of Nesis"

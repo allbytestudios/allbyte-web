@@ -35,18 +35,55 @@ export const saves = new SaveStore();
 
 let iframeRef: HTMLIFrameElement | null = null;
 let pendingPushTimer: ReturnType<typeof setTimeout> | null = null;
+let exitCallback: (() => void) | null = null;
+/** Hidden file input used to satisfy the browser's "import" picker.
+ *  Game triggers it through the same-origin window function below — the call
+ *  must originate from inside the iframe to preserve user-gesture context. */
+let importFileInput: HTMLInputElement | null = null;
 /** Messages queued while the game is still booting (before ready). */
 const preReadyQueue: any[] = [];
+
+export interface SaveBridgeOptions {
+  /** Called when the game posts `allbyte:request-exit` (game's own exit button).
+   *  Web shows no confirm — game handles that. */
+  onExit?: () => void;
+}
 
 /**
  * Initialize the save bridge: set up window message listener and remember the iframe ref.
  * Call this when the play overlay mounts.
  */
-export function initSaveBridge(iframe: HTMLIFrameElement | null) {
+export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBridgeOptions = {}) {
   iframeRef = iframe;
+  exitCallback = options.onExit ?? null;
   saves.gameReady = false;
   if (typeof window === "undefined") return;
   window.addEventListener("message", handleGameMessage);
+
+  // Hidden file input lives in the parent document. Game triggers it via
+  // window.allbyteRequestImport (same-origin direct call) so the click()
+  // happens inside the user-gesture context — postMessage would not work
+  // for file pickers (gesture doesn't propagate across the message queue).
+  importFileInput = document.createElement("input");
+  importFileInput.type = "file";
+  importFileInput.accept = "application/json,.json";
+  importFileInput.style.position = "absolute";
+  importFileInput.style.left = "-9999px";
+  importFileInput.addEventListener("change", handleImportFileChosen);
+  document.body.appendChild(importFileInput);
+
+  // Game calls these directly via JavaScriptBridge.eval("parent.allbyteRequest*()").
+  // Direct calls preserve user activation; postMessage would not.
+  (window as any).allbyteRequestExit = () => {
+    if (exitCallback) exitCallback();
+  };
+  (window as any).allbyteRequestExport = () => {
+    downloadSavesFile();
+  };
+  (window as any).allbyteRequestImport = () => {
+    if (importFileInput) importFileInput.click();
+  };
+
   // Test hook: expose state and a postMessage interceptor for Playwright tests
   (window as any).__saves_test = {
     store: saves,
@@ -65,6 +102,7 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null) {
 
 export function teardownSaveBridge() {
   iframeRef = null;
+  exitCallback = null;
   saves.gameReady = false;
   saves.protocolVersion = null;
   saves.maxSaveSlots = null;
@@ -72,9 +110,31 @@ export function teardownSaveBridge() {
   preReadyQueue.length = 0;
   if (typeof window === "undefined") return;
   window.removeEventListener("message", handleGameMessage);
+  if (importFileInput) {
+    importFileInput.removeEventListener("change", handleImportFileChosen);
+    importFileInput.remove();
+    importFileInput = null;
+  }
+  delete (window as any).allbyteRequestExit;
+  delete (window as any).allbyteRequestExport;
+  delete (window as any).allbyteRequestImport;
   if (pendingPushTimer) {
     clearTimeout(pendingPushTimer);
     pendingPushTimer = null;
+  }
+}
+
+/** Called when the user picks a file in the browser's file picker (triggered
+ *  by the game via allbyteRequestImport). Basic shape check, then forward to
+ *  the game via allbyte:load-saves. Full validation belongs to the game. */
+async function handleImportFileChosen(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = ""; // reset so picking the same file again still fires
+  if (!file) return;
+  const err = await uploadSavesFile(file);
+  if (err) {
+    saves.errorMessage = err;
   }
 }
 
@@ -90,6 +150,21 @@ function handleGameMessage(e: MessageEvent) {
   if (!testSkip && iframeRef && e.source !== iframeRef.contentWindow) return;
 
   switch (data.type) {
+    // Game-initiated requests. Prefer direct calls (window.allbyteRequest*) over
+    // postMessage for export / import — only those can preserve user activation
+    // for the browser's file picker / download. We still accept postMessage so
+    // game code can pick whichever style fits, but import via postMessage will
+    // silently no-op the file picker on most browsers.
+    case "allbyte:request-exit":
+      if (exitCallback) exitCallback();
+      return;
+    case "allbyte:request-export-saves":
+      downloadSavesFile();
+      return;
+    case "allbyte:request-import-saves":
+      if (importFileInput) importFileInput.click();
+      return;
+
     case "allbyte:ready":
       saves.gameReady = true;
       if (typeof data.protocolVersion === "number") {
@@ -100,6 +175,10 @@ function handleGameMessage(e: MessageEvent) {
       }
       // Drain any messages queued while we were waiting
       flushPreReadyQueue();
+      // Send the current sync-status snapshot so any in-game indicator can
+      // render the correct state immediately rather than wait for the next
+      // sync event.
+      broadcastSyncStatus();
       // On ready, request the current snapshot to populate our cache
       requestSavesFromGame();
       // For Hero/Legend, also pull from server and merge
@@ -249,6 +328,26 @@ function isSyncTier(): boolean {
   return tier === "hero" || tier === "legend";
 }
 
+/** Push current sync state to the game. Best-effort — only fires once the
+ *  game is ready (no queueing; an out-of-date sync indicator is worse than a
+ *  silent gap, since the next state change will broadcast again anyway). */
+function broadcastSyncStatus() {
+  if (!saves.gameReady) return;
+  postToGame({
+    type: "allbyte:sync-status",
+    status: saves.syncStatus,
+    lastSyncedAt: saves.lastSyncedAt,
+    errorMessage: saves.errorMessage,
+  });
+}
+
+/** Wrap a sync-status assignment so the game always sees the new value. */
+function setSyncStatus(s: SyncStatus, errorMessage: string | null = null) {
+  saves.syncStatus = s;
+  if (errorMessage !== null) saves.errorMessage = errorMessage;
+  broadcastSyncStatus();
+}
+
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem("allbyte_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -273,7 +372,7 @@ async function fetchServerSaves(): Promise<{ saves: string; updatedAt: string } 
 
 async function pushServerSaves(): Promise<boolean> {
   if (!isSyncTier()) return false;
-  saves.syncStatus = "syncing";
+  setSyncStatus("syncing");
   try {
     const blob = JSON.stringify(saves.current);
     const resp = await fetch(`${API}/saves`, {
@@ -282,25 +381,22 @@ async function pushServerSaves(): Promise<boolean> {
       body: JSON.stringify({ saves: blob }),
     });
     if (!resp.ok) {
-      saves.syncStatus = "error";
-      saves.errorMessage = `Upload failed (${resp.status})`;
+      setSyncStatus("error", `Upload failed (${resp.status})`);
       return false;
     }
     const data = await resp.json();
     saves.lastSyncedAt = data.updatedAt ? Date.parse(data.updatedAt) : Date.now();
-    saves.syncStatus = "synced";
-    saves.errorMessage = null;
+    setSyncStatus("synced", "");
     return true;
   } catch (e: any) {
-    saves.syncStatus = "error";
-    saves.errorMessage = e?.message || "Network error";
+    setSyncStatus("error", e?.message || "Network error");
     return false;
   }
 }
 
 function schedulePushToServer() {
   if (pendingPushTimer) clearTimeout(pendingPushTimer);
-  saves.syncStatus = "unsynced";
+  setSyncStatus("unsynced");
   pendingPushTimer = setTimeout(() => {
     pendingPushTimer = null;
     pushServerSaves();
@@ -313,11 +409,11 @@ function schedulePushToServer() {
  */
 export async function syncFromServer() {
   if (!isSyncTier()) return;
-  saves.syncStatus = "syncing";
+  setSyncStatus("syncing");
   const server = await fetchServerSaves();
   if (!server) {
     // No server saves yet — push current state up
-    saves.syncStatus = "idle";
+    setSyncStatus("idle");
     if (Object.keys(saves.current.saves).length > 0) {
       pushServerSaves();
     }
@@ -328,8 +424,7 @@ export async function syncFromServer() {
   try {
     serverSnapshot = JSON.parse(server.saves);
   } catch {
-    saves.syncStatus = "error";
-    saves.errorMessage = "Server save data corrupted";
+    setSyncStatus("error", "Server save data corrupted");
     return;
   }
 
@@ -365,8 +460,8 @@ export async function syncFromServer() {
     });
   }
 
-  saves.syncStatus = "synced";
   saves.lastSyncedAt = server.updatedAt ? Date.parse(server.updatedAt) : Date.now();
+  setSyncStatus("synced");
 }
 
 /**

@@ -2,6 +2,7 @@
   import EnginePanel from "./EnginePanel.svelte";
   import HeartPanel from "./HeartPanel.svelte";
   import PlayOverlay from "./PlayOverlay.svelte";
+  import VirtualGamepad from "./VirtualGamepad.svelte";
   import MilestoneBadge from "./MilestoneBadge.svelte";
   import gameVersion from "../data/game-version.json";
   import { auth, initAuth, login, signup, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
@@ -114,7 +115,7 @@
   // Wire up the save bridge once the iframe is mounted
   $effect(() => {
     if (playMode && gameIframe) {
-      initSaveBridge(gameIframe);
+      initSaveBridge(gameIframe, { onExit: exitGame });
     }
   });
 
@@ -425,14 +426,14 @@
     </div>
   {/if}
 
-  <!-- Hidden SSR mount of PlayOverlay so Astro's Vite build extracts its
-       scoped CSS into a linked stylesheet. Without this, PlayOverlay is
-       only rendered inside {#if playMode} which is false at build time, so
-       its CSS never ships — the client-side mount has the hashed class but
-       no matching rules, and the overlay renders completely unstyled. This
-       mount uses display:none to stay invisible at runtime. -->
+  <!-- Hidden SSR mount of play-mode components so Astro's Vite build extracts
+       their scoped CSS into a linked stylesheet. Without this, they're only
+       rendered inside {#if playMode} which is false at build time, so their
+       CSS never ships — the client-side mount has the hashed class but no
+       matching rules. Mount uses display:none to stay invisible at runtime. -->
   <div style="display:none" aria-hidden="true">
     <PlayOverlay onExit={() => {}} />
+    <VirtualGamepad iframe={null} />
   </div>
 
   <div class="demo-section" class:play-active={playMode}>
@@ -446,6 +447,7 @@
         allow="cross-origin-isolated"
         bind:this={gameIframe}
       ></iframe>
+      <VirtualGamepad iframe={gameIframe} />
     </div>
   {:else}
     <div class="demo-row" style="position: relative;" onclick={launchGame} onmouseenter={onDemoEnter} onmouseleave={onDemoLeave}>
@@ -1233,6 +1235,8 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    /* Positioning context for VirtualGamepad (absolute, inset:0 overlay). */
+    position: relative;
   }
 
   .game-frame {

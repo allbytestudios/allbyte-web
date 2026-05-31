@@ -26,7 +26,20 @@
  * regardless of which page initiated the navigation.
  */
 
-const CACHE_NAME = "chronicles-godot-v1";
+// __BUILD_VERSION__ is replaced by scripts/inject-sw-version.js after Astro
+// build, from src/data/game-version.json. In dev (when this file is read
+// directly) the placeholder reaches the browser, but we don't register the
+// SW on localhost anyway (see BaseLayout.astro), so it's harmless.
+//
+// Why versioning matters: Godot's engine.js fetches /godot/index.wasm and
+// /godot/index.pck WITHOUT a version query string (the ?v= in
+// index.html only versions the engine.js script tag, not internal asset
+// fetches — see GODOT_CONFIG.fileSizes key/value mismatch in engine
+// source). So a static cache name would serve stale WASM/PCK across
+// deploys forever. Versioning the cache name and bumping it per release
+// is what makes /play/ actually update on prod deploys.
+const BUILD_VERSION = "__BUILD_VERSION__";
+const CACHE_NAME = `chronicles-godot-${BUILD_VERSION}`;
 
 self.addEventListener("install", (event) => {
   // New worker takes over without waiting for tabs to close. Acceptable

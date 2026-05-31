@@ -14,7 +14,7 @@
     "push-packs": "node scripts/push-packs.js",
     "obfuscate-godot": "node scripts/obfuscate-godot-export.js",
     "dev": "astro dev --host 0.0.0.0",
-    "build": "node scripts/sync-assets.js && astro build",
+    "build": "node scripts/sync-assets.js && astro build && node scripts/inject-sw-version.js",
     "preview": "astro preview",
     "astro": "astro",
     "test:a11y": "pytest tests/e2e/test_accessibility.py -v",

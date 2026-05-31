@@ -3,6 +3,7 @@ import { ClientRouter } from "astro:transitions";
 import MusicPlayer from "../components/MusicPlayer.svelte";
 import AuthInit from "../components/AuthInit.svelte";
 import DevAuthSwitcher from "../components/DevAuthSwitcher.svelte";
+import UpdateOverlay from "../components/UpdateOverlay.svelte";
 
 interface Props {
   title?: string;
@@ -70,6 +71,7 @@ const {
   <body>
     <AuthInit client:load />
     <DevAuthSwitcher client:load />
+    <UpdateOverlay client:load />
     <slot />
     <div transition:persist="music-player">
       <MusicPlayer client:load />
@@ -122,6 +124,17 @@ const {
         // mask Vite HMR / live-reload behavior.
         navigator.serviceWorker
           .register("/sw.js")
+          .then((reg) => {
+            // Aggressive update check: re-poll the SW when the tab becomes
+            // visible. Without this, a user who leaves the PWA open across
+            // a deploy might not pick up the new build until they navigate
+            // (and Astro's ClientRouter doesn't trigger a real navigation).
+            document.addEventListener("visibilitychange", () => {
+              if (document.visibilityState === "visible") {
+                reg.update().catch(() => {});
+              }
+            });
+          })
           .catch((err) =>
             console.warn("[sw] registration failed:", err)
           );

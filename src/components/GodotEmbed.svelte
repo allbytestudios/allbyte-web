@@ -57,6 +57,48 @@
     iframeEl.src = `/godot/index.html?t=${Date.now()}`;
   }
 
+  // Owner spec for quit/exit:
+  //   PWA mode (standalone/fullscreen)  -> close the app
+  //   Browser tab                       -> return to home page
+  // Wired both as the save-bridge onExit (called when the game posts
+  // allbyte:request-exit) and as an Escape-key handler on the parent
+  // window for desktop fallback before Arc ships the in-game quit.
+  function handleExit() {
+    const standalone =
+      typeof window !== "undefined" &&
+      ((window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches) ||
+        (window.matchMedia &&
+          window.matchMedia("(display-mode: fullscreen)").matches));
+
+    if (standalone) {
+      // Installed PWA — close the window. window.close() works for
+      // PWAs in Chrome (script-opened-window-like context). On the rare
+      // browser/version that refuses, fall back to exiting fullscreen so
+      // the user can use system back/home gesture.
+      try {
+        window.close();
+      } catch {}
+      setTimeout(() => {
+        try {
+          if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          }
+        } catch {}
+      }, 200);
+    } else {
+      // Browser tab — go home.
+      window.location.href = "/";
+    }
+  }
+
+  function handleEscape(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      handleExit();
+    }
+  }
+
   // First-interaction fullscreen + orientation lock. For installed PWA
   // users the manifest's display: "fullscreen" already hides Android
   // system chrome (status + nav bars), so this is a no-op for them. For
@@ -87,6 +129,7 @@
     // with a single handler. { once: true } auto-removes after firing.
     if (typeof window !== "undefined") {
       window.addEventListener("pointerdown", tryEnterFullscreen, { once: true });
+      window.addEventListener("keydown", handleEscape);
     }
 
     if (!import.meta.env.DEV) return;
@@ -109,20 +152,18 @@
     teardownSaveBridge();
     if (typeof window !== "undefined") {
       window.removeEventListener("pointerdown", tryEnterFullscreen);
+      window.removeEventListener("keydown", handleEscape);
     }
   });
 
   // Wire the save bridge once the iframe is mounted. The /play/ URL is the
   // PWA's start_url, so this is where mobile users land on launch — they
-  // need both the save sync protocol (so future in-game Import/Download
-  // works) and the virtual gamepad (so they can actually play). Bridge is
-  // wired with no onExit callback because /play/ has no "exit play mode"
-  // notion — it's the standalone page. Game-side quit posts the request
-  // and we route it via the in-page handler at the page level if needed,
-  // or just rely on browser-back for now.
+  // need the save sync protocol (so future in-game Import/Download works),
+  // the virtual gamepad (so they can actually play), and onExit (so the
+  // future in-game quit button can close the PWA or return to home).
   $effect(() => {
     if (iframeEl) {
-      initSaveBridge(iframeEl);
+      initSaveBridge(iframeEl, { onExit: handleExit });
     }
   });
 

@@ -203,6 +203,32 @@ aws cloudformation deploy \
 - Place Godot HTML5 export files in `public/godot/`
 - HTML files served with `max-age=0, must-revalidate`; versioned assets cached 1 year
 
+### Godot key obfuscation (`scripts/obfuscate-godot-export.js`)
+The Godot 4 web export ships its script-encryption key as 32 contiguous bytes
+inside `index.wasm`. The obfuscator XORs that slot with a random per-release
+mask and injects `<script src="pck-key-shim.js"></script>` ahead of the engine
+loader; the shim intercepts the WASM fetch and XORs the bytes back so the
+engine sees plaintext in linear memory. Static scanners (KeyDot etc.) get
+nothing useful from the WASM on disk.
+
+`npm run push-assets` runs the obfuscator before uploading `public/godot/` and
+hard-aborts the deploy on any inconsistency. The obfuscator is idempotent:
+- shim absent, key found in WASM → fresh obfuscation
+- shim present, SHA matches WASM, HTML still patched → no-op
+- shim present, SHA matches WASM, HTML overwritten by re-export → re-patch HTML
+- shim present, SHA mismatches WASM → refuse (re-exported after obfuscation;
+  shim's mask no longer fits the new WASM)
+- shim present, no SHA marker (legacy) → refuse
+- key not findable in WASM (dev template without key compiled in) → skip cleanly
+
+The shim file embeds a `// WASM_SHA256: <hex>` marker for that verification.
+The 2026-05-31 black-screen bug was caused by a re-export overwriting the
+patched HTML while keeping the obfuscated WASM and shim file. The SHA marker
++ push-pipeline integration is what prevents it from recurring.
+
+Set `SKIP_GODOT_OBFUSCATION=1` to bypass the obfuscation step in `push-assets`
+(debugging only — ships whatever's on disk verbatim).
+
 ## E2E Tests
 Playwright-based E2E tests in `tests/e2e/` using pytest. The dev server must be running (`npm run dev`) before running tests. The `conftest.py` provides:
 - `page` fixture: fresh Playwright Chromium page per test (1280×960 viewport)

@@ -21,7 +21,7 @@
  */
 
 import { execSync } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -83,12 +83,65 @@ if (existsSync(join(publicDir, "assets"))) {
   console.log("No public/assets/ directory found. Run `npm run sync` first.");
 }
 
-// 2. Sync the godot/ HTML5 export. Most files are immutable (.wasm, .pck,
-// worklets), but index.html must revalidate so updates land without a
-// manual CloudFront invalidation of that specific key.
+// 2. Godot HTML5 export: obfuscate the WASM key first (idempotent, self-heals
+//    after re-exports), verify HTML/shim consistency, then sync to S3.
+//
+// History: 2026-05-31 we shipped a build whose index.html was overwritten by a
+// Godot re-export after obfuscation, leaving an XOR'd WASM but no un-obfuscator
+// in the page. Engine booted, every PCK MD5 mismatched, black screen. The
+// obfuscator now embeds a SHA-256 of the obfuscated WASM in the shim so
+// repeated runs can no-op / self-heal / refuse safely. Running it here on every
+// push means a re-export can never silently outpace obfuscation again.
+//
+// Set SKIP_GODOT_OBFUSCATION=1 to bypass (debugging only — won't deploy obfuscated
+// state, will deploy whatever's in public/godot/ verbatim).
 const godotDir = join(publicDir, "godot");
 const godotIndex = join(godotDir, "index.html");
+const shimPath = join(godotDir, "pck-key-shim.js");
 if (existsSync(godotDir) && existsSync(godotIndex)) {
+  // 2a. Obfuscator. Non-zero exit = refuse state, deploy halts so we don't
+  // ship a half-broken build. The script's own stderr explains what to fix.
+  if (process.env.SKIP_GODOT_OBFUSCATION === "1") {
+    console.log("[push-assets] SKIP_GODOT_OBFUSCATION=1 — skipping obfuscator.");
+  } else {
+    const obfuscateCmd =
+      `node "${join(root, "scripts", "obfuscate-godot-export.js")}" "${godotDir}"`;
+    if (dryRun) {
+      console.log(`[dry-run] ${obfuscateCmd}`);
+    } else {
+      console.log("[push-assets] Running Godot key obfuscator...");
+      try {
+        execSync(obfuscateCmd, { stdio: "inherit" });
+      } catch (err) {
+        console.error(
+          "\n[push-assets] Obfuscator refused. Fix local state per the message " +
+            "above before retrying. Aborting deploy."
+        );
+        process.exit(1);
+      }
+    }
+  }
+
+  // 2b. Consistency gate. The shim file and HTML must agree on whether
+  // obfuscation is active. A mismatch reproduces the exact 2026-05-31 bug, so
+  // halt before uploading to S3.
+  if (!dryRun) {
+    const shimExists = existsSync(shimPath);
+    const htmlRefsShim = readFileSync(godotIndex, "utf8").includes("pck-key-shim.js");
+    if (shimExists !== htmlRefsShim) {
+      console.error(
+        `\n[push-assets] HALT: shim/HTML mismatch — ` +
+          `pck-key-shim.js ${shimExists ? "exists" : "missing"}, ` +
+          `index.html ${htmlRefsShim ? "references" : "does not reference"} it. ` +
+          `Deploying this would break /play/. Aborting.`
+      );
+      process.exit(1);
+    }
+  }
+
+  // 2c. Upload. Most files are immutable (.wasm, .pck, worklets), but
+  // index.html must revalidate so updates land without a manual CloudFront
+  // invalidation of that specific key.
   run(
     `aws s3 sync "${godotDir}" s3://${bucket}/godot ` +
       `--region ${region} ` +

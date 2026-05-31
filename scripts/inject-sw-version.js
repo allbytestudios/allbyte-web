@@ -25,6 +25,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
@@ -32,6 +33,31 @@ const root = join(__dirname, "..");
 const swPath = join(root, "dist", "sw.js");
 const versionPath = join(root, "src", "data", "game-version.json");
 const PLACEHOLDER = "__BUILD_VERSION__";
+
+/**
+ * Build a version string that changes whenever ANYTHING about the site
+ * changes — game version bump OR site code edit. Format:
+ *   <game-version>-<git-short-sha>
+ * e.g. v0.6.1457-a1b2c3d4
+ *
+ * Without the git SHA, pushes that didn't bump game-version.json would
+ * leave sw.js byte-identical and browsers would skip the SW update —
+ * meaning UpdateOverlay never fires and users stay on stale caches.
+ *
+ * Falls back to a timestamp if git isn't available (e.g. running outside
+ * a worktree); spurious updates from a timestamp are mild — at worst a
+ * brief "Updating..." flash, content still correct.
+ */
+function shortBuildId() {
+  if (process.env.GITHUB_SHA) {
+    return process.env.GITHUB_SHA.slice(0, 8);
+  }
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
+  } catch {
+    return `t${Date.now()}`;
+  }
+}
 
 if (!existsSync(swPath)) {
   console.error(`[inject-sw-version] ${swPath} not found — did astro build run?`);
@@ -45,10 +71,13 @@ if (!existsSync(versionPath)) {
 let version;
 try {
   const data = JSON.parse(readFileSync(versionPath, "utf8"));
-  version = data.version;
-  if (!version || typeof version !== "string") {
+  const gameVersion = data.version;
+  if (!gameVersion || typeof gameVersion !== "string") {
     throw new Error(`game-version.json has no usable "version" string`);
   }
+  // Combine with the build ID so every site commit triggers an update,
+  // not just game-version bumps.
+  version = `${gameVersion}-${shortBuildId()}`;
 } catch (err) {
   console.error(`[inject-sw-version] could not read version: ${err.message}`);
   process.exit(1);

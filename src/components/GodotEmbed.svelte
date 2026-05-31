@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { subscribeToFile } from "../lib/testEvents";
+  import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
+  import VirtualGamepad from "./VirtualGamepad.svelte";
 
   interface Props {
     fixture?: string;
@@ -73,6 +75,21 @@
   onDestroy(() => {
     sseUnsub?.();
     messageOff?.();
+    teardownSaveBridge();
+  });
+
+  // Wire the save bridge once the iframe is mounted. The /play/ URL is the
+  // PWA's start_url, so this is where mobile users land on launch — they
+  // need both the save sync protocol (so future in-game Import/Download
+  // works) and the virtual gamepad (so they can actually play). Bridge is
+  // wired with no onExit callback because /play/ has no "exit play mode"
+  // notion — it's the standalone page. Game-side quit posts the request
+  // and we route it via the in-page handler at the page level if needed,
+  // or just rely on browser-back for now.
+  $effect(() => {
+    if (iframeEl) {
+      initSaveBridge(iframeEl);
+    }
   });
 
   function onLoad() {
@@ -120,18 +137,22 @@
       onerror={onError}
       allow="cross-origin-isolated"
     ></iframe>
+    <VirtualGamepad iframe={iframeEl} />
   {/if}
 </div>
 
 <style>
   .godot-container {
     width: 100%;
-    aspect-ratio: 1270 / 920;
-    max-height: 80vh;
+    /* Fill the available height — the parent (.play-page in play.astro)
+       is sized to the viewport so the game iframe gets the full screen.
+       Godot's canvasResizePolicy: 2 handles the 1.38:1 letterboxing
+       inside, and the virtual gamepad lives in those letterbox bars on
+       mobile. */
+    height: 100%;
     background: #0a0e17;
     position: relative;
     margin: 0 auto;
-    border: 1px solid rgba(0, 255, 136, 0.2);
   }
 
   .loading-screen {

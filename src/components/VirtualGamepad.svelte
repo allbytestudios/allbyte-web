@@ -58,18 +58,37 @@
 
   function dispatchKey(type: "keydown" | "keyup", k: { key: string; code: string; keyCode: number }) {
     if (!iframe || !iframe.contentWindow) return;
+
+    // Godot's Emscripten-built web export registers keyboard callbacks
+    // through `registerKeyEventCallback`, which typically attaches to the
+    // iframe's `document` — NOT its `window`. Dispatching at the canvas
+    // and letting the event bubble up covers all three possible listener
+    // locations (canvas → document → window) with one dispatch.
+    //
+    // Same-origin lets us reach into the iframe's DOM. If contentDocument
+    // is unavailable for any reason (rare race during boot), fall back to
+    // the window so we at least try.
+    let target: EventTarget | null = null;
+    try {
+      const doc = iframe.contentDocument;
+      if (doc) {
+        target = doc.querySelector("canvas") ?? doc;
+      }
+    } catch {
+      /* document inaccessible for some reason — keep target null */
+    }
+    if (!target) target = iframe.contentWindow;
+
     const ev = new KeyboardEvent(type, {
       key: k.key,
       code: k.code,
-      // keyCode/which are deprecated but Godot's web input handler still
-      // checks them on some paths — pass them for compatibility.
+      // keyCode/which are deprecated but Emscripten's keyboard handler
+      // still reads them — pass for compatibility.
       keyCode: k.keyCode,
       bubbles: true,
       cancelable: true,
     });
-    // Dispatch at contentWindow so any window-level keyboard listener inside
-    // the iframe sees it (Godot's Emscripten input attaches there).
-    iframe.contentWindow.dispatchEvent(ev);
+    target.dispatchEvent(ev);
   }
 
   function press(id: string, mapping: { key: string; code: string; keyCode: number }) {

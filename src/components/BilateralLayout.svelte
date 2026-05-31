@@ -96,6 +96,55 @@
   let gameUrl = $state("");
   let gameIframe = $state<HTMLIFrameElement | null>(null);
 
+  // PWA install prompt: Chrome/Edge fires `beforeinstallprompt` on
+  // browsers/devices that meet the PWA install criteria (manifest valid,
+  // SW active, served over HTTPS, not already installed). We capture and
+  // defer the event so the user can trigger it from our own button rather
+  // than the browser's subtle URL-bar icon. iOS Safari and Firefox don't
+  // fire this event — the button just stays hidden there.
+  let installPrompt = $state<any>(null);
+  let isInstalled = $state(false);
+
+  onMount(() => {
+    function handleBeforeInstall(e: Event) {
+      e.preventDefault();
+      installPrompt = e;
+    }
+    function handleAppInstalled() {
+      isInstalled = true;
+      installPrompt = null;
+    }
+    // Detect "already running as installed PWA" — don't offer install
+    // when the page is launched from the home screen / app launcher.
+    if (typeof window !== "undefined") {
+      try {
+        if (window.matchMedia("(display-mode: standalone)").matches) {
+          isInstalled = true;
+        }
+      } catch {}
+    }
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  });
+
+  async function handleInstallClick() {
+    if (!installPrompt) return;
+    try {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+    } catch {
+      // User dismissed or browser rejected — just clear state.
+    }
+    // The deferred prompt can only be used once. Either appinstalled fires
+    // (-> isInstalled = true, button hides) or it doesn't (user dismissed,
+    // but the event is spent — we clear so the button doesn't relinger).
+    installPrompt = null;
+  }
+
   function launchGame() {
     gameUrl = "/godot/index.html";
     playMode = true;
@@ -531,6 +580,12 @@
           <svg class="youtube-inline-icon" viewBox="0 0 461.001 461.001" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M365.257,67.393H95.744C42.866,67.393,0,110.259,0,163.137v134.728c0,52.878,42.866,95.744,95.744,95.744h269.513c52.878,0,95.744-42.866,95.744-95.744V163.137C461.001,110.259,418.135,67.393,365.257,67.393z M300.506,237.056l-126.06,60.123c-3.359,1.602-7.239-0.847-7.239-4.568V168.607c0-3.774,3.982-6.22,7.348-4.514l126.06,63.881C304.363,229.873,304.298,235.248,300.506,237.056z"/></svg>
           YouTube
         </a>
+        {#if installPrompt && !isInstalled}
+          <button class="notify-bar-btn install-pwa-btn" onclick={handleInstallClick} title="Install Chronicles of Nesis as an app on this device">
+            <svg class="install-inline-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1 1.4-1.42L11 13.6V4a1 1 0 0 1 1-1zM5 19a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/></svg>
+            Install as App
+          </button>
+        {/if}
       </div>
     {:else if auth.currentUser}
       <div class="notify-bar-actions">
@@ -913,6 +968,20 @@
     width: 1em;
     height: 0.85em;
     color: #ff0000;
+  }
+
+  .install-pwa-btn {
+    color: #a7f3d0 !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .install-inline-icon {
+    width: 0.95em;
+    height: 0.95em;
+    color: #a7f3d0;
   }
 
   @media (max-width: 640px) {

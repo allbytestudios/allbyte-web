@@ -57,7 +57,38 @@
     iframeEl.src = `/godot/index.html?t=${Date.now()}`;
   }
 
+  // First-interaction fullscreen + orientation lock. For installed PWA
+  // users the manifest's display: "fullscreen" already hides Android
+  // system chrome (status + nav bars), so this is a no-op for them. For
+  // browser-tab users (not installed) it kicks in on the first touch
+  // anywhere — the Fullscreen API and orientation.lock both require user
+  // activation, so we hook the first pointerdown to satisfy that.
+  let fullscreenAttempted = false;
+  function tryEnterFullscreen() {
+    if (fullscreenAttempted) return;
+    fullscreenAttempted = true;
+    try {
+      const el = document.documentElement;
+      if (!document.fullscreenElement && el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      }
+    } catch {}
+    try {
+      const orientation = (screen as any).orientation;
+      if (orientation && typeof orientation.lock === "function") {
+        orientation.lock("landscape").catch(() => {});
+      }
+    } catch {}
+  }
+
   onMount(() => {
+    // Listen anywhere on the page for the first user gesture and try the
+    // fullscreen request once. Use pointerdown so it covers mouse + touch
+    // with a single handler. { once: true } auto-removes after firing.
+    if (typeof window !== "undefined") {
+      window.addEventListener("pointerdown", tryEnterFullscreen, { once: true });
+    }
+
     if (!import.meta.env.DEV) return;
 
     sseUnsub = subscribeToFile("godot/reload", doReload);
@@ -76,6 +107,9 @@
     sseUnsub?.();
     messageOff?.();
     teardownSaveBridge();
+    if (typeof window !== "undefined") {
+      window.removeEventListener("pointerdown", tryEnterFullscreen);
+    }
   });
 
   // Wire the save bridge once the iframe is mounted. The /play/ URL is the

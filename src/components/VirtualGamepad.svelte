@@ -425,16 +425,18 @@
     }
   }
 
-  /* Single touch zones, one per side. The zone captures any finger inside
-     its bounds (pointer-events: auto) and the visible button glyphs inside
-     are decorative (pointer-events: none) — touches always go to the parent
-     zone, never to a specific button, which is what lets a finger move
-     between buttons without lifting. */
+  /* Single touch zones, one per side, anchored to the bottom corners.
+     Owner spec: "I'd like them near the bottom instead of centered."
+     Bottom positioning matches how a player's thumbs naturally rest
+     when holding a phone in landscape. The zone captures any finger
+     inside its bounds (pointer-events: auto) and the visible button
+     glyphs inside are decorative (pointer-events: none) — touches
+     always go to the parent zone, never to a specific button, which is
+     what lets a finger move between buttons without lifting. */
   .dpad-zone,
   .face-zone {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 8px));
     width: 144px;
     height: 144px;
     pointer-events: auto;

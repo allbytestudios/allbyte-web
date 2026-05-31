@@ -65,6 +65,7 @@ context. Messages have the shape `{ type: "allbyte:<verb>", ...payload }`.
 | `allbyte:load-saves` | `saves, options, keymapping` | Load these into game slots. Reply with `allbyte:load-complete`. |
 | `allbyte:sync-status` | `status: "idle"\|"syncing"\|"synced"\|"error"\|"unsynced"`, `lastSyncedAt: number\|null`, `errorMessage: string\|null` | Update any in-game sync indicator. Broadcast on every state change and once on `ready`. |
 | `allbyte:visibility` | `visible: boolean` | Page visibility (phone screen on/off, tab background/foreground). Game should pause audio + sims when `visible: false` and resume when `visible: true`. Broadcast on every `document.visibilitychange`. |
+| `allbyte:update-available` | — | A new build of the site has been detected (new service worker activated). Game should record this flag and apply the update at a safe moment — typically when the user is on the Title screen — by calling `parent.allbyteApplyUpdate()`. Web will NOT auto-reload by itself, so the game decides when. |
 
 ### Direct same-origin calls (synchronous, user-gesture preserving)
 
@@ -87,6 +88,8 @@ JavaScriptBridge.eval("parent.allbyteRequestImport()")
 | `parent.allbyteRequestExit()` | Tears down the play iframe; user returns to landing page. |
 | `parent.allbyteRequestExport()` | Asks the game for fresh save state via `allbyte:request-saves`, waits briefly, then triggers a browser download of `chronicles-of-nesis-saves-<ts>.json`. |
 | `parent.allbyteRequestImport()` | Opens a hidden `<input type="file">` browser dialog. On file pick, web does a basic shape check (parsed as JSON, has top-level `saves` object), then sends to game via `allbyte:load-saves`. Game does full schema validation. |
+| `parent.allbyteApplyUpdate()` | Brief "Updating..." overlay, then `location.reload()`. Game should call this when an update is pending AND it's a safe moment (Title screen). |
+| `parent.allbyteUpdatePending` | Boolean property the game can poll on Title screen ready. True if a new build has been detected since this page loaded. |
 
 These three functions exist on `window` for the lifetime of `initSaveBridge`
 (i.e., while play mode is active) and are removed in `teardownSaveBridge`.

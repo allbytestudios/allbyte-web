@@ -1,43 +1,69 @@
 <script lang="ts">
   /**
-   * Full-screen "Updating..." overlay shown when the service worker
-   * detects a new build of the site and takes over from the previous one.
+   * Update-available signal for the PWA.
    *
-   * Flow:
-   *   1. Browser fetches /sw.js on navigation.
-   *   2. sw.js bytes differ from the cached worker (because we injected a
-   *      new BUILD_VERSION at build time). Browser installs new SW.
-   *   3. New SW calls self.skipWaiting() + clients.claim(), takes over
-   *      the page synchronously.
-   *   4. navigator.serviceWorker fires `controllerchange` on every client.
-   *   5. We show this overlay so the user knows something is happening,
-   *      wait a short beat for the visual to register, then location.reload().
-   *      The reload pulls fresh HTML through the new SW which now has the
-   *      new cache name and refetches from network.
+   * Owner spec (2026-05-31): "Auto updates to PWA are very painful as a
+   * user, I don't want to update when I'm mid-game and lose my progress.
+   * Updates should be made when loading the Title screen."
    *
-   * Guard: the controllerchange event ALSO fires on the very first SW
-   * install (no previous controller). We suppress in that case so first-
-   * time visitors don't see "Updating..." flash for no reason. The
-   * heuristic is "had a controller at register time" → this is a real
-   * update; if `navigator.serviceWorker.controller` was null, it's an
-   * initial install and we skip the overlay.
+   * What we do now:
+   *   1. Browser fetches /sw.js on navigation / visibilitychange.
+   *   2. New sw.js bytes -> browser installs new SW + activates -> fires
+   *      `controllerchange` on every client.
+   *   3. We set `window.allbyteUpdatePending = true` and post
+   *      `allbyte:update-available` to every iframe (game).
+   *   4. We do NOT reload. The game checks the flag (or listens for the
+   *      postMessage) and decides when to actually apply — typically when
+   *      the user is on the Title screen and no save state is at risk.
+   *   5. Game calls `parent.allbyteApplyUpdate()` (via JavaScriptBridge)
+   *      when it's safe. That shows a brief "Updating..." overlay and
+   *      reloads.
+   *
+   * Until the game wires its end up, updates are detected but not auto-
+   * applied. Users still get the new version on the next manual page
+   * refresh / PWA relaunch — just no surprise reloads mid-battle.
+   *
+   * The controllerchange event fires on first install too (no previous
+   * controller). We suppress that case so first-time visitors don't see
+   * a phantom update.
    */
   import { onMount, onDestroy } from "svelte";
 
-  let visible = $state(false);
+  let applying = $state(false);
   let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
-  function handleControllerChange() {
-    visible = true;
-    // Brief delay so the user actually sees the overlay register before
-    // the page goes through reload. 1.2s is enough to read the message
-    // without dragging out the update unnecessarily.
+  function broadcastToIframes() {
+    document.querySelectorAll("iframe").forEach((iframe) => {
+      try {
+        iframe.contentWindow?.postMessage(
+          { type: "allbyte:update-available" },
+          "*",
+        );
+      } catch {
+        /* cross-origin iframe — ignore */
+      }
+    });
+  }
+
+  function applyUpdate() {
+    if (applying) return;
+    applying = true;
     reloadTimer = setTimeout(() => {
       window.location.reload();
-    }, 1200);
+    }, 600);
+  }
+
+  function onControllerChange() {
+    (window as any).allbyteUpdatePending = true;
+    broadcastToIframes();
   }
 
   onMount(() => {
+    // Expose the apply-update entrypoint regardless of whether an update
+    // is currently pending — game-side polling can check pending first
+    // and call apply when ready.
+    (window as any).allbyteApplyUpdate = applyUpdate;
+
     if (typeof navigator === "undefined" || !navigator.serviceWorker) return;
     // Snapshot whether we already have a controller. If yes, any subsequent
     // controllerchange is a real update. If no, the first event is the
@@ -50,13 +76,14 @@
         firstChangeFired = true;
         return;
       }
-      handleControllerChange();
+      onControllerChange();
     }
 
     navigator.serviceWorker.addEventListener("controllerchange", onChange);
 
     return () => {
       navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+      delete (window as any).allbyteApplyUpdate;
     };
   });
 
@@ -65,7 +92,7 @@
   });
 </script>
 
-{#if visible}
+{#if applying}
   <div class="update-overlay" role="status" aria-live="polite">
     <div class="update-content">
       <div class="update-spinner" aria-hidden="true"></div>

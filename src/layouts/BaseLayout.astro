@@ -41,6 +41,30 @@ const {
     <link rel="apple-touch-icon" href="/godot/index.apple-touch-icon.png" />
 
     <title>{title}</title>
+
+    <!-- Installed-PWA hard redirect: if the user launched the installed
+         standalone app and landed anywhere outside /play/ (typically
+         because their browser cached an earlier manifest with start_url:
+         "/" before we fixed it), bounce straight to the game. Runs
+         synchronously in head so there's no homepage flash. Only fires
+         once per session (sessionStorage flag) so the user can still
+         navigate to other pages from inside the PWA after the first
+         landing — but the first launch always goes to the game. -->
+    <script is:inline>
+      try {
+        var inStandalone =
+          window.matchMedia &&
+          window.matchMedia("(display-mode: standalone)").matches;
+        if (
+          inStandalone &&
+          window.location.pathname === "/" &&
+          !sessionStorage.getItem("__pwa_launched")
+        ) {
+          sessionStorage.setItem("__pwa_launched", "1");
+          window.location.replace("/play/");
+        }
+      } catch (e) {}
+    </script>
     <ClientRouter />
   </head>
   <body>

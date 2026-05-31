@@ -549,16 +549,28 @@
         <div class="demo-banner">
           <img src={demoHovered ? "/ChroniclesOfNesisTitle.gif" : "/ChroniclesOfNesisTitle-still.png"} alt="The Chronicles of Nesis Demo" class="demo-gif" />
           <img src="/ChroniclesOfNesisTitleName.png" alt="The Chronicles of Nesis" class="demo-title-overlay" />
+          <span class="demo-version-overlay" aria-label={`Build version ${gameVersion.version}`}>
+            {gameVersion.version.startsWith("v") ? gameVersion.version : `v${gameVersion.version}`}
+          </span>
         </div>
       </div>
       <div class="demo-actions">
         {#if buildDateLabel}
           <span class="build-date" title={`Built ${buildDateLabel}`}>Built {buildDateLabel}</span>
         {/if}
-        <span class="demo-cta">Play Now {gameVersion.version.startsWith("v") ? gameVersion.version : `v${gameVersion.version}`} (No Download) &#8594;</span>
+        <div class="demo-cta-group">
+          <button class="demo-cta play-cta" type="button" aria-label="Play in browser">
+            Play In Browser &#8594;
+          </button>
+          {#if installPrompt && !isInstalled}
+            <button class="demo-cta install-cta" type="button" onclick={(e) => { e.stopPropagation(); handleInstallClick(); }} aria-label="Install Chronicles as an app on this device">
+              Install as App &#8595;
+            </button>
+          {/if}
+        </div>
         <a href="https://store.steampowered.com/app/3900010/The_Chronicles_of_Nesis/" class="steam-btn" target="_blank" rel="noopener noreferrer" onclick={(e) => e.stopPropagation()}>
           <svg class="steam-icon" viewBox="0 0 256 259" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M127.779 0C57.852 0 .469 55.394.013 124.609L68.95 153.16a35.615 35.615 0 0 1 20.15-6.213l30.15-43.635v-.613c0-26.36 21.457-47.817 47.818-47.817 26.36 0 47.818 21.457 47.818 47.817 0 26.361-21.457 47.818-47.818 47.818h-1.105l-42.926 30.658a35.796 35.796 0 0 1-35.638 37.149 35.87 35.87 0 0 1-34.992-28.333L1.592 168.53C17.2 220.124 65.89 258.18 123.578 258.18c70.692 0 128.003-57.31 128.003-128.003C251.581 59.487 198.47 0 127.779 0zM80.36 208.09l-15.082-6.232a26.887 26.887 0 0 0 14.49 14.088 26.941 26.941 0 0 0 35.26-14.468 26.796 26.796 0 0 0 .001-20.624 26.864 26.864 0 0 0-14.467-14.467l15.594 6.446a21.556 21.556 0 0 1-11.392 41.29 21.56 21.56 0 0 1-24.404-6.033zm114.007-57.39c0-17.568-14.29-31.858-31.858-31.858-17.569 0-31.858 14.29-31.858 31.858 0 17.569 14.29 31.858 31.858 31.858 17.569 0 31.858-14.29 31.858-31.858zm-55.737-.098c0-13.19 10.706-23.896 23.897-23.896 13.19 0 23.896 10.706 23.896 23.896 0 13.19-10.706 23.897-23.896 23.897-13.191 0-23.897-10.706-23.897-23.897z"/></svg>
-          Wishlist on Steam &#8594;
+          Steam
         </a>
       </div>
     </div>
@@ -580,12 +592,6 @@
           <svg class="youtube-inline-icon" viewBox="0 0 461.001 461.001" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M365.257,67.393H95.744C42.866,67.393,0,110.259,0,163.137v134.728c0,52.878,42.866,95.744,95.744,95.744h269.513c52.878,0,95.744-42.866,95.744-95.744V163.137C461.001,110.259,418.135,67.393,365.257,67.393z M300.506,237.056l-126.06,60.123c-3.359,1.602-7.239-0.847-7.239-4.568V168.607c0-3.774,3.982-6.22,7.348-4.514l126.06,63.881C304.363,229.873,304.298,235.248,300.506,237.056z"/></svg>
           YouTube
         </a>
-        {#if installPrompt && !isInstalled}
-          <button class="notify-bar-btn install-pwa-btn" onclick={handleInstallClick} title="Install Chronicles of Nesis as an app on this device">
-            <svg class="install-inline-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.59l3.3-3.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1 1.4-1.42L11 13.6V4a1 1 0 0 1 1-1zM5 19a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/></svg>
-            Install as App
-          </button>
-        {/if}
       </div>
     {:else if auth.currentUser}
       <div class="notify-bar-actions">
@@ -968,20 +974,6 @@
     width: 1em;
     height: 0.85em;
     color: #ff0000;
-  }
-
-  .install-pwa-btn {
-    color: #a7f3d0 !important;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .install-inline-icon {
-    width: 0.95em;
-    height: 0.95em;
-    color: #a7f3d0;
   }
 
   @media (max-width: 640px) {
@@ -1480,6 +1472,24 @@
     pointer-events: none;
   }
 
+  /* Build version overlaid on the GIF (bottom-right corner) so the demo
+     actions row can use its full width for the Play/Install links rather
+     than sharing space with version text. */
+  .demo-version-overlay {
+    position: absolute;
+    bottom: 0.6rem;
+    right: 0.8rem;
+    font-family: "Courier New", monospace;
+    font-size: 0.85rem;
+    color: rgba(167, 243, 208, 0.85);
+    background: rgba(10, 14, 23, 0.55);
+    padding: 0.15rem 0.45rem;
+    border-radius: 3px;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    line-height: 1;
+  }
+
   .demo-actions {
     display: flex;
     align-items: center;
@@ -1495,6 +1505,16 @@
     transform: translateY(-50%);
   }
 
+  /* Group containing Play In Browser + Install as App. Centered in the
+     middle of the actions row; build-date (absolute left) and Steam button
+     (absolute right) flank it without crowding the links. */
+  .demo-cta-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+  }
+
   .demo-cta {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.25rem;
@@ -1503,10 +1523,22 @@
     letter-spacing: 0.02em;
     text-decoration: none;
     transition: text-decoration 0.2s;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
   }
 
   .demo-cta:hover {
     text-decoration: underline;
+  }
+
+  /* Install link sits next to Play with the same visual weight (peers,
+     not primary/secondary) — Drew's UX call. The subtle separation is
+     just the gap in the flex container above. */
+  .install-cta {
+    /* Same .demo-cta base; this class is here in case we want a slight
+       tonal variation later (e.g., faded color until hover). */
   }
 
   .steam-btn {
@@ -1874,8 +1906,10 @@
       opacity: 0.8;
     }
 
-    .demo-actions .demo-cta {
+    .demo-actions .demo-cta-group {
       order: 1;
+      flex-wrap: wrap;
+      gap: 0.85rem;
     }
 
     .demo-actions .steam-btn {

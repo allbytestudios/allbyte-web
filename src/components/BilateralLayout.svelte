@@ -101,6 +101,34 @@
     playMode = true;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handlePlayKey);
+    // Request fullscreen + lock landscape. Best-effort:
+    //   - Android Chrome: both succeed; user lands in full-screen landscape.
+    //   - Desktop: fullscreen requests OK, orientation.lock is a no-op.
+    //   - iOS Safari: fullscreen partial (16+) and orientation.lock is
+    //     unsupported in a browser tab. Both throws caught silently — iOS
+    //     users get a playable game without forced orientation. The PWA
+    //     install path (Add to Home Screen) is iOS's escape hatch — the
+    //     manifest's "orientation": "landscape" is respected there.
+    requestFullscreenLandscape();
+  }
+
+  async function requestFullscreenLandscape() {
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      }
+    } catch {
+      /* user denied or unsupported — game still works windowed */
+    }
+    try {
+      const orientation = (screen as any).orientation;
+      if (orientation && typeof orientation.lock === "function") {
+        await orientation.lock("landscape");
+      }
+    } catch {
+      /* not supported (iOS Safari) or denied — game still works in current orientation */
+    }
   }
 
   function exitGame() {
@@ -110,6 +138,20 @@
     window.removeEventListener("keydown", handlePlayKey);
     teardownSaveBridge();
     gameIframe = null;
+    // Reverse the fullscreen/orientation lock from launchGame so the rest
+    // of the site renders in its normal viewport. Both unlock/exit are
+    // no-ops if we never entered the locked/fullscreen state.
+    try {
+      const orientation = (screen as any).orientation;
+      if (orientation && typeof orientation.unlock === "function") {
+        orientation.unlock();
+      }
+    } catch {}
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    } catch {}
   }
 
   // Wire up the save bridge once the iframe is mounted

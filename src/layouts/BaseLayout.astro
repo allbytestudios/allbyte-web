@@ -19,10 +19,27 @@ const {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/png" href="/icon.png" />
+
+    <!-- PWA: manifest + theme color drive Android install eligibility and
+         the address-bar tint on mobile. -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0a0e17" />
+
+    <!-- iOS PWA forward-compat (not optimized for iOS yet, but adding the
+         meta tags now means the install flow already works when we turn
+         to it — no architectural rework needed). screen.orientation.lock
+         doesn't exist on iOS in a browser tab, but the manifest's
+         "orientation": "landscape" is honored once installed via
+         Share → Add to Home Screen. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Chronicles" />
+    <link rel="apple-touch-icon" href="/godot/index.apple-touch-icon.png" />
+
     <title>{title}</title>
     <ClientRouter />
   </head>
@@ -71,6 +88,20 @@ const {
       }
       syncTierClasses();
       document.addEventListener("astro:page-load", syncTierClasses);
+
+      // Service worker: caches /godot/* so repeat visits to /play/ skip the
+      // ~60MB download and WASM compile. Registered globally so it's live
+      // before the user first navigates to /play/.
+      if ("serviceWorker" in navigator && location.protocol === "https:") {
+        // localhost falls through with protocol "http:" — don't register
+        // there because the SW would intercept dev-server requests and
+        // mask Vite HMR / live-reload behavior.
+        navigator.serviceWorker
+          .register("/sw.js")
+          .catch((err) =>
+            console.warn("[sw] registration failed:", err)
+          );
+      }
     </script>
   </body>
 </html>

@@ -177,7 +177,7 @@ The third one requires shape-matching the test against the ticket's language; it
 
 The report is machine-readable and feeds into the [Dev Console's tests tab](/devlog/dev-console-agent-dashboard/) so the gap is visible at-a-glance.
 
-## Why Vera-MCP is a public-OSS candidate
+## Why Vera-MCP is on the OSS path
 
 The Godot ecosystem has two well-served test paths and one underserved one.
 
@@ -190,7 +190,7 @@ The underserved:
 
 Vera-MCP is opinionated about the framework — it bakes in the four-tier model, the Shape A/B/C/D taxonomy, the marker conventions. That's a legitimate reason to keep it focused rather than trying to be a general-purpose Godot test MCP. But the core ideas — structured `playwright_run` envelope, marker-balance audit, ticket-criterion coverage report — generalize to any stack that wraps Playwright over a non-trivial runtime.
 
-Publishing posture: this one ships open-source when the parity framework clears the bar (every tool needs N consecutive parity-matched runs against its bash equivalent before the CLAUDE.md instruction flips). Probably 4–6 weeks of dogfooding from now. Until then, the architecture and the design rationale are in `allbyte-mcp/docs/VERA_MCP.md` for anyone who wants to model their own.
+Publishing posture: same arc as the other two — prove the concept on Chronicles first, then once the parity framework has cleared the bar (every tool needs N consecutive parity-matched runs against its bash equivalent before the CLAUDE.md instruction flips), extract a project-agnostic version. Probably 4–6 weeks of dogfooding from now. Until then, the architecture and design rationale are in `allbyte-mcp/docs/VERA_MCP.md` for anyone modeling their own.
 
 ## How Vera spawns workers across tiers, post-MCP
 

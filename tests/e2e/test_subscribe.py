@@ -111,7 +111,7 @@ def test_subscribe_tier_posts_correct_payload(page, mock_api, base_url, tier, _p
         )
 
     page.route(
-        "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/checkout",
+        "https://api.allbyte.studio/checkout",
         capture_checkout,
     )
 
@@ -148,7 +148,7 @@ def test_donate_posts_correct_payload(page, mock_api, base_url, data_tier, _labe
         )
 
     page.route(
-        "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/checkout",
+        "https://api.allbyte.studio/checkout",
         capture_checkout,
     )
 
@@ -179,7 +179,7 @@ def test_subscribe_shows_success_banner_on_return(page, mock_api, base_url):
 def test_subscribe_checkout_failure_button_recovers(page, mock_api, base_url):
     """If /checkout fails, the button recovers to 'Subscribe' instead of staying 'Loading...'."""
     page.route(
-        "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/checkout",
+        "https://api.allbyte.studio/checkout",
         lambda r: r.fulfill(
             status=500,
             content_type="application/json",

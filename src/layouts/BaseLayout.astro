@@ -54,7 +54,7 @@ const {
 
         const token = localStorage.getItem("allbyte_token");
         if (!token) return;
-        fetch("https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/me", {
+        fetch("https://api.allbyte.studio/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((r) => (r.ok ? r.json() : null))

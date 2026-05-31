@@ -53,3 +53,12 @@ gamedev_assets/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Qwen-on-spot session env (contains live API key for the spot instance)
+.qwen-env
+
+# A/B eval run outputs (paired markdown + summary.csv per run)
+tests/ai-eval/results/
+
+# Anthropic Admin API key (used by break-even-report.py)
+.claude-admin-key

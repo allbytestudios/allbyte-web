@@ -4,7 +4,7 @@
   import type { Tier } from "../lib/tier";
   import { onMount } from "svelte";
 
-  const API = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";
+  const API = "https://api.allbyte.studio";
 
   interface AdminUser {
     userId: string;

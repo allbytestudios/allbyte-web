@@ -26,7 +26,7 @@ I cannot watch them all. I can watch *one* — Arc, in my terminal — and the r
 
 The question that this post is about: *how do I track and influence what's happening when so much is automated?* It started as a dashboard. It ended up as a stack — a dashboard, a file watcher, a save-sync bridge, an OpenTelemetry investigation, and an MCP server that finally enforced the contract that ties them together. Each layer was built because the layer below it wasn't quite enough.
 
-This is the fourth post in a four-part series on MCP. The [hub](/devlog/why-build-mcp-and-why-three/) frames when MCP earns its complexity and why I split one server into three. The [Port-MCP](#) and [Vera-MCP](/devlog/vera-mcp-test-infrastructure/) deep-dives cover the two domains that are public-OSS candidates. This one covers the third — Arc-MCP, the orchestration server — and the visibility stack it sits inside. It's the post that has the most going wrong; that's where the lessons are.
+This is the fourth post in a four-part series on MCP. The [hub](/devlog/why-build-mcp-and-why-three/) frames when MCP earns its complexity and why I split one server into three. The [Port-MCP](#) and [Vera-MCP](/devlog/vera-mcp-test-infrastructure/) deep-dives cover the Godot and test-infrastructure domains. This one covers the third — Arc-MCP, the orchestration server — and the visibility stack it sits inside. It's the post that has the most going wrong; that's where the lessons are. As shipped, Arc-MCP is project-shaped (my phases, my lead names, my signoff fields), but the lifecycle and corroboration primitives underneath it are the kind of thing every multi-agent system reinvents poorly. Once those have been proven against a real workflow, the generic core lifts out.
 
 ## What I needed to see
 
@@ -85,18 +85,20 @@ This replaces the terminal round-trip. A decision that used to take three minute
 
 That's what I built first. It worked. For about a week.
 
-## Second layer: getting the files to prod
+## A side-channel: pushing some of this to prod
 
-The dashboard worked locally because a Vite proxy streams the files directly from disk. Prod was the problem. Two repos with two git identities:
+The dashboard answers my real-time questions locally — what's in flight, what's blocked, what's next. That part worked from day one because a Vite proxy streams the files straight from disk. The latency I cared about was always local-side, and that was solved.
+
+But I also wanted some of this visible *publicly*. Not because anyone needs accurate, fresh test data — they don't, and I haven't seriously tested that it is — but because letting people see the agents working at all is part of the studio's pitch. "Here is the thing being built, and here is the swarm building it." Marketing-grade visibility, not a second source of truth.
+
+The catch was that the data lives in the wrong place to ship through the normal site deploy. Two repos with two git identities:
 
 - **ChroniclesOfNesis** — the game, private, pushed with my personal GitHub account.
 - **allbyte-web** — this site, public, pushed with the `allbytestudios` account.
 
-The game writes test results to `ChroniclesOfNesis/test_results/test_run_status.json`. The web app reads those files and paints a dashboard. In dev that's free. In prod they live at `s3://allbyte.studio-site/test-snapshot/`, uploaded by `scripts/push-assets.js` during a normal web deploy.
+The game writes test results to `ChroniclesOfNesis/test_results/test_run_status.json`. In prod those files live at `s3://allbyte.studio-site/test-snapshot/`, uploaded by `scripts/push-assets.js` during a normal web deploy. Which means without intervention, prod test data only refreshes when I push the web repo — and the *game* runs the tests, in a *different* repo, on a totally different cadence than site pushes. So the marketing-facing snapshot would be perpetually stale unless I either remembered to manually sync (I won't) or built something to do it.
 
-Which means: the only way to refresh prod test data was to push the web repo. Every time I ran tests on the game, prod stayed stale until I shipped the site again. Defeated the entire reason I'd built the dashboard.
-
-Easy fix, right? Wrong. Every clean option broke on a different constraint.
+Every clean option broke on a different constraint.
 
 **Git hook on the game repo.** A `post-commit` in Chronicles could push the three files straight to S3. But Chronicles' git config was tied to my personal identity, the AWS credentials on my machine were tied to the Allbyte account, and I did not want the game repo to know anything about the web app's bucket. Cross-contamination waiting to happen.
 
@@ -139,9 +141,9 @@ It refreshes every 60 seconds regardless of whether files changed. "No tests ran
 
 There's a whole class of problems that look distributed but are really "I have one computer and I want it to do something." Git hooks, CI runners, cloud schedulers, pub/sub buses — they all feel like the right shape because the problem *feels* like integration between systems. But when the data never leaves my laptop in the first place, a long-running local process is the right answer, and the only real engineering is making sure it doesn't die without telling you. The heartbeat is the whole trick. Everything else is plumbing.
 
-## Third layer: the back-channel from inside the game
+## Second layer: the back-channel from inside the game
 
-The dashboard reads state. The watcher delivers state to prod. Both flows are one-directional.
+The dashboard reads state. The watcher mirrors a slice of it publicly. The dashboard read path is the one that has to be fast; the prod mirror just has to exist. Both flows are one-directional.
 
 Then I needed a *bidirectional* channel — specifically, the game (running in a browser iframe) had to push state to the parent webapp, and the parent webapp had to push state back to the game. Save sync was the first concrete need. The same pattern ended up being the answer for `/api/decisions` writes back to Arc.
 

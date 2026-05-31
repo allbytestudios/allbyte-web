@@ -1,6 +1,6 @@
 ---
 title: "When to Build an MCP Server, and Why I Built Three"
-description: "MCP isn't a wrapper around your bash scripts. It's a contract that solves problems memories, skills, and CLAUDE.md files can't. Here's when it earns its complexity, and why my one private server became three."
+description: "MCP isn't a wrapper around your bash scripts. It's a contract that solves problems memories, skills, and CLAUDE.md files can't. Here's when it earns its complexity, and why my one server became three."
 pubDate: 2026-04-27T20:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
@@ -82,23 +82,25 @@ I started with one server, `allbyte-mcp`, fifteen tools. The fifteen tools fell 
 
 The three groups:
 
-**Godot and web-export tooling.** Auditing `.gd` files for WASM-hostile patterns. Migrating G3 scenes to G4 syntax. Deploying the web export. Live-mutating game state via TestBridge. Querying the running game's state without writing a Python test. These tools touch source files, run external scripts, talk to a running WASM build. They're broadly applicable to any Godot 4 web-export project — public-OSS candidates.
+**Godot and web-export tooling.** Auditing `.gd` files for WASM-hostile patterns. Migrating G3 scenes to G4 syntax. Deploying the web export. Live-mutating game state via TestBridge. Querying the running game's state without writing a Python test. These tools touch source files, run external scripts, talk to a running WASM build. They're broadly applicable to any Godot 4 web-export project.
 
 **Test infrastructure.** Scaffolding new test files from templates. Auditing test markers for tier balance. Maintaining `test_index.json`. Running tests filtered by tier or marker. Mapping ticket success-criteria to actual test files for coverage analysis. These tools live next to the test suite, read tickets read-only, write test files. Also broadly applicable — Godot + Playwright test infrastructure is a documented gap.
 
-**Orchestration.** Reading and writing `tickets.json`. Maintaining `agent_activity.json`. Clustering pending tickets into optimal dispatch bundles. These tools are *deeply* tied to my agent topology. They write the state that my orchestrator consumes. Not generic. Not OSS material.
+**Orchestration.** Reading and writing `tickets.json`. Maintaining `agent_activity.json`. Clustering pending tickets into optimal dispatch bundles. These tools are tied to my agent topology — they write the state my orchestrator consumes, with my phases, my lead names, my signoff fields baked in. The *primitives underneath* (lifecycle MOVE-not-flip, OTel corroboration tiers, single-writer discipline) look extraction-worthy, but as shipped this server is mine.
 
-Three groups that look obvious in retrospect. But sharing one server meant they shared a release posture, a public-vs-private boundary, a test suite, a documentation set. The Godot tools are things I'd happily ship to anyone running Godot 4 web exports; the orchestration tools are things tied to a multi-agent setup I'm not yet ready to expose. Mixing them in one server forced a single answer to "is this open?" when the right answer is per-server.
+Three groups that look obvious in retrospect. But sharing one server meant they shared a release posture, a test suite, a documentation set. Each group is on a different timeline toward "vetted enough to publish" — Port's audit rules need to survive more upstream Godot 4 versions, Vera's tier taxonomy needs to hold across more projects than mine, Arc's lifecycle primitives need extraction from the ticket-shaped wrapper they currently live inside. Mixing them in one server forced a single answer to "is this ready?" when the right answer is per-server.
 
 The split followed the agent topology I already had. Each lead agent — Port (web export), Vera (test infrastructure), Arc (orchestration) — already owns a CLAUDE.md hierarchy and a domain. Their MCP surface should follow. **Three servers, one per lead.** Plus a `shared` package for the locking primitive, schema validators, envelope types — anything cross-cutting.
 
 The surfaces:
 
-| Server | Tools | OSS posture |
+| Server | Tools | OSS path |
 |---|---|---|
-| **Port-MCP** | `audit_g4_web_compat`, `batch_g3_to_g4`, `redeploy`, `live_mutate`, `testbridge_query` | Public-OSS candidate when scope-defer reverses |
-| **Vera-MCP** | `test_scaffold`, `test_marker_audit`, `test_index_op`, `test_run_by_tier`, `playwright_run`, `test_coverage_report` | Public-OSS candidate |
-| **Arc-MCP** | `ticket_op`, `agent_activity_op`, `backlog_cluster` | Private indefinitely |
+| **Port-MCP** | `audit_g4_web_compat`, `batch_g3_to_g4`, `redeploy`, `live_mutate`, `testbridge_query` | Prove on Chronicles → extract Godot-generic version |
+| **Vera-MCP** | `test_scaffold`, `test_marker_audit`, `test_index_op`, `test_run_by_tier`, `playwright_run`, `test_coverage_report` | Prove on Chronicles → extract project-agnostic test infra |
+| **Arc-MCP** | `ticket_op`, `agent_activity_op`, `backlog_cluster` | Prove the lifecycle/corroboration primitives → extract as a generic agent-observability server (the ticket-specific surface stays mine) |
+
+The pattern is the same for all three: prove the concept end-to-end against a specific project (this one), then once the shape is vetted, lift the generic core into a separate published version. None of these are "private indefinitely"; none of them are "ready to ship today." They're at different points on the same arc.
 
 One monorepo, npm workspaces, three servers + shared. Each package can be published independently to npm if and when it ships open-source. Cross-package refactors don't need cross-repo PRs. The shared lock manager, schema validators, and envelope types stay co-located.
 
@@ -114,7 +116,7 @@ This isn't novel; it's just the obvious thing once the boundaries are domain-ali
 
 Each of the three servers got long enough that it deserves its own post. Headlines:
 
-**Port-MCP — Godot / web-export.** The original survey-and-build story expands here: eight upstream Godot MCPs evaluated, none adopted, MIT plugin half cherry-picked from `youichi-uda/godot-mcp-pro`. The 16 web-compatibility audit rules. The `live_mutate` runtime path that lets agents tune visuals without restarting the game. Why this is the most likely public-OSS contribution.
+**Port-MCP — Godot / web-export.** The original survey-and-build story expands here: eight upstream Godot MCPs evaluated, none adopted, MIT plugin half cherry-picked from `youichi-uda/godot-mcp-pro`. The 16 web-compatibility audit rules. The `live_mutate` runtime path that lets agents tune visuals without restarting the game. The first of the three to clear the "ship it" bar, since the audit rules and translation tools are project-shaped least.
 
 **Vera-MCP — Test infrastructure.** The Shape-A/B/C/D test taxonomy and the F1 phrase classifier that picks a shape from a ticket description. The marker-audit tool that prevents tier-imbalance regressions. The coverage-report mapping from `successCriteria.testPath` to actual test files. Why Godot + Playwright together is an ecosystem gap nobody's filled.
 

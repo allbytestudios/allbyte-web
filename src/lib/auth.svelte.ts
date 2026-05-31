@@ -1,6 +1,6 @@
 import type { Tier } from "./tier";
 
-const API = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";
+const API = "https://api.allbyte.studio";
 
 export interface User {
   userId: string;

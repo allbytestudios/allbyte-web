@@ -39,22 +39,22 @@ const HTML_PATH = join(TARGET_DIR, "index.html");
 const SHIM_PATH = join(TARGET_DIR, "pck-key-shim.js");
 const SHIM_REL = "pck-key-shim.js";
 
-// KeyDot marker bytes — see github.com/Titoot/KeyDot/blob/main/src/wasm/wasm_scanner.cpp.
-// These are LEB128 segment-size + opcode bytes that bracket the
-// `script_encryption_key[32]` data symbol the engine compiles in. Matching
-// KeyDot exactly is the goal — defeating KeyDot is the threat model.
+// KeyDot marker bytes (KeyDot v1, Godot 3.5.x / 4.1.x layout) — see
+// github.com/Titoot/KeyDot/blob/main/src/wasm/wasm_scanner.cpp. Godot 4.6.2
+// uses a different LEB128 framing AND places the key block ~17KB from end,
+// not within KeyDot's last-3KB window. So this marker-scan is a legacy
+// fallback; the primary path is now key-from-env (read game key from
+// docker/.env, scan whole WASM for those exact bytes). Game keys are exempt
+// from the no-secrets policy per Drew's 2026-05-11 clarification.
 const START_MARKER = Buffer.from([0x00, 0x1b, 0x00, 0x00, 0x00, 0x00, 0x40]);
 const END_MARKER = Buffer.from([0x09, 0x00]);
 const KEY_LEN = 32;
 const SCAN_TAIL_BYTES = 3 * 1024;
 
-function findKeyOffset(wasm) {
+/** Marker-scan fallback. Works on older Godot layouts (3.5.x, 4.1.x). */
+function findKeyByMarker(wasm) {
 	const tailStart = Math.max(0, wasm.length - SCAN_TAIL_BYTES);
 	const tail = wasm.subarray(tailStart);
-	// Scan backwards for END_MARKER, then verify START_MARKER sits exactly
-	// 32 + START_MARKER.length bytes before it. Backwards-scan + dual-bracket
-	// match is more robust than forward-scan-from-start: a stray START_MARKER
-	// pattern earlier in the tail won't false-positive.
 	for (let i = tail.length - END_MARKER.length; i >= START_MARKER.length + KEY_LEN; i--) {
 		if (tail[i] !== END_MARKER[0] || tail[i + 1] !== END_MARKER[1]) continue;
 		const keyStart = i - KEY_LEN;
@@ -74,6 +74,42 @@ function findKeyOffset(wasm) {
 		return tailStart + keyStart;
 	}
 	return -1;
+}
+
+/** Find the plaintext key in the WASM. Returns offset or -1. */
+function findKeyByValue(wasm, keyBuf) {
+	if (keyBuf.length !== KEY_LEN) return -1;
+	return wasm.indexOf(keyBuf);
+}
+
+/**
+ * Resolve the plaintext key from CLI / env / .env file. Returns a 32-byte
+ * Buffer or null. Looked up in priority order:
+ *   1. --key=<64-hex> CLI arg
+ *   2. $GODOT_RELEASE_SCRIPT_KEY env var
+ *   3. GODOT_RELEASE_SCRIPT_KEY line in $GODOT_RELEASE_KEY_ENV_FILE (default:
+ *      C:/Users/drew/Desktop/GameDev/docker/.env) via targeted single-line
+ *      regex match — never reads the whole file.
+ */
+function resolveKey(argv) {
+	const cliArg = argv.find((a) => a.startsWith("--key="));
+	if (cliArg) {
+		const hex = cliArg.slice("--key=".length);
+		if (/^[0-9a-f]{64}$/i.test(hex)) return Buffer.from(hex, "hex");
+	}
+	const envValue = process.env.GODOT_RELEASE_SCRIPT_KEY;
+	if (envValue && /^[0-9a-f]{64}$/i.test(envValue)) {
+		return Buffer.from(envValue, "hex");
+	}
+	const envFile = process.env.GODOT_RELEASE_KEY_ENV_FILE || "C:/Users/drew/Desktop/GameDev/docker/.env";
+	if (existsSync(envFile)) {
+		try {
+			const text = readFileSync(envFile, "utf8");
+			const m = text.match(/^GODOT_RELEASE_SCRIPT_KEY=([0-9a-f]+)$/m);
+			if (m && /^[0-9a-f]{64}$/i.test(m[1])) return Buffer.from(m[1], "hex");
+		} catch {}
+	}
+	return null;
 }
 
 function isAllZeros(buf, offset, len) {
@@ -150,18 +186,39 @@ if (existsSync(SHIM_PATH)) {
 }
 
 const wasm = readFileSync(WASM_PATH);
-const offset = findKeyOffset(wasm);
+
+// Primary path: key-from-env (works on any Godot version that compiles the
+// key as raw 32 contiguous bytes — Godot 3.5+ through current).
+const knownKey = resolveKey(process.argv.slice(2));
+let offset = -1;
+let detection = "";
+if (knownKey) {
+	offset = findKeyByValue(wasm, knownKey);
+	if (offset !== -1) detection = `key-from-env (found plaintext key at offset ${offset})`;
+}
+
+// Fallback: KeyDot-style marker scan, last-3KB of WASM (legacy Godot layout).
+if (offset === -1) {
+	offset = findKeyByMarker(wasm);
+	if (offset !== -1) detection = `KeyDot marker (last ${SCAN_TAIL_BYTES} bytes)`;
+}
 
 if (offset === -1) {
-	console.log(
-		`[obfuscate] no KeyDot marker in last ${SCAN_TAIL_BYTES} bytes of ${WASM_PATH} — skipping (likely dev export with script_encryption_key="").`,
-	);
+	if (knownKey) {
+		console.log(
+			`[obfuscate] plaintext key not found anywhere in ${WASM_PATH} and KeyDot marker absent — skipping (likely dev export built against a template without the key compiled in).`,
+		);
+	} else {
+		console.log(
+			`[obfuscate] no key source configured (set $GODOT_RELEASE_SCRIPT_KEY or pass --key=<64-hex>) and KeyDot marker absent in last ${SCAN_TAIL_BYTES} bytes — skipping.`,
+		);
+	}
 	process.exit(0);
 }
 
 if (isAllZeros(wasm, offset, KEY_LEN)) {
 	console.log(
-		`[obfuscate] marker found at offset ${offset} but key slot is all zeros — skipping (script_encryption_key="").`,
+		`[obfuscate] key slot at offset ${offset} is all zeros — skipping (script_encryption_key="").`,
 	);
 	process.exit(0);
 }
@@ -178,6 +235,7 @@ const htmlChanged = patched !== html;
 if (htmlChanged) writeFileSync(HTML_PATH, patched);
 
 console.log(`[obfuscate] OK`);
-console.log(`[obfuscate]   wasm:  XOR'd 32 key bytes at offset ${offset} in ${WASM_PATH}`);
-console.log(`[obfuscate]   shim:  wrote ${SHIM_PATH}`);
-console.log(`[obfuscate]   html:  ${htmlChanged ? "patched (added shim <script> before index.js)" : "unchanged (already patched)"}`);
+console.log(`[obfuscate]   detect: ${detection}`);
+console.log(`[obfuscate]   wasm:   XOR'd 32 key bytes at offset ${offset} in ${WASM_PATH}`);
+console.log(`[obfuscate]   shim:   wrote ${SHIM_PATH}`);
+console.log(`[obfuscate]   html:   ${htmlChanged ? "patched (added shim <script> before index.js)" : "unchanged (already patched)"}`);

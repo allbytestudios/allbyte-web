@@ -65,7 +65,7 @@ def page(browser, base_url):
 @pytest.fixture
 def mock_api(page):
     """Intercept API calls to Lambda backend with mock responses."""
-    API_BASE = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com"
+    API_BASE = "https://api.allbyte.studio"
 
     def handle_route(route):
         url = route.request.url

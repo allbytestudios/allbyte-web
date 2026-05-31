@@ -196,7 +196,7 @@ export async function fetchRoadmap(
   return data;
 }
 
-const API_BASE = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";
+const API_BASE = "https://api.allbyte.studio";
 
 export interface UserAnalytics {
   totalRegistered: number;

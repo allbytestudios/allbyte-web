@@ -128,7 +128,7 @@ All generated files committed to git (CI has no Godot access). Sync gracefully s
 
 ## Backend (Lambda + DynamoDB + API Gateway)
 
-All backend infrastructure is defined in `infrastructure/stripe-backend.yaml` as inline Python 3.12 Lambda functions within a CloudFormation template. The API Gateway V2 (HTTP API) is at `https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com`.
+All backend infrastructure is defined in `infrastructure/stripe-backend.yaml` as inline Python 3.12 Lambda functions within a CloudFormation template. The API Gateway V2 (HTTP API) is at `https://api.allbyte.studio`.
 
 ### DynamoDB Tables
 - **`allbyte-studio-users`**: userId (PK), email (GSI `email-index`), username, passwordHash (email/password users only), oauthProvider, oauthId (OAuth users), stripeCustomerId, createdAt
@@ -167,8 +167,8 @@ All backend infrastructure is defined in `infrastructure/stripe-backend.yaml` as
 - `allbyte-studio/stripe-webhook-secret` — Stripe webhook signing secret (`whsec_...`)
 
 **OAuth redirect URIs** (must match provider app config):
-- Google: `https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/oauth/google/callback`
-- Discord: `https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/oauth/discord/callback`
+- Google: `https://api.allbyte.studio/auth/oauth/google/callback`
+- Discord: `https://api.allbyte.studio/auth/oauth/discord/callback`
 
 ### Stripe Integration
 - Subscription tiers: Initiate ($3), Hero ($7), Legend ($15) + donation amounts ($5/$10/$25)

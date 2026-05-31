@@ -78,7 +78,7 @@ function formatTrackName(name: string): string {
   <script>
     import assetIndex from "../data/asset-index.json";
 
-    const API = "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com";
+    const API = "https://api.allbyte.studio";
     const TIER_RANK = { default: 0, initiate: 1, hero: 2, legend: 3, admin: 4 };
     function tierAtLeast(userTier: string | null | undefined, required: string): boolean {
       const u = TIER_RANK[(userTier ?? "default") as keyof typeof TIER_RANK] ?? 0;

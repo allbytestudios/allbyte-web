@@ -34,6 +34,14 @@ Parameters:
     Type: Number
     Default: 25
     Description: Monthly AWS budget in USD for the budget status endpoint.
+  ApiCustomDomain:
+    Type: String
+    Default: api.allbyte.studio
+    Description: Custom domain for the HTTP API. Shown to users on the Google OAuth consent screen.
+  HostedZoneId:
+    Type: String
+    Default: Z01925952NW3G7UBHQ76M
+    Description: Route 53 hosted zone ID for allbyte.studio. Used for cert DNS validation and the API alias record.
 
 Resources:
   # --- DynamoDB Tables ---
@@ -963,7 +971,7 @@ Resources:
                   items.extend(result.get("Items", []))
 
               sent = 0
-              api_base = SITE.replace("https://", "https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com")
+              api_base = SITE.replace("https://", "https://api.allbyte.studio")
               for user in items:
                   email = user.get("email")
                   user_id = user.get("userId")
@@ -971,7 +979,7 @@ Resources:
                       continue
 
                   token = make_unsubscribe_token(user_id, secret)
-                  unsub_url = f"https://wj3xkrm1r1.execute-api.us-east-1.amazonaws.com/auth/unsubscribe?token={token}"
+                  unsub_url = f"https://api.allbyte.studio/auth/unsubscribe?token={token}"
 
                   text_body = f"""{title}
           {description}
@@ -2482,6 +2490,47 @@ Resources:
         ThrottlingBurstLimit: 20
         ThrottlingRateLimit: 10
 
+  # --- Custom domain for the HTTP API ---
+  # Why this exists: the OAuth start Lambda builds redirect_uri from the request's
+  # domainName, and Google's consent screen shows that domain to the user as
+  # "to continue to ...". Without a custom domain, users see the raw API Gateway
+  # hostname (wj3xkrm1r1.execute-api...). Routing through api.allbyte.studio
+  # makes the consent screen read clearly as AllByte.
+  ApiCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref ApiCustomDomain
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref ApiCustomDomain
+          HostedZoneId: !Ref HostedZoneId
+
+  ApiDomainName:
+    Type: AWS::ApiGatewayV2::DomainName
+    Properties:
+      DomainName: !Ref ApiCustomDomain
+      DomainNameConfigurations:
+        - CertificateArn: !Ref ApiCertificate
+          EndpointType: REGIONAL
+          SecurityPolicy: TLS_1_2
+
+  ApiDomainMapping:
+    Type: AWS::ApiGatewayV2::ApiMapping
+    Properties:
+      ApiId: !Ref HttpApi
+      DomainName: !Ref ApiDomainName
+      Stage: !Ref ApiStage
+
+  ApiDomainRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref ApiCustomDomain
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ApiDomainName.RegionalDomainName
+        HostedZoneId: !GetAtt ApiDomainName.RegionalHostedZoneId
+
   # Auth routes
   SignupIntegration:
     Type: AWS::ApiGatewayV2::Integration
@@ -3349,3 +3398,6 @@ Outputs:
   PacksBucketName:
     Description: "S3 bucket where .pck files live (private; access only via signed URLs)"
     Value: !Ref PacksBucket
+  ApiCustomDomainUrl:
+    Description: "Custom domain URL for the API. Use this in src/lib/auth.svelte.ts and as the OAuth redirect URI base."
+    Value: !Sub "https://${ApiCustomDomain}"

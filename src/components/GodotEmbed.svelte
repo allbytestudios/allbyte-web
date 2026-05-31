@@ -12,6 +12,19 @@
   let loading = $state(true);
   let error = $state("");
   let iframeEl = $state<HTMLIFrameElement | null>(null);
+  // After the iframe finishes loading we hold the overlay open as a
+  // "Tap to play" gate. This guarantees a real user-gesture context for
+  // the fullscreen + orientation-lock request, which is what reliably
+  // hides the Android status bar and nav bar. The first-pointerdown
+  // listener below was firing only after a user tapped the gamepad, by
+  // which point the bars had already been visible for several seconds.
+  let userActivated = $state(false);
+
+  function startPlay() {
+    if (userActivated) return;
+    userActivated = true;
+    tryEnterFullscreen();
+  }
 
   // Served from /godot/ in both dev and prod. Astro dev sets the required
   // COOP/COEP headers via vite.server.headers; CloudFront sets them in prod.
@@ -187,18 +200,29 @@
 </script>
 
 <div class="godot-container">
-  {#if loading}
-    <div class="loading-screen">
+  {#if (loading || !userActivated) && !error}
+    <button
+      type="button"
+      class="loading-screen"
+      onclick={startPlay}
+      aria-label={loading ? "Loading game" : "Tap to play"}
+      disabled={loading}
+    >
       <div class="loading-title">AllByte Studios</div>
-      <div class="loading-subtitle">Loading game...</div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: 30%"></div>
-      </div>
-    </div>
+      {#if loading}
+        <div class="loading-subtitle">Loading game...</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 30%"></div>
+        </div>
+      {:else}
+        <div class="tap-to-play">Tap to play</div>
+        <div class="loading-subtitle subtle">Goes fullscreen on tap</div>
+      {/if}
+    </button>
   {/if}
 
   {#if error}
-    <div class="loading-screen">
+    <div class="loading-screen error">
       <div class="loading-title">AllByte Studios</div>
       <p class="loading-note">{error}</p>
     </div>
@@ -241,6 +265,43 @@
     background: #0a0e17;
     color: #e0e7ff;
     font-family: "Courier New", monospace;
+    /* When the element is a <button> (the tap-to-play affordance), reset
+       browser default button styles so it looks like a normal screen. */
+    border: 0;
+    width: 100%;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .loading-screen:disabled {
+    cursor: default;
+  }
+
+  .loading-screen:not(:disabled):active {
+    background: #131a26;
+  }
+
+  .tap-to-play {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.75rem;
+    color: #a7f3d0;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.02em;
+    animation: tap-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes tap-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tap-to-play { animation: none; }
+  }
+
+  .subtle {
+    opacity: 0.45;
   }
 
   .loading-title {

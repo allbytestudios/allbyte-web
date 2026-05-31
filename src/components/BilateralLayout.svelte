@@ -11,19 +11,6 @@
   import { subscribeToFile } from "../lib/testEvents";
   import { onMount } from "svelte";
 
-  const buildDateLabel = (() => {
-    const raw = (gameVersion as { buildDate?: string | null }).buildDate;
-    if (!raw) return null;
-    const d = new Date(raw);
-    if (Number.isNaN(d.getTime())) return null;
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    return `${y}-${m}-${day} ${hh}:${mm}`;
-  })();
-
   let isMobile = $state(false);
   let showLoginModal = $state(false);
   let loginMode = $state("signin");
@@ -555,16 +542,13 @@
         </div>
       </div>
       <div class="demo-actions">
-        {#if buildDateLabel}
-          <span class="build-date" title={`Built ${buildDateLabel}`}>Built {buildDateLabel}</span>
-        {/if}
         <div class="demo-cta-group">
           <button class="demo-cta play-cta" type="button" aria-label="Play in browser">
-            Play In Browser &#8594;
+            Play In Browser
           </button>
           {#if installPrompt && !isInstalled}
             <button class="demo-cta install-cta" type="button" onclick={(e) => { e.stopPropagation(); handleInstallClick(); }} aria-label="Install Chronicles as an app on this device">
-              Install as App &#8595;
+              Install as App
             </button>
           {/if}
         </div>
@@ -1364,22 +1348,6 @@
     display: block;
   }
 
-  /* Build date label — bottom-left of the demo-actions row, mirrored
-     from the Steam wishlist button on the right. Same font + color as
-     the Play Now CTA so they read as a matched pair. */
-  .build-date {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.1rem;
-    color: var(--engine-accent);
-    letter-spacing: 0.02em;
-    cursor: help;
-    white-space: nowrap;
-  }
-
   /* Thin overlay badges in the top-right of the demo button */
   .overlay-badges {
     position: absolute;
@@ -1513,9 +1481,9 @@
   }
 
 
-  /* Group containing Play In Browser + Install as App. Centered in the
-     middle of the actions row; build-date (absolute left) and Steam button
-     (absolute right) flank it without crowding the links. */
+  /* The two boxed CTAs (Play In Browser, Install as App) are centered
+     side-by-side. demo-actions has no other children now (build-date and
+     Steam button moved or removed) so the group gets the full width. */
   .demo-cta-group {
     display: flex;
     align-items: center;
@@ -1529,24 +1497,23 @@
     font-weight: 400;
     color: var(--engine-accent);
     letter-spacing: 0.02em;
-    text-decoration: none;
-    transition: text-decoration 0.2s;
-    background: none;
-    border: 0;
-    padding: 0;
+    background: transparent;
+    border: 1px solid var(--engine-border);
+    padding: 0.5rem 1.1rem;
     cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
   }
 
   .demo-cta:hover {
-    text-decoration: underline;
+    border-color: var(--engine-accent);
+    background: rgba(167, 243, 208, 0.1);
   }
 
-  /* Install link sits next to Play with the same visual weight (peers,
-     not primary/secondary) — Drew's UX call. The subtle separation is
-     just the gap in the flex container above. */
+  /* Install sits next to Play as a peer. Same boxed treatment as Play —
+     they read as two equal choices side-by-side (play now or install for
+     later) rather than primary/secondary. */
   .install-cta {
-    /* Same .demo-cta base; this class is here in case we want a slight
-       tonal variation later (e.g., faded color until hover). */
+    /* No visual difference from .demo-cta; class kept for future hooks. */
   }
 
 
@@ -1874,16 +1841,6 @@
       align-items: center;
       gap: 0.85rem;
       padding: 0.85rem 1rem;
-    }
-
-    .demo-actions .build-date {
-      position: static;
-      transform: none;
-      top: auto;
-      left: auto;
-      order: 2;
-      font-size: 0.95rem;
-      opacity: 0.8;
     }
 
     .demo-actions .demo-cta-group {

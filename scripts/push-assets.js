@@ -299,3 +299,34 @@ if (invalidationPaths.size === 0) {
 }
 
 console.log(`\nAsset push complete${dryRun ? " (dry run, nothing was uploaded)" : ""}.`);
+
+// Post-deploy smoke. Hits the live URL via Playwright and waits for
+// the Godot engine to actually boot, then scrapes window._consoleLogs
+// for the MD5/encryption failure signatures. Catches the class of bugs
+// the in-script version-stamp smoke misses — current_version.txt loads
+// independent of the PCK, so a wrong-key build still shows the correct
+// version while the engine is dying silently in the iframe.
+//
+// Skip with SKIP_SMOKE=1 (e.g., asset-only deploys where you're
+// confident the game itself didn't change). Exits non-zero on failure
+// but the deploy is already live by then — manual intervention.
+if (!dryRun && invalidationPaths.size > 0 && process.env.SKIP_SMOKE !== "1") {
+  // Give CloudFront ~5s to start propagating before hitting the URL.
+  // Most edges flip within seconds for must-revalidate HTML; the heavy
+  // /godot/* assets are usually already warm. Not a guarantee — if smoke
+  // fails on a cold edge, just rerun `npm run smoke:prod`.
+  console.log("\nWaiting 5s for CloudFront to start propagating...");
+  execSync("node -e \"setTimeout(()=>{}, 5000)\"", { stdio: "ignore" });
+  console.log("[push-assets] Running post-deploy smoke (~30-60s)...");
+  try {
+    execSync(`python "${join(root, "scripts", "smoke_prod.py")}"`, {
+      stdio: "inherit",
+    });
+  } catch {
+    console.error(
+      "\n[push-assets] SMOKE FAILED. The deploy is already live but " +
+        "the engine isn't booting cleanly. Investigate before users hit it."
+    );
+    process.exitCode = 1;
+  }
+}

@@ -18,7 +18,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test:a11y": "pytest tests/e2e/test_accessibility.py -v",
-    "test:e2e": "pytest tests/e2e/ -v"
+    "test:e2e": "pytest tests/e2e/ -v",
+    "smoke:prod": "python scripts/smoke_prod.py"
   },
   "repository": {
     "type": "git",

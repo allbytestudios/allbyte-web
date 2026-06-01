@@ -125,8 +125,8 @@ if (existsSync(godotDir) && existsSync(godotIndex)) {
   // 2b. Consistency gate. The shim file and HTML must agree on whether
   // obfuscation is active. A mismatch reproduces the exact 2026-05-31 bug, so
   // halt before uploading to S3.
+  const shimExists = existsSync(shimPath);
   if (!dryRun) {
-    const shimExists = existsSync(shimPath);
     const htmlRefsShim = readFileSync(godotIndex, "utf8").includes("pck-key-shim.js");
     if (shimExists !== htmlRefsShim) {
       console.error(
@@ -155,6 +155,32 @@ if (existsSync(godotDir) && existsSync(godotIndex)) {
       `--cache-control "public, max-age=0, must-revalidate" ` +
       `--content-type "text/html"`
   );
+
+  // 2d. Orphan-shim cleanup. `aws s3 sync` by default doesn't delete
+  // files that exist in S3 but not locally, so when the obfuscator self-
+  // heals and removes pck-key-shim.js locally, S3 keeps the stale file.
+  // The 2026-06-01 black screen was caused by a stale shim on S3
+  // (May 16) being loaded by any cached old HTML that still referenced
+  // it — old shim XORs the new plaintext-key WASM, scrambling 32 bytes,
+  // engine boots with corrupted key, every PCK MD5 mismatches.
+  //
+  // If pck-key-shim.js isn't present locally, delete it from S3 too.
+  // Cheap belt-and-suspenders; rm against an absent key is a no-op.
+  if (!shimExists) {
+    if (dryRun) {
+      console.log(`[dry-run] aws s3 rm s3://${bucket}/godot/pck-key-shim.js`);
+    } else {
+      try {
+        execSync(
+          `aws s3 rm s3://${bucket}/godot/pck-key-shim.js --region ${region}`,
+          { stdio: "inherit" }
+        );
+      } catch {
+        // 'No object found' is fine — that's the steady state.
+      }
+    }
+  }
+
   // Invalidate /godot/* so existing sessions pick up new pck/wasm hashes
   // even though S3 already has the new bytes. Also hit /play/ since its
   // cached HTML references the export.

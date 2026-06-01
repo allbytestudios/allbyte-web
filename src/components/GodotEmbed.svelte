@@ -217,6 +217,22 @@
   let loadPanelVisible = $state(true);
   let loadPoller: ReturnType<typeof setInterval> | null = null;
 
+  // Download progress: observe completed resource fetches inside the
+  // iframe and sum the bytes. PerformanceObserver fires per-resource on
+  // completion, so the progress bar advances in chunks rather than
+  // smoothly — but that's good enough to convince a user that something
+  // is happening, and it's the only same-origin path that doesn't
+  // require modifying the iframe's HTML to wrap fetch().
+  //
+  // EXPECTED_DOWNLOAD_BYTES is a soft target — actual total depends on
+  // the current export. Today it's roughly index.wasm (~37MB) +
+  // index.pck (~24MB) + Laria.pck (~43MB) = ~104MB. The progress bar
+  // caps visually at 100% and the phase text takes over once downloads
+  // complete (WASM compile + engine init are CPU work, no fetch events).
+  const EXPECTED_DOWNLOAD_BYTES = 105 * 1024 * 1024;
+  let bytesDownloaded = $state(0);
+  let filesDownloaded = $state(0);
+
   function pollLoadStatus() {
     loadElapsed = Math.floor((Date.now() - loadStart) / 1000);
 
@@ -234,6 +250,29 @@
       scene = w.gameState?.scene ?? null;
       logs = Array.isArray(w._consoleLogs) ? w._consoleLogs : [];
       bootShell = !!iframeEl.contentDocument?.getElementById("chronicles-shell");
+
+      // Sum bytes for resources fetched inside the iframe under /godot/*.
+      // transferSize is what crossed the wire (0 for memory-cache hits and
+      // for SW cache hits, so on warm cache the progress bar effectively
+      // stays at 0 — that's correct, because no actual download happened).
+      // encodedBodySize is the network payload size; we fall back to it
+      // when transferSize is unavailable.
+      const perf = w.performance;
+      if (perf && typeof perf.getEntriesByType === "function") {
+        const entries = perf.getEntriesByType("resource");
+        let totalBytes = 0;
+        let count = 0;
+        for (const e of entries) {
+          if (typeof e.name !== "string" || !e.name.includes("/godot/")) continue;
+          const sz = e.transferSize || e.encodedBodySize || 0;
+          if (sz > 0) {
+            totalBytes += sz;
+            count++;
+          }
+        }
+        bytesDownloaded = totalBytes;
+        filesDownloaded = count;
+      }
     } catch {
       /* iframe still booting / not accessible yet */
     }
@@ -301,10 +340,21 @@
     ></iframe>
     <VirtualGamepad iframe={iframeEl} />
     {#if loadPanelVisible}
+      {@const pct = Math.min(100, Math.round((bytesDownloaded / EXPECTED_DOWNLOAD_BYTES) * 100))}
+      {@const mbDl = (bytesDownloaded / (1024 * 1024)).toFixed(1)}
+      {@const mbTotal = (EXPECTED_DOWNLOAD_BYTES / (1024 * 1024)).toFixed(0)}
       <div class="load-status" role="status" aria-live="polite">
         <div class="load-status-line load-status-primary">
           {loadStatus} <span class="load-status-elapsed">{loadElapsed}s</span>
         </div>
+        {#if bytesDownloaded > 0}
+          <div class="load-progress" aria-label="Download progress">
+            <div class="load-progress-fill" style="width: {pct}%"></div>
+            <div class="load-progress-label">
+              Downloading: {mbDl} MB / ~{mbTotal} MB ({pct}%, {filesDownloaded} {filesDownloaded === 1 ? "file" : "files"})
+            </div>
+          </div>
+        {/if}
         {#if loadLogTail.length > 0}
           <div class="load-status-logs">
             {#each loadLogTail as line}
@@ -431,5 +481,39 @@
     overflow: hidden;
     text-overflow: ellipsis;
     text-overflow: clip;
+  }
+
+  .load-progress {
+    margin-top: 0.4rem;
+    position: relative;
+    height: 14px;
+    background: rgba(167, 243, 208, 0.08);
+    border: 1px solid rgba(167, 243, 208, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .load-progress-fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(167, 243, 208, 0.55) 0%,
+      rgba(167, 243, 208, 0.8) 100%
+    );
+    transition: width 0.4s ease;
+  }
+
+  .load-progress-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: rgba(10, 14, 23, 0.85);
+    font-weight: bold;
+    text-shadow: 0 0 1px rgba(255, 255, 255, 0.4);
+    pointer-events: none;
   }
 </style>

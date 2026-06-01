@@ -5,6 +5,7 @@ pubDate: 2026-06-02T00:00:00Z
 category: "engineering"
 devlog: "studio"
 tags: ["pwa", "mobile", "godot", "service-worker", "architecture"]
+draft: true
 ---
 
 The Chronicles of Nesis was always going to be a desktop game. Tactical RPGs live on mouse + keyboard. The Godot project is 1270×920, the UI was built for hover states, the controls assume a precision input. I never set out to make a mobile game.

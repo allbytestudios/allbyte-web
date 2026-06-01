@@ -99,16 +99,22 @@
     }
   }
 
-  // First-interaction fullscreen + orientation lock. For installed PWA
-  // users the manifest's display: "fullscreen" already hides Android
-  // system chrome (status + nav bars), so this is a no-op for them. For
-  // browser-tab users (not installed) it kicks in on the first touch
-  // anywhere — the Fullscreen API and orientation.lock both require user
-  // activation, so we hook the first pointerdown to satisfy that.
+  // First-interaction fullscreen + orientation lock — MOBILE ONLY.
+  // Owner spec: fullscreen is default on mobile browser + mobile PWA,
+  // NOT on desktop browser or desktop PWA. Desktop users keep their
+  // windowed experience; F11 is still available if they want it.
+  // Manifest is "standalone" now, so installed PWAs don't auto-
+  // fullscreen via the manifest either — JS gates it on viewport.
+  function isMobileViewport(): boolean {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(pointer: coarse) and (max-width: 1100px)").matches;
+  }
+
   let fullscreenAttempted = false;
   function tryEnterFullscreen() {
     if (fullscreenAttempted) return;
     fullscreenAttempted = true;
+    if (!isMobileViewport()) return;
     try {
       const el = document.documentElement;
       if (!document.fullscreenElement && el.requestFullscreen) {

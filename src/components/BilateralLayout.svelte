@@ -147,7 +147,18 @@
     requestFullscreenLandscape();
   }
 
+  /** True for touch devices on phone/small-tablet screens. Same gate the
+   *  VirtualGamepad uses, so fullscreen + virtual controls turn on
+   *  together. Owner spec: "Fullscreen should be default on mobile
+   *  browser and mobile PWA, but not assumed on desktop browser or
+   *  desktop PWA." Desktop users can still F11 if they want it. */
+  function isMobileViewport(): boolean {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(pointer: coarse) and (max-width: 1100px)").matches;
+  }
+
   async function requestFullscreenLandscape() {
+    if (!isMobileViewport()) return;
     try {
       const el = document.documentElement;
       if (el.requestFullscreen) {

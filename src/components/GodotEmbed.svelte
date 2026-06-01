@@ -138,6 +138,12 @@
       window.addEventListener("keydown", handleEscape);
     }
 
+    // Start the load-status poller. 500ms cadence balances responsiveness
+    // (Drew sees fresh log lines within half a second) against same-origin
+    // poll overhead (touching iframe DOM is cheap but not free).
+    loadPoller = setInterval(pollLoadStatus, 500);
+    pollLoadStatus();
+
     if (!import.meta.env.DEV) return;
 
     sseUnsub = subscribeToFile("godot/reload", doReload);
@@ -156,6 +162,7 @@
     sseUnsub?.();
     messageOff?.();
     teardownSaveBridge();
+    stopLoadPolling();
     if (typeof window !== "undefined") {
       window.removeEventListener("pointerdown", tryEnterFullscreen);
       window.removeEventListener("keydown", handleEscape);
@@ -190,6 +197,80 @@
     loading = false;
     error = "Game failed to load.";
   }
+
+  // Loading status panel — Drew flagged 2026-06-01 that he wants info
+  // visible during the load phase, both for debugging and for users to
+  // feel like something's happening. The Chronicles boot shell inside
+  // the iframe shows the dot/icon animation; this panel sits BELOW that
+  // (semi-transparent strip at the bottom of the play container) with:
+  //   - elapsed wall-clock seconds since the iframe started loading
+  //   - last few lines of window._consoleLogs (the GDScript print() trail
+  //     that index.html's ARC-DEV-CONSOLE script captures)
+  //   - a current-phase heuristic from what we can poll same-origin
+  //
+  // Hides as soon as the engine reports a scene via window.gameState
+  // (set by the title scene's _ready).
+  const loadStart = Date.now();
+  let loadElapsed = $state(0);
+  let loadStatus = $state("Starting...");
+  let loadLogTail = $state<string[]>([]);
+  let loadPanelVisible = $state(true);
+  let loadPoller: ReturnType<typeof setInterval> | null = null;
+
+  function pollLoadStatus() {
+    loadElapsed = Math.floor((Date.now() - loadStart) / 1000);
+
+    if (!iframeEl?.contentWindow) {
+      loadStatus = "Waiting for iframe...";
+      return;
+    }
+
+    // Same-origin: we can read iframe.contentWindow.* directly.
+    let scene: string | null = null;
+    let logs: string[] = [];
+    let bootShell = true;
+    try {
+      const w = iframeEl.contentWindow as any;
+      scene = w.gameState?.scene ?? null;
+      logs = Array.isArray(w._consoleLogs) ? w._consoleLogs : [];
+      bootShell = !!iframeEl.contentDocument?.getElementById("chronicles-shell");
+    } catch {
+      /* iframe still booting / not accessible yet */
+    }
+
+    // Game has reported a scene -> engine is up and rendering. Hide the
+    // panel for good.
+    if (scene) {
+      loadStatus = `Ready: ${scene}`;
+      loadPanelVisible = false;
+      stopLoadPolling();
+      return;
+    }
+
+    // Show the last 3 log lines (most recent at bottom). Trim each line
+    // so the panel doesn't get wide.
+    loadLogTail = logs.slice(-3).map((l) => String(l).slice(0, 110));
+
+    // Heuristic phase indicator based on elapsed time + boot-shell state.
+    // We can't observe Godot's WASM compile or PCK load directly, but the
+    // boot-shell DOM goes away when the engine has resolved startGame().
+    if (loadElapsed < 3) {
+      loadStatus = "Loading game files...";
+    } else if (loadElapsed < 12) {
+      loadStatus = "Compiling engine...";
+    } else if (bootShell) {
+      loadStatus = "Initializing...";
+    } else {
+      loadStatus = "Loading title scene...";
+    }
+  }
+
+  function stopLoadPolling() {
+    if (loadPoller) {
+      clearInterval(loadPoller);
+      loadPoller = null;
+    }
+  }
 </script>
 
 <div class="godot-container">
@@ -219,6 +300,20 @@
       allow="cross-origin-isolated"
     ></iframe>
     <VirtualGamepad iframe={iframeEl} />
+    {#if loadPanelVisible}
+      <div class="load-status" role="status" aria-live="polite">
+        <div class="load-status-line load-status-primary">
+          {loadStatus} <span class="load-status-elapsed">{loadElapsed}s</span>
+        </div>
+        {#if loadLogTail.length > 0}
+          <div class="load-status-logs">
+            {#each loadLogTail as line}
+              <div class="load-status-log-line">{line}</div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -288,5 +383,53 @@
     height: 100%;
     border: none;
     display: block;
+  }
+
+  /* Load status overlay — sits at the bottom of the play container while
+     the engine is still booting. Semi-transparent strip so the Chronicles
+     boot shell inside the iframe stays visible above it (the dot + icon
+     animation reassures the user that something's happening; this panel
+     adds debug-grade detail without overpowering the boot shell). */
+  .load-status {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    background: rgba(10, 14, 23, 0.78);
+    color: rgba(224, 231, 255, 0.92);
+    font-family: "Courier New", monospace;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid rgba(167, 243, 208, 0.18);
+    pointer-events: none;
+    max-height: 35%;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+  }
+
+  .load-status-primary {
+    color: #a7f3d0;
+    font-weight: bold;
+  }
+
+  .load-status-elapsed {
+    color: rgba(224, 231, 255, 0.55);
+    font-weight: normal;
+    margin-left: 0.4rem;
+  }
+
+  .load-status-logs {
+    margin-top: 0.35rem;
+    color: rgba(224, 231, 255, 0.7);
+    font-size: 0.72rem;
+  }
+
+  .load-status-log-line {
+    white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-overflow: clip;
   }
 </style>

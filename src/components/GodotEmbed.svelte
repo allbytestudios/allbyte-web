@@ -262,16 +262,41 @@
         const entries = perf.getEntriesByType("resource");
         let totalBytes = 0;
         let count = 0;
+        let mostRecent: { name: string; bytes: number } | null = null;
         for (const e of entries) {
           if (typeof e.name !== "string" || !e.name.includes("/godot/")) continue;
           const sz = e.transferSize || e.encodedBodySize || 0;
           if (sz > 0) {
             totalBytes += sz;
             count++;
+            mostRecent = { name: e.name, bytes: sz };
           }
         }
-        bytesDownloaded = totalBytes;
-        filesDownloaded = count;
+        // Only post if the numbers actually moved — avoids spamming the
+        // iframe with identical messages every 500ms when no fetches are
+        // in flight (e.g. mid-compile, mid-scene-init).
+        if (totalBytes !== bytesDownloaded || count !== filesDownloaded) {
+          bytesDownloaded = totalBytes;
+          filesDownloaded = count;
+          // Owner spec (2026-06-01): web reports transport-level progress,
+          // game owns the visible loading UI. Emit the postMessage so Arc's
+          // Chronicles boot shell can drive a real progress bar instead of
+          // the time-based dot animation. Same-origin so safe to use "*".
+          try {
+            (iframeEl.contentWindow as any).postMessage(
+              {
+                type: "allbyte:download-progress",
+                bytesDownloaded: totalBytes,
+                expectedBytes: EXPECTED_DOWNLOAD_BYTES,
+                filesDownloaded: count,
+                currentFile: mostRecent?.name ?? null,
+              },
+              "*",
+            );
+          } catch {
+            /* iframe may not be ready to receive */
+          }
+        }
       }
     } catch {
       /* iframe still booting / not accessible yet */

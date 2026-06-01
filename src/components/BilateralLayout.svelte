@@ -278,7 +278,6 @@
 
   let tierCounts = $state({ initiate: 0, hero: 0, legend: 0 });
 
-  let anthemAudio;
   let cursorAudio;
   let audioReady = false;
 
@@ -289,13 +288,9 @@
   function initAudio() {
     if (audioReady) return;
     audioReady = true;
-    anthemAudio = new Audio("/Anthem2.mp3");
-    anthemAudio.loop = true;
-    anthemAudio.volume = 0.7;
     cursorAudio = new Audio("/cursor-move.wav");
     cursorAudio.volume = 0.21;
-    // Play and immediately pause to unlock both
-    anthemAudio.play().then(() => anthemAudio.pause()).catch(() => {});
+    // Play and immediately pause to unlock playback in the same gesture.
     cursorAudio.play().then(() => { cursorAudio.pause(); cursorAudio.currentTime = 0; }).catch(() => {});
   }
 
@@ -313,7 +308,6 @@
 
     return () => {
       window.removeEventListener("resize", checkMobile);
-      if (anthemAudio) { anthemAudio.pause(); }
       if (cursorAudio) { cursorAudio.pause(); }
     };
   });
@@ -376,18 +370,10 @@
 
   function onDemoEnter() {
     demoHovered = true;
-    if (anthemAudio && audioReady && !window.__musicPlayerPlaying) {
-      anthemAudio.currentTime = 0;
-      anthemAudio.play().catch(() => {});
-    }
   }
 
   function onDemoLeave() {
     demoHovered = false;
-    if (anthemAudio) {
-      anthemAudio.pause();
-      anthemAudio.currentTime = 0;
-    }
   }
 
   function playCursor() {

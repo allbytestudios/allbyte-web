@@ -268,6 +268,46 @@
   let faceHeld = $state<FaceBtn | null>(null);
   let faceTouchId: number | null = null;
 
+  // Auto-repeat for face buttons. Touch events don't fire while a finger
+  // stays still on the screen, so without this a held button only fires
+  // one keydown — which means equip → unequip → equip patterns require
+  // physically lifting between each tap. Owner spec (2026-06-01): holding
+  // should re-trigger after a brief delay, matching keyboard auto-repeat.
+  //
+  // Delay before first repeat is generous so quick taps don't accidentally
+  // repeat. Interval after that is snappy enough for menu navigation
+  // without blasting through items. The d-pad doesn't need this because
+  // movement uses Input.is_action_pressed (continuous) and the touch
+  // layer dispatches via touchmove anyway.
+  const FACE_REPEAT_DELAY_MS = 400;
+  const FACE_REPEAT_INTERVAL_MS = 200;
+  let faceRepeatTimer: ReturnType<typeof setTimeout> | null = null;
+  let faceRepeatInterval: ReturnType<typeof setInterval> | null = null;
+
+  function startFaceRepeat(btn: FaceBtn) {
+    stopFaceRepeat();
+    faceRepeatTimer = setTimeout(() => {
+      faceRepeatInterval = setInterval(() => {
+        // Re-press: keyup then keydown so the engine sees a clean edge.
+        // The held set already has "f-${btn}" so we bypass the
+        // press/release helpers (they'd no-op due to the held check).
+        dispatchKey("keyup", FACE_KEYS[btn]);
+        dispatchKey("keydown", FACE_KEYS[btn]);
+      }, FACE_REPEAT_INTERVAL_MS);
+    }, FACE_REPEAT_DELAY_MS);
+  }
+
+  function stopFaceRepeat() {
+    if (faceRepeatTimer) {
+      clearTimeout(faceRepeatTimer);
+      faceRepeatTimer = null;
+    }
+    if (faceRepeatInterval) {
+      clearInterval(faceRepeatInterval);
+      faceRepeatInterval = null;
+    }
+  }
+
   function updateFaceFromOffset(dx: number, dy: number) {
     const DEADZONE = 8;
     const dist = Math.hypot(dx, dy);
@@ -283,6 +323,14 @@
     if (faceHeld !== null) release(`f-${faceHeld}`, FACE_KEYS[faceHeld]);
     if (next !== null) press(`f-${next}`, FACE_KEYS[next]);
     faceHeld = next;
+    // Manage the auto-repeat timer: start when a button becomes held,
+    // stop when it leaves (either to a different button — its own timer
+    // restarts — or to nothing on release).
+    if (next !== null) {
+      startFaceRepeat(next);
+    } else {
+      stopFaceRepeat();
+    }
   }
 
   function getTrackedFaceTouch(e: TouchEvent): Touch | null {

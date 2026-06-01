@@ -64,6 +64,19 @@
     // and call apply when ready.
     (window as any).allbyteApplyUpdate = applyUpdate;
 
+    // Debug entrypoint: fakes a service-worker activation so the full
+    // update-available -> game-handler -> applyUpdate flow can be
+    // exercised without deploying twice. Game-side handler reacts
+    // identically to a real SW takeover.
+    // Usage from any console (page or iframe):
+    //   window.__simulateUpdateAvailable()
+    // or from GDScript:
+    //   JavaScriptBridge.eval("parent.__simulateUpdateAvailable()")
+    (window as any).__simulateUpdateAvailable = () => {
+      console.log("[UpdateOverlay] Simulating update-available signal");
+      onControllerChange();
+    };
+
     if (typeof navigator === "undefined" || !navigator.serviceWorker) return;
     // Snapshot whether we already have a controller. If yes, any subsequent
     // controllerchange is a real update. If no, the first event is the
@@ -84,6 +97,7 @@
     return () => {
       navigator.serviceWorker.removeEventListener("controllerchange", onChange);
       delete (window as any).allbyteApplyUpdate;
+      delete (window as any).__simulateUpdateAvailable;
     };
   });
 

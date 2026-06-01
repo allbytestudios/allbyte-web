@@ -249,40 +249,28 @@
   let musicHovered = $state(false);
   let fontHovered = $state(false);
 
-  let notifyMode = $state(false);
-  let notifyPrefs = $state<Record<string, boolean>>({
-    devlog: true, testsuite: true, music: true, artwork: true,
-  });
   let notifySaving = $state(false);
 
-  function enterNotifyMode() {
-    const existing = auth.currentUser?.notificationPreferences;
-    notifyPrefs = existing
-      ? { devlog: true, testsuite: true, music: true, artwork: true, ...existing }
-      : { devlog: true, testsuite: true, music: true, artwork: true };
-    notifyMode = true;
-  }
+  // Owner spec (2026-06-01): "let's change the Email Me Updates to just
+  // flag people boolean wanting updates.. no need for the checkbox flow."
+  // The per-category checkbox UI was overkill; subscribed/unsubscribed
+  // is the only signal that actually drives behavior right now. Backend
+  // still stores Record<string, boolean>, so we set every known category
+  // to true on subscribe and null on unsubscribe — preserves the wire
+  // contract without changing Lambdas.
+  const ALL_NOTIFY_CATEGORIES = [
+    "chronicles", "godot-and-claude", "studio", "music", "artwork", "fonts",
+  ];
 
-  function cancelNotifyMode() {
-    notifyMode = false;
-  }
-
-  async function saveNotifications() {
+  async function toggleSubscribed() {
+    if (notifySaving) return;
     notifySaving = true;
-    const err = await saveNotificationPrefs(notifyPrefs);
+    const isSubscribed = !!auth.currentUser?.notificationPreferences;
+    const newPrefs = isSubscribed
+      ? null
+      : Object.fromEntries(ALL_NOTIFY_CATEGORIES.map((k) => [k, true]));
+    await saveNotificationPrefs(newPrefs);
     notifySaving = false;
-    if (!err) notifyMode = false;
-  }
-
-  async function stopAllNotifications() {
-    notifySaving = true;
-    const err = await saveNotificationPrefs(null);
-    notifySaving = false;
-    if (!err) notifyMode = false;
-  }
-
-  function togglePref(key: string) {
-    if (notifyMode) notifyPrefs[key] = !notifyPrefs[key];
   }
 
   let { devlogTotal = 0, artCounts = { music: 0, artwork: 0 } } = $props();
@@ -552,10 +540,16 @@
   </div>
 
   <div class="notify-bar">
-    {#if !notifyMode}
       <div class="notify-bar-row">
         {#if auth.currentUser}
-          <button class="notify-bar-btn" onclick={enterNotifyMode}>&#9993; Email Me Updates{#if auth.currentUser.notificationPreferences} (On){/if}</button>
+          <button
+            class="notify-bar-btn"
+            onclick={toggleSubscribed}
+            disabled={notifySaving}
+            title={auth.currentUser.notificationPreferences ? "Unsubscribe from email updates" : "Subscribe to email updates"}
+          >
+            &#9993; {auth.currentUser.notificationPreferences ? "Subscribed ✓" : "Email Me Updates"}
+          </button>
           <!-- Legend's Square hidden until the feature is complete and in the subscription promise -->
         {/if}
         <a href="https://discord.gg/qjRmcFaB7Z" class="notify-bar-btn discord-notify-btn" target="_blank" rel="noopener noreferrer" title="Join the AllByte Discord server">
@@ -571,17 +565,6 @@
           Steam
         </a>
       </div>
-    {:else if auth.currentUser}
-      <div class="notify-bar-actions">
-        <button class="notify-bar-save" onclick={saveNotifications} disabled={notifySaving}>{notifySaving ? "Saving..." : "Save"}</button>
-        <button class="notify-bar-cancel" onclick={cancelNotifyMode}>Cancel</button>
-        {#if auth.currentUser.notificationPreferences}
-          <button class="notify-bar-stop" onclick={stopAllNotifications} disabled={notifySaving}>Stop all</button>
-        {/if}
-      </div>
-      <span class="notify-bar-prompt">&#9993; Which areas do you want to be notified about new content?</span>
-      <span class="notify-bar-prompt">(subscriptions help me know what content people are interested in)</span>
-    {/if}
   </div>
 
   {#if isMobile}
@@ -591,42 +574,38 @@
       <h2 class="panel-title heart-title">Art<br/><span class="panel-sub">(made without AI)</span></h2>
       <img src="/Flourish.png" alt="" class="flourish flourish-right" />
       <div class="mobile-links">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("music")}>
-          <a href="/music/" class="link-card heart-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
+        <div class="card-wrapper">
+          <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
             <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
             <p>Original compositions for The Chronicles of Nesis.</p>
             <span class="entry-count heart-count">({artCounts.music} tracks)</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.music} /></label>{/if}
         </div>
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("artwork")}>
-          <a href="/artwork/" class="link-card heart-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
+        <div class="card-wrapper">
+          <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
             <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
             <p>Sprites, pre-rendered backgrounds &amp; the ModernGoth typeface.</p>
             <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.artwork} /></label>{/if}
         </div>
       </div>
     </div>
     <div class="mobile-panel engine-bg">
       <h2 class="panel-title engine-title"><span class="terminal-prompt">$</span> Dev<br/><span class="panel-sub">(built with AI)</span></h2>
       <div class="mobile-links">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("devlog")}>
-          <a href="/devlog/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
+        <div class="card-wrapper">
+          <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Devlog <span class="cursor-arrow"></span></h3>
             <p>Engineering, workflow, strategy, narrative &amp; craft posts.</p>
             <span class="entry-count">({devlogTotal} {devlogTotal === 1 ? "entry" : "entries"})</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.devlog} /></label>{/if}
         </div>
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("testsuite")}>
-          <a href="/test/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
+        <div class="card-wrapper">
+          <a href="/test/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Test Suite Dashboard <span class="cursor-arrow"></span></h3>
             <p>Live build health across three runner tiers with milestone progress &amp; blockers.</p>
             <span class="entry-count">(public summary · Hero+ for depth)</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.testsuite} /></label>{/if}
         </div>
       </div>
     </div>
@@ -643,44 +622,40 @@
       </div>
 
       <div class="cell engine-bg">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("devlog")}>
-          <a href="/devlog/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
+        <div class="card-wrapper">
+          <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Devlog <span class="cursor-arrow"></span></h3>
             <p>Engineering, workflow, strategy, narrative &amp; craft posts — all in one feed with tag filters.</p>
             <span class="entry-count">({devlogTotal} {devlogTotal === 1 ? "entry" : "entries"})</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.devlog} /></label>{/if}
         </div>
       </div>
       <div class="cell heart-bg">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("music")}>
-          <a href="/music/" class="link-card heart-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
+        <div class="card-wrapper">
+          <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
             <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
             <p>Original compositions for The Chronicles of Nesis.</p>
             <span class="entry-count heart-count">({artCounts.music} tracks)</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.music} /></label>{/if}
         </div>
       </div>
 
       <div class="cell engine-bg">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("testsuite")}>
-          <a href="/test/" class="link-card engine-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={playCursor}>
+        <div class="card-wrapper">
+          <a href="/test/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Dev Console <span class="cursor-arrow"></span></h3>
             <p>Tests, agents, tickets &amp; milestones — live build status at a glance.</p>
             <span class="entry-count">(public overview · Hero+ for depth)</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.testsuite} /></label>{/if}
         </div>
       </div>
       <div class="cell heart-bg">
-        <div class="card-wrapper" class:notify-active={notifyMode} onclick={() => togglePref("artwork")}>
-          <a href="/artwork/" class="link-card heart-card" onclick={(e) => { if (notifyMode) e.preventDefault(); }} onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
+        <div class="card-wrapper">
+          <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
             <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
             <p>Sprites, pre-rendered backgrounds &amp; the ModernGoth typeface.</p>
             <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
           </a>
-          {#if notifyMode}<label class="notify-checkbox"><input type="checkbox" bind:checked={notifyPrefs.artwork} /></label>{/if}
         </div>
       </div>
     </div>
@@ -975,84 +950,12 @@
     }
   }
 
-  .notify-bar-prompt {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.3rem;
-    color: #e0e7ff;
-  }
-
-  .notify-bar-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .notify-bar-save,
-  .notify-bar-cancel,
-  .notify-bar-stop {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.1rem;
-    padding: 0.15rem 0.75rem;
-    border-radius: 3px;
-    cursor: pointer;
-    border: 1px solid;
-  }
-
-  .notify-bar-save {
-    background: rgba(167, 243, 208, 0.1);
-    color: #a7f3d0;
-    border-color: rgba(167, 243, 208, 0.3);
-  }
-
-  .notify-bar-cancel {
-    background: none;
-    color: rgba(224, 231, 255, 0.6);
-    border-color: rgba(224, 231, 255, 0.15);
-  }
-
-  .notify-bar-stop {
-    background: rgba(239, 68, 68, 0.1);
-    color: #f87171;
-    border-color: rgba(239, 68, 68, 0.3);
-  }
-
-  .notify-bar-save:hover { background: rgba(167, 243, 208, 0.2); }
-  .notify-bar-cancel:hover { background: rgba(224, 231, 255, 0.05); }
-  .notify-bar-stop:hover { background: rgba(239, 68, 68, 0.2); }
-
-  /* === Card Wrapper & Notify Checkbox === */
+  /* === Card Wrapper === */
   .card-wrapper {
     position: relative;
     width: 100%;
     display: flex;
     justify-content: center;
-  }
-
-  .notify-checkbox {
-    position: absolute;
-    top: 0.5rem;
-    right: 1.5rem;
-    z-index: 10;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.25rem;
-  }
-
-  .notify-checkbox input[type="checkbox"] {
-    width: 1.8rem;
-    height: 1.8rem;
-    accent-color: #a7f3d0;
-    cursor: pointer;
-  }
-
-  .card-wrapper.notify-active .link-card {
-    opacity: 0.4;
-    pointer-events: none;
-  }
-
-  .card-wrapper.notify-active {
-    cursor: pointer;
   }
 
   /* === Login Modal === */

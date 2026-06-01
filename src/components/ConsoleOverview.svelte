@@ -37,7 +37,40 @@
     { key: "ticketsDone",  label: "Tickets Done",  color: "#c084fc", field: "ticketsDone" },
   ];
   let activeSeries = $state<Set<SeriesKey>>(new Set(["messages", "outputTokens", "commits", "ticketsDone"]));
-  let maWindow = $state<number>(24); // hours in moving-average window
+
+  // Per-section time range selectors. Owner spec (2026-06-01): each
+  // historical chart gets its own dropdown so the viewer can compare
+  // scales independently (e.g., users over the last year vs traffic over
+  // the last week). Backend currently returns ~7 days of daily data and
+  // a rolling hourly window for usage; the dropdown slices client-side,
+  // so "month" / "year" may render with whatever data is available
+  // (smaller than the nominal range until backend returns more).
+  type TimeRange = "week" | "month" | "year";
+  let usersRange = $state<TimeRange>("week");
+  let trafficRange = $state<TimeRange>("week");
+  let usageRange = $state<TimeRange>("week");
+
+  // Convert a range to the slice length in DAYS for daily-bucket data.
+  function rangeDays(r: TimeRange): number {
+    return r === "week" ? 7 : r === "month" ? 30 : 365;
+  }
+  // Convert a range to the slice length in HOURS for hourly-bucket data.
+  function rangeHours(r: TimeRange): number {
+    return r === "week" ? 7 * 24 : r === "month" ? 30 * 24 : 365 * 24;
+  }
+  // Suggested moving-average window for the usage chart at each range.
+  // Replaces the standalone "Trend" dropdown — the smoothing scale should
+  // match the time scale (24h window for a week of data, daily for a
+  // month, weekly for a year).
+  function rangeMaWindow(r: TimeRange): number {
+    return r === "week" ? 24 : r === "month" ? 24 * 7 : 24 * 30;
+  }
+  let maWindow = $derived(rangeMaWindow(usageRange));
+  // Sliced usage hours used by the chart. $derived so a range change
+  // re-renders cleanly. Backend returns rolling hours; slicing to the
+  // requested window covers what we can do without backend changes.
+  let usageHours = $derived(usageHistory.hours.slice(-rangeHours(usageRange)));
+
   function toggleSeries(k: SeriesKey) {
     const s = new Set(activeSeries);
     if (s.has(k)) s.delete(k);
@@ -337,14 +370,24 @@
     {/if}
   </div>
 
-  <!-- Users graph (7-day history, admin only) -->
+  <!-- Users graph (admin only). Range slider toggles week / month / year;
+       backend currently returns ~7 days so month/year render whatever's
+       available until backend supports a longer history. -->
   {#if viewerIsAdmin && userAnalytics?.dailyHistory?.length}
-    {@const history = userAnalytics.dailyHistory}
+    {@const history = userAnalytics.dailyHistory.slice(-rangeDays(usersRange))}
     {@const maxNew = Math.max(...history.map(d => d.new), 1)}
     {@const minTotal = Math.min(...history.map(d => d.total))}
     {@const totalRange = Math.max(...history.map(d => d.total)) - minTotal || 1}
     <div class="users-chart-section">
-      <h3 class="section-title">Users <span class="section-subtitle">{userAnalytics.totalRegistered} total · +{userAnalytics.newThisWeek} this week</span></h3>
+      <h3 class="section-title">
+        Users
+        <span class="section-subtitle">{userAnalytics.totalRegistered} total · +{userAnalytics.newThisWeek} this week</span>
+        <select bind:value={usersRange} class="range-select" aria-label="Users time range">
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+          <option value="year">Year</option>
+        </select>
+      </h3>
       <div class="users-chart">
         <svg viewBox="0 0 700 160" class="users-svg">
           <polyline
@@ -379,12 +422,20 @@
     </div>
   {/if}
 
-  <!-- Site traffic graph (7-day, admin only) -->
+  <!-- Site traffic graph (admin only). Same range-slider model as Users. -->
   {#if viewerIsAdmin && siteTraffic?.dailyRequests?.length}
-    {@const traffic = siteTraffic.dailyRequests}
+    {@const traffic = siteTraffic.dailyRequests.slice(-rangeDays(trafficRange))}
     {@const maxReq = Math.max(...traffic.map(d => d.requests), 1)}
     <div class="users-chart-section">
-      <h3 class="section-title">Site Traffic <span class="section-subtitle">{siteTraffic.totalRequests7d.toLocaleString()} requests (7 days)</span></h3>
+      <h3 class="section-title">
+        Site Traffic
+        <span class="section-subtitle">{siteTraffic.totalRequests7d.toLocaleString()} requests (7 days)</span>
+        <select bind:value={trafficRange} class="range-select" aria-label="Site traffic time range">
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+          <option value="year">Year</option>
+        </select>
+      </h3>
       <div class="users-chart">
         <svg viewBox="0 0 700 140" class="users-svg">
           {#each traffic as d, i}
@@ -404,37 +455,24 @@
     <FixturePicker />
   {/if}
 
-  <!-- Historical usage chart (Legend only) -->
-  <!-- Current-week usage bars (above the history chart) -->
-  {#if usageData && viewerIsLegend}
-    <h3 class="section-title">Current Week</h3>
-    <div class="usage-bars">
-      <div class="usage-row">
-        <span class="usage-label">Messages</span>
-        <div class="usage-bar"><div class="usage-fill usage-blue" style="width: {usageData.usage.usagePct}%"></div></div>
-        <span class="usage-pct">{usageData.usage.messages.toLocaleString()}</span>
-      </div>
-      <div class="usage-row">
-        <span class="usage-label">Time Elapsed</span>
-        <div class="usage-bar"><div class="usage-fill usage-grey" style="width: {usageData.week.progressPct}%"></div></div>
-        <span class="usage-pct">{usageData.week.progressPct}%</span>
-      </div>
-      <div class="usage-note" class:usage-ahead={usageData.paceDeltaPct > 5} class:usage-behind={usageData.paceDeltaPct < -5}>
-        {#if usageData.paceDeltaPct > 5}
-          {usageData.paceDeltaPct}% ahead of pace
-        {:else if usageData.paceDeltaPct < -5}
-          {Math.abs(usageData.paceDeltaPct)}% behind pace
-        {:else}
-          on pace
-        {/if}
-      </div>
-    </div>
-  {/if}
-
+  <!-- Historical usage chart (Legend only). "Current Week" Messages/
+       Time-Elapsed block removed 2026-06-01 per owner spec — the same
+       data is implicit in the Usage History chart, and the standalone
+       bars were just clutter at the top of the section. -->
   {#if viewerIsLegend && usageHistory?.hours?.length > 0}
-    <h3 class="section-title">Usage History</h3>
+    <h3 class="section-title">
+      Usage History
+      <select bind:value={usageRange} class="range-select" aria-label="Usage history time range">
+        <option value="week">Week</option>
+        <option value="month">Month</option>
+        <option value="year">Year</option>
+      </select>
+    </h3>
     <div class="history-chart">
-      <!-- Legend toggles + moving-average window -->
+      <!-- Series toggles. The standalone "Trend" dropdown was removed
+           2026-06-01; the moving-average window now scales automatically
+           with the selected time range (24h smoothing for a week of data,
+           weekly for a month, monthly for a year). -->
       <div class="chart-legend-toggles">
         {#each SERIES as s}
           <button
@@ -447,22 +485,14 @@
             {s.label}
           </button>
         {/each}
-        <span class="ma-window-ctrl">
-          Trend:
-          <select bind:value={maWindow} class="ma-window-select">
-            <option value={7}>7h</option>
-            <option value={12}>12h</option>
-            <option value={24}>24h</option>
-            <option value={48}>48h</option>
-            <option value={72}>3d</option>
-            <option value={168}>1w</option>
-          </select>
-        </span>
       </div>
 
-      <!-- One row per active series (small multiples) -->
+      <!-- One row per active series (small multiples). usageHours is a
+           $derived in the script — sliced to the selected range; backend
+           returns a rolling hourly window, so year may render with fewer
+           bars than nominal until backend support widens. -->
       {#each SERIES.filter(s => activeSeries.has(s.key)) as s}
-        {@const values = usageHistory.hours.map((h: any) => h[s.field] ?? 0)}
+        {@const values = usageHours.map((h: any) => h[s.field] ?? 0)}
         {@const maxVal = Math.max(...values, 1)}
         <div class="series-row">
           <div class="series-label" style="color: {s.color}">
@@ -470,8 +500,8 @@
             <span class="series-max">max {maxVal.toLocaleString()}/hr</span>
           </div>
           <div class="chart-bars">
-            {#each usageHistory.hours as h, i}
-              {@const prevWeek = i > 0 ? usageHistory.hours[i-1].weekStart : null}
+            {#each usageHours as h, i}
+              {@const prevWeek = i > 0 ? usageHours[i-1].weekStart : null}
               {@const isWeekStart = prevWeek !== h.weekStart}
               {@const v = h[s.field] ?? 0}
               {#if isWeekStart && i > 0}
@@ -843,6 +873,21 @@
     font-family: inherit;
     font-size: 0.72rem;
     cursor: pointer;
+  }
+  /* Range selector that sits inline in each section title. Subtle so it
+     doesn't compete with the title text, hovers up slightly to align
+     with the section-subtitle line height. */
+  .range-select {
+    margin-left: 0.6rem;
+    background: #0d1117;
+    color: #d1d5db;
+    border: 1px solid rgba(167, 243, 208, 0.25);
+    border-radius: 3px;
+    padding: 0.18rem 0.4rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    cursor: pointer;
+    vertical-align: middle;
   }
   .hour-bar-wrap {
     flex: 1 1 0;

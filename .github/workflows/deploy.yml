@@ -66,6 +66,19 @@ jobs:
             --content-type "text/html" \
             --metadata-directive REPLACE
 
+          # Override cache headers for sw.js. Without an explicit
+          # Cache-Control, CloudFront serves it with no header and
+          # browsers fall back to heuristic freshness — meaning a stale
+          # SW can persist on the client for hours after a deploy. The
+          # SW spec mandates "no-cache" semantics: revalidate every fetch
+          # but cache the bytes when ETag matches. This makes the
+          # browser actually pick up the new SW on the next navigation
+          # instead of holding the old one until the 24h cap.
+          aws s3 cp s3://${{ secrets.AWS_S3_BUCKET }}/sw.js s3://${{ secrets.AWS_S3_BUCKET }}/sw.js \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --content-type "application/javascript" \
+            --metadata-directive REPLACE
+
       - name: Invalidate CloudFront cache
         run: |
           aws cloudfront create-invalidation \

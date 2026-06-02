@@ -1,5 +1,5 @@
 ---
-title: "Godot Web Export on Mobile, As an App Without the App Store"
+title: "Godot Web Export on Mobile, an App Without the App Store"
 description: "How I turned The Chronicles of Nesis — a desktop-shaped tactical RPG — into something that runs on a phone from a URL, installs to the home screen like a native app, and updates itself without losing your save."
 pubDate: 2026-06-02T00:00:00Z
 category: "engineering"

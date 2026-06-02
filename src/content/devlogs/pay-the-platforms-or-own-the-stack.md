@@ -102,9 +102,19 @@ The argument loses credibility if it overstates. Here's what self-hosting doesn'
 
 **Mobile push notifications.** PWA push exists but is limited and inconsistent — especially on iOS Safari. The App Store and Google Play own this lane.
 
-**Console distribution.** Switch, PlayStation, Xbox — not realistically replaceable for the foreseeable future. If your game needs to ship to consoles, you're paying their tax.
+**Console distribution — partially.** Xbox has Edge built in; Steam Deck runs full Linux with any browser you want. Both can host a PWA today, even if almost no players actually reach for the browser on them. Switch and PS5 don't expose user-facing browsers despite their hardware being perfectly capable of running one — that's a policy decision, not a technical limit, and the reason is straightforwardly that a browser would let games reach players outside the platform's storefront. Whether you can reach console audiences via web depends on which console. Whether you can reach them at all without paying the tax depends on whether the platform owner allows it.
 
 The honest version of the argument is: self-host the pieces you can, trade with the platforms for the pieces you can't, pay the cut where the cut earns its keep.
+
+## What one build actually covers
+
+There's a counter to the argument worth taking seriously: web isn't the only way to reach a lot of platforms. You could just ship native to everything. So is the "one build" advantage actually a win?
+
+It depends on what you're comparing to. A native build pipeline that matches the reach of a single web build means Windows, Linux, and Mac for desktop; iOS and Android for mobile; and potentially Switch, PS5, and Xbox for console reach. Even ignoring consoles, each of those targets is its own build configuration, code signing, store presence, update process, and support burden. The toolchain costs and the per-platform breakage are real and recurring.
+
+A single web build reaches Windows, Linux, Mac, iOS, Android, Steam Deck, and Xbox out of one artifact. It doesn't reach Switch or PS5 — a real gap if those are your target platforms — and it doesn't reach the nostalgia-coded path of physical cartridges or original hardware at all, which is a serious cost for the segment of devs whose whole identity is "my game ships on the SNES." Those are real tradeoffs, not catches.
+
+But for the rest — devs whose game doesn't specifically need to ship to original hardware or to Sony or Nintendo — the math looks something like: web reaches the large majority of platforms an indie typically targets, from one build, with one update pipeline. The desktop-native alternative reaches Windows, Linux, and Mac from three separate builds with three separate update pipelines, plus everything mobile and console as additional ports on top. That's a meaningful difference even before the platform-fee math from earlier kicks in.
 
 ## The cost comparison
 

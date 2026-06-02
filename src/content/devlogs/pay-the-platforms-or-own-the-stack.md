@@ -10,9 +10,9 @@ draft: true
 
 Every indie dev makes the same set of decisions when shipping a game. Where does it sell — Steam, App Store, Google Play, itch? Where do supporters back you — Patreon, Substack, Ko-fi? Where do you host your newsletter, your forum, your analytics, your support inbox? For most of indie dev's history, the answer was the same: use the platforms. They take a cut, but they handle the parts you can't.
 
-I've been chipping away at the other answer. Build for the web, own the URL, build my own subscriber tier system, run my own infrastructure, ship updates without anyone's review process. So far it's working. Not because I'm a better engineer than the people building these platforms — because AI assistance shrinks the time cost of "build it yourself" enough that the math has shifted for one person sitting at a keyboard.
+I've been chipping away at the other answer. Build for the web, own the URL, build my own subscriber tier system, run my own infrastructure, ship updates without anyone's review process. I'm not a better engineer than the people building these platforms, but AI assistance shrinks the time cost of "build it yourself" enough that the math has shifted for one person sitting at a keyboard.
 
-This isn't an argument for burning down the platforms. They're useful. They charge for value they deliver. The argument here is narrower: **for an AI-assisted solo dev, the math now favors self-hosting most of the stack.** Not all of it. But most.
+This isn't an argument for burning down the platforms. They're useful. They charge for value they deliver. The argument here is narrower: **for an AI-assisted solo dev, the math now favors self-hosting most of the stack.**
 
 ## The universe of cuts
 
@@ -70,13 +70,15 @@ Not all of these are equally bad. Discord is genuinely free and where most game 
 
 ## What two of these look like in practice
 
-I've already replaced two of them in production. Both have their own writeups; here's the shape.
+I've already replaced two of them in production.
 
-**Subscriptions instead of Patreon.** I built a tier system on Stripe Checkout + DynamoDB + Lambda + OAuth. Five tiers (free, Initiate, Hero, Legend, plus one-time donation amounts), JWT auth, Google and Discord login, the works. Runs for less than $5/month. The full story is in [Why Build My Own Site Instead of Using Patreon?](/devlog/studio/patreon-vs-self-hosting/) — the short version is that the math works at any scale, the real risk is marketing and trust, and I haven't lost that bet yet.
+**[Subscriptions instead of Patreon.](/devlog/studio/patreon-vs-self-hosting/)** I built a tier system on Stripe Checkout + DynamoDB + Lambda + OAuth. Five tiers (free, Initiate, Hero, Legend, plus one-time donation amounts), JWT auth, Google and Discord login, the works. Runs for less than $5/month.
 
-**PWA install instead of the App Store.** I just spent a week turning The Chronicles of Nesis into something playable on a phone from a URL, installable to the home screen, with auto-update that only fires at the title screen so it never interrupts a mission. Full writeup in [Playable on Your Phone, Without an App](/devlog/studio/playable-on-your-phone/). No app store cut, no review process, no platform deciding whether my updates are allowed to ship.
+**[PWA install instead of the App Store.](/devlog/studio/playable-on-your-phone/)** I just spent a week turning The Chronicles of Nesis into something playable on a phone from a URL, installable to the home screen, with auto-update that only fires at the title screen so it never interrupts a mission.
 
-Both run on infrastructure that costs less per month than a single Patreon supporter's subscription. The reason I could justify the engineering for either is the same: AI assistance.
+Both run on infrastructure that costs less per month than a single Patreon supporter's subscription — for now. At some point cloud costs will become a concern, but I expect the tradeoff to still be worth it. I'll report on that as I find out.
+
+The reason I could justify the engineering for either is the same: AI assistance.
 
 ## What AI actually changed
 
@@ -86,13 +88,13 @@ Building the Patreon replacement properly took roughly a week of evenings. Claud
 
 The PWA pipeline took another week of similar shape. Replacing Mailchimp with a transactional-email opt-in flow took an afternoon. Setting up CloudFront with correct COOP/COEP headers took an hour. Each of these used to be a project. Now each of them is a session.
 
-That's not a 10x speedup. It's the difference between "I can't justify this against the game I'm trying to ship" and "I can do this on Saturday." Most platform fees price the engineering work you'd otherwise do yourself. When that work used to take weeks, the platform fee was a fair trade. When it takes hours, it isn't.
+That's not just a 10x speedup, it's the difference between "I can't justify this against the game I'm trying to ship" and "I can do this on Saturday." Most platform fees price the engineering work you'd otherwise do yourself. When that work used to take weeks, the platform fee was a fair trade. When it takes hours, it isn't.
 
 This is the actual news in 2026 — not that AI can write code, but that the math on building-vs-buying has shifted enough that solo devs can credibly own pieces of the stack that used to require a team.
 
 ## What you can't credibly replace
 
-The argument loses credibility if it overstates. Here's what self-hosting doesn't fix.
+In a word, marketing. In a detailed list:
 
 **Steam's discovery surface.** I can build my own URL. I can't build my own recommendation engine that surfaces my game to everyone else's audience. Steam has *made* games — its tag-and-recommend system has rank-changing power for indie titles that no marketing effort I could mount would match. Choosing not to use Steam is choosing to do my own outreach for every player. That's not free; it might not even be cheap.
 
@@ -102,52 +104,21 @@ The argument loses credibility if it overstates. Here's what self-hosting doesn'
 
 **Mobile push notifications.** PWA push exists but is limited and inconsistent — especially on iOS Safari. The App Store and Google Play own this lane.
 
-**Console distribution — partially.** Xbox has Edge built in; Steam Deck runs full Linux with any browser you want. Both can host a PWA today, even if almost no players actually reach for the browser on them. Switch and PS5 don't expose user-facing browsers despite their hardware being perfectly capable of running one — that's a policy decision, not a technical limit, and the reason is straightforwardly that a browser would let games reach players outside the platform's storefront. Whether you can reach console audiences via web depends on which console. Whether you can reach them at all without paying the tax depends on whether the platform owner allows it.
+**Console distribution — partially.** Xbox has Edge built in; Steam Deck runs full Linux with any browser you want. Both can host a PWA today, even if almost no players actually reach for the browser on them. Switch and PS5 don't expose user-facing browsers despite their hardware being perfectly capable of running one — that's a policy decision, not a technical limit, and the reason is straightforwardly that a browser would let games reach players outside the platform's storefront.
 
 The honest version of the argument is: self-host the pieces you can, trade with the platforms for the pieces you can't, pay the cut where the cut earns its keep.
 
 ## What one build actually covers
 
-There's a counter to the argument worth taking seriously: web isn't the only way to reach a lot of platforms. You could just ship native to everything. So is the "one build" advantage actually a win?
+There's a counter to the argument worth taking seriously: web isn't the only way to reach a lot of platforms. You could just ship native to everything. A native build pipeline that matches the reach of a single web build means Windows, Linux, and Mac for desktop; iOS and Android for mobile; and potentially Switch, PS5, and Xbox for console reach. Even ignoring consoles, each of those targets is its own build configuration, code signing, store presence, update process, and support burden.
 
-It depends on what you're comparing to. A native build pipeline that matches the reach of a single web build means Windows, Linux, and Mac for desktop; iOS and Android for mobile; and potentially Switch, PS5, and Xbox for console reach. Even ignoring consoles, each of those targets is its own build configuration, code signing, store presence, update process, and support burden.
-
-I spent weeks trying to get the Windows build of Chronicles to run correctly on Linux. I gave up on making it work on Mac. Browser deploy has its own annoyances — quirks, edge cases, the iOS PWA polish I still haven't done — but that's all. It's one deploy.
+I spent weeks trying to get The Chronicles of Nesis to run correctly on Linux. I gave up on making it work on Mac. Browser deploy has its own annoyances — quirks, edge cases, the iOS PWA polish I still haven't done — but that's all. It's one deploy.
 
 A single web build reaches Windows, Linux, Mac, iOS, Android, Steam Deck, and Xbox out of one artifact. It doesn't reach Switch or PS5 — a real gap if those are your target platforms — and it doesn't reach the nostalgia-coded path of physical cartridges or original hardware at all, which is a serious cost for the segment of devs whose whole identity is "my game ships on the SNES." Those are real tradeoffs, not catches.
 
-But for the rest — devs whose game doesn't specifically need to ship to original hardware or to Sony or Nintendo — the math looks something like: web reaches the large majority of platforms an indie typically targets, from one build, with one update pipeline. The desktop-native alternative reaches Windows, Linux, and Mac from three separate builds with three separate update pipelines, plus everything mobile and console as additional ports on top. That's a meaningful difference even before the platform-fee math from earlier kicks in.
+So is it worth it? Every situation is different, but I'd argue you have some serious benefits to deploying on web.
 
-## The cost comparison
-
-The numbers depend on scale, but the shape is the same at any size.
-
-At my current scale — small audience, growing — I pay:
-
-- ~$5/month for AWS (S3, CloudFront, Lambda, DynamoDB, Route 53, Secrets Manager)
-- Stripe's 2.9% + 30¢ per transaction
-- ~$15/year for the domain
-- $0 for analytics (rolling my own from CloudFront logs)
-- $0 for transactional email (SES; pennies even at scale)
-- $0 for community (Discord)
-
-If I'd put the equivalent setup on the platforms, the monthly cost would include Patreon's 8-12% cut on every subscription, Mailchimp at $20+/month for my list size, hosted analytics at $9-90, hosted community at $40-500 for Circle or Mighty or hosted Discourse, App Store / Google Play 30% on any mobile revenue, and Substack's 10% if I monetized newsletters.
-
-The fixed costs alone are 5-10x what I currently pay. The percentage cuts compound on top of that the more the project grows. Even at low scale the math is striking, because platform minimums are flat tiers and mine are pennies. At higher scale — if Chronicles takes off — the math becomes lopsided.
-
-Either direction makes the argument.
-
-## Who this is actually for
-
-This case lands hardest with three audiences.
-
-**Solo devs pre-revenue.** The 30% cut isn't bleeding you yet, but the workflow pain of app store review processes absolutely is. The pitch resonates as "ship faster, no waiting for review, no rejected-for-cosmetic-reason rounds."
-
-**Mid-tier indies with revenue.** 30% is real money. The pitch resonates as economics.
-
-**Platform refugees.** Unity runtime fee survivors, App Store rejection victims, Steam discoverability frustrated. Already convinced of the problem. The pitch sells you the alternative you already wanted.
-
-It lands softest with mobile-first studios where App Store distribution is your oxygen, and with anyone whose game lives or dies by Steam's discovery surface. Those aren't bad choices — they're a different optimization. The math that flips for a solo AI-assisted dev with a small audience doesn't flip the same way for a studio with a marketing team and a discovery problem.
+First, the hurdle to export to web fits AI's strengths — complex WASM dependency and timing, but verbosely documented. Second, exporting the game to web better supports AI testing and automated QA, where Playwright has been extensively invested in by the industry. Third, you reach maximum platforms on a single build. You can always expand to PS5 and Switch after growing or success.
 
 ## Where I am
 

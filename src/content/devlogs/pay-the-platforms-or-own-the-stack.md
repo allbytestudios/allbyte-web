@@ -1,6 +1,6 @@
 ---
 title: "Pay the Platforms, or Own the Stack"
-description: "Every indie dev makes the same choice: pay the platform middlemen for distribution, payments, hosting, and community, or do them yourself. AI is starting to make doing more yourself much more viable — I'd argue most of it. Here's the math."
+description: "Every indie dev has to choose what platforms to support for distribution, payments, hosting, and community. Each one costs time to integrate, and most take a cut of revenue. But with AI today, how much could a solo dev save owning more of this? Here's what I did."
 pubDate: 2026-06-02T00:00:00Z
 category: "strategy"
 devlog: "studio"

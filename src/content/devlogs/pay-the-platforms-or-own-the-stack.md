@@ -1,6 +1,6 @@
 ---
 title: "Pay the Platforms, or Own the Stack"
-description: "Every indie dev makes the same choice: pay the platform middlemen for distribution, payments, hosting, and community, or do it all yourself. AI made the second path realistic for one person. Here's the math."
+description: "Every indie dev makes the same choice: pay the platform middlemen for distribution, payments, hosting, and community, or do them yourself. AI is starting to make doing more yourself much more viable — I'd argue most of it. Here's the math."
 pubDate: 2026-06-02T00:00:00Z
 category: "strategy"
 devlog: "studio"
@@ -12,7 +12,7 @@ Every indie dev makes the same set of decisions when shipping a game. Where does
 
 I've been chipping away at the other answer. Build for the web, own the URL, build my own subscriber tier system, run my own infrastructure, ship updates without anyone's review process. So far it's working. Not because I'm a better engineer than the people building these platforms — because AI assistance shrinks the time cost of "build it yourself" enough that the math has shifted for one person sitting at a keyboard.
 
-This isn't an argument for burning down the platforms. They're useful. They charge for value they deliver. The argument here is narrower: **for an AI-assisted solo dev, the math now favors self-hosting more pieces of the stack than was previously realistic.** Not all of them. But more.
+This isn't an argument for burning down the platforms. They're useful. They charge for value they deliver. The argument here is narrower: **for an AI-assisted solo dev, the math now favors self-hosting most of the stack.** Not all of it. But most.
 
 ## The universe of cuts
 

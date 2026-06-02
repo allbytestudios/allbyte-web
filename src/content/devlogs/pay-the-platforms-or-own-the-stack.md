@@ -5,7 +5,6 @@ pubDate: 2026-06-02T00:00:00Z
 category: "strategy"
 devlog: "studio"
 tags: ["business", "self-hosting", "indie", "ai", "platforms"]
-draft: true
 ---
 
 - AI makes shipping full games on web easier.
@@ -75,9 +74,9 @@ Not all of these are equally bad. Discord is genuinely free and where most game 
 
 I've already replaced two of them in production.
 
-**[Subscriptions instead of Patreon.](/devlog/studio/patreon-vs-self-hosting/)** I built a tier system on Stripe Checkout + DynamoDB + Lambda + OAuth. Five tiers (free, Initiate, Hero, Legend, plus one-time donation amounts), JWT auth, Google and Discord login, the works. Runs for less than $5/month.
+**[Subscriptions instead of Patreon.](/devlog/patreon-vs-self-hosting/)** I built a tier system on Stripe Checkout + DynamoDB + Lambda + OAuth. Five tiers (free, Initiate, Hero, Legend, plus one-time donation amounts), JWT auth, Google and Discord login, the works. Runs for less than $5/month.
 
-**[PWA install instead of the App Store.](/devlog/studio/playable-on-your-phone/)** I just spent a week turning The Chronicles of Nesis into something playable on a phone from a URL, installable to the home screen, with auto-update that only fires at the title screen so it never interrupts a mission.
+**[PWA install instead of the App Store.](/devlog/playable-on-your-phone/)** I just spent a few days turning The Chronicles of Nesis into something playable on a phone from a URL, installable to the home screen, with auto-update that only fires at the title screen so it never interrupts a mission.
 
 Both run on infrastructure that costs less per month than a single Patreon supporter's subscription — for now. At some point cloud costs will become a concern, but I expect the tradeoff to still be worth it. I'll report on that as I find out.
 
@@ -89,7 +88,7 @@ A few years ago, a solo developer could *theoretically* self-host all of this. T
 
 Building the Patreon replacement properly took roughly a week of evenings. Claude drafted the CloudFormation template, designed the DynamoDB schema, implemented the Lambda functions in Python, wired up OAuth flows for Google and Discord, generated the JWT auth logic, and handled the Stripe Checkout and webhook integration. I read every piece of code, fixed what didn't fit, and made the architectural decisions. But the engineering grind — the tedious "now I have to wire up OAuth state validation and HMAC-sign the callback parameter" — was hours instead of weeks.
 
-The PWA pipeline took another week of similar shape. Replacing Mailchimp with a transactional-email opt-in flow took an afternoon. Setting up CloudFront with correct COOP/COEP headers took an hour. Each of these used to be a project. Now each of them is a session.
+The PWA pipeline took just a few days of similar shape. Replacing Mailchimp with a transactional-email opt-in flow took an afternoon. Setting up CloudFront with correct COOP/COEP headers took an hour. Each of these used to be a project. Now each of them is a session.
 
 That's not just a 10x speedup, it's the difference between "I can't justify this against the game I'm trying to ship" and "I can do this on Saturday." Most platform fees price the engineering work you'd otherwise do yourself. When that work used to take weeks, the platform fee was a fair trade. When it takes hours, it isn't.
 
@@ -129,7 +128,7 @@ I'm not running a platform. I'm not selling a tool. I'm one solo dev shipping on
 
 The argument I'm making is small: **if you're an AI-assisted solo dev, walk through your stack and ask which pieces are still worth the cut.** A lot of them aren't anymore, and that's new information. If the answer changes for some pieces and stays the same for others, that's the right answer. The point isn't to burn down the platforms; the point is to notice that the deal you've been making with them was priced for an engineering economy that no longer exists.
 
-What's next, for me, is finding out whether this is also a thing other Godot devs would want to do — and whether the tools I built for Chronicles could be wrapped in a way that lets other indies make the same choice without doing the engineering twice. There's a different post in that direction, eventually.
+What's next, for me, is finding out whether this is also a thing other Godot devs would want to do — and whether the tools I built for Chronicles of Nesis could be wrapped in a way that lets other indies make the same choice without doing the engineering twice. There's a different post in that direction, eventually.
 
 For now: the report-back from the patreon devlog two months ago is that it's working. The PWA install pipeline is working. The cost is real, but it's lower than the cuts I'd be paying. And the engineering, which used to be the prohibitive part, is no longer prohibitive.
 

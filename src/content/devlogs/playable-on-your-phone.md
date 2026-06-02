@@ -1,18 +1,17 @@
 ---
-title: "Playable on Your Phone, Without an App"
+title: "Godot Web Export on Mobile, As an App Without the App Store"
 description: "How I turned The Chronicles of Nesis — a desktop-shaped tactical RPG — into something that runs on a phone from a URL, installs to the home screen like a native app, and updates itself without losing your save."
 pubDate: 2026-06-02T00:00:00Z
 category: "engineering"
 devlog: "studio"
 tags: ["pwa", "mobile", "godot", "service-worker", "architecture"]
-draft: true
 ---
 
-The Chronicles of Nesis was always going to be a desktop game. Tactical RPGs live on mouse + keyboard. The Godot project is 1270×920, the UI was built for hover states, the controls assume a precision input. I never set out to make a mobile game.
+The Chronicles of Nesis was always going to be a desktop game. Tactical RPGs live on mouse + keyboard. The Godot project is 1270×920, the UI was built for hover states, the controls assume a precision input. I never set out to make a mobile game — I can only focus on one thing at a time, and that one thing was the desktop game. But phones were in the back of my head the whole time. I used to play old JRPGs on my phone with the ePSXe emulator. I remember thinking: this is amazing — why don't people make games like this now? So whenever I built a menu I made sure: make it extra big. Consider what a small screen might be like. I never imagined I'd be in a place where I could type "make it work on my phone" and it would just work overnight. But that's where I ended up.
 
-But there's a difference between "designing for desktop" and "refusing to play on a phone." Two clicks shouldn't be a wall.
+There's a difference between "designing for desktop" and "refusing to play on a phone." Two clicks shouldn't be a wall.
 
-So I spent a week — alongside Arc, my game-side coordinator — turning the existing web build into something that:
+So I spent a few days — alongside Arc, my game-side coordinator — turning the existing web build into something that:
 
 - Plays on a phone from a URL, no app store
 - Installs to your home screen like a native app
@@ -48,7 +47,7 @@ There's also a small bit of polish for menu nav: hold a face button past 400ms a
 
 You can play in a regular browser tab. But the better experience is installable.
 
-The manifest declares `display: standalone`, `orientation: landscape`, with an apple-touch-icon and a 192×192 + 512×512 icon set. On Chrome desktop or Android, the browser offers an "Install Chronicles of Nesis" button after a couple of visits. I also surface my own "Install as App" link in the social bar — it triggers the same `beforeinstallprompt` flow without making the user dig through browser menus.
+The manifest declares `display: standalone`, `orientation: landscape`, with an apple-touch-icon and a 192×192 + 512×512 icon set. I added an "Install as App" link next to Play Now in the browser — it triggers the `beforeinstallprompt` flow directly. A little odd on desktop, but much more natural for mobile.
 
 Once installed:
 
@@ -116,12 +115,12 @@ Whether anyone clicks the link is a different conversation. But "they tried but 
 
 ## What if this works for any game?
 
-Sitting back from a week of building all this, the question I keep circling is: how much of it is specific to Chronicles, and how much would translate to any Godot game on the web?
+Sitting back from a week of building all this, the question I keep circling is: how much of it is specific to Chronicles of Nesis, and how much would translate to any Godot game on the web?
 
-Most of it generalizes. The boot shell, the service worker with game-version-keyed caching, the PWA manifest pattern, the virtual gamepad with its sector-based d-pad — none of that depends on Chronicles being a tactical RPG. What *does* depend on the game is the input mapping (every Godot project names its InputActions differently) and the integration points on the game side: the title-screen update guard, the quit handler, the save-sync handshake. Those are the kinds of things that could be abstracted into a Godot addon — an editor panel that reads your project's InputMap, a `WebDeploy` autoload that exposes the boundary contract as clean GDScript APIs instead of `JavaScriptBridge.eval` strings.
+Most of it generalizes. The boot shell, the service worker with game-version-keyed caching, the PWA manifest pattern, the virtual gamepad with its sector-based d-pad — none of that depends on Chronicles of Nesis being a tactical RPG. What *does* depend on the game is the input mapping (every Godot project names its InputActions differently) and the integration points on the game side: the title-screen update guard, the quit handler, the save-sync handshake. Those are the kinds of things that could be abstracted into a Godot addon — an editor panel that reads your project's InputMap, a `WebDeploy` autoload that exposes the boundary contract as clean GDScript APIs instead of `JavaScriptBridge.eval` strings.
 
 Which gets me thinking about a different product entirely. There's a thing that doesn't exist that probably should: a `create-godot-pwa` template repo plus a small Godot addon that turns "I have a Godot HTML5 export" into "I have an installable PWA on my domain with a virtual gamepad, sane caching, and update-at-safe-moment" in under five minutes. Open source. Deploys to Netlify, Vercel, Cloudflare Pages, itch.io out of the box. No backend required. The thing every Godot dev who's ever wrestled with COOP/COEP and SharedArrayBuffer has wanted to exist.
 
-I'm not building it yet. Chronicles isn't shipped, and the hypothesis underneath the idea — that the addon's APIs would be clean enough for an existing Godot game to adopt them in an afternoon, not a week — hasn't been tested. If integration cost on a non-Chronicles game is high, the whole thing collapses, and you don't know until you try it on something genuinely different. A platformer, a puzzle game, something with mouse-only UI. Three external games is probably the right validation budget.
+I'm not building it yet. Chronicles of Nesis isn't shipped, and the hypothesis underneath the idea — that the addon's APIs would be clean enough for an existing Godot game to adopt them in an afternoon, not a week — hasn't been tested. If integration cost on a game that isn't Chronicles of Nesis is high, the whole thing collapses, and you don't know until you try it on something genuinely different. A platformer, a puzzle game, something with mouse-only UI. Three external games is probably the right validation budget.
 
-But it sits in the back of my head as the natural next thing after Chronicles ships. The infrastructure I just spent a week building feels too much like "this should exist" to stay locked inside one game.
+But it sits in the back of my head as the natural next thing after Chronicles of Nesis ships. The infrastructure I just spent a week building feels too much like "this should exist" to stay locked inside one game.

@@ -110,7 +110,9 @@ The honest version of the argument is: self-host the pieces you can, trade with 
 
 There's a counter to the argument worth taking seriously: web isn't the only way to reach a lot of platforms. You could just ship native to everything. So is the "one build" advantage actually a win?
 
-It depends on what you're comparing to. A native build pipeline that matches the reach of a single web build means Windows, Linux, and Mac for desktop; iOS and Android for mobile; and potentially Switch, PS5, and Xbox for console reach. Even ignoring consoles, each of those targets is its own build configuration, code signing, store presence, update process, and support burden. The toolchain costs and the per-platform breakage are real and recurring.
+It depends on what you're comparing to. A native build pipeline that matches the reach of a single web build means Windows, Linux, and Mac for desktop; iOS and Android for mobile; and potentially Switch, PS5, and Xbox for console reach. Even ignoring consoles, each of those targets is its own build configuration, code signing, store presence, update process, and support burden.
+
+I spent weeks trying to get the Windows build of Chronicles to run correctly on Linux. I gave up on making it work on Mac. Browser deploy has its own annoyances — quirks, edge cases, the iOS PWA polish I still haven't done — but that's all. It's one deploy.
 
 A single web build reaches Windows, Linux, Mac, iOS, Android, Steam Deck, and Xbox out of one artifact. It doesn't reach Switch or PS5 — a real gap if those are your target platforms — and it doesn't reach the nostalgia-coded path of physical cartridges or original hardware at all, which is a serious cost for the segment of devs whose whole identity is "my game ships on the SNES." Those are real tradeoffs, not catches.
 

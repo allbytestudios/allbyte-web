@@ -8,9 +8,12 @@ tags: ["business", "self-hosting", "indie", "ai", "platforms"]
 draft: true
 ---
 
-Every indie dev makes the same set of decisions when shipping a game. Where does it sell — Steam, App Store, Google Play, itch? Where do supporters back you — Patreon, Substack, Ko-fi? Where do you host your newsletter, your forum, your analytics, your support inbox? For most of indie dev's history, the answer was the same: use the platforms. They take a cut, but they handle the parts you can't.
+- AI makes shipping full games on web easier.
+- Web games make building them via AI easier.
+- Web games can reach most platforms from a single build.
+- You pay for it by operating outside the defined ecosystem.
 
-I've been chipping away at the other answer. Build for the web, own the URL, build my own subscriber tier system, run my own infrastructure, ship updates without anyone's review process. I'm not a better engineer than the people building these platforms, but AI assistance shrinks the time cost of "build it yourself" enough that the math has shifted for one person sitting at a keyboard.
+I've been chipping away at this. Build for the web, own the URL, build my own subscriber tier system, run my own infrastructure, ship updates without anyone's review process. I'm not a better engineer than the people building these platforms, but AI assistance shrinks the time cost of "build it yourself" enough that the math has shifted for one person sitting at a keyboard.
 
 This isn't an argument for burning down the platforms. They're useful. They charge for value they deliver. The argument here is narrower: **for an AI-assisted solo dev, the math now favors self-hosting most of the stack.**
 

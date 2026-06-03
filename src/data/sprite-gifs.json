@@ -180,11 +180,6 @@
     "file": "/assets/sprites/Falmri_Victory.gif"
   },
   {
-    "character": "Falmri",
-    "animation": "Dead",
-    "file": "/assets/sprites/Falmri_Dead.gif"
-  },
-  {
     "character": "slime",
     "animation": "IdleDown",
     "file": "/assets/sprites/slime_IdleDown.gif"

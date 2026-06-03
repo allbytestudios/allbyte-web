@@ -68,6 +68,38 @@
   // re-renders cleanly.
   let usageHours = $derived(usageHistory.hours.slice(-rangeHours(graphRange)));
 
+  // Display-density helpers for the Users / Site Traffic SVGs. Every
+  // data point always renders — only the bar width and the x-axis text
+  // labels adapt with density. Label filtering is date-semantic so the
+  // labels that DO show fall on natural cadence points (Mondays for
+  // the month view, first-of-month for the year view), not arbitrary
+  // index strides that drift relative to wall-clock weeks/months.
+  function chartBarWidth(n: number): number {
+    // Bar width = 60% of the per-point spacing, capped at 24px so the
+    // week view doesn't look chunky and floored at 1px so year-view
+    // bars stay visible as a thin histogram instead of vanishing.
+    const spacing = 600 / Math.max(n, 1);
+    return Math.max(1, Math.min(24, spacing * 0.6));
+  }
+  function chartShouldShowLabel(dateStr: string, range: TimeRange): boolean {
+    if (range === "week") return true;                    // all 7 days
+    const d = new Date(dateStr + "T00:00:00Z");
+    if (range === "month") return d.getUTCDay() === 1;    // Mondays only
+    if (range === "year") return dateStr.endsWith("-01"); // first of month only
+    return false;
+  }
+  function chartShowPerPointDetails(n: number): boolean {
+    // Per-point text (count above each bar, "+N" badges, total-line
+    // dots) — hide these when there are too many to read without
+    // overlap. The bars and dots themselves still render.
+    return n <= 12;
+  }
+  function chartDateLabel(s: string, range: TimeRange): string {
+    // s is "YYYY-MM-DD". Year-range labels read better as "MM/YY".
+    if (range === "year") return s.slice(5, 7) + "/" + s.slice(2, 4);
+    return s.slice(5);
+  }
+
   function toggleSeries(k: SeriesKey) {
     const s = new Set(activeSeries);
     if (s.has(k)) s.delete(k);
@@ -410,14 +442,21 @@
           {#each history as d, i}
             {@const x = 50 + i * (600 / (history.length - 1 || 1))}
             {@const y = 140 - ((d.total - minTotal) / totalRange) * 120}
+            {@const barW = chartBarWidth(history.length)}
             {@const barH = (d.new / maxNew) * 40}
-            <circle cx={x} cy={y} r="3" fill="#60a5fa" />
-            <text x={x} y={y - 8} fill="#60a5fa" font-size="10" text-anchor="middle">{d.total}</text>
-            <rect x={x - 12} y={140 - barH} width="24" height={barH} fill="rgba(52, 211, 153, 0.4)" rx="2" />
-            {#if d.new > 0}
+            {@const showDetails = chartShowPerPointDetails(history.length)}
+            {@const showLabel = chartShouldShowLabel(d.date, graphRange)}
+            {#if showDetails}
+              <circle cx={x} cy={y} r="3" fill="#60a5fa" />
+              <text x={x} y={y - 8} fill="#60a5fa" font-size="10" text-anchor="middle">{d.total}</text>
+            {/if}
+            <rect x={x - barW / 2} y={140 - barH} width={barW} height={barH} fill="rgba(52, 211, 153, 0.4)" rx={barW > 4 ? 2 : 0} />
+            {#if d.new > 0 && showDetails}
               <text x={x} y={140 - barH - 3} fill="#34d399" font-size="9" text-anchor="middle">+{d.new}</text>
             {/if}
-            <text x={x} y={156} fill="#6b7280" font-size="9" text-anchor="middle">{d.date.slice(5)}</text>
+            {#if showLabel}
+              <text x={x} y={156} fill="#6b7280" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
+            {/if}
           {/each}
         </svg>
         <div class="users-chart-legend">
@@ -442,10 +481,17 @@
         <svg viewBox="0 0 700 140" class="users-svg">
           {#each traffic as d, i}
             {@const x = 50 + i * (600 / (traffic.length - 1 || 1))}
+            {@const barW = chartBarWidth(traffic.length)}
             {@const barH = (d.requests / maxReq) * 100}
-            <rect x={x - 20} y={120 - barH} width="40" height={barH} fill="rgba(96, 165, 250, 0.5)" rx="3" />
-            <text x={x} y={120 - barH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{d.requests > 999 ? (d.requests / 1000).toFixed(1) + "k" : d.requests}</text>
-            <text x={x} y={136} fill="#6b7280" font-size="9" text-anchor="middle">{d.date.slice(5)}</text>
+            {@const showCount = chartShowPerPointDetails(traffic.length)}
+            {@const showLabel = chartShouldShowLabel(d.date, graphRange)}
+            <rect x={x - barW / 2} y={120 - barH} width={barW} height={barH} fill="rgba(96, 165, 250, 0.5)" rx={barW > 4 ? 3 : 0} />
+            {#if showCount}
+              <text x={x} y={120 - barH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{d.requests > 999 ? (d.requests / 1000).toFixed(1) + "k" : d.requests}</text>
+            {/if}
+            {#if showLabel}
+              <text x={x} y={136} fill="#6b7280" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
+            {/if}
           {/each}
         </svg>
       </div>

@@ -27,10 +27,20 @@ def sheet_to_gif(src_path, dest_path, frame_duration=150, scale=3, frame_width=N
         frame = sheet.crop((i * frame_w, 0, (i + 1) * frame_w, h))
         # Scale up for web display (pixel art)
         scaled = frame.resize((frame_w * scale, h * scale), Image.NEAREST)
-        # Convert RGBA to RGB with transparency handled
-        bg = Image.new("RGBA", scaled.size, (0, 0, 0, 0))
-        bg.paste(scaled, (0, 0), scaled)
-        frames.append(bg)
+        # Threshold the alpha channel to binary. The source PNGs include
+        # anti-aliased outline pixels (partial alpha), which GIF can't
+        # represent. The previous implementation alpha-blended each
+        # frame against a fully-transparent black RGBA background as a
+        # mode-conversion step — but PIL's mask blend with a black
+        # destination darkened the RGB of every partial-alpha pixel,
+        # which is what produced the visible "dark fringe" around
+        # sprites like the slime. Snapping alpha to 0-or-255 here gives
+        # crisp pixel-art edges and lets PIL's native GIF palettization
+        # handle transparency cleanly.
+        r, g, b, a = scaled.split()
+        a = a.point(lambda v: 255 if v >= 128 else 0)
+        scaled = Image.merge("RGBA", (r, g, b, a))
+        frames.append(scaled)
 
     # Save as GIF with loop
     frames[0].save(

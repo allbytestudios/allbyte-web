@@ -117,10 +117,45 @@ through Steam Input on desktop or kernel evdev on Linux. The profile
 in `controllers.json` reflects the standard xinput passthrough only.
 Real Deck hardware is required to test the Steam Input layer.
 
-## Test against the game
+## Test against the live game
 
-To test against the live game at `/play/`, the harness needs to wait
-for Godot to boot before injecting events. That's a v1.5 feature
-(adding `--page=play` mode). For now `--target=local` or `--target=prod`
-will route to `/play/` but the Godot iframe boot wait isn't wired up
-yet — use `--target=tester` for routine harness runs.
+`--target=local` and `--target=prod` route at `/play/` and auto-detect
+"play mode" — the harness waits for Godot to boot to a real scene (via
+`window.gameState.scene` polling on the iframe context, same pattern as
+`scripts/smoke_prod.py`), clicks the iframe to register user activation,
+and injects the mock into the iframe's window before each profile sweep.
+
+```
+python tests/controller-qa/run_qa.py --target prod
+```
+
+Expect ~30s per profile on cold cache (Godot WASM compile + PCK download),
+~5s warm. Full 7-controller sweep against prod takes ~3 minutes.
+
+### Verification semantics in play mode
+
+- **What the harness verifies:** mock injection succeeds in the iframe;
+  per-input round-trip via `window.__qaGetMockState()`; the game
+  survives the full sweep (`gameState.scene` still set after sweep, no
+  fatal errors in `_consoleLogs`).
+- **What it CANNOT verify yet:** whether Chronicles' InputMap actually
+  fired the corresponding action in response. That requires game-side
+  instrumentation — Arc adds a debug print on every InputAction firing,
+  harness greps `_consoleLogs` for those. Coord doc to Arc:
+  `Desktop\GameDev\APP_CLAUDE_CONTROLLER_INPUTMAP_AUDIT.md`.
+- **Fatal vs informational logs:** Godot's GDScript runtime logs
+  verbose `ERROR:`-prefixed lines for many non-fatal conditions (Parse
+  JSON failed, etc.). The harness classifies those as informational
+  (count visible in the report, doesn't fail the test). Only genuine
+  crashers — MD5 mismatches, encrypted file failures, missing classes,
+  uncaught JS exceptions — flip status to PARTIAL.
+
+### Known Godot HTML5 quirk
+
+Godot's HTML5 runtime detaches the iframe after ~2 mock connect /
+disconnect cycles. Cause not fully understood, possibly internal
+teardown reacting to repeated `gamepadconnected` events. Harness
+workaround: reload the page between profiles in play mode (each profile
+starts from a fresh Godot boot). This is mentioned for transparency —
+the workaround makes the QA pipeline reliable but the underlying cause
+is worth investigating game-side eventually.

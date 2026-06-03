@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Controller QA Tester</title>
+<style>
+  body { font-family: Courier New, monospace; background: #0a0e17; color: #d1d5db; padding: 1rem; }
+  h1 { color: #a7f3d0; margin: 0 0 0.5rem; }
+  .meta { color: #9ca3af; margin-bottom: 1rem; font-size: 0.85rem; }
+  .gamepad { background: #0d1117; border: 1px solid #374151; padding: 1rem; margin-bottom: 1rem; }
+  .gamepad-id { color: #a7f3d0; font-weight: bold; margin-bottom: 0.5rem; }
+  .gamepad-meta { color: #9ca3af; font-size: 0.8rem; margin-bottom: 0.75rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+  .btn { padding: 0.25rem 0.5rem; border: 1px solid #374151; min-width: 2rem; text-align: center; font-size: 0.8rem; }
+  .btn[data-pressed="true"] { background: #a7f3d0; color: #0a0e17; border-color: #a7f3d0; }
+  .axis { padding: 0.25rem 0.5rem; border: 1px solid #374151; min-width: 5rem; font-size: 0.8rem; }
+  .events { background: #0d1117; border: 1px solid #374151; padding: 0.5rem; max-height: 200px; overflow-y: auto; font-size: 0.75rem; }
+  .events-title { color: #9ca3af; margin-bottom: 0.25rem; }
+  .event { padding: 0.1rem 0; color: #60a5fa; }
+  #no-gamepad { color: #6b7280; font-style: italic; }
+</style>
+</head>
+<body>
+<h1>Controller QA Tester</h1>
+<div class="meta">
+  Listens to <code>navigator.getGamepads()</code> + <code>gamepadconnected</code> events.
+  All state is reflected in DOM with <code>data-button</code> / <code>data-axis</code> /
+  <code>data-pressed</code> / <code>data-value</code> attributes for Playwright introspection.
+</div>
+
+<div id="gamepads"></div>
+<div id="no-gamepad">No gamepad connected yet. Connect a controller and press a button, or run the QA harness.</div>
+
+<div class="events-title">Recent button-press events (newest first):</div>
+<div id="events" class="events"></div>
+
+<script>
+  // Track previous pressed state so we can log transitions
+  const prevPressed = new Map(); // key: gamepadIdx-buttonIdx -> bool
+
+  function render(gamepads) {
+    const root = document.getElementById("gamepads");
+    const empty = document.getElementById("no-gamepad");
+
+    let any = false;
+    let html = "";
+
+    for (let gi = 0; gi < gamepads.length; gi++) {
+      const gp = gamepads[gi];
+      if (!gp || !gp.connected) continue;
+      any = true;
+
+      // Buttons row
+      let btnsHtml = "";
+      for (let bi = 0; bi < gp.buttons.length; bi++) {
+        const b = gp.buttons[bi];
+        const pressed = b.pressed ? "true" : "false";
+        btnsHtml += `<div class="btn" data-button="${bi}" data-pressed="${pressed}" data-value="${b.value.toFixed(2)}">B${bi}</div>`;
+
+        // Log transitions
+        const key = `${gi}-${bi}`;
+        const wasPressed = prevPressed.get(key) || false;
+        if (b.pressed && !wasPressed) {
+          logEvent(`gp${gi} button ${bi} PRESSED (val=${b.value.toFixed(2)})`);
+        } else if (!b.pressed && wasPressed) {
+          logEvent(`gp${gi} button ${bi} released`);
+        }
+        prevPressed.set(key, b.pressed);
+      }
+
+      // Axes row
+      let axesHtml = "";
+      for (let ai = 0; ai < gp.axes.length; ai++) {
+        const v = gp.axes[ai];
+        axesHtml += `<div class="axis" data-axis="${ai}" data-value="${v.toFixed(3)}">A${ai}: ${v.toFixed(3)}</div>`;
+      }
+
+      html += `
+        <div class="gamepad" data-gamepad-index="${gi}">
+          <div class="gamepad-id" data-id="${gp.id}">${gp.id}</div>
+          <div class="gamepad-meta">
+            index=${gp.index} · mapping="${gp.mapping}" · ${gp.buttons.length} buttons · ${gp.axes.length} axes · ts=${Math.round(gp.timestamp)}
+          </div>
+          <div class="row" data-section="buttons">${btnsHtml}</div>
+          <div class="row" data-section="axes">${axesHtml}</div>
+        </div>
+      `;
+    }
+
+    root.innerHTML = html;
+    empty.style.display = any ? "none" : "block";
+  }
+
+  function logEvent(text) {
+    const events = document.getElementById("events");
+    const el = document.createElement("div");
+    el.className = "event";
+    el.dataset.event = text;
+    el.textContent = `${new Date().toLocaleTimeString()} ${text}`;
+    events.insertBefore(el, events.firstChild);
+    while (events.children.length > 50) events.removeChild(events.lastChild);
+  }
+
+  function poll() {
+    const gamepads = navigator.getGamepads ? Array.from(navigator.getGamepads()) : [];
+    render(gamepads);
+    requestAnimationFrame(poll);
+  }
+
+  window.addEventListener("gamepadconnected", (e) => {
+    logEvent(`CONNECTED: ${e.gamepad.id} (index=${e.gamepad.index})`);
+  });
+  window.addEventListener("gamepaddisconnected", (e) => {
+    logEvent(`DISCONNECTED: ${e.gamepad.id} (index=${e.gamepad.index})`);
+  });
+
+  // Expose a flag the harness can poll to confirm the page is ready
+  window.__qaTesterReady = true;
+  poll();
+</script>
+</body>
+</html>

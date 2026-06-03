@@ -36,6 +36,9 @@ public/tier-none.png
 public/godot/*
 !public/godot/.gitkeep
 
+# Controller QA harness reports (generated per run, not source)
+tests/controller-qa/reports/
+
 # OS
 .DS_Store
 Thumbs.db

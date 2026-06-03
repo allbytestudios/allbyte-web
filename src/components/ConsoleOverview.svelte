@@ -38,17 +38,16 @@
   ];
   let activeSeries = $state<Set<SeriesKey>>(new Set(["messages", "outputTokens", "commits", "ticketsDone"]));
 
-  // Per-section time range selectors. Owner spec (2026-06-01): each
-  // historical chart gets its own dropdown so the viewer can compare
-  // scales independently (e.g., users over the last year vs traffic over
-  // the last week). Backend currently returns ~7 days of daily data and
-  // a rolling hourly window for usage; the dropdown slices client-side,
-  // so "month" / "year" may render with whatever data is available
-  // (smaller than the nominal range until backend returns more).
+  // Shared time-range selector for all three historical charts (Users,
+  // Site Traffic, Usage History). Owner spec (2026-06-03): one dropdown
+  // controls every graph in unison — keeps comparison consistent across
+  // panes and removes redundant chrome. Backend currently returns ~7
+  // days of daily data and a rolling hourly window for usage; the
+  // dropdown slices client-side, so "month" / "year" may render with
+  // whatever data is available (smaller than the nominal range until
+  // backend returns more).
   type TimeRange = "week" | "month" | "year";
-  let usersRange = $state<TimeRange>("week");
-  let trafficRange = $state<TimeRange>("week");
-  let usageRange = $state<TimeRange>("week");
+  let graphRange = $state<TimeRange>("week");
 
   // Convert a range to the slice length in DAYS for daily-bucket data.
   function rangeDays(r: TimeRange): number {
@@ -58,18 +57,16 @@
   function rangeHours(r: TimeRange): number {
     return r === "week" ? 7 * 24 : r === "month" ? 30 * 24 : 365 * 24;
   }
-  // Suggested moving-average window for the usage chart at each range.
-  // Replaces the standalone "Trend" dropdown — the smoothing scale should
-  // match the time scale (24h window for a week of data, daily for a
-  // month, weekly for a year).
+  // Moving-average window for the usage chart; scales with the selected
+  // time range (24h smoothing for a week of data, daily for a month,
+  // weekly for a year).
   function rangeMaWindow(r: TimeRange): number {
     return r === "week" ? 24 : r === "month" ? 24 * 7 : 24 * 30;
   }
-  let maWindow = $derived(rangeMaWindow(usageRange));
+  let maWindow = $derived(rangeMaWindow(graphRange));
   // Sliced usage hours used by the chart. $derived so a range change
-  // re-renders cleanly. Backend returns rolling hours; slicing to the
-  // requested window covers what we can do without backend changes.
-  let usageHours = $derived(usageHistory.hours.slice(-rangeHours(usageRange)));
+  // re-renders cleanly.
+  let usageHours = $derived(usageHistory.hours.slice(-rangeHours(graphRange)));
 
   function toggleSeries(k: SeriesKey) {
     const s = new Set(activeSeries);
@@ -370,11 +367,26 @@
     {/if}
   </div>
 
-  <!-- Users graph (admin only). Range slider toggles week / month / year;
-       backend currently returns ~7 days so month/year render whatever's
-       available until backend supports a longer history. -->
+  <!-- Shared time-range selector for the three historical charts below.
+       Owner spec 2026-06-03: one dropdown controls Users / Site Traffic /
+       Usage History together. Renders only when at least one of those
+       graphs would be visible to the current viewer. -->
+  {#if (viewerIsAdmin && (userAnalytics?.dailyHistory?.length || siteTraffic?.dailyRequests?.length)) || (viewerIsLegend && usageHistory?.hours?.length > 0)}
+    <div class="graph-range-control">
+      <label class="range-control-label">
+        Time range
+        <select bind:value={graphRange} class="range-select" aria-label="Time range for all graphs">
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+          <option value="year">Year</option>
+        </select>
+      </label>
+    </div>
+  {/if}
+
+  <!-- Users graph (admin only). Time range from the shared selector. -->
   {#if viewerIsAdmin && userAnalytics?.dailyHistory?.length}
-    {@const history = userAnalytics.dailyHistory.slice(-rangeDays(usersRange))}
+    {@const history = userAnalytics.dailyHistory.slice(-rangeDays(graphRange))}
     {@const maxNew = Math.max(...history.map(d => d.new), 1)}
     {@const minTotal = Math.min(...history.map(d => d.total))}
     {@const totalRange = Math.max(...history.map(d => d.total)) - minTotal || 1}
@@ -382,11 +394,6 @@
       <h3 class="section-title">
         Users
         <span class="section-subtitle">{userAnalytics.totalRegistered} total · +{userAnalytics.newThisWeek} this week</span>
-        <select bind:value={usersRange} class="range-select" aria-label="Users time range">
-          <option value="week">Week</option>
-          <option value="month">Month</option>
-          <option value="year">Year</option>
-        </select>
       </h3>
       <div class="users-chart">
         <svg viewBox="0 0 700 160" class="users-svg">
@@ -422,19 +429,14 @@
     </div>
   {/if}
 
-  <!-- Site traffic graph (admin only). Same range-slider model as Users. -->
+  <!-- Site traffic graph (admin only). Time range from the shared selector. -->
   {#if viewerIsAdmin && siteTraffic?.dailyRequests?.length}
-    {@const traffic = siteTraffic.dailyRequests.slice(-rangeDays(trafficRange))}
+    {@const traffic = siteTraffic.dailyRequests.slice(-rangeDays(graphRange))}
     {@const maxReq = Math.max(...traffic.map(d => d.requests), 1)}
     <div class="users-chart-section">
       <h3 class="section-title">
         Site Traffic
         <span class="section-subtitle">{siteTraffic.totalRequests7d.toLocaleString()} requests (7 days)</span>
-        <select bind:value={trafficRange} class="range-select" aria-label="Site traffic time range">
-          <option value="week">Week</option>
-          <option value="month">Month</option>
-          <option value="year">Year</option>
-        </select>
       </h3>
       <div class="users-chart">
         <svg viewBox="0 0 700 140" class="users-svg">
@@ -462,11 +464,6 @@
   {#if viewerIsLegend && usageHistory?.hours?.length > 0}
     <h3 class="section-title">
       Usage History
-      <select bind:value={usageRange} class="range-select" aria-label="Usage history time range">
-        <option value="week">Week</option>
-        <option value="month">Month</option>
-        <option value="year">Year</option>
-      </select>
     </h3>
     <div class="history-chart">
       <!-- Series toggles. The standalone "Trend" dropdown was removed
@@ -888,6 +885,19 @@
     font-size: 0.72rem;
     cursor: pointer;
     vertical-align: middle;
+  }
+  /* Shared range-control bar above the three historical charts. */
+  .graph-range-control {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0.6rem 0 0.4rem;
+  }
+  .range-control-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.72rem;
+    color: #9ca3af;
   }
   .hour-bar-wrap {
     flex: 1 1 0;

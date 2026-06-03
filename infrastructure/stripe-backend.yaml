@@ -1855,8 +1855,12 @@ Resources:
 
               tier_counts = {}
               oauth_count = 0
+              # 365-day rolling window so the dashboard's week/month/year
+              # selector can slice client-side without re-fetching. Backend
+              # owns the full history; frontend owns the framing.
+              DAYS_BACK = 365
               daily_signups = {}
-              for i in range(7):
+              for i in range(DAYS_BACK):
                   d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
                   daily_signups[d] = 0
 
@@ -1874,8 +1878,13 @@ Resources:
                   for d in sorted(daily_signups.keys())
               ]
 
+              # Cumulative total at the end of each day in the range. Start
+              # from "users that existed before the range began" — i.e.,
+              # total minus everyone who signed up within the window — then
+              # walk forward adding each day's new signups.
+              new_in_range = sum(daily_signups.values())
               cumulative = []
-              running = total - new_this_week
+              running = total - new_in_range
               for entry in daily_series:
                   running += entry["count"]
                   cumulative.append({"date": entry["date"], "total": running, "new": entry["count"]})
@@ -2018,7 +2027,12 @@ Resources:
 
               dist_id = os.environ["DISTRIBUTION_ID"]
               now = datetime.now(timezone.utc)
-              start = now - timedelta(days=7)
+              # 365-day window so the dashboard's week/month/year selector
+              # can slice client-side without re-fetching. CloudWatch
+              # retains 1-day-granularity metrics for 15 months, so this
+              # is well within the retention envelope.
+              DAYS_BACK = 365
+              start = now - timedelta(days=DAYS_BACK)
 
               try:
                   resp = cw.get_metric_statistics(
@@ -2050,17 +2064,20 @@ Resources:
                       by_date[ts.strftime("%Y-%m-%d")] = int(dp["Sum"])
 
                   daily = []
-                  for i in range(7):
-                      d = (now - timedelta(days=6 - i)).strftime("%Y-%m-%d")
+                  for i in range(DAYS_BACK):
+                      d = (now - timedelta(days=DAYS_BACK - 1 - i)).strftime("%Y-%m-%d")
                       daily.append({"date": d, "requests": by_date.get(d, 0)})
 
-                  total = sum(e["requests"] for e in daily)
+                  # totalRequests7d stays explicitly "last 7 days" so the
+                  # dashboard subtitle ("X requests (7 days)") remains
+                  # accurate regardless of how many days we now return.
+                  total_7d = sum(e["requests"] for e in daily[-7:])
 
                   return {
                       "statusCode": 200,
                       "headers": {**CORS, "Cache-Control": "public, max-age=3600"},
                       "body": json.dumps({
-                          "totalRequests7d": total,
+                          "totalRequests7d": total_7d,
                           "dailyRequests": daily,
                       }),
                   }

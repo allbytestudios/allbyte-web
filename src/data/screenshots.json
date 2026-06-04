@@ -2,13 +2,36 @@
   "_comment": "Screenshots gallery for the /artwork/ page. Items with draft:true are admin-only visible until approved. Items with proposed:true are AppC pitch suggestions that don't have files captured yet — they show description-only cards in the admin draft queue until the file lands. Once the autoplay-capture pipeline ships, captured screenshots auto-append here with draft:true.",
   "screenshots": [
     {
+      "id": "title_hero",
+      "title": "Title screen — hero shot",
+      "description": "The Chronicles of Nesis title card with the windmill, hills, and clouds backdrop. Main menu (New Game / Continue / Options / Quit) overlaid. Captured 2026-06-04 from prod /play/. Captured at 1920x1080 viewport, 1270x920 native render.",
+      "src": "/captures/screenshots/title_hero.png",
+      "scene": "Title",
+      "category": "hero",
+      "captured_at": "2026-06-04T11:14:00Z",
+      "captured_by": "scripts/capture_pitch_screenshots.py (manual pre-Autoplay)",
+      "draft": true
+    },
+    {
+      "id": "options_menu",
+      "title": "Options menu — settings UI",
+      "description": "Settings panel showing Music Volume, Sound Effect Volume, Fullscreen toggle, Difficulty selector, Controls, and Save. UI polish showcase, useful for marketing the depth of game configuration. Note: the small debug bar in top-left of these manual captures is dev-mode overlay; the autoplay pipeline should disable it before production captures.",
+      "src": "/captures/screenshots/options_menu.png",
+      "scene": "Title",
+      "category": "ui",
+      "captured_at": "2026-06-04T11:14:00Z",
+      "captured_by": "scripts/capture_pitch_screenshots.py (manual pre-Autoplay)",
+      "draft": true
+    },
+    {
       "id": "proposal-cloud-shadows-laria-mainsquare",
       "title": "Cloud shadows over Laria — Main Square",
       "description": "Recently-shipped cloud shadow feature over hill-mounted props. Hero shot of the parallax + lighting depth at golden-hour ambient.",
       "scene": "Laria-MainSquare",
       "category": "atmosphere",
       "draft": true,
-      "proposed": true
+      "proposed": true,
+      "blocked_on": "Pending Autoplay — needs in-game navigation"
     },
     {
       "id": "proposal-windmill-interior",
@@ -17,7 +40,8 @@
       "scene": "Windmill1",
       "category": "atmosphere",
       "draft": true,
-      "proposed": true
+      "proposed": true,
+      "blocked_on": "Pending Autoplay — needs in-game navigation"
     },
     {
       "id": "proposal-waterway-channel-approach",
@@ -26,7 +50,8 @@
       "scene": "WaterwayChannel",
       "category": "atmosphere",
       "draft": true,
-      "proposed": true
+      "proposed": true,
+      "blocked_on": "Pending Autoplay — needs in-game navigation"
     },
     {
       "id": "proposal-combat-skill-tree-menu",
@@ -35,7 +60,8 @@
       "scene": "Menu",
       "category": "ui",
       "draft": true,
-      "proposed": true
+      "proposed": true,
+      "blocked_on": "Pending Autoplay — needs save-state with unlocked skill tree"
     },
     {
       "id": "proposal-poison-status-effect",
@@ -44,7 +70,18 @@
       "scene": "Combat",
       "category": "vfx",
       "draft": true,
-      "proposed": true
+      "proposed": true,
+      "blocked_on": "Pending Autoplay — needs combat with VSlime"
+    },
+    {
+      "id": "proposal-character-dialogue-naphtali-elias",
+      "title": "Character dialogue — Naphtali and Elias",
+      "description": "Glimpsed in the manual capture run: a dialogue / character-naming UI with 'Naphtali' and 'Elias' name boxes. Worth capturing properly when Autoplay can navigate the intro/dialogue flow cleanly without the menu overlay confusion.",
+      "scene": "WordsOnBlack",
+      "category": "dialogue",
+      "draft": true,
+      "proposed": true,
+      "blocked_on": "Pending Autoplay — needs clean intro traversal"
     }
   ]
 }

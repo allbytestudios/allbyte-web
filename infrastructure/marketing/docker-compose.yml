@@ -106,8 +106,16 @@ services:
   # auto-setup image bundles the Temporal server + auto-creates required
   # namespaces against the provided Postgres. Uses a separate Postgres
   # instance from Postiz's own DB so the two concerns don't share state.
+  #
+  # Versions and Elasticsearch search-attribute store mirror Postiz's
+  # upstream compose at https://github.com/gitroomhq/postiz-app/blob/main/docker-compose.yaml
+  # — Postgres-only search store hits the 3-Text-attribute limit when
+  # Postiz tries to register its full search-attribute set on boot.
+  # ES lifts that limit. Lesson learned 2026-06-04 — Postiz crashed with
+  # "cannot have more than 3 search attribute of type Text" until ES was
+  # wired in.
   postiz-temporal-postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: allbyte-marketing-temporal-postgres
     restart: unless-stopped
     environment:
@@ -122,12 +130,30 @@ services:
       timeout: 5s
       retries: 5
 
+  postiz-temporal-elasticsearch:
+    image: elasticsearch:7.17.27
+    container_name: allbyte-marketing-temporal-elasticsearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms256m -Xmx256m"
+    volumes:
+      - postiz_temporal_elasticsearch:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   postiz-temporal:
-    image: temporalio/auto-setup:1.25.0
+    image: temporalio/auto-setup:1.28.1
     container_name: allbyte-marketing-temporal
     restart: unless-stopped
     depends_on:
       postiz-temporal-postgres:
+        condition: service_healthy
+      postiz-temporal-elasticsearch:
         condition: service_healthy
     environment:
       DB: postgres12
@@ -135,6 +161,9 @@ services:
       POSTGRES_USER: temporal
       POSTGRES_PWD: temporal
       POSTGRES_SEEDS: postiz-temporal-postgres
+      ENABLE_ES: "true"
+      ES_SEEDS: postiz-temporal-elasticsearch
+      ES_VERSION: v7
     # Not exposed to host — postiz container talks to it via the
     # internal docker network.
 
@@ -144,3 +173,4 @@ volumes:
   postiz_postgres:
   postiz_redis:
   postiz_temporal_postgres:
+  postiz_temporal_elasticsearch:

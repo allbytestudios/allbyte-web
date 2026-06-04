@@ -39,6 +39,9 @@ public/godot/*
 # Controller QA harness reports (generated per run, not source)
 tests/controller-qa/reports/
 
+# Cross-browser QA harness reports (generated per run, not source)
+tests/cross-browser-qa/reports/
+
 # OS
 .DS_Store
 Thumbs.db

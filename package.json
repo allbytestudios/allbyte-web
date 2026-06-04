@@ -20,7 +20,8 @@
     "test:a11y": "pytest tests/e2e/test_accessibility.py -v",
     "test:e2e": "pytest tests/e2e/ -v",
     "smoke:prod": "python scripts/smoke_prod.py",
-    "qa:controllers": "python tests/controller-qa/run_qa.py"
+    "qa:controllers": "python tests/controller-qa/run_qa.py",
+    "qa:browsers": "python tests/cross-browser-qa/run.py"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,209 @@
+name: Deploy QA
+
+# Runs after a successful deploy. Boots /play/ on prod in a matrix of
+# OS x browser-engine combos + runs the controller QA tester-mode
+# harness, captures pass/fail + screenshots + log excerpts, and uploads
+# everything to S3 under test-snapshot/qa-runs/<run-id>/. The /test/
+# dev console reads from there and renders a matrix panel.
+#
+# Manual trigger also available for re-running against the current prod
+# without a new deploy. Matrix-level failures don't block this workflow
+# from completing — the aggregator job needs to run regardless so the
+# dashboard sees what happened.
+
+on:
+  workflow_run:
+    workflows: ["Deploy to AWS"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  # Single run-id shared across matrix + aggregator jobs. GitHub Actions
+  # doesn't expose a built-in "workflow run start time" matching what we
+  # want, so we synthesize one in the setup job.
+  TARGET_URL: https://allbyte.studio/play/
+
+jobs:
+  # Only run if the upstream deploy succeeded (skip the QA pass entirely
+  # if deploy failed — there's nothing new to QA against).
+  preflight:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      run_id: ${{ steps.runid.outputs.run_id }}
+      commit_sha: ${{ steps.runid.outputs.commit_sha }}
+    steps:
+      - name: Compute run-id
+        id: runid
+        run: |
+          TS=$(date -u +%Y-%m-%dT%H-%M-%SZ)
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          SHORT_SHA="${SHA:0:7}"
+          echo "run_id=${TS}_${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "commit_sha=${SHA}" >> $GITHUB_OUTPUT
+          echo "Run id: ${TS}_${SHORT_SHA}"
+
+  cross-browser:
+    needs: preflight
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        engine: [chromium, firefox, webkit]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          python -m playwright install ${{ matrix.engine }} --with-deps
+
+      - name: Run cross-browser harness
+        id: harness
+        continue-on-error: true
+        run: |
+          python tests/cross-browser-qa/run.py \
+            --engines ${{ matrix.engine }} \
+            --target prod
+        env:
+          PYTHONUNBUFFERED: "1"
+
+      - name: Locate report dir
+        id: report
+        run: |
+          REPORT=$(ls -td tests/cross-browser-qa/reports/*/ | head -1)
+          echo "dir=${REPORT}" >> $GITHUB_OUTPUT
+          ls -la "$REPORT"
+
+      - name: Rename artifacts with OS+engine prefix
+        run: |
+          SRC="${{ steps.report.outputs.dir }}"
+          DEST_PREFIX="${{ matrix.os }}-${{ matrix.engine }}"
+          # The harness saves <engine>.png + <engine>.logs.txt + results.json
+          # We rename to include os in the filename so multiple matrix runs
+          # don't collide in S3.
+          cd "$SRC"
+          [ -f "${{ matrix.engine }}.png" ] && cp "${{ matrix.engine }}.png" "${DEST_PREFIX}.png" || true
+          [ -f "${{ matrix.engine }}.logs.txt" ] && cp "${{ matrix.engine }}.logs.txt" "${DEST_PREFIX}.logs.txt" || true
+          [ -f "results.json" ] && cp "results.json" "${DEST_PREFIX}.json" || true
+          ls -la
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload to S3
+        run: |
+          RUN_ID="${{ needs.preflight.outputs.run_id }}"
+          DEST_PREFIX="${{ matrix.os }}-${{ matrix.engine }}"
+          SRC="${{ steps.report.outputs.dir }}"
+          # Upload the renamed artifacts only (not the per-run-timestamped
+          # report.md / results.json that the harness writes in unrenamed
+          # form — those are local-only artifacts).
+          aws s3 cp "${SRC}${DEST_PREFIX}.png" \
+            s3://${{ secrets.AWS_S3_BUCKET }}/test-snapshot/qa-runs/${RUN_ID}/ \
+            --content-type "image/png" || true
+          aws s3 cp "${SRC}${DEST_PREFIX}.logs.txt" \
+            s3://${{ secrets.AWS_S3_BUCKET }}/test-snapshot/qa-runs/${RUN_ID}/ \
+            --content-type "text/plain" || true
+          aws s3 cp "${SRC}${DEST_PREFIX}.json" \
+            s3://${{ secrets.AWS_S3_BUCKET }}/test-snapshot/qa-runs/${RUN_ID}/ \
+            --content-type "application/json" || true
+
+  controllers:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright + chromium
+        run: |
+          pip install playwright
+          python -m playwright install chromium --with-deps
+
+      - name: Run controller QA (tester mode)
+        id: harness
+        continue-on-error: true
+        run: |
+          python tests/controller-qa/run_qa.py --headless
+
+      - name: Locate report dir
+        id: report
+        run: |
+          REPORT=$(ls -td tests/controller-qa/reports/*/ | head -1)
+          echo "dir=${REPORT}" >> $GITHUB_OUTPUT
+          ls -la "$REPORT"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload to S3
+        run: |
+          RUN_ID="${{ needs.preflight.outputs.run_id }}"
+          SRC="${{ steps.report.outputs.dir }}"
+          aws s3 cp "${SRC}results.json" \
+            s3://${{ secrets.AWS_S3_BUCKET }}/test-snapshot/qa-runs/${RUN_ID}/controllers.json \
+            --content-type "application/json" || true
+          if [ -f "${SRC}report.md" ]; then
+            aws s3 cp "${SRC}report.md" \
+              s3://${{ secrets.AWS_S3_BUCKET }}/test-snapshot/qa-runs/${RUN_ID}/controllers.report.md \
+              --content-type "text/markdown" || true
+          fi
+
+  aggregate:
+    needs: [preflight, cross-browser, controllers]
+    # Run even if some matrix jobs failed — we still want a manifest
+    # showing what happened, including the failures.
+    if: always() && needs.preflight.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: pip install boto3
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Aggregate results + update index
+        env:
+          RUN_ID: ${{ needs.preflight.outputs.run_id }}
+          COMMIT_SHA: ${{ needs.preflight.outputs.commit_sha }}
+          BRANCH: main
+          BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          python scripts/aggregate_qa_results.py

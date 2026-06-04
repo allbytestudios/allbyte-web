@@ -19,6 +19,7 @@
   import MilestoneStrip from "./MilestoneStrip.svelte";
   import TestStatusCard from "./TestStatusCard.svelte";
   import FixturePicker from "./FixturePicker.svelte";
+  import DeployQaPanel from "./DeployQaPanel.svelte";
   import { auth } from "../lib/auth.svelte.ts";
   import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
@@ -341,6 +342,14 @@
 
   <!-- Live run status -->
   <TestStatusCard {status} />
+
+  <!-- Deploy QA — cross-browser + controller smoke against /play/ on
+       prod after each deploy. Admin-only because the underlying data
+       (per-deploy screenshots, log excerpts) is operational signal,
+       not player-facing. Driven by .github/workflows/qa.yml. -->
+  {#if viewerIsAdmin}
+    <DeployQaPanel />
+  {/if}
 
   <!-- Three overview cards -->
   <div class="cards">

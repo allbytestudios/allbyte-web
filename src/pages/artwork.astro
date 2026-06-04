@@ -426,6 +426,15 @@ function animationGateFor(character: string, animation: string): {
     }
 
     async function checkTierAndUnlock() {
+      // Dev convenience: localhost auto-reveals draft Screenshots /
+      // Recordings so Drew can preview captures without needing prod
+      // auth tokens. Prod path below still requires admin tier.
+      const host = window.location.hostname;
+      const isLocalhost = host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0";
+      if (isLocalhost) {
+        document.body.classList.add("is-admin-draft-viewer");
+      }
+
       const token = localStorage.getItem("allbyte_token");
       if (!token) return;
       try {

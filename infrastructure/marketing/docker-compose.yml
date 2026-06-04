@@ -1,0 +1,104 @@
+# Postiz self-hosted marketing automation
+#
+# AppC-managed marketing container, isolated from Arc's tactical-dev game-dev
+# container. Hosts Postiz (open-source social scheduler with MCP server) +
+# its PostgreSQL + Redis dependencies.
+#
+# Bring up:    docker compose -f infrastructure/marketing/docker-compose.yml up -d
+# Bring down:  docker compose -f infrastructure/marketing/docker-compose.yml down
+# Logs:        docker compose -f infrastructure/marketing/docker-compose.yml logs -f postiz
+# Reset state: docker compose -f infrastructure/marketing/docker-compose.yml down -v
+#
+# Postiz UI:   http://localhost:5000 (default after first run)
+# Postiz API:  http://localhost:3000 (internal, MCP server uses this too)
+#
+# Before first run: copy .env.example to .env and set JWT_SECRET (any
+# strong random string). See README.md for the full setup walkthrough
+# including the social platform OAuth callback URL story for actual
+# publishing.
+
+name: allbyte-marketing
+
+services:
+  postiz:
+    image: ghcr.io/gitroomhq/postiz-app:latest
+    container_name: allbyte-marketing-postiz
+    restart: unless-stopped
+    depends_on:
+      postiz-postgres:
+        condition: service_healthy
+      postiz-redis:
+        condition: service_healthy
+    environment:
+      # URLs — for purely local testing these point at localhost. When
+      # connecting real social-platform OAuth (Bluesky/Mastodon don't
+      # need it; Reddit/X do), set MAIN_URL + FRONTEND_URL to a publicly
+      # reachable URL (Tailscale Funnel works) and update the OAuth app
+      # callback URLs at each platform to match.
+      MAIN_URL: "${MAIN_URL:-http://localhost:5000}"
+      FRONTEND_URL: "${FRONTEND_URL:-http://localhost:5000}"
+      NEXT_PUBLIC_BACKEND_URL: "${NEXT_PUBLIC_BACKEND_URL:-http://localhost:3000}"
+      BACKEND_INTERNAL_URL: "http://localhost:3000"
+
+      JWT_SECRET: "${JWT_SECRET:?must be set in .env — generate via openssl rand -hex 32}"
+
+      # Database
+      DATABASE_URL: "postgresql://postiz-user:postiz-password@postiz-postgres:5432/postiz-db-local"
+
+      # Redis
+      REDIS_URL: "redis://postiz-redis:6379"
+
+      # Storage
+      STORAGE_PROVIDER: "local"
+      UPLOAD_DIRECTORY: "/uploads"
+      NEXT_PUBLIC_UPLOAD_DIRECTORY: "/uploads"
+
+      # MCP server — exposed for Claude/Claude Code to drive Postiz.
+      # Postiz reads this at startup to determine whether to bind the
+      # MCP endpoint.
+      MCP_ENABLED: "true"
+
+      # Misc
+      IS_GENERAL: "true"
+    ports:
+      - "${POSTIZ_FRONTEND_PORT:-5000}:5000"
+      - "${POSTIZ_BACKEND_PORT:-3000}:3000"
+    volumes:
+      - postiz_uploads:/uploads
+      - postiz_config:/config
+
+  postiz-postgres:
+    image: postgres:17-alpine
+    container_name: allbyte-marketing-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postiz-user
+      POSTGRES_PASSWORD: postiz-password
+      POSTGRES_DB: postiz-db-local
+    volumes:
+      - postiz_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postiz-user -d postiz-db-local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Not exposed to host — only postiz container needs to reach it.
+
+  postiz-redis:
+    image: redis:7.2-alpine
+    container_name: allbyte-marketing-redis
+    restart: unless-stopped
+    volumes:
+      - postiz_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Not exposed to host — only postiz container needs to reach it.
+
+volumes:
+  postiz_uploads:
+  postiz_config:
+  postiz_postgres:
+  postiz_redis:

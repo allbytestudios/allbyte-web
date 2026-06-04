@@ -3,25 +3,27 @@
   "screenshots": [
     {
       "id": "title_hero",
-      "title": "Title screen — hero shot",
-      "description": "The Chronicles of Nesis title card with the windmill, hills, and clouds backdrop. Main menu (New Game / Continue / Options / Quit) overlaid. Captured 2026-06-04 from prod /play/. Captured at 1920x1080 viewport, 1270x920 native render.",
+      "title": "Title screen — hero shot (DEBUG BUILD)",
+      "description": "The Chronicles of Nesis title card with the windmill, hills, and clouds backdrop. Main menu (New Game / Continue / Options / Quit) overlaid. Captured 2026-06-04 from prod /play/. PROBLEM: shows the dev-mode admin debug bar in the top-left — this is the current /play/ build serving the debug variant to everyone. Needs re-capture after Arc ships the non-debug public build per APP_CLAUDE_TIER_GATED_BUILDS.md.",
       "src": "/captures/screenshots/title_hero.png",
       "scene": "Title",
       "category": "hero",
       "captured_at": "2026-06-04T11:14:00Z",
       "captured_by": "scripts/capture_pitch_screenshots.py (manual pre-Autoplay)",
-      "draft": true
+      "draft": true,
+      "blocked_on": "Re-capture from /godot/public/ once Arc ships non-debug build"
     },
     {
       "id": "options_menu",
-      "title": "Options menu — settings UI",
-      "description": "Settings panel showing Music Volume, Sound Effect Volume, Fullscreen toggle, Difficulty selector, Controls, and Save. UI polish showcase, useful for marketing the depth of game configuration. Note: the small debug bar in top-left of these manual captures is dev-mode overlay; the autoplay pipeline should disable it before production captures.",
+      "title": "Options menu — settings UI (DEBUG BUILD)",
+      "description": "Settings panel showing Music Volume, Sound Effect Volume, Fullscreen toggle, Difficulty selector, Controls, and Save. UI polish showcase. Same debug-bar problem — needs re-capture from the non-debug build.",
       "src": "/captures/screenshots/options_menu.png",
       "scene": "Title",
       "category": "ui",
       "captured_at": "2026-06-04T11:14:00Z",
       "captured_by": "scripts/capture_pitch_screenshots.py (manual pre-Autoplay)",
-      "draft": true
+      "draft": true,
+      "blocked_on": "Re-capture from /godot/public/ once Arc ships non-debug build"
     },
     {
       "id": "proposal-cloud-shadows-laria-mainsquare",

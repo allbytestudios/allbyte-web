@@ -39,6 +39,10 @@ public/godot/*
 # Controller QA harness reports (generated per run, not source)
 tests/controller-qa/reports/
 
+# Marketing infra secrets — never commit Postiz JWT or any real
+# platform tokens. The .env.example template stays in the repo.
+infrastructure/marketing/.env
+
 # Cross-browser QA harness reports (generated per run, not source)
 tests/cross-browser-qa/reports/
 

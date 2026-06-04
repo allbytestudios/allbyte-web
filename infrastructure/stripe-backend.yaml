@@ -178,6 +178,47 @@ Resources:
                 Action:
                   - cloudwatch:GetMetricStatistics
                 Resource: "*"
+              # Athena + Glue + S3 access for the SiteTrafficFunction, which
+              # queries CloudFront access logs to classify traffic into
+              # owner / bots / other. Glue catalog hosts the external table
+              # over s3://allbyte.studio-access-logs/cf-logs/. Athena writes
+              # query results to s3://allbyte-studio-cfn-deploy/athena-results/
+              # (no separate bucket; cfn-deploy already exists for CFN packaging).
+              # The Lambda also caches the daily aggregate JSON in the same
+              # bucket under traffic-cache/ to avoid re-querying Athena on
+              # every dashboard refresh.
+              - Effect: Allow
+                Action:
+                  - athena:StartQueryExecution
+                  - athena:GetQueryExecution
+                  - athena:GetQueryResults
+                  - athena:StopQueryExecution
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - glue:GetTable
+                  - glue:GetDatabase
+                  - glue:GetPartitions
+                  - glue:CreateTable
+                  - glue:UpdateTable
+                  - glue:CreateDatabase
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - "arn:aws:s3:::allbyte.studio-access-logs"
+                  - "arn:aws:s3:::allbyte.studio-access-logs/*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                Resource:
+                  - "arn:aws:s3:::allbyte-studio-cfn-deploy"
+                  - "arn:aws:s3:::allbyte-studio-cfn-deploy/*"
 
   # --- Lambda: Auth Signup ---
   SignupFunction:
@@ -1994,22 +2035,150 @@ Resources:
                       "body": json.dumps({"error": str(e)}),
                   }
 
-  # --- Lambda: Site traffic (CloudWatch CloudFront metrics, public) ---
+  # --- Athena resources for SiteTrafficFunction --------------------------
+  #
+  # The site-traffic chart needs per-request detail (IP, user-agent) to split
+  # daily requests into owner / bots / other. CloudWatch's CloudFront metric
+  # gives totals only, so we switched the data source to CloudFront access
+  # logs (already configured to write to s3://allbyte.studio-access-logs/cf-logs/)
+  # and query them via Athena.
+  #
+  # Glue catalog hosts a single external table over the access-log prefix.
+  # Athena workgroup pins the results-output location (cfn-deploy/athena-results/)
+  # and enforces a per-query bytes-scanned ceiling so a mis-tuned query can't
+  # accidentally blow the budget. Lambda writes a 1-hour TTL cache of the
+  # aggregated JSON to s3://allbyte-studio-cfn-deploy/traffic-cache/daily.json
+  # so the dashboard's 5-minute polling doesn't fire Athena every refresh.
+
+  TrafficGlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: allbyte_studio_traffic
+        Description: CloudFront access logs for AllByte Studios
+
+  TrafficGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref TrafficGlueDatabase
+      TableInput:
+        Name: cf_access_logs
+        Description: CloudFront W3C-extended access logs (gzipped)
+        TableType: EXTERNAL_TABLE
+        Parameters:
+          "skip.header.line.count": "2"
+          "EXTERNAL": "TRUE"
+        StorageDescriptor:
+          # CloudFront standard log format — column list is positional and
+          # matches the W3C-extended #Fields header CloudFront writes into
+          # every file. Order is fixed; adding fields is backward-compatible
+          # because Hive's tab-delimited SerDe just ignores extra columns.
+          Columns:
+            - { Name: log_date,                 Type: date }
+            - { Name: log_time,                 Type: string }
+            - { Name: x_edge_location,          Type: string }
+            - { Name: sc_bytes,                 Type: bigint }
+            - { Name: c_ip,                     Type: string }
+            - { Name: cs_method,                Type: string }
+            - { Name: cs_host,                  Type: string }
+            - { Name: cs_uri_stem,              Type: string }
+            - { Name: sc_status,                Type: int }
+            - { Name: cs_referer,               Type: string }
+            - { Name: cs_user_agent,            Type: string }
+            - { Name: cs_uri_query,             Type: string }
+            - { Name: cs_cookie,                Type: string }
+            - { Name: x_edge_result_type,       Type: string }
+            - { Name: x_edge_request_id,        Type: string }
+            - { Name: x_host_header,            Type: string }
+            - { Name: cs_protocol,              Type: string }
+            - { Name: cs_bytes,                 Type: bigint }
+            - { Name: time_taken,               Type: float }
+            - { Name: x_forwarded_for,          Type: string }
+            - { Name: ssl_protocol,             Type: string }
+            - { Name: ssl_cipher,               Type: string }
+            - { Name: x_edge_response_result_type, Type: string }
+            - { Name: cs_protocol_version,      Type: string }
+            - { Name: fle_status,               Type: string }
+            - { Name: fle_encrypted_fields,     Type: int }
+            - { Name: c_port,                   Type: int }
+            - { Name: time_to_first_byte,       Type: float }
+            - { Name: x_edge_detailed_result_type, Type: string }
+            - { Name: sc_content_type,          Type: string }
+            - { Name: sc_content_len,           Type: bigint }
+            - { Name: sc_range_start,           Type: bigint }
+            - { Name: sc_range_end,             Type: bigint }
+          Location: s3://allbyte.studio-access-logs/cf-logs/
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+            Parameters:
+              "field.delim": "\t"
+              "serialization.format": "\t"
+
+  TrafficAthenaWorkgroup:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Name: allbyte-studio-traffic
+      State: ENABLED
+      Description: Workgroup for site-traffic classification queries
+      WorkGroupConfiguration:
+        EnforceWorkGroupConfiguration: true
+        PublishCloudWatchMetricsEnabled: false
+        # 5 GB scan ceiling per query — at AllByte's traffic scale a full
+        # 365-day scan is well under 100 MB, so this is a generous safety
+        # rail rather than a working constraint.
+        BytesScannedCutoffPerQuery: 5368709120
+        ResultConfiguration:
+          OutputLocation: s3://allbyte-studio-cfn-deploy/athena-results/
+
+  # --- Lambda: Site traffic (Athena-backed, public) ---
+  #
+  # Queries the cf_access_logs Glue table to aggregate yesterday's-and-prior
+  # 365 days into per-day counts split by classification:
+  #   owner — IP in OWNER_IDENTIFIERS.ips OR User-Agent matching one of
+  #           OWNER_IDENTIFIERS.user_agent_patterns (case-insensitive substring)
+  #   bots  — User-Agent matches the hard-coded BOT_PATTERNS list
+  #   other — everything else
+  # CloudFront access logs run ~5–10 minutes behind real-time, so the most
+  # recent bucket may under-report; the dashboard's day-grain rendering
+  # makes that invisible at ordinary refresh cadence.
+  #
+  # Results JSON is cached in s3://allbyte-studio-cfn-deploy/traffic-cache/daily.json
+  # with a 1-hour TTL. Cache-miss path runs an Athena query (typically 3-8s,
+  # well under the function timeout); cache-hit returns immediately.
   SiteTrafficFunction:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: allbyte-studio-site-traffic
       Runtime: python3.12
       Handler: index.handler
-      Timeout: 10
+      # Athena queries usually finish in 3-8s but can spike to 30s on a
+      # cold catalog. 60s gives plenty of headroom; cache-hit returns in
+      # tens of ms regardless.
+      Timeout: 60
+      MemorySize: 256
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          DISTRIBUTION_ID: E1M9YWY7UW7130
+          GLUE_DATABASE: !Ref TrafficGlueDatabase
+          GLUE_TABLE: cf_access_logs
+          ATHENA_WORKGROUP: !Ref TrafficAthenaWorkgroup
+          CACHE_BUCKET: allbyte-studio-cfn-deploy
+          CACHE_KEY: traffic-cache/daily.json
+          CACHE_TTL_SECONDS: "3600"
+          # Owner identifiers — JSON with "ips" (exact match) and
+          # "user_agent_patterns" (case-insensitive substring). Default empty;
+          # update via console or `aws lambda update-function-configuration`
+          # without redeploying CloudFormation.
+          OWNER_IDENTIFIERS: '{"ips":[],"user_agent_patterns":[]}'
       Code:
         ZipFile: |
           import json
           import os
+          import time
           import boto3
           from datetime import datetime, timedelta, timezone
 
@@ -2019,74 +2188,232 @@ Resources:
               "Access-Control-Allow-Methods": "GET,OPTIONS",
           }
 
-          cw = boto3.client("cloudwatch")
+          # Known bot/crawler User-Agent substrings. Matched case-insensitively
+          # against cs_user_agent. List sourced from the owner's spec — covers
+          # major search engines, social-media link unfurlers, LLM crawlers,
+          # and the SEO/scraping bots that show up in logs at AllByte's scale.
+          BOT_PATTERNS = [
+              "Googlebot", "bingbot", "Slurp", "DuckDuckBot", "Baiduspider",
+              "YandexBot", "Sogou", "facebot", "facebookexternalhit",
+              "Twitterbot", "LinkedInBot", "Discordbot", "TelegramBot",
+              "WhatsApp", "Pinterest", "Mastodon", "applebot",
+              "ChatGPT-User", "GPTBot", "OAI-SearchBot", "Anthropic", "Claude",
+              "PerplexityBot", "ClaudeBot", "CCBot", "Amazonbot", "Bytespider",
+              "MJ12bot", "AhrefsBot", "SemrushBot", "DotBot",
+          ]
+
+          athena = boto3.client("athena")
+          s3 = boto3.client("s3")
+
+          DAYS_BACK = 365
+
+          def _empty_daily(now):
+              return [
+                  {
+                      "date": (now - timedelta(days=DAYS_BACK - 1 - i)).strftime("%Y-%m-%d"),
+                      "requests": 0,
+                      "owner": 0,
+                      "bots": 0,
+                      "other": 0,
+                  }
+                  for i in range(DAYS_BACK)
+              ]
+
+          def _read_cache():
+              try:
+                  obj = s3.get_object(
+                      Bucket=os.environ["CACHE_BUCKET"],
+                      Key=os.environ["CACHE_KEY"],
+                  )
+                  body = json.loads(obj["Body"].read())
+                  ts = body.get("_cachedAt", 0)
+                  ttl = int(os.environ.get("CACHE_TTL_SECONDS", "3600"))
+                  if time.time() - ts < ttl:
+                      return body
+              except Exception:
+                  pass
+              return None
+
+          def _write_cache(payload):
+              try:
+                  s3.put_object(
+                      Bucket=os.environ["CACHE_BUCKET"],
+                      Key=os.environ["CACHE_KEY"],
+                      Body=json.dumps(payload).encode("utf-8"),
+                      ContentType="application/json",
+                  )
+              except Exception:
+                  # Cache write failures are non-fatal — the next request
+                  # will simply re-query Athena.
+                  pass
+
+          def _owner_filter_sql():
+              """Build the SQL fragment that matches owner traffic.
+
+              Reads OWNER_IDENTIFIERS env var (JSON). Returns a SQL expression
+              that evaluates true when the row is the owner's traffic. Falls
+              back to a literal false if the env is missing/malformed/empty,
+              which keeps the query valid while putting all traffic into
+              bots/other classifications.
+              """
+              try:
+                  cfg = json.loads(os.environ.get("OWNER_IDENTIFIERS", "{}"))
+              except Exception:
+                  cfg = {}
+              clauses = []
+              ips = cfg.get("ips") or []
+              if ips:
+                  quoted = ", ".join(
+                      "'" + str(ip).replace("'", "''") + "'" for ip in ips
+                  )
+                  clauses.append(f"c_ip IN ({quoted})")
+              patterns = cfg.get("user_agent_patterns") or []
+              for p in patterns:
+                  safe = str(p).replace("'", "''")
+                  clauses.append(f"lower(cs_user_agent) LIKE '%{safe.lower()}%'")
+              if not clauses:
+                  return "false"
+              return "(" + " OR ".join(clauses) + ")"
+
+          def _bot_filter_sql():
+              """SQL fragment that matches known bot/crawler User-Agents."""
+              clauses = []
+              for p in BOT_PATTERNS:
+                  safe = p.replace("'", "''")
+                  clauses.append(f"lower(cs_user_agent) LIKE '%{safe.lower()}%'")
+              return "(" + " OR ".join(clauses) + ")"
+
+          def _run_athena_query(now):
+              owner_expr = _owner_filter_sql()
+              bot_expr = _bot_filter_sql()
+              start_date = (now - timedelta(days=DAYS_BACK)).strftime("%Y-%m-%d")
+              database = os.environ["GLUE_DATABASE"]
+              table = os.environ["GLUE_TABLE"]
+              # Classification is mutually exclusive: owner wins over bots,
+              # bots wins over other. CASE expression encodes that priority.
+              query = f"""
+                  SELECT
+                      date_format(log_date, '%Y-%m-%d') AS d,
+                      SUM(CASE WHEN {owner_expr} THEN 1 ELSE 0 END) AS owner_count,
+                      SUM(CASE WHEN NOT ({owner_expr}) AND {bot_expr} THEN 1 ELSE 0 END) AS bot_count,
+                      SUM(CASE WHEN NOT ({owner_expr}) AND NOT ({bot_expr}) THEN 1 ELSE 0 END) AS other_count
+                  FROM {table}
+                  WHERE log_date >= DATE '{start_date}'
+                  GROUP BY date_format(log_date, '%Y-%m-%d')
+                  ORDER BY d
+              """
+              start = athena.start_query_execution(
+                  QueryString=query,
+                  QueryExecutionContext={"Database": database},
+                  WorkGroup=os.environ["ATHENA_WORKGROUP"],
+              )
+              qid = start["QueryExecutionId"]
+              # Poll for completion. Athena typical for this table size is
+              # 3-8s; cap at ~50s so we leave headroom before the function
+              # times out. Backoff escalates so we're not hammering the API
+              # for a query that hasn't finished.
+              deadline = time.time() + 50
+              delay = 0.5
+              while time.time() < deadline:
+                  st = athena.get_query_execution(QueryExecutionId=qid)
+                  state = st["QueryExecution"]["Status"]["State"]
+                  if state == "SUCCEEDED":
+                      break
+                  if state in ("FAILED", "CANCELLED"):
+                      reason = st["QueryExecution"]["Status"].get("StateChangeReason", "unknown")
+                      raise RuntimeError(f"Athena {state}: {reason}")
+                  time.sleep(delay)
+                  delay = min(delay * 1.5, 4.0)
+              else:
+                  raise TimeoutError("Athena query did not complete in time")
+
+              # Pull results — Athena paginates at 1000 rows/page; 365 days
+              # max so a single page is enough but we loop defensively.
+              by_date = {}
+              token = None
+              while True:
+                  kwargs = {"QueryExecutionId": qid, "MaxResults": 1000}
+                  if token:
+                      kwargs["NextToken"] = token
+                  res = athena.get_query_results(**kwargs)
+                  rows = res["ResultSet"]["Rows"]
+                  for row in rows:
+                      data = row.get("Data", [])
+                      vals = [d.get("VarCharValue", "") for d in data]
+                      if not vals or vals[0] == "d":  # header row
+                          continue
+                      try:
+                          d = vals[0]
+                          owner_c = int(vals[1] or 0)
+                          bot_c = int(vals[2] or 0)
+                          other_c = int(vals[3] or 0)
+                      except (ValueError, IndexError):
+                          continue
+                      by_date[d] = (owner_c, bot_c, other_c)
+                  token = res.get("NextToken")
+                  if not token:
+                      break
+              return by_date
 
           def handler(event, context):
               if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
                   return {"statusCode": 200, "headers": CORS}
 
-              dist_id = os.environ["DISTRIBUTION_ID"]
               now = datetime.now(timezone.utc)
-              # 365-day window so the dashboard's week/month/year selector
-              # can slice client-side without re-fetching. CloudWatch
-              # retains 1-day-granularity metrics for 15 months, so this
-              # is well within the retention envelope.
-              DAYS_BACK = 365
-              start = now - timedelta(days=DAYS_BACK)
 
-              try:
-                  resp = cw.get_metric_statistics(
-                      Namespace="AWS/CloudFront",
-                      MetricName="Requests",
-                      Dimensions=[
-                          {"Name": "DistributionId", "Value": dist_id},
-                          {"Name": "Region", "Value": "Global"},
-                      ],
-                      StartTime=start.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                      EndTime=now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                      Period=86400,
-                      Statistics=["Sum"],
-                  )
-
-                  # Each datapoint's Timestamp marks the START of the 24-hour
-                  # bucket. boto3 returns it tz-aware in UTC, but if we ever
-                  # got a naive datetime back we'd silently format in the
-                  # Lambda runtime's local tz — which has historically shifted
-                  # today's traffic into yesterday's column on the dashboard.
-                  # Force-UTC before formatting eliminates that class of bug.
-                  by_date = {}
-                  for dp in resp.get("Datapoints", []):
-                      ts = dp["Timestamp"]
-                      if ts.tzinfo is None:
-                          ts = ts.replace(tzinfo=timezone.utc)
-                      else:
-                          ts = ts.astimezone(timezone.utc)
-                      by_date[ts.strftime("%Y-%m-%d")] = int(dp["Sum"])
-
-                  daily = []
-                  for i in range(DAYS_BACK):
-                      d = (now - timedelta(days=DAYS_BACK - 1 - i)).strftime("%Y-%m-%d")
-                      daily.append({"date": d, "requests": by_date.get(d, 0)})
-
-                  # totalRequests7d stays explicitly "last 7 days" so the
-                  # dashboard subtitle ("X requests (7 days)") remains
-                  # accurate regardless of how many days we now return.
-                  total_7d = sum(e["requests"] for e in daily[-7:])
-
+              cached = _read_cache()
+              if cached:
                   return {
                       "statusCode": 200,
-                      "headers": {**CORS, "Cache-Control": "public, max-age=3600"},
+                      "headers": {**CORS, "Cache-Control": "public, max-age=300"},
                       "body": json.dumps({
-                          "totalRequests7d": total_7d,
-                          "dailyRequests": daily,
+                          k: v for k, v in cached.items() if not k.startswith("_")
                       }),
                   }
+
+              try:
+                  by_date = _run_athena_query(now)
               except Exception as e:
+                  # Graceful degradation: return zero-filled history with an
+                  # error hint rather than a 500. The dashboard will render
+                  # an empty chart instead of breaking.
+                  daily = _empty_daily(now)
                   return {
-                      "statusCode": 500,
+                      "statusCode": 200,
                       "headers": CORS,
-                      "body": json.dumps({"error": str(e)}),
+                      "body": json.dumps({
+                          "totalRequests7d": 0,
+                          "dailyRequests": daily,
+                          "error": str(e)[:200],
+                      }),
                   }
+
+              daily = []
+              for i in range(DAYS_BACK):
+                  d = (now - timedelta(days=DAYS_BACK - 1 - i)).strftime("%Y-%m-%d")
+                  owner_c, bot_c, other_c = by_date.get(d, (0, 0, 0))
+                  daily.append({
+                      "date": d,
+                      "requests": owner_c + bot_c + other_c,
+                      "owner": owner_c,
+                      "bots": bot_c,
+                      "other": other_c,
+                  })
+
+              total_7d = sum(e["requests"] for e in daily[-7:])
+              payload = {
+                  "totalRequests7d": total_7d,
+                  "dailyRequests": daily,
+                  "_cachedAt": int(time.time()),
+              }
+              _write_cache(payload)
+              return {
+                  "statusCode": 200,
+                  "headers": {**CORS, "Cache-Control": "public, max-age=300"},
+                  "body": json.dumps({
+                      k: v for k, v in payload.items() if not k.startswith("_")
+                  }),
+              }
 
   # --- Lambda: Admin — list all users (admin tier only) ---
   AdminListUsersFunction:

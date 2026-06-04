@@ -234,9 +234,23 @@ export interface BudgetStatus {
   period: string;
 }
 
+export interface SiteTrafficDay {
+  date: string;
+  requests: number;
+  // Per-classification breakdown — added 2026-06-04 when the backend
+  // switched from CloudWatch CloudFront metrics to Athena over the
+  // CloudFront access logs. Older snapshots may omit these (falsy ⇒ 0);
+  // chart code treats them as optional and zero-fills.
+  owner?: number;
+  bots?: number;
+  other?: number;
+}
+
 export interface SiteTraffic {
   totalRequests7d: number;
-  dailyRequests: { date: string; requests: number }[];
+  dailyRequests: SiteTrafficDay[];
+  /** Present only if the backend hit a non-fatal error producing data. */
+  error?: string;
 }
 
 export async function fetchSiteTraffic(signal?: AbortSignal): Promise<SiteTraffic | null> {

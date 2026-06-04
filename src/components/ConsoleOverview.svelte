@@ -477,10 +477,24 @@
     </div>
   {/if}
 
-  <!-- Site traffic graph (admin only). Time range from the shared selector. -->
+  <!-- Site traffic graph (admin only). Time range from the shared selector.
+       Per-day bars are stacked into three classifications, sourced from
+       CloudFront access logs via Athena (see SiteTrafficFunction in
+       infrastructure/stripe-backend.yaml):
+         owner — AllByte-Internal traffic (configured in OWNER_IDENTIFIERS env)
+         bots  — known crawlers (Googlebot / GPTBot / etc., UA-pattern match)
+         other — everything else
+       Stack order bottom→top is owner / bots / other so the most
+       "interesting" segment (real visitors) sits on top of the bar where
+       the eye lands. Older snapshots without the breakdown fall back to
+       a single-color total (owner/bots/other all zero or undefined). -->
   {#if viewerIsAdmin && siteTraffic?.dailyRequests?.length}
     {@const traffic = siteTraffic.dailyRequests.slice(-rangeDays(graphRange))}
     {@const maxReq = Math.max(...traffic.map(d => d.requests), 1)}
+    {@const hasBreakdown = traffic.some(d => (d.owner ?? 0) + (d.bots ?? 0) + (d.other ?? 0) > 0)}
+    {@const COLOR_OWNER = "#a7f3d0"}
+    {@const COLOR_BOTS  = "#fbbf24"}
+    {@const COLOR_OTHER = "#60a5fa"}
     <div class="users-chart-section">
       <h3 class="section-title">
         Site Traffic
@@ -491,18 +505,58 @@
           {#each traffic as d, i}
             {@const x = 50 + i * (600 / (traffic.length - 1 || 1))}
             {@const barW = chartBarWidth(traffic.length)}
-            {@const barH = (d.requests / maxReq) * 100}
+            {@const ownerC = d.owner ?? 0}
+            {@const botsC  = d.bots  ?? 0}
+            {@const otherC = d.other ?? 0}
+            {@const scale = 100 / maxReq}
+            {@const ownerH = ownerC * scale}
+            {@const botsH  = botsC  * scale}
+            {@const otherH = otherC * scale}
+            {@const totalH = (d.requests || 0) * scale}
             {@const showCount = chartShowPerPointDetails(traffic.length)}
             {@const showLabel = chartShouldShowLabel(d.date, graphRange)}
-            <rect x={x - barW / 2} y={120 - barH} width={barW} height={barH} fill="rgba(96, 165, 250, 0.5)" rx={barW > 4 ? 3 : 0} />
+            {@const tooltip = hasBreakdown
+              ? `${d.date}\nOwner ${ownerC} · Bots ${botsC} · Other ${otherC}\nTotal ${d.requests}`
+              : `${d.date}: ${d.requests}`}
+            {#if hasBreakdown}
+              <!-- Stacked bar: owner (bottom) → bots (mid) → other (top).
+                   Bot+other stack first so a busy crawler day doesn't dwarf
+                   the owner sliver into invisibility. -->
+              {#if ownerH > 0}
+                <rect x={x - barW / 2} y={120 - ownerH} width={barW} height={ownerH}
+                      fill={COLOR_OWNER} opacity="0.7"
+                      rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+              {/if}
+              {#if botsH > 0}
+                <rect x={x - barW / 2} y={120 - ownerH - botsH} width={barW} height={botsH}
+                      fill={COLOR_BOTS} opacity="0.6"
+                      rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+              {/if}
+              {#if otherH > 0}
+                <rect x={x - barW / 2} y={120 - ownerH - botsH - otherH} width={barW} height={otherH}
+                      fill={COLOR_OTHER} opacity="0.7"
+                      rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+              {/if}
+            {:else}
+              <rect x={x - barW / 2} y={120 - totalH} width={barW} height={totalH}
+                    fill={COLOR_OTHER} opacity="0.5"
+                    rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+            {/if}
             {#if showCount}
-              <text x={x} y={120 - barH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{d.requests > 999 ? (d.requests / 1000).toFixed(1) + "k" : d.requests}</text>
+              <text x={x} y={120 - totalH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{d.requests > 999 ? (d.requests / 1000).toFixed(1) + "k" : d.requests}</text>
             {/if}
             {#if showLabel}
               <text x={x} y={136} fill="#6b7280" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
             {/if}
           {/each}
         </svg>
+        {#if hasBreakdown}
+          <div class="users-chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OWNER}"></span> Owner</span>
+            <span class="legend-item"><span class="legend-dot" style="background: {COLOR_BOTS}"></span> Bots / crawlers</span>
+            <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OTHER}"></span> Other visitors</span>
+          </div>
+        {/if}
       </div>
     </div>
   {/if}

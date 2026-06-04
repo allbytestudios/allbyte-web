@@ -129,7 +129,3 @@ I'm not running a platform. I'm not selling a tool. I'm one solo dev shipping on
 The argument I'm making is small: **if you're an AI-assisted solo dev, walk through your stack and ask which pieces are still worth the cut.** A lot of them aren't anymore, and that's new information. If the answer changes for some pieces and stays the same for others, that's the right answer. The point isn't to burn down the platforms; the point is to notice that the deal you've been making with them was priced for an engineering economy that no longer exists.
 
 What's next, for me, is finding out whether this is also a thing other Godot devs would want to do — and whether the tools I built for Chronicles of Nesis could be wrapped in a way that lets other indies make the same choice without doing the engineering twice. There's a different post in that direction, eventually.
-
-For now: the report-back from the patreon devlog two months ago is that it's working. The PWA install pipeline is working. The cost is real, but it's lower than the cuts I'd be paying. And the engineering, which used to be the prohibitive part, is no longer prohibitive.
-
-That's the actual news.

@@ -3,6 +3,7 @@
   import { subscribeToFile } from "../lib/testEvents";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   import VirtualGamepad from "./VirtualGamepad.svelte";
+  import MinimapPanel from "./MinimapPanel.svelte";
 
   interface Props {
     fixture?: string;
@@ -364,6 +365,7 @@
       allow="cross-origin-isolated"
     ></iframe>
     <VirtualGamepad iframe={iframeEl} />
+    <MinimapPanel />
     {#if loadPanelVisible}
       {@const pct = Math.min(100, Math.round((bytesDownloaded / EXPECTED_DOWNLOAD_BYTES) * 100))}
       {@const mbDl = (bytesDownloaded / (1024 * 1024)).toFixed(1)}

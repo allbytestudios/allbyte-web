@@ -1,0 +1,46 @@
+{
+  "_comment": "Recordings gallery for the /artwork/ page. Items with draft:true are admin-only visible. Items with src:'/captures/recordings/...' play from local file; once youtube_id is populated, the page uses a YouTube embed instead. Proposed items (proposed:true) don't have files yet — they're AppC pitch suggestions waiting for the autoplay-capture pipeline. On Drew approval, src gets uploaded to YouTube (Unlisted), youtube_id is filled in, draft flips to false.",
+  "recordings": [
+    {
+      "id": "proposal-cloud-shadows-demo",
+      "title": "Cloud shadows over Laria",
+      "description": "30-second loop showing the parallax cloud shadows passing over hill props in Laria-MainSquare. Calm atmosphere reel — no combat, just the visual feature.",
+      "scene": "Laria-MainSquare",
+      "category": "atmosphere",
+      "duration_s": 30,
+      "draft": true,
+      "proposed": true
+    },
+    {
+      "id": "proposal-combat-encounter-slime",
+      "title": "Combat encounter — Slime",
+      "description": "Full combat encounter from entry to victory. Showcases combat system, action overlay, and damage queue.",
+      "scene": "Combat",
+      "category": "combat",
+      "duration_s": 45,
+      "draft": true,
+      "proposed": true
+    },
+    {
+      "id": "proposal-skill-animation-poison",
+      "title": "Skill animation — Poison",
+      "description": "Short 4-second clip of the Poison damage type being applied in combat. Pure skill showcase.",
+      "scene": "Combat",
+      "category": "skill",
+      "duration_s": 4,
+      "draft": true,
+      "proposed": true
+    },
+    {
+      "id": "proposal-mother-slime-intro",
+      "title": "Mother Slime boss intro",
+      "description": "Pending Arc's Mother Slime boss ship. The cinematic intro sequence (if one exists) plus first attack exchange — boss reveal moment.",
+      "scene": "Combat-MotherSlime",
+      "category": "boss",
+      "duration_s": 30,
+      "draft": true,
+      "proposed": true,
+      "blocked_on": "Arc: Mother Slime boss not yet shipped"
+    }
+  ]
+}

@@ -3,9 +3,31 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Footer from "../components/Footer.astro";
 import spriteGifs from "../data/sprite-gifs.json";
 import manifest from "../../scripts/asset-manifest.json";
+import screenshotsData from "../data/screenshots.json";
+import recordingsData from "../data/recordings.json";
 
 const title = "Artwork — AllByte Studios";
-const description = "Hand-crafted sprites, animations, and backgrounds from The Chronicles of Nesis.";
+const description = "Hand-crafted sprites, animations, screenshots, and recordings from The Chronicles of Nesis.";
+
+interface ScreenshotItem {
+  id: string;
+  title: string;
+  description?: string;
+  src?: string;
+  scene?: string;
+  category?: string;
+  captured_at?: string;
+  draft?: boolean;
+  proposed?: boolean;
+  blocked_on?: string;
+}
+interface RecordingItem extends ScreenshotItem {
+  youtube_id?: string | null;
+  duration_s?: number;
+}
+
+const screenshotItems = (screenshotsData.screenshots as ScreenshotItem[]) ?? [];
+const recordingItems = (recordingsData.recordings as RecordingItem[]) ?? [];
 
 // Character Map data — mirrors the Typography section block on /fonts/.
 // Kept in sync by hand; both pages render the same four rows.
@@ -91,7 +113,7 @@ function animationGateFor(character: string, animation: string): {
       <a href="/" class="back-link">&larr; Back</a>
       <div class="header-text">
         <h1 class="page-title">Artwork</h1>
-        <p class="page-sub">Hand-crafted sprites, animations, and backgrounds</p>
+        <p class="page-sub">Hand-crafted sprites, animations, screenshots, and recordings</p>
       </div>
       <div class="header-spacer" aria-hidden="true"></div>
     </header>
@@ -268,23 +290,105 @@ function animationGateFor(character: string, animation: string): {
         </div>
       </section>
 
-      <!-- Backgrounds -->
+      <!-- Screenshots — JSON-driven from src/data/screenshots.json.
+           Items with draft:true render only for admins (revealed via the
+           same client-side tier check the rest of this page uses).
+           Items with proposed:true are AppC pitch suggestions awaiting
+           a captured file; rendered as description-only "pitch" cards
+           with no image. Real captures land via the autoplay-capture
+           pipeline once that ships. -->
       <section class="category-section">
-        <h2 class="category-title">Backgrounds</h2>
-        <p class="section-note">Screenshots of fully composed scenes — coming soon.</p>
+        <h2 class="category-title">Screenshots</h2>
+        {screenshotItems.length === 0 && (
+          <p class="section-note">Coming soon — populated by the autoplay-capture pipeline.</p>
+        )}
         <div class="bg-grid">
-          <div class="bg-card locked-card">
-            <div class="locked-bg">&#128274;</div>
-            <span class="bg-label">Laria — Main Square</span>
-          </div>
-          <div class="bg-card locked-card">
-            <div class="locked-bg">&#128274;</div>
-            <span class="bg-label">Dwarven Ruins</span>
-          </div>
-          <div class="bg-card locked-card">
-            <div class="locked-bg">&#128274;</div>
-            <span class="bg-label">More locations to discover</span>
-          </div>
+          {screenshotItems.map((s) => (
+            <div
+              class={`bg-card${s.draft ? " draft-card" : ""}${s.proposed ? " proposed-card" : ""}`}
+              data-draft={s.draft ? "true" : "false"}
+              data-proposed={s.proposed ? "true" : "false"}
+              data-id={s.id}
+            >
+              {s.proposed ? (
+                <div class="proposed-placeholder">
+                  <div class="proposed-icon">&#128172;</div>
+                  <span class="proposed-label">PITCH</span>
+                </div>
+              ) : (
+                s.src && <img src={s.src} alt={s.title} class="bg-image" loading="lazy" />
+              )}
+              <div class="bg-meta">
+                <span class="bg-label">{s.title}</span>
+                {s.description && <p class="bg-description">{s.description}</p>}
+                {(s.scene || s.category) && (
+                  <div class="bg-tags">
+                    {s.scene && <span class="bg-tag">{s.scene}</span>}
+                    {s.category && <span class="bg-tag bg-tag-cat">{s.category}</span>}
+                  </div>
+                )}
+                {s.draft && <span class="draft-badge">DRAFT</span>}
+                {s.blocked_on && <span class="blocked-badge">{s.blocked_on}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Recordings — JSON-driven from src/data/recordings.json.
+           If youtube_id is populated, render as YouTube embed; else if
+           src is populated, render as <video>; else if proposed, render
+           as pitch card. Drafts are admin-only via client-side reveal.
+           Approval flow: AppC captures via autoplay-capture pipeline →
+           writes to recordings.json with draft:true + src → Drew
+           approves → AppC uploads to YouTube (unlisted) → youtube_id
+           populated, draft flips to false. -->
+      <section class="category-section">
+        <h2 class="category-title">Recordings</h2>
+        {recordingItems.length === 0 && (
+          <p class="section-note">Coming soon — populated by the autoplay-capture pipeline.</p>
+        )}
+        <div class="recording-grid">
+          {recordingItems.map((r) => (
+            <div
+              class={`recording-card${r.draft ? " draft-card" : ""}${r.proposed ? " proposed-card" : ""}`}
+              data-draft={r.draft ? "true" : "false"}
+              data-proposed={r.proposed ? "true" : "false"}
+              data-id={r.id}
+            >
+              {r.youtube_id ? (
+                <div class="recording-media">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${r.youtube_id}`}
+                    title={r.title}
+                    frameborder="0"
+                    allowfullscreen
+                    loading="lazy"
+                  ></iframe>
+                </div>
+              ) : r.src ? (
+                <div class="recording-media">
+                  <video src={r.src} controls preload="metadata" loading="lazy"></video>
+                </div>
+              ) : (
+                <div class="proposed-placeholder">
+                  <div class="proposed-icon">&#127916;</div>
+                  <span class="proposed-label">PITCH</span>
+                </div>
+              )}
+              <div class="bg-meta">
+                <span class="bg-label">{r.title}</span>
+                {r.description && <p class="bg-description">{r.description}</p>}
+                <div class="bg-tags">
+                  {r.scene && <span class="bg-tag">{r.scene}</span>}
+                  {r.category && <span class="bg-tag bg-tag-cat">{r.category}</span>}
+                  {r.duration_s && <span class="bg-tag bg-tag-dur">{r.duration_s}s</span>}
+                </div>
+                {r.draft && <span class="draft-badge">DRAFT</span>}
+                {r.blocked_on && <span class="blocked-badge">{r.blocked_on}</span>}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -349,6 +453,15 @@ function animationGateFor(character: string, animation: string): {
             cell.querySelector(".cell-gate-badge")?.remove();
           }
         });
+
+        // Reveal draft Screenshot / Recording cards for admins only.
+        // Drafts ship with the static build (gitignored assets live in
+        // /captures/ on prod) but are hidden by default CSS. Admin
+        // viewers see them so Drew can approve/reject from the live
+        // site, mirroring the devlog draft pattern.
+        if (tier === "admin") {
+          document.body.classList.add("is-admin-draft-viewer");
+        }
       } catch {
         // Network error — fail closed (stay locked)
       }
@@ -743,28 +856,144 @@ function animationGateFor(character: string, animation: string): {
     font-weight: 700;
   }
 
-  /* Backgrounds */
+  /* Screenshots + Recordings grids */
   .bg-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
   }
+  .recording-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1.5rem;
+  }
 
-  .bg-card {
+  .bg-card, .recording-card {
     background: #dbd0a0;
     border: 2px solid #7a6e52;
     border-radius: 4px;
     overflow: hidden;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Drafts hidden by default — revealed for admins via is-admin-draft-viewer body class */
+  .draft-card { display: none; }
+  body.is-admin-draft-viewer .draft-card { display: flex; }
+
+  .bg-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: #c5b67e;
+  }
+
+  .recording-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+  }
+  .recording-media iframe, .recording-media video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: none;
+  }
+
+  .proposed-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    background: #c5b67e;
+    color: #5a4d38;
+    gap: 0.5rem;
+  }
+  .proposed-icon {
+    font-size: 2.5rem;
+  }
+  .proposed-label {
+    font-family: "Courier New", monospace;
+    font-size: 0.7rem;
+    color: #5a4d38;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+  }
+
+  .bg-meta {
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
   }
 
   .bg-label {
     display: block;
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1rem;
+    font-size: 1.1rem;
     color: #2a2218;
-    padding: 0.75rem;
-    text-align: center;
+    text-align: left;
+  }
+
+  .bg-description {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 0.9rem;
+    color: #3a3020;
+    margin: 0;
+    line-height: 1.35;
+    font-style: italic;
+  }
+
+  .bg-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .bg-tag {
+    font-family: "Courier New", monospace;
+    font-size: 0.65rem;
+    color: #5a4d38;
+    background: rgba(58, 48, 32, 0.1);
+    border: 1px solid rgba(58, 48, 32, 0.25);
+    padding: 0.1rem 0.4rem;
+    border-radius: 2px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .bg-tag-cat {
+    background: rgba(58, 48, 32, 0.18);
+  }
+  .bg-tag-dur {
+    background: rgba(34, 197, 94, 0.18);
+    border-color: rgba(34, 197, 94, 0.4);
+  }
+
+  .draft-badge {
+    font-family: "Courier New", monospace;
+    font-size: 0.65rem;
+    color: #92400e;
+    background: rgba(252, 211, 77, 0.5);
+    border: 1px solid rgba(146, 64, 14, 0.4);
+    padding: 0.15rem 0.45rem;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    align-self: flex-start;
+    font-weight: 700;
+  }
+
+  .blocked-badge {
+    font-family: "Courier New", monospace;
+    font-size: 0.65rem;
+    color: #7c2d12;
+    background: rgba(252, 165, 165, 0.4);
+    border: 1px solid rgba(124, 45, 18, 0.3);
+    padding: 0.15rem 0.45rem;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+    align-self: flex-start;
   }
 
   .locked-bg {

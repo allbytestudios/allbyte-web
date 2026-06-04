@@ -1,0 +1,50 @@
+{
+  "_comment": "Screenshots gallery for the /artwork/ page. Items with draft:true are admin-only visible until approved. Items with proposed:true are AppC pitch suggestions that don't have files captured yet — they show description-only cards in the admin draft queue until the file lands. Once the autoplay-capture pipeline ships, captured screenshots auto-append here with draft:true.",
+  "screenshots": [
+    {
+      "id": "proposal-cloud-shadows-laria-mainsquare",
+      "title": "Cloud shadows over Laria — Main Square",
+      "description": "Recently-shipped cloud shadow feature over hill-mounted props. Hero shot of the parallax + lighting depth at golden-hour ambient.",
+      "scene": "Laria-MainSquare",
+      "category": "atmosphere",
+      "draft": true,
+      "proposed": true
+    },
+    {
+      "id": "proposal-windmill-interior",
+      "title": "Windmill interior — multi-floor architecture",
+      "description": "Showcase the verticality of Windmill1 / Windmill1SecondFloor / Windmill1Basement together — environmental storytelling without UI overlay.",
+      "scene": "Windmill1",
+      "category": "atmosphere",
+      "draft": true,
+      "proposed": true
+    },
+    {
+      "id": "proposal-waterway-channel-approach",
+      "title": "WaterwayChannel — boss approach",
+      "description": "The atmospheric build-up just before the SluiceGate. Mood + foreshadowing rather than action.",
+      "scene": "WaterwayChannel",
+      "category": "atmosphere",
+      "draft": true,
+      "proposed": true
+    },
+    {
+      "id": "proposal-combat-skill-tree-menu",
+      "title": "Skill Tree menu — full layout",
+      "description": "Hero shot of the Skill Tree UI showing the spatial layout of skills and progression structure. UI polish showcase rather than gameplay.",
+      "scene": "Menu",
+      "category": "ui",
+      "draft": true,
+      "proposed": true
+    },
+    {
+      "id": "proposal-poison-status-effect",
+      "title": "Poison status effect — visual overlay",
+      "description": "VSlime trail leaving poisoned terrain, showing the recently-shipped status effect system both in-combat and overworld.",
+      "scene": "Combat",
+      "category": "vfx",
+      "draft": true,
+      "proposed": true
+    }
+  ]
+}

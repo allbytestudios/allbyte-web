@@ -29,7 +29,12 @@ services:
         condition: service_healthy
       postiz-redis:
         condition: service_healthy
+      postiz-temporal:
+        condition: service_started
     environment:
+      # Temporal — Postiz uses it for scheduled job workflows. Address
+      # is the internal docker network hostname + Temporal's gRPC port.
+      TEMPORAL_ADDRESS: "postiz-temporal:7233"
       # URLs — for purely local testing these point at localhost. When
       # connecting real social-platform OAuth (Bluesky/Mastodon don't
       # need it; Reddit/X do), set MAIN_URL + FRONTEND_URL to a publicly
@@ -97,8 +102,45 @@ services:
       retries: 5
     # Not exposed to host — only postiz container needs to reach it.
 
+  # Temporal — workflow scheduler used by Postiz for scheduled posts.
+  # auto-setup image bundles the Temporal server + auto-creates required
+  # namespaces against the provided Postgres. Uses a separate Postgres
+  # instance from Postiz's own DB so the two concerns don't share state.
+  postiz-temporal-postgres:
+    image: postgres:15-alpine
+    container_name: allbyte-marketing-temporal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    volumes:
+      - postiz_temporal_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal -d temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postiz-temporal:
+    image: temporalio/auto-setup:1.25.0
+    container_name: allbyte-marketing-temporal
+    restart: unless-stopped
+    depends_on:
+      postiz-temporal-postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: postiz-temporal-postgres
+    # Not exposed to host — postiz container talks to it via the
+    # internal docker network.
+
 volumes:
   postiz_uploads:
   postiz_config:
   postiz_postgres:
   postiz_redis:
+  postiz_temporal_postgres:

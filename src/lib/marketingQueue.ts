@@ -4,14 +4,20 @@
  * Reads the manifest + per-clip metadata produced by the autoplay-capture
  * pipeline (tests/autoplay-capture/clip_extractor.py + caption_drafter.py).
  *
- * Dev: served via the captureLocalProxy at /captures-local/* from the
- *      local .tmp/capture-out/ directory.
- * Prod (future): same URL shape, but served from S3 once the upload step
- *      lands in boot.sh. UI doesn't care which.
+ * Dev: served via captureLocalProxy at /captures-local/* from the local
+ *      .tmp/capture-out/ directory.
+ * Prod: served from S3 via CloudFront at /captures/latest/ — uploaded by
+ *      tests/autoplay-capture/upload_to_s3.py at the end of each capture
+ *      session run. The "latest" prefix is overwritten each run; preserve
+ *      a session by re-running with CAPTURE_S3_PREFIX=captures/<id>.
  */
 
-const MANIFEST_URL = "/captures-local/clips/manifest.json";
-const CLIPS_BASE = "/captures-local/clips/";
+const IS_DEV = import.meta.env.DEV;
+
+// Prod absolute URL through CloudFront. Same origin in prod so no CORS
+// concerns; dev fetches from the local Astro dev server proxy.
+const CLIPS_BASE = IS_DEV ? "/captures-local/clips/" : "/captures/latest/clips/";
+const MANIFEST_URL = `${CLIPS_BASE}manifest.json`;
 
 export interface DraftCaptions {
   title?: string;

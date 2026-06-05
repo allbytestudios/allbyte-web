@@ -106,4 +106,12 @@ python3 /home/pwuser/harness/clip_extractor.py || echo "[boot] clip extraction f
 echo "[boot] drafting captions"
 python3 /home/pwuser/harness/caption_drafter.py || echo "[boot] caption drafting failed (non-fatal)"
 
+# --- S3 upload (optional, gated on AWS credentials presence) ---------------
+# Uploads clips + manifest + full-session MP4 + timeline to
+# s3://allbyte.studio-site/captures/latest/ so the marketing-queue UI can
+# read from CloudFront in prod. Smoke-test container has no creds and
+# skips cleanly.
+echo "[boot] uploading to S3"
+python3 /home/pwuser/harness/upload_to_s3.py || echo "[boot] S3 upload failed (non-fatal)"
+
 exit $RUN_EXIT

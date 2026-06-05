@@ -99,6 +99,73 @@ function chroniclesProxy() {
   };
 }
 
+// Dev-only proxy for autoplay-capture artifacts. Serves files from the
+// local capture output dir (default .tmp/capture-out/) at /captures-local/*
+// so the marketing-queue UI can fetch manifest.json + clip MP4s + thumbs
+// without committing the (large, churn-heavy) artifact files to git.
+//
+// In prod, the marketing-queue will read from S3 instead — this proxy
+// doesn't ship.
+function captureLocalProxy() {
+  const captureRoot = resolve(
+    process.env.CAPTURE_OUT_DIR ||
+      join(process.cwd(), ".tmp", "capture-out")
+  );
+
+  function streamLocalFile(full, res) {
+    res.setHeader("Cache-Control", "no-store");
+    const lower = full.toLowerCase();
+    if (lower.endsWith(".json")) {
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+    } else if (lower.endsWith(".mp4")) {
+      res.setHeader("Content-Type", "video/mp4");
+    } else if (lower.endsWith(".png")) {
+      res.setHeader("Content-Type", "image/png");
+    } else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+      res.setHeader("Content-Type", "image/jpeg");
+    }
+    createReadStream(full).pipe(res);
+  }
+
+  return {
+    name: "allbyte-capture-local-proxy",
+    configureServer(server) {
+      server.middlewares.use("/captures-local", (req, res, next) => {
+        try {
+          const url = new URL(req.url || "/", "http://localhost");
+          const rel = decodeURIComponent(url.pathname).replace(/^\/+/, "");
+          const full = normalize(join(captureRoot, rel));
+          if (!full.startsWith(captureRoot + sep) && full !== captureRoot) {
+            res.statusCode = 400;
+            return res.end("bad path");
+          }
+          if (!existsSync(full) || !statSync(full).isFile()) {
+            return next();
+          }
+          // Symlink-safety: same realpath check as chroniclesProxy. Capture
+          // root may not exist on a fresh checkout — bail to next() in that
+          // case so the UI's empty-state path renders cleanly.
+          let realFull, realBase;
+          try {
+            realFull = realpathSync(full);
+            realBase = realpathSync(captureRoot);
+          } catch {
+            return next();
+          }
+          if (!realFull.startsWith(realBase + sep) && realFull !== realBase) {
+            res.statusCode = 403;
+            return res.end("forbidden");
+          }
+          streamLocalFile(realFull, res);
+        } catch (err) {
+          res.statusCode = 500;
+          res.end(String(err && err.message ? err.message : err));
+        }
+      });
+    },
+  };
+}
+
 // Dev-only POST endpoint for owner decision write-back.
 // Writes to agent_chat.ndjson in the Chronicles repo.
 function decisionWriteback() {
@@ -406,7 +473,7 @@ export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
   vite: {
-    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy()],
+    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

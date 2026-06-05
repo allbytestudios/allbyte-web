@@ -6,7 +6,7 @@
   import { onMount, onDestroy } from "svelte";
 
   interface Props {
-    active: "roadmap" | "tickets" | "tests" | "decisions";
+    active: "roadmap" | "tickets" | "tests" | "decisions" | "marketing";
   }
   let { active }: Props = $props();
 
@@ -86,6 +86,9 @@
     <span class="nav-count nav-green">0</span>
     <span class="nav-count nav-red">0</span>
     <span class="nav-count nav-grey">{testCount ?? 0}</span>
+  </a>
+  <a href="/test/marketing-queue/" class="nav-tab" class:active={active === "marketing"}>
+    Marketing
   </a>
 </nav>
 

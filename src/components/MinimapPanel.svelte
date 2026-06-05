@@ -192,11 +192,13 @@
   // ---- Lifecycle ----
 
   onMount(() => {
+    if (typeof window === "undefined") return;
     window.addEventListener("message", handleMessage);
     installDevHooks();
   });
 
   onDestroy(() => {
+    if (typeof window === "undefined") return;
     window.removeEventListener("message", handleMessage);
   });
 

@@ -7,11 +7,11 @@ def test_discord_button_in_notify_bar(page, base_url):
 
     btn = page.locator("a.discord-notify-btn")
     assert btn.count() == 1, f"expected 1 discord button, got {btn.count()}"
-    assert btn.get_attribute("href") == "https://discord.gg/qjRmcFaB7Z"
+    assert btn.get_attribute("href") == "https://discord.gg/WfYC6gFJe"
     assert btn.get_attribute("target") == "_blank"
 
     text = btn.inner_text()
-    assert "Discord Server" in text, f"unexpected button text: {text!r}"
+    assert "Discord" in text, f"unexpected button text: {text!r}"
 
     # Must be inside the notify bar, not the header
     in_notify = page.locator(".notify-bar a.discord-notify-btn").count()

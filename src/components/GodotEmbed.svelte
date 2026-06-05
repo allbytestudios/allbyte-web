@@ -2,6 +2,8 @@
   import { onMount, onDestroy } from "svelte";
   import { subscribeToFile } from "../lib/testEvents";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
+  import { auth } from "../lib/auth.svelte.ts";
+  import { isAdmin, isTierAtLeast } from "../lib/tier";
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import MinimapPanel from "./MinimapPanel.svelte";
 
@@ -14,9 +16,40 @@
   let error = $state("");
   let iframeEl = $state<HTMLIFrameElement | null>(null);
 
-  // Served from /godot/ in both dev and prod. Astro dev sets the required
-  // COOP/COEP headers via vite.server.headers; CloudFront sets them in prod.
-  let gameUrl = $state("/godot/index.html");
+  // Tier-gated build variants — see APP_CLAUDE_TIER_GATED_BUILDS.md.
+  // Arc's deploy will produce two Godot exports (`/godot/public/` debug
+  // stripped, `/godot/debug/` current state). Until Arc lands the variant
+  // paths in S3, VARIANT_PATHS_AVAILABLE stays false and everyone gets the
+  // single legacy `/godot/` path — no behavioral change at runtime.
+  //
+  // When Arc confirms both paths populate: flip the flag, the iframe routes
+  // by tier. Add a re-resolve in onMount at the same time so SSR'd "public"
+  // upgrades to "debug" for admin/legend users after auth hydrates.
+  const VARIANT_PATHS_AVAILABLE = false;
+
+  type Variant = "public" | "debug";
+
+  function getBuildOverride(): Variant | null {
+    if (typeof window === "undefined") return null;
+    const value = new URLSearchParams(window.location.search).get("build");
+    return value === "public" || value === "debug" ? value : null;
+  }
+
+  function resolveVariant(): Variant {
+    const override = getBuildOverride();
+    if (override && isAdmin(auth.currentUser)) return override;
+    if (isAdmin(auth.currentUser) || isTierAtLeast(auth.currentUser, "legend")) {
+      return "debug";
+    }
+    return "public";
+  }
+
+  function resolveGameUrl(): string {
+    if (!VARIANT_PATHS_AVAILABLE) return "/godot/index.html";
+    return `/godot/${resolveVariant()}/index.html`;
+  }
+
+  let gameUrl = $state(resolveGameUrl());
 
   // Dev-only: listen for SSE file-change event from the godot-reload plugin
   // and reload just the iframe when Arc redeploys.
@@ -55,7 +88,7 @@
     if (!iframeEl) return;
     loading = true;
     error = "";
-    iframeEl.src = `/godot/index.html?t=${Date.now()}`;
+    iframeEl.src = `${gameUrl}?t=${Date.now()}`;
   }
 
   // Owner spec for quit/exit:

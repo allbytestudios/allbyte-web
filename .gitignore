@@ -43,6 +43,12 @@ tests/controller-qa/reports/
 # platform tokens. The .env.example template stays in the repo.
 infrastructure/marketing/.env
 
+# Marketing compose override — holds per-platform OAuth env var
+# passthroughs (Discord, Bluesky, etc.). Names + structure are private
+# infra; values come from .env. Docker Compose auto-merges this with
+# docker-compose.yml on `up`.
+infrastructure/marketing/docker-compose.override.yml
+
 # Cross-browser QA harness reports (generated per run, not source)
 tests/cross-browser-qa/reports/
 

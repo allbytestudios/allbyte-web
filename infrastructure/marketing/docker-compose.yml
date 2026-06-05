@@ -58,13 +58,13 @@ services:
       UPLOAD_DIRECTORY: "/uploads"
       NEXT_PUBLIC_UPLOAD_DIRECTORY: "/uploads"
 
-      # MCP server — exposed for Claude/Claude Code to drive Postiz.
-      # Postiz reads this at startup to determine whether to bind the
-      # MCP endpoint.
-      MCP_ENABLED: "true"
-
       # Misc
       IS_GENERAL: "true"
+
+      # Social platform OAuth credentials live in a gitignored compose
+      # override (`docker-compose.override.yml` in this dir) so neither
+      # the env var names nor their values touch the public repo.
+      # Docker Compose auto-merges the override on `up`.
     ports:
       - "${POSTIZ_FRONTEND_PORT:-5000}:5000"
       - "${POSTIZ_BACKEND_PORT:-3000}:3000"

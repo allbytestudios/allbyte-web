@@ -1,15 +1,65 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
-    fetchManifest, fetchClipMeta, clipMp4Url, clipThumbUrl,
-    type Manifest, type ManifestEntry, type ClipMeta,
+    fetchManifest, fetchClipMeta, publishToPlatform,
+    clipMp4Url, clipThumbUrl,
+    type Manifest, type ManifestEntry, type ClipMeta, type PublishResult,
   } from "../lib/marketingQueue";
+
+  const IS_DEV = import.meta.env.DEV;
+
+  // Maps the caption field to the Postiz platform identifier.
+  const PLATFORM_FOR_FIELD: Record<string, string> = {
+    bluesky: "bluesky",
+    discord: "discord",
+    youtube_shorts: "youtube",
+  };
+
+  // Platform display names for button labels.
+  const PLATFORM_LABEL: Record<string, string> = {
+    bluesky: "Bluesky",
+    discord: "Discord",
+    youtube: "YouTube",
+  };
 
   let manifest = $state<Manifest | null>(null);
   let loading = $state(true);
   let clipMetas = $state<Record<string, ClipMeta>>({});
   let selectedClip = $state<string | null>(null);
   let copiedKey = $state<string | null>(null);
+
+  // Caption edits override the AI drafts. Key shape: `${clipName}.${field}`.
+  // When a key is absent, fall back to the original draft from clipMetas.
+  let captionEdits = $state<Record<string, string>>({});
+
+  // Per-publish state. Key shape: `${clipName}.${platform}`.
+  // busy = request in flight, result = last response, undefined = never published.
+  let publishStates = $state<Record<string, { busy: boolean; result?: PublishResult }>>({});
+
+  function currentCaption(clipName: string, field: string, draft: string | undefined): string {
+    const key = `${clipName}.${field}`;
+    if (key in captionEdits) return captionEdits[key];
+    return draft ?? "";
+  }
+
+  function onCaptionInput(clipName: string, field: string, e: Event) {
+    captionEdits[`${clipName}.${field}`] = (e.currentTarget as HTMLTextAreaElement).value;
+  }
+
+  async function publish(clipName: string, field: string, mp4File: string) {
+    const platform = PLATFORM_FOR_FIELD[field];
+    if (!platform) return;
+    const draft = clipMetas[clipName]?.draft_captions?.[field as keyof typeof clipMetas[string]["draft_captions"]];
+    const content = currentCaption(clipName, field, draft as string | undefined);
+    if (!content) return;
+    // Absolute URL so Postiz can fetch the media regardless of dev/prod.
+    const mediaUrl = window.location.origin + clipMp4Url(mp4File);
+
+    const stateKey = `${clipName}.${platform}`;
+    publishStates[stateKey] = { busy: true };
+    const result = await publishToPlatform(platform, content, mediaUrl);
+    publishStates[stateKey] = { busy: false, result };
+  }
 
   onMount(async () => {
     const m = await fetchManifest();
@@ -146,60 +196,64 @@
             <section class="captions">
               <h3>Draft captions</h3>
 
+              {#snippet captionBlock(field: string, label: string, limit: number | null, rows: number, draft: string | undefined)}
+                {@const current = currentCaption(selectedClip!, field, draft)}
+                {@const platform = PLATFORM_FOR_FIELD[field]}
+                {@const stateKey = platform ? `${selectedClip}.${platform}` : ""}
+                {@const pubState = stateKey ? publishStates[stateKey] : undefined}
+                <div class="caption-block">
+                  <label>
+                    <span class="caption-label">
+                      {label}
+                      <small>{current.length}{limit ? `/${limit}` : " chars"}{limit && current.length > limit ? " — over limit" : ""}</small>
+                    </span>
+                    <div class="caption-row">
+                      <textarea
+                        rows={rows}
+                        value={current}
+                        oninput={(e) => onCaptionInput(selectedClip!, field, e)}
+                      ></textarea>
+                      <div class="caption-actions">
+                        <button onclick={() => copyToClipboard(current, `${selectedClip}-${field}`)}>
+                          {copiedKey === `${selectedClip}-${field}` ? "Copied" : "Copy"}
+                        </button>
+                        {#if platform}
+                          <button
+                            class="publish-btn"
+                            disabled={!IS_DEV || pubState?.busy || !current}
+                            title={!IS_DEV ? "Publish requires the local dev server" : ""}
+                            onclick={() => publish(selectedClip!, field, findEntry(selectedClip!)?.mp4 ?? "")}
+                          >
+                            {pubState?.busy ? "Publishing…" : `Publish to ${PLATFORM_LABEL[platform]}`}
+                          </button>
+                        {/if}
+                      </div>
+                    </div>
+                    {#if pubState?.result}
+                      {@const r = pubState.result}
+                      <div class="publish-result" class:ok={r.ok} class:err={!r.ok}>
+                        {#if r.ok}
+                          Posted to {r.integration?.name ?? platform}.
+                        {:else}
+                          Failed: {r.error}
+                        {/if}
+                      </div>
+                    {/if}
+                  </label>
+                </div>
+              {/snippet}
+
               {#if cap.title}
-                <div class="caption-block">
-                  <label>
-                    <span class="caption-label">Title <small>{cap.title.length}/80</small></span>
-                    <div class="caption-row">
-                      <textarea readonly rows="1">{cap.title}</textarea>
-                      <button onclick={() => copyToClipboard(cap.title ?? "", `${selectedClip}-title`)}>
-                        {copiedKey === `${selectedClip}-title` ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-                  </label>
-                </div>
+                {@render captionBlock("title", "Title", 80, 1, cap.title)}
               {/if}
-
               {#if cap.bluesky}
-                <div class="caption-block">
-                  <label>
-                    <span class="caption-label">Bluesky <small>{cap.bluesky.length}/290</small></span>
-                    <div class="caption-row">
-                      <textarea readonly rows="3">{cap.bluesky}</textarea>
-                      <button onclick={() => copyToClipboard(cap.bluesky ?? "", `${selectedClip}-bsky`)}>
-                        {copiedKey === `${selectedClip}-bsky` ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-                  </label>
-                </div>
+                {@render captionBlock("bluesky", "Bluesky", 290, 3, cap.bluesky)}
               {/if}
-
               {#if cap.discord}
-                <div class="caption-block">
-                  <label>
-                    <span class="caption-label">Discord <small>{cap.discord.length} chars</small></span>
-                    <div class="caption-row">
-                      <textarea readonly rows="4">{cap.discord}</textarea>
-                      <button onclick={() => copyToClipboard(cap.discord ?? "", `${selectedClip}-disc`)}>
-                        {copiedKey === `${selectedClip}-disc` ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-                  </label>
-                </div>
+                {@render captionBlock("discord", "Discord", null, 4, cap.discord)}
               {/if}
-
               {#if cap.youtube_shorts}
-                <div class="caption-block">
-                  <label>
-                    <span class="caption-label">YouTube Shorts <small>{cap.youtube_shorts.length}/180</small></span>
-                    <div class="caption-row">
-                      <textarea readonly rows="3">{cap.youtube_shorts}</textarea>
-                      <button onclick={() => copyToClipboard(cap.youtube_shorts ?? "", `${selectedClip}-yt`)}>
-                        {copiedKey === `${selectedClip}-yt` ? "Copied" : "Copy"}
-                      </button>
-                    </div>
-                  </label>
-                </div>
+                {@render captionBlock("youtube_shorts", "YouTube Shorts", 180, 3, cap.youtube_shorts)}
               {/if}
             </section>
           {:else}
@@ -447,6 +501,12 @@
   .caption-row textarea:focus {
     outline: 1px solid rgba(167, 243, 208, 0.4);
   }
+  .caption-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 9rem;
+  }
   .caption-row button {
     background: rgba(167, 243, 208, 0.12);
     border: 1px solid rgba(167, 243, 208, 0.35);
@@ -458,8 +518,38 @@
     cursor: pointer;
     height: max-content;
   }
-  .caption-row button:hover {
+  .caption-row button:hover:not(:disabled) {
     background: rgba(167, 243, 208, 0.22);
+  }
+  .caption-row button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .publish-btn {
+    background: rgba(251, 191, 36, 0.1) !important;
+    border-color: rgba(251, 191, 36, 0.4) !important;
+    color: #fbbf24 !important;
+  }
+  .publish-btn:hover:not(:disabled) {
+    background: rgba(251, 191, 36, 0.22) !important;
+  }
+  .publish-result {
+    margin-top: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-family: inherit;
+  }
+  .publish-result.ok {
+    background: rgba(167, 243, 208, 0.1);
+    border: 1px solid rgba(167, 243, 208, 0.3);
+    color: #a7f3d0;
+  }
+  .publish-result.err {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    color: #f87171;
+    word-break: break-word;
   }
 
   .raw {

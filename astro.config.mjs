@@ -3,6 +3,7 @@ import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
 import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, writeFileSync, realpathSync, watch as fsWatch } from "node:fs";
 import { join, normalize, resolve, sep, relative } from "node:path";
+import { spawn } from "node:child_process";
 import chokidar from "chokidar";
 
 const chroniclesRoot = resolve(
@@ -161,6 +162,133 @@ function captureLocalProxy() {
           res.statusCode = 500;
           res.end(String(err && err.message ? err.message : err));
         }
+      });
+    },
+  };
+}
+
+// Dev-only POST endpoint for publishing marketing-queue clips to Postiz.
+// Spawns the `postiz` global CLI under the marketing/postiz.ps1 wrapper
+// so POSTIZ_API_KEY + POSTIZ_API_URL come from the gitignored .env file
+// (never the env of this dev server). Receives { platform, content,
+// mediaUrl, dryRun } and returns the CLI exit code + stdout/stderr.
+//
+// Production deploy doesn't include this middleware — the marketing UI
+// hides publish buttons when import.meta.env.DEV is false.
+function marketingPublish() {
+  const MAX_BODY = 32 * 1024;
+  const ALLOWED_PLATFORMS = new Set([
+    "discord", "bluesky", "mastodon", "twitter", "x", "youtube",
+    "instagram", "tiktok", "reddit", "linkedin", "threads",
+  ]);
+
+  function spawnPostiz(args, cb) {
+    // Wrapper resolves env (key, URL) and forwards to global `postiz`.
+    // Using PowerShell since the wrapper is .ps1 (Windows-only as written).
+    const wrapper = join(process.cwd(), "infrastructure", "marketing", "postiz.ps1");
+    const child = spawn(
+      "powershell.exe",
+      ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", wrapper, ...args],
+      { cwd: process.cwd() },
+    );
+    let stdout = "", stderr = "";
+    child.stdout.on("data", (d) => { stdout += d.toString(); });
+    child.stderr.on("data", (d) => { stderr += d.toString(); });
+    child.on("close", (code) => cb(code, stdout, stderr));
+    child.on("error", (err) => cb(-1, stdout, stderr + String(err)));
+  }
+
+  function findIntegrationId(platform, cb) {
+    spawnPostiz(["integrations:list"], (code, stdout, stderr) => {
+      if (code !== 0) return cb(new Error(`integrations:list exit ${code}: ${stderr}`));
+      // CLI prints a header line, then a JSON array. Find the JSON.
+      const jsonStart = stdout.indexOf("[");
+      if (jsonStart === -1) return cb(new Error("no JSON in integrations:list output"));
+      try {
+        const list = JSON.parse(stdout.slice(jsonStart));
+        const match = list.find((i) => i.identifier === platform && !i.disabled);
+        if (!match) return cb(new Error(`no enabled integration for platform '${platform}'`));
+        cb(null, match.id, match);
+      } catch (e) {
+        cb(new Error(`failed to parse integrations: ${e.message}`));
+      }
+    });
+  }
+
+  return {
+    name: "allbyte-marketing-publish",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.method !== "POST" || (req.url || "").replace(/\/$/, "") !== "/api/marketing/publish") {
+          return next();
+        }
+        let body = "", tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
+        req.on("end", () => {
+          if (tooLarge) return;
+          let payload;
+          try { payload = JSON.parse(body); } catch {
+            res.statusCode = 400;
+            return res.end(JSON.stringify({ error: "invalid JSON body" }));
+          }
+          const { platform, content, mediaUrl, dryRun } = payload || {};
+          if (!platform || typeof platform !== "string" || !ALLOWED_PLATFORMS.has(platform)) {
+            res.statusCode = 400;
+            return res.end(JSON.stringify({ error: "platform required and must be a known identifier" }));
+          }
+          if (!content || typeof content !== "string" || content.length === 0 || content.length > 4000) {
+            res.statusCode = 400;
+            return res.end(JSON.stringify({ error: "content required, 1-4000 chars" }));
+          }
+          if (mediaUrl && typeof mediaUrl !== "string") {
+            res.statusCode = 400;
+            return res.end(JSON.stringify({ error: "mediaUrl must be a string if present" }));
+          }
+
+          findIntegrationId(platform, (err, integrationId, integration) => {
+            if (err) {
+              res.statusCode = 502;
+              return res.end(JSON.stringify({ error: err.message }));
+            }
+            if (dryRun) {
+              res.setHeader("Content-Type", "application/json");
+              return res.end(JSON.stringify({ ok: true, dryRun: true, integration }));
+            }
+            const args = [
+              "posts:create",
+              "-c", content,
+              "-s", new Date().toISOString(),
+              "-i", integrationId,
+              "-t", "schedule",
+            ];
+            if (mediaUrl) args.push("-m", mediaUrl);
+            spawnPostiz(args, (code, stdout, stderr) => {
+              res.setHeader("Content-Type", "application/json");
+              if (code !== 0) {
+                res.statusCode = 502;
+                return res.end(JSON.stringify({
+                  error: `posts:create exit ${code}`,
+                  stdout: stdout.slice(-2000),
+                  stderr: stderr.slice(-2000),
+                }));
+              }
+              res.end(JSON.stringify({
+                ok: true,
+                integration: { id: integrationId, platform, name: integration.name },
+                stdout: stdout.slice(-2000),
+              }));
+            });
+          });
+        });
       });
     },
   };
@@ -473,7 +601,7 @@ export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
   vite: {
-    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy()],
+    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

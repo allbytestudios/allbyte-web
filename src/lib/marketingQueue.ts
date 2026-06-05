@@ -84,3 +84,41 @@ export function clipMp4Url(mp4File: string): string {
 export function clipThumbUrl(thumbFile: string): string {
   return `${CLIPS_BASE}${thumbFile}`;
 }
+
+export interface PublishResult {
+  ok: boolean;
+  error?: string;
+  integration?: { id: string; platform: string; name: string };
+  stdout?: string;
+  stderr?: string;
+}
+
+/**
+ * Publish a caption + clip to a platform via the dev-only Postiz CLI
+ * middleware. Returns the result, including platform-specific error
+ * messages when Postiz refuses (e.g., no integration wired for platform).
+ *
+ * Dev-only: in prod the middleware doesn't exist; publish() returns ok:false
+ * with a clear error.
+ */
+export async function publishToPlatform(
+  platform: string,
+  content: string,
+  mediaUrl: string | null,
+  signal?: AbortSignal,
+): Promise<PublishResult> {
+  if (!IS_DEV) {
+    return { ok: false, error: "Publishing requires the local dev server (Postiz runs locally)" };
+  }
+  try {
+    const res = await fetch("/api/marketing/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal,
+      body: JSON.stringify({ platform, content, mediaUrl }),
+    });
+    return await res.json();
+  } catch (e) {
+    return { ok: false, error: String((e as Error)?.message ?? e) };
+  }
+}

@@ -99,4 +99,11 @@ wait "$FFMPEG_PID" 2>/dev/null || true
 echo "[boot] extracting clips"
 python3 /home/pwuser/harness/clip_extractor.py || echo "[boot] clip extraction failed (non-fatal)"
 
+# --- Caption drafting (optional, gated on ANTHROPIC_API_KEY) ---------------
+# Per-clip Claude calls to draft platform-specific captions. Skips silently
+# if the API key isn't in the container env, so the smoke-test container
+# (no key) still exits cleanly.
+echo "[boot] drafting captions"
+python3 /home/pwuser/harness/caption_drafter.py || echo "[boot] caption drafting failed (non-fatal)"
+
 exit $RUN_EXIT

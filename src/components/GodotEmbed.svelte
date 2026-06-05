@@ -25,7 +25,7 @@
   // When Arc confirms both paths populate: flip the flag, the iframe routes
   // by tier. Add a re-resolve in onMount at the same time so SSR'd "public"
   // upgrades to "debug" for admin/legend users after auth hydrates.
-  const VARIANT_PATHS_AVAILABLE = false;
+  const VARIANT_PATHS_AVAILABLE = true;
 
   type Variant = "public" | "debug";
 
@@ -45,8 +45,13 @@
   }
 
   function resolveGameUrl(): string {
+    // Arc's deploy layout (CON_CLAUDE_TIER_GATED_LANDED.md 2026-06-05):
+    //   debug  → /godot/index.html         (current path, kept)
+    //   public → /godot/public/index.html  (new subdir, opt-in via BUILD_PUBLIC=1)
     if (!VARIANT_PATHS_AVAILABLE) return "/godot/index.html";
-    return `/godot/${resolveVariant()}/index.html`;
+    return resolveVariant() === "debug"
+      ? "/godot/index.html"
+      : "/godot/public/index.html";
   }
 
   let gameUrl = $state(resolveGameUrl());

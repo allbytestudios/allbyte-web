@@ -7,12 +7,12 @@
   import { TIER_META } from "../lib/testIndex";
   import {
     fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat,
-    fetchUserAnalytics, fetchBudgetStatus, fetchSiteTraffic,
+    fetchUserAnalytics, fetchBudgetStatus, fetchSiteTraffic, claimOwnerIp,
   } from "../lib/testDataSource";
   import { fetchBeadsIssues } from "../lib/beadsSource";
   import { epicsOnly, isOpen, isClosed } from "../lib/beadsTypes";
   import { milestonesOrdered, milestoneIdFromLabels } from "../lib/milestones";
-  import type { UserAnalytics, BudgetStatus, SiteTraffic } from "../lib/testDataSource";
+  import type { UserAnalytics, BudgetStatus, SiteTraffic, SiteTrafficDay, ClaimOwnerIpResult } from "../lib/testDataSource";
   import { subscribeToFile } from "../lib/testEvents";
   import usageData from "../data/claude-usage.json";
   import usageHistory from "../data/claude-usage-history.json";
@@ -142,7 +142,28 @@
   let userAnalytics = $state<UserAnalytics | null>(null);
   let budgetStatus = $state<BudgetStatus | null>(null);
   let siteTraffic = $state<SiteTraffic | null>(null);
+  let claimIpResult = $state<ClaimOwnerIpResult | null>(null);
+  let claimIpBusy = $state(false);
   let nowTs = $state<number>(Date.now());
+
+  async function handleClaimIp() {
+    claimIpBusy = true;
+    try {
+      const result = await claimOwnerIp();
+      claimIpResult = result;
+      // If the IP was newly added, the backend busts the analytics cache.
+      // Wait briefly for Athena re-query (3-8s typical), then refresh the
+      // chart data so the user sees the updated classification.
+      if (result?.added) {
+        setTimeout(async () => {
+          const fresh = await fetchSiteTraffic();
+          if (fresh) siteTraffic = fresh;
+        }, 8000);
+      }
+    } finally {
+      claimIpBusy = false;
+    }
+  }
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let tickTimer: ReturnType<typeof setInterval> | null = null;
@@ -412,7 +433,7 @@
        Owner spec 2026-06-03: one dropdown controls Users / Site Traffic /
        Usage History together. Renders only when at least one of those
        graphs would be visible to the current viewer. -->
-  {#if (viewerIsAdmin && (userAnalytics?.dailyHistory?.length || siteTraffic?.dailyRequests?.length)) || (viewerIsLegend && usageHistory?.hours?.length > 0)}
+  {#if (viewerIsAdmin && (userAnalytics?.dailyHistory?.length || siteTraffic?.dailyGameServes?.length || siteTraffic?.dailyWebappServes?.length)) || (viewerIsLegend && usageHistory?.hours?.length > 0)}
     <div class="graph-range-control">
       <label class="range-control-label">
         Time range
@@ -488,17 +509,18 @@
        "interesting" segment (real visitors) sits on top of the bar where
        the eye lands. Older snapshots without the breakdown fall back to
        a single-color total (owner/bots/other all zero or undefined). -->
-  {#if viewerIsAdmin && siteTraffic?.dailyRequests?.length}
-    {@const traffic = siteTraffic.dailyRequests.slice(-rangeDays(graphRange))}
-    {@const maxReq = Math.max(...traffic.map(d => d.requests), 1)}
-    {@const hasBreakdown = traffic.some(d => (d.owner ?? 0) + (d.bots ?? 0) + (d.other ?? 0) > 0)}
+  {#snippet trafficChart(label: string, dataset: SiteTrafficDay[])}
+    {@const traffic = dataset.slice(-rangeDays(graphRange))}
+    {@const totalsPerDay = traffic.map(d => (d.owner ?? 0) + (d.bots ?? 0) + (d.other ?? 0))}
+    {@const maxReq = Math.max(...totalsPerDay, 1)}
+    {@const total7d = traffic.slice(-7).reduce((s, d) => s + (d.owner ?? 0) + (d.bots ?? 0) + (d.other ?? 0), 0)}
     {@const COLOR_OWNER = "#a7f3d0"}
     {@const COLOR_BOTS  = "#fbbf24"}
     {@const COLOR_OTHER = "#60a5fa"}
     <div class="users-chart-section">
       <h3 class="section-title">
-        Site Traffic
-        <span class="section-subtitle">{siteTraffic.totalRequests7d.toLocaleString()} requests (7 days)</span>
+        {label}
+        <span class="section-subtitle">{total7d.toLocaleString()} (7 days)</span>
       </h3>
       <div class="users-chart">
         <svg viewBox="0 0 700 140" class="users-svg">
@@ -508,57 +530,71 @@
             {@const ownerC = d.owner ?? 0}
             {@const botsC  = d.bots  ?? 0}
             {@const otherC = d.other ?? 0}
+            {@const total = ownerC + botsC + otherC}
             {@const scale = 100 / maxReq}
             {@const ownerH = ownerC * scale}
             {@const botsH  = botsC  * scale}
             {@const otherH = otherC * scale}
-            {@const totalH = (d.requests || 0) * scale}
+            {@const totalH = total * scale}
             {@const showCount = chartShowPerPointDetails(traffic.length)}
             {@const showLabel = chartShouldShowLabel(d.date, graphRange)}
-            {@const tooltip = hasBreakdown
-              ? `${d.date}\nOwner ${ownerC} · Bots ${botsC} · Other ${otherC}\nTotal ${d.requests}`
-              : `${d.date}: ${d.requests}`}
-            {#if hasBreakdown}
-              <!-- Stacked bar: owner (bottom) → bots (mid) → other (top).
-                   Bot+other stack first so a busy crawler day doesn't dwarf
-                   the owner sliver into invisibility. -->
-              {#if ownerH > 0}
-                <rect x={x - barW / 2} y={120 - ownerH} width={barW} height={ownerH}
-                      fill={COLOR_OWNER} opacity="0.7"
-                      rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
-              {/if}
-              {#if botsH > 0}
-                <rect x={x - barW / 2} y={120 - ownerH - botsH} width={barW} height={botsH}
-                      fill={COLOR_BOTS} opacity="0.6"
-                      rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
-              {/if}
-              {#if otherH > 0}
-                <rect x={x - barW / 2} y={120 - ownerH - botsH - otherH} width={barW} height={otherH}
-                      fill={COLOR_OTHER} opacity="0.7"
-                      rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
-              {/if}
-            {:else}
-              <rect x={x - barW / 2} y={120 - totalH} width={barW} height={totalH}
-                    fill={COLOR_OTHER} opacity="0.5"
+            {@const tooltip = `${d.date}\nOwner ${ownerC} · Bots ${botsC} · Other ${otherC}\nTotal ${total}`}
+            <!-- Stacked bar: owner (bottom) → bots (mid) → other (top).
+                 Bot+other stack first so a busy crawler day doesn't dwarf
+                 the owner sliver into invisibility. -->
+            {#if ownerH > 0}
+              <rect x={x - barW / 2} y={120 - ownerH} width={barW} height={ownerH}
+                    fill={COLOR_OWNER} opacity="0.7"
                     rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
             {/if}
-            {#if showCount}
-              <text x={x} y={120 - totalH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{d.requests > 999 ? (d.requests / 1000).toFixed(1) + "k" : d.requests}</text>
+            {#if botsH > 0}
+              <rect x={x - barW / 2} y={120 - ownerH - botsH} width={barW} height={botsH}
+                    fill={COLOR_BOTS} opacity="0.6"
+                    rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+            {/if}
+            {#if otherH > 0}
+              <rect x={x - barW / 2} y={120 - ownerH - botsH - otherH} width={barW} height={otherH}
+                    fill={COLOR_OTHER} opacity="0.7"
+                    rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+            {/if}
+            {#if showCount && total > 0}
+              <text x={x} y={120 - totalH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{total > 999 ? (total / 1000).toFixed(1) + "k" : total}</text>
             {/if}
             {#if showLabel}
               <text x={x} y={136} fill="#6b7280" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
             {/if}
           {/each}
         </svg>
-        {#if hasBreakdown}
-          <div class="users-chart-legend">
-            <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OWNER}"></span> Owner</span>
-            <span class="legend-item"><span class="legend-dot" style="background: {COLOR_BOTS}"></span> Bots / crawlers</span>
-            <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OTHER}"></span> Other visitors</span>
-          </div>
-        {/if}
+        <div class="users-chart-legend">
+          <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OWNER}"></span> Owner</span>
+          <span class="legend-item"><span class="legend-dot" style="background: {COLOR_BOTS}"></span> Bots / crawlers</span>
+          <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OTHER}"></span> Other visitors</span>
+        </div>
       </div>
     </div>
+  {/snippet}
+
+  {#if viewerIsAdmin && (siteTraffic?.dailyGameServes?.length || siteTraffic?.dailyWebappServes?.length)}
+    <div class="claim-ip-row">
+      <button onclick={handleClaimIp} disabled={claimIpBusy} class="claim-ip-btn">
+        {claimIpBusy ? "Claiming…" : "Tag this device's IP as owner"}
+      </button>
+      {#if claimIpResult}
+        <span class="claim-ip-result">
+          {#if claimIpResult.added}
+            Added <code>{claimIpResult.ip}</code> — {claimIpResult.ips.length} owner IPs total. Chart refreshing in ~8s.
+          {:else}
+            <code>{claimIpResult.ip}</code> already in list ({claimIpResult.ips.length} IPs total).
+          {/if}
+        </span>
+      {/if}
+    </div>
+    {#if siteTraffic?.dailyWebappServes?.length}
+      {@render trafficChart("Webapp Serves", siteTraffic.dailyWebappServes)}
+    {/if}
+    {#if siteTraffic?.dailyGameServes?.length}
+      {@render trafficChart("Game Serves", siteTraffic.dailyGameServes)}
+    {/if}
   {/if}
 
   <!-- Fixture picker (Legend+ only) -->
@@ -762,6 +798,45 @@
 
   .users-chart-section {
     margin: 1.5rem 0;
+  }
+  .claim-ip-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(167, 243, 208, 0.04);
+    border: 1px solid rgba(167, 243, 208, 0.15);
+    border-radius: 4px;
+  }
+  .claim-ip-btn {
+    background: rgba(167, 243, 208, 0.12);
+    border: 1px solid rgba(167, 243, 208, 0.35);
+    color: #a7f3d0;
+    padding: 0.4rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.78rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .claim-ip-btn:hover:not(:disabled) {
+    background: rgba(167, 243, 208, 0.22);
+  }
+  .claim-ip-btn:disabled {
+    opacity: 0.5;
+    cursor: progress;
+  }
+  .claim-ip-result {
+    font-size: 0.78rem;
+    color: #d1d5db;
+  }
+  .claim-ip-result code {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    font-size: 0.78rem;
   }
   .section-subtitle {
     font-size: 0.8rem;

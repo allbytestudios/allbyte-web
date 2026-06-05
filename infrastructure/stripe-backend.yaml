@@ -2169,29 +2169,35 @@ Resources:
           CACHE_BUCKET: allbyte-studio-cfn-deploy
           CACHE_KEY: traffic-cache/daily.json
           CACHE_TTL_SECONDS: "3600"
-          # Owner identifiers — JSON with "ips" (exact match) and
-          # "user_agent_patterns" (case-insensitive substring). Default empty;
-          # update via console or `aws lambda update-function-configuration`
-          # without redeploying CloudFormation.
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+          # Owner identifiers live in S3 at OWNER_ID_KEY so CFN deploys
+          # don't clobber the IP list when the admin "claim IP" endpoint
+          # accumulates new IPs over time. The env-var fallback below is
+          # only used if the S3 read fails (cold start / S3 outage).
+          OWNER_ID_KEY: traffic-config/owner-identifiers.json
           OWNER_IDENTIFIERS: '{"ips":[],"user_agent_patterns":[]}'
       Code:
         ZipFile: |
           import json
           import os
           import time
+          import hashlib
+          import hmac
+          import base64
           import boto3
           from datetime import datetime, timedelta, timezone
 
           CORS = {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Headers": "Content-Type",
-              "Access-Control-Allow-Methods": "GET,OPTIONS",
+              "Access-Control-Allow-Origin": os.environ.get("SITE_DOMAIN", "*"),
+              "Access-Control-Allow-Headers": "Content-Type,Authorization",
+              "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
           }
 
           # Known bot/crawler User-Agent substrings. Matched case-insensitively
-          # against cs_user_agent. List sourced from the owner's spec — covers
-          # major search engines, social-media link unfurlers, LLM crawlers,
-          # and the SEO/scraping bots that show up in logs at AllByte's scale.
+          # against cs_user_agent. Covers search engines, social-media link
+          # unfurlers, LLM crawlers, and the SEO/scraping bots that show up
+          # in logs at AllByte's scale.
           BOT_PATTERNS = [
               "Googlebot", "bingbot", "Slurp", "DuckDuckBot", "Baiduspider",
               "YandexBot", "Sogou", "facebot", "facebookexternalhit",
@@ -2202,8 +2208,37 @@ Resources:
               "MJ12bot", "AhrefsBot", "SemrushBot", "DotBot",
           ]
 
+          # IP prefix patterns for known datacenter ranges. Most bots spoof
+          # browser UAs but originate from cloud IPs — UA-only classification
+          # misses them. Order/values matter: SQL LIKE prefixes against c_ip.
+          # 20., 34., 35. are large blocks dominated by Azure / GCP — small
+          # false-positive risk for legit consumer IPs in those ranges,
+          # acceptable for analytics. Owner classification still wins via
+          # UA pattern match for any owner traffic egressing via cloud IPs.
+          DATACENTER_IP_PREFIXES = [
+              "20.", "34.", "35.",
+              "65.52.", "104.208.", "74.249.", "4.201.",
+              "45.155.42.", "185.177.72.", "77.83.39.",
+          ]
+
+          # URL filter for "webapp serves" — HTML page hits, excluding game
+          # bootstrap, asset bundles, dev-console polling endpoints, and font
+          # files (which are noisy and not pageviews in any useful sense).
+          GAME_URL = "/godot/index.html"
+          WEBAPP_FILTER_SQL = (
+              "((cs_uri_stem = '/' OR cs_uri_stem LIKE '%/' OR cs_uri_stem LIKE '%.html') "
+              "AND cs_uri_stem NOT LIKE '/godot/%' "
+              "AND cs_uri_stem NOT LIKE '/assets/%' "
+              "AND cs_uri_stem NOT LIKE '/_astro/%' "
+              "AND cs_uri_stem NOT LIKE '/test-snapshot/%' "
+              "AND cs_uri_stem NOT LIKE '/fonts/%')"
+          )
+
           athena = boto3.client("athena")
           s3 = boto3.client("s3")
+          users_table = boto3.resource("dynamodb").Table(
+              os.environ.get("USERS_TABLE", "allbyte-studio-users")
+          )
 
           DAYS_BACK = 365
 
@@ -2211,7 +2246,6 @@ Resources:
               return [
                   {
                       "date": (now - timedelta(days=DAYS_BACK - 1 - i)).strftime("%Y-%m-%d"),
-                      "requests": 0,
                       "owner": 0,
                       "bots": 0,
                       "other": 0,
@@ -2247,19 +2281,36 @@ Resources:
                   # will simply re-query Athena.
                   pass
 
-          def _owner_filter_sql():
-              """Build the SQL fragment that matches owner traffic.
-
-              Reads OWNER_IDENTIFIERS env var (JSON). Returns a SQL expression
-              that evaluates true when the row is the owner's traffic. Falls
-              back to a literal false if the env is missing/malformed/empty,
-              which keeps the query valid while putting all traffic into
-              bots/other classifications.
-              """
+          def _load_owner_identifiers():
+              """Load owner identifiers from S3, with env-var fallback for
+              cold-start / S3-outage safety. Returns dict with 'ips' and
+              'user_agent_patterns' lists."""
               try:
-                  cfg = json.loads(os.environ.get("OWNER_IDENTIFIERS", "{}"))
+                  obj = s3.get_object(
+                      Bucket=os.environ["CACHE_BUCKET"],
+                      Key=os.environ.get("OWNER_ID_KEY", "traffic-config/owner-identifiers.json"),
+                  )
+                  return json.loads(obj["Body"].read())
               except Exception:
-                  cfg = {}
+                  pass
+              try:
+                  return json.loads(os.environ.get("OWNER_IDENTIFIERS", "{}"))
+              except Exception:
+                  return {"ips": [], "user_agent_patterns": []}
+
+          def _save_owner_identifiers(cfg):
+              s3.put_object(
+                  Bucket=os.environ["CACHE_BUCKET"],
+                  Key=os.environ.get("OWNER_ID_KEY", "traffic-config/owner-identifiers.json"),
+                  Body=json.dumps(cfg).encode("utf-8"),
+                  ContentType="application/json",
+              )
+
+          def _owner_filter_sql():
+              """SQL fragment that matches owner traffic. Returns literal
+              'false' when no owner identifiers are configured (keeps the
+              query valid; all traffic falls into bots/other)."""
+              cfg = _load_owner_identifiers()
               clauses = []
               ips = cfg.get("ips") or []
               if ips:
@@ -2267,8 +2318,7 @@ Resources:
                       "'" + str(ip).replace("'", "''") + "'" for ip in ips
                   )
                   clauses.append(f"c_ip IN ({quoted})")
-              patterns = cfg.get("user_agent_patterns") or []
-              for p in patterns:
+              for p in (cfg.get("user_agent_patterns") or []):
                   safe = str(p).replace("'", "''")
                   clauses.append(f"lower(cs_user_agent) LIKE '%{safe.lower()}%'")
               if not clauses:
@@ -2276,12 +2326,54 @@ Resources:
               return "(" + " OR ".join(clauses) + ")"
 
           def _bot_filter_sql():
-              """SQL fragment that matches known bot/crawler User-Agents."""
+              """SQL fragment matching bots: known crawler UAs OR datacenter
+              IP prefixes. UA-only matching misses bots that spoof browser
+              UAs from cloud IPs, which is most of them in our data."""
               clauses = []
               for p in BOT_PATTERNS:
                   safe = p.replace("'", "''")
                   clauses.append(f"lower(cs_user_agent) LIKE '%{safe.lower()}%'")
+              for prefix in DATACENTER_IP_PREFIXES:
+                  clauses.append(f"c_ip LIKE '{prefix}%'")
               return "(" + " OR ".join(clauses) + ")"
+
+          def _bust_cache():
+              try:
+                  s3.delete_object(
+                      Bucket=os.environ["CACHE_BUCKET"],
+                      Key=os.environ["CACHE_KEY"],
+                  )
+              except Exception:
+                  pass
+
+          # JWT verification — same pattern as AdminListUsersFunction.
+          _jwt_cache = {}
+          def _get_jwt_secret():
+              if "jwt" not in _jwt_cache:
+                  sm = boto3.client("secretsmanager")
+                  _jwt_cache["jwt"] = sm.get_secret_value(
+                      SecretId="allbyte-studio/jwt-secret"
+                  )["SecretString"]
+              return _jwt_cache["jwt"]
+
+          def _verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected_sig = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected_sig):
+                  return None
+              payload_b64 = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def _err(code, msg):
+              return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
 
           def _run_athena_query(now):
               owner_expr = _owner_filter_sql()
@@ -2289,14 +2381,18 @@ Resources:
               start_date = (now - timedelta(days=DAYS_BACK)).strftime("%Y-%m-%d")
               database = os.environ["GLUE_DATABASE"]
               table = os.environ["GLUE_TABLE"]
-              # Classification is mutually exclusive: owner wins over bots,
-              # bots wins over other. CASE expression encodes that priority.
+              # Single query returns both game and webapp aggregates per day.
+              # Classification is mutually exclusive: owner > bots > other,
+              # encoded in the CASE expression ordering.
               query = f"""
                   SELECT
                       date_format(log_date, '%Y-%m-%d') AS d,
-                      SUM(CASE WHEN {owner_expr} THEN 1 ELSE 0 END) AS owner_count,
-                      SUM(CASE WHEN NOT ({owner_expr}) AND {bot_expr} THEN 1 ELSE 0 END) AS bot_count,
-                      SUM(CASE WHEN NOT ({owner_expr}) AND NOT ({bot_expr}) THEN 1 ELSE 0 END) AS other_count
+                      SUM(CASE WHEN cs_uri_stem = '{GAME_URL}' AND {owner_expr} THEN 1 ELSE 0 END) AS game_owner,
+                      SUM(CASE WHEN cs_uri_stem = '{GAME_URL}' AND NOT ({owner_expr}) AND {bot_expr} THEN 1 ELSE 0 END) AS game_bots,
+                      SUM(CASE WHEN cs_uri_stem = '{GAME_URL}' AND NOT ({owner_expr}) AND NOT ({bot_expr}) THEN 1 ELSE 0 END) AS game_other,
+                      SUM(CASE WHEN {WEBAPP_FILTER_SQL} AND {owner_expr} THEN 1 ELSE 0 END) AS webapp_owner,
+                      SUM(CASE WHEN {WEBAPP_FILTER_SQL} AND NOT ({owner_expr}) AND {bot_expr} THEN 1 ELSE 0 END) AS webapp_bots,
+                      SUM(CASE WHEN {WEBAPP_FILTER_SQL} AND NOT ({owner_expr}) AND NOT ({bot_expr}) THEN 1 ELSE 0 END) AS webapp_other
                   FROM {table}
                   WHERE log_date >= DATE '{start_date}'
                   GROUP BY date_format(log_date, '%Y-%m-%d')
@@ -2310,8 +2406,7 @@ Resources:
               qid = start["QueryExecutionId"]
               # Poll for completion. Athena typical for this table size is
               # 3-8s; cap at ~50s so we leave headroom before the function
-              # times out. Backoff escalates so we're not hammering the API
-              # for a query that hasn't finished.
+              # times out.
               deadline = time.time() + 50
               delay = 0.5
               while time.time() < deadline:
@@ -2327,8 +2422,6 @@ Resources:
               else:
                   raise TimeoutError("Athena query did not complete in time")
 
-              # Pull results — Athena paginates at 1000 rows/page; 365 days
-              # max so a single page is enough but we loop defensively.
               by_date = {}
               token = None
               while True:
@@ -2344,23 +2437,17 @@ Resources:
                           continue
                       try:
                           d = vals[0]
-                          owner_c = int(vals[1] or 0)
-                          bot_c = int(vals[2] or 0)
-                          other_c = int(vals[3] or 0)
+                          go = int(vals[1] or 0); gb = int(vals[2] or 0); gx = int(vals[3] or 0)
+                          wo = int(vals[4] or 0); wb = int(vals[5] or 0); wx = int(vals[6] or 0)
                       except (ValueError, IndexError):
                           continue
-                      by_date[d] = (owner_c, bot_c, other_c)
+                      by_date[d] = (go, gb, gx, wo, wb, wx)
                   token = res.get("NextToken")
                   if not token:
                       break
               return by_date
 
-          def handler(event, context):
-              if event.get("requestContext", {}).get("http", {}).get("method") == "OPTIONS":
-                  return {"statusCode": 200, "headers": CORS}
-
-              now = datetime.now(timezone.utc)
-
+          def _get_analytics(now):
               cached = _read_cache()
               if cached:
                   return {
@@ -2374,36 +2461,34 @@ Resources:
               try:
                   by_date = _run_athena_query(now)
               except Exception as e:
-                  # Graceful degradation: return zero-filled history with an
-                  # error hint rather than a 500. The dashboard will render
-                  # an empty chart instead of breaking.
-                  daily = _empty_daily(now)
+                  # Graceful degradation: return zero-filled history rather
+                  # than 500. Dashboard renders empty chart instead of breaking.
                   return {
                       "statusCode": 200,
                       "headers": CORS,
                       "body": json.dumps({
                           "totalRequests7d": 0,
-                          "dailyRequests": daily,
+                          "dailyGameServes": _empty_daily(now),
+                          "dailyWebappServes": _empty_daily(now),
                           "error": str(e)[:200],
                       }),
                   }
 
-              daily = []
+              game_daily, webapp_daily = [], []
               for i in range(DAYS_BACK):
                   d = (now - timedelta(days=DAYS_BACK - 1 - i)).strftime("%Y-%m-%d")
-                  owner_c, bot_c, other_c = by_date.get(d, (0, 0, 0))
-                  daily.append({
-                      "date": d,
-                      "requests": owner_c + bot_c + other_c,
-                      "owner": owner_c,
-                      "bots": bot_c,
-                      "other": other_c,
-                  })
+                  go, gb, gx, wo, wb, wx = by_date.get(d, (0, 0, 0, 0, 0, 0))
+                  game_daily.append({"date": d, "owner": go, "bots": gb, "other": gx})
+                  webapp_daily.append({"date": d, "owner": wo, "bots": wb, "other": wx})
 
-              total_7d = sum(e["requests"] for e in daily[-7:])
+              total_7d = sum(
+                  e["owner"] + e["bots"] + e["other"]
+                  for e in game_daily[-7:] + webapp_daily[-7:]
+              )
               payload = {
                   "totalRequests7d": total_7d,
-                  "dailyRequests": daily,
+                  "dailyGameServes": game_daily,
+                  "dailyWebappServes": webapp_daily,
                   "_cachedAt": int(time.time()),
               }
               _write_cache(payload)
@@ -2414,6 +2499,59 @@ Resources:
                       k: v for k, v in payload.items() if not k.startswith("_")
                   }),
               }
+
+          def _post_claim_owner_ip(event):
+              """POST /analytics/traffic/owner-ip — admin only.
+
+              Adds caller's source IP to OWNER_IDENTIFIERS.ips (deduped),
+              persists to S3, and busts the analytics cache so the next
+              dashboard fetch reflects the new classifier."""
+              auth = event.get("headers", {}).get("authorization", "")
+              if not auth.startswith("Bearer "):
+                  return _err(401, "No token provided")
+              token = auth[7:]
+              payload = _verify_jwt(token, _get_jwt_secret())
+              if not payload:
+                  return _err(401, "Invalid or expired token")
+              actor_resp = users_table.get_item(Key={"userId": payload["sub"]})
+              actor = actor_resp.get("Item")
+              if not actor or actor.get("tier") != "admin":
+                  return _err(403, "Admin tier required")
+
+              source_ip = event.get("requestContext", {}).get("http", {}).get("sourceIp")
+              if not source_ip:
+                  return _err(400, "Could not determine source IP")
+
+              cfg = _load_owner_identifiers()
+              ips = list(cfg.get("ips") or [])
+              added = source_ip not in ips
+              if added:
+                  ips.append(source_ip)
+                  cfg["ips"] = ips
+                  _save_owner_identifiers(cfg)
+                  _bust_cache()
+
+              return {
+                  "statusCode": 200,
+                  "headers": CORS,
+                  "body": json.dumps({
+                      "ip": source_ip,
+                      "added": added,
+                      "ips": ips,
+                      "user_agent_patterns": cfg.get("user_agent_patterns") or [],
+                  }),
+              }
+
+          def handler(event, context):
+              method = event.get("requestContext", {}).get("http", {}).get("method")
+              if method == "OPTIONS":
+                  return {"statusCode": 200, "headers": CORS}
+              if method == "POST":
+                  path = event.get("rawPath") or event.get("requestContext", {}).get("http", {}).get("path", "")
+                  if path.endswith("/owner-ip"):
+                      return _post_claim_owner_ip(event)
+                  return _err(404, "unknown POST path")
+              return _get_analytics(datetime.now(timezone.utc))
 
   # --- Lambda: Admin — list all users (admin tier only) ---
   AdminListUsersFunction:
@@ -3236,6 +3374,15 @@ Resources:
     Properties:
       ApiId: !Ref HttpApi
       RouteKey: "GET /analytics/traffic"
+      Target: !Sub "integrations/${SiteTrafficIntegration}"
+
+  # Admin-only: adds the caller's source IP to OWNER_IDENTIFIERS.ips.
+  # Same Lambda integration as GET — handler routes on method+path.
+  SiteTrafficClaimIpRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /analytics/traffic/owner-ip"
       Target: !Sub "integrations/${SiteTrafficIntegration}"
 
   SiteTrafficPermission:

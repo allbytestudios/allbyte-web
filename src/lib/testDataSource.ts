@@ -236,19 +236,18 @@ export interface BudgetStatus {
 
 export interface SiteTrafficDay {
   date: string;
-  requests: number;
-  // Per-classification breakdown — added 2026-06-04 when the backend
-  // switched from CloudWatch CloudFront metrics to Athena over the
-  // CloudFront access logs. Older snapshots may omit these (falsy ⇒ 0);
-  // chart code treats them as optional and zero-fills.
-  owner?: number;
-  bots?: number;
-  other?: number;
+  owner: number;
+  bots: number;
+  other: number;
 }
 
 export interface SiteTraffic {
   totalRequests7d: number;
-  dailyRequests: SiteTrafficDay[];
+  // Backend split into game/webapp 2026-06-05 (replaced the old single
+  // dailyRequests array). Each day is owner/bots/other counts, datacenter
+  // IP prefixes added to the bot classifier the same day.
+  dailyGameServes: SiteTrafficDay[];
+  dailyWebappServes: SiteTrafficDay[];
   /** Present only if the backend hit a non-fatal error producing data. */
   error?: string;
 }
@@ -256,6 +255,29 @@ export interface SiteTraffic {
 export async function fetchSiteTraffic(signal?: AbortSignal): Promise<SiteTraffic | null> {
   try {
     const res = await fetch(`${API_BASE}/admin/stats/traffic`, { signal, cache: "no-store" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export interface ClaimOwnerIpResult {
+  ip: string;
+  added: boolean;
+  ips: string[];
+  user_agent_patterns: string[];
+}
+
+/** Admin-only: add caller's source IP to the owner classifier. */
+export async function claimOwnerIp(signal?: AbortSignal): Promise<ClaimOwnerIpResult | null> {
+  try {
+    const res = await fetch(`${API_BASE}/analytics/traffic/owner-ip`, {
+      signal,
+      method: "POST",
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${localStorage.getItem("allbyte_token") ?? ""}` },
+    });
     if (!res.ok) return null;
     return await res.json();
   } catch {

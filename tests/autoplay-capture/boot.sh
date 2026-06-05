@@ -77,4 +77,26 @@ trap cleanup EXIT INT TERM
 
 # --- Playwright harness -----------------------------------------------------
 echo "[boot] handing off to run.py"
+# Disable errexit around the harness call so a Playwright failure doesn't
+# skip the clip-extraction step (we still want clips from any usable
+# fragment of the recording).
+set +e
 python3 /home/pwuser/harness/run.py "$@"
+RUN_EXIT=$?
+set -e
+
+# Stop ffmpeg cleanly so the MP4 finalizes before clip extraction reads it.
+# (The trap will fire on script exit anyway, but we need ffmpeg finalized
+# *before* clip_extractor.py runs.)
+echo "[boot] stopping ffmpeg to finalize MP4"
+kill -INT "$FFMPEG_PID" 2>/dev/null || true
+wait "$FFMPEG_PID" 2>/dev/null || true
+
+# --- Clip extraction --------------------------------------------------------
+# Reads MP4_PATH + TIMELINE_PATH (set above), groups combat events into
+# clusters, cuts per-cluster clips with lead/lag padding, writes thumbnails.
+# Failure here is non-fatal — the raw capture is still usable.
+echo "[boot] extracting clips"
+python3 /home/pwuser/harness/clip_extractor.py || echo "[boot] clip extraction failed (non-fatal)"
+
+exit $RUN_EXIT

@@ -45,6 +45,8 @@ jobs:
             --exclude "assets/*" \
             --exclude "godot/*" \
             --exclude "test-snapshot/*" \
+            --exclude "captures/*" \
+            --exclude "savefixtures/*" \
             --exclude "Anthem2.mp3" \
             --exclude "cursor-move.wav" \
             --exclude "ChroniclesOfNesisTitle.gif" \

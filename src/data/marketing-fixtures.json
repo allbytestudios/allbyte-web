@@ -1,7 +1,7 @@
 {
   "$schema": "./marketing-fixtures.schema.md",
-  "version": 1,
-  "description": "Marketing-side fixture manifest. Each entry maps a marketing-relevant game state to an Arc-side save fixture (or declares a gap). Arc's MANIFEST.json at ChroniclesOfNesis/WebTests/fixtures/saves/frontier/MANIFEST.json is the source of truth for what file exists; this manifest is the source of truth for what marketing wants to capture from.",
+  "version": 2,
+  "description": "Marketing-side fixture manifest. Each entry maps a marketing-relevant game state to an Arc-side save fixture (or declares a gap). Arc's MANIFEST.json at ChroniclesOfNesis/WebTests/fixtures/saves/frontier/MANIFEST.json is the source of truth for what file exists; this manifest is the source of truth for what marketing wants to capture from. Filenames verified against Arc's inventory in CON_CLAUDE_FIXTURE_BUNDLE_FOR_S3.md (2026-06-06).",
   "entries": [
     {
       "id": "town-introduction",
@@ -44,7 +44,7 @@
       "category": "moment",
       "tags": ["tension", "discovery", "windmill"],
       "story_beat": "Saw basement slime, back on main floor",
-      "fixture": "cond_04_after_event_4.json",
+      "fixture": "cond_04_after_event_5.json",
       "arc_cond": 4,
       "scene_anchor": "Windmill1",
       "duration_estimate_s": 30,
@@ -56,7 +56,7 @@
       "category": "scene",
       "tags": ["dungeon", "transition"],
       "story_beat": "Post-Rein-report, ready to leave windmill",
-      "fixture": "cond_05_after_event_5.json",
+      "fixture": "cond_05_after_event_6.json",
       "arc_cond": 5,
       "scene_anchor": "Windmill1",
       "duration_estimate_s": 30,
@@ -68,7 +68,7 @@
       "category": "scene",
       "tags": ["town", "dialogue", "mayors-house"],
       "story_beat": "Reported windmill slime to Mayor",
-      "fixture": "cond_06_after_event_6.json",
+      "fixture": "cond_06_after_event_8.json",
       "arc_cond": 6,
       "scene_anchor": "MayorsHouse",
       "duration_estimate_s": 30,
@@ -76,11 +76,23 @@
       "notes": "Interior dialogue scene. Shows NPC interaction surface."
     },
     {
+      "id": "church-square-slime-summoning",
+      "category": "cutscene",
+      "tags": ["cinematic", "reveal", "tension"],
+      "story_beat": "Slimes materialize in ChurchSquare (Event 9 cutscene)",
+      "fixture": "cond_06_after_event_8.json",
+      "arc_cond": 7,
+      "scene_anchor": "ChurchSquare",
+      "duration_estimate_s": 40,
+      "persona_hint": "default",
+      "notes": "cond 7 is permanently un-saveable (mid-cinematic alpha state). Recipe per Arc: load cond_06 → wait for scene → autoplay forward → Event 9 fires the slime-summon cutscene. ~20-30s gameplay leading into the moment."
+    },
+    {
       "id": "church-square-post-combat",
       "category": "moment",
       "tags": ["victory", "post-combat", "town"],
       "story_beat": "Slimes defeated in ChurchSquare",
-      "fixture": "cond_08_after_event_8.json",
+      "fixture": "cond_08_after_event_10.json",
       "arc_cond": 8,
       "scene_anchor": "ChurchSquare",
       "duration_estimate_s": 30,
@@ -92,7 +104,7 @@
       "category": "moment",
       "tags": ["dialogue", "story", "mayors-house"],
       "story_beat": "Post-combat debrief with Mayor",
-      "fixture": "cond_09_after_event_9.json",
+      "fixture": "cond_09_after_event_11.json",
       "arc_cond": 9,
       "scene_anchor": "MayorsHouse",
       "duration_estimate_s": 30,
@@ -104,12 +116,24 @@
       "category": "scene",
       "tags": ["dialogue", "story", "mayors-house", "exposition"],
       "story_beat": "Mayor's expanded brief on the situation",
-      "fixture": "cond_10_after_event_10.json",
+      "fixture": "cond_10_after_event_12.json",
       "arc_cond": 10,
       "scene_anchor": "MayorsHouse",
       "duration_estimate_s": 45,
       "persona_hint": "default",
       "notes": "Quest expansion. Useful for narrative trailer pacing."
+    },
+    {
+      "id": "mayors-house-waterway-brief",
+      "category": "scene",
+      "tags": ["dialogue", "story", "mayors-house"],
+      "story_beat": "Final mayor brief before heading to Waterway",
+      "fixture": "cond_11_after_event_13.json",
+      "arc_cond": 11,
+      "scene_anchor": "MayorsHouse",
+      "duration_estimate_s": 30,
+      "persona_hint": "default",
+      "notes": "cond 11 default variant (MayorsHouse). Transition setup before Waterway exploration."
     },
     {
       "id": "waterway-entry-combat",
@@ -119,21 +143,21 @@
       "fixture": "cond_11_waterway1_entry.json",
       "arc_cond": 11,
       "scene_anchor": "Waterway1",
-      "duration_estimate_s": 60,
+      "duration_estimate_s": 180,
       "persona_hint": "default",
-      "notes": "Arc-recommended combat-immediate fixture. Walk a few steps → slime-cluster encounter. Primary combat-clip target today."
+      "notes": "cond 11 checkpoint variant — Arc-recommended combat-immediate fixture. Walk a few steps → slime-cluster encounter. Validated 2026-06-06: 180s session produced 3 clips covering 5 enemy kills across Waterway1/2/10."
     },
     {
       "id": "first-boss-encounter",
       "category": "combat",
       "tags": ["combat", "boss", "tension", "setup"],
-      "story_beat": "Just before first major boss fight (state needed)",
+      "story_beat": "Just before Mother Slime boss fight (SluiceGate)",
       "fixture": null,
       "arc_cond": null,
-      "scene_anchor": null,
+      "scene_anchor": "SluiceGate",
       "duration_estimate_s": 90,
       "persona_hint": "default",
-      "notes": "GAP — no captured fixture yet. Marketing intent: pre-fight setup tension clip. Needs Arc to capture during Tier 5 run reaching first scripted boss."
+      "notes": "GAP — falls out naturally when Arc's Tier 5 reaches SluiceGate (cond 12-14 range). No urgent ask."
     },
     {
       "id": "level-up-moment",
@@ -145,19 +169,19 @@
       "scene_anchor": null,
       "duration_estimate_s": 45,
       "persona_hint": "default",
-      "notes": "GAP — no captured fixture yet. Marketing intent: showcase the level-up + stat-spend UI Arc's been polishing in Phase 6.3."
+      "notes": "GAP — hand-crafted fixture needed (Tier 5 doesn't pause at XP=99/100). Arc will author after Phase 7.3 per CON_CLAUDE_FIXTURE_PUBLISH_OWNERSHIP.md. Likely landing as cond_09_pre_levelup.json with xp_inject note."
     },
     {
       "id": "status-menu-showcase",
       "category": "menu",
       "tags": ["ui", "status", "menu", "showcase"],
-      "story_beat": "Mid-game with skills + items unlocked, ready to open StatusMenu",
+      "story_beat": "Mid-game StatusMenu showcase",
       "fixture": null,
       "arc_cond": null,
       "scene_anchor": null,
       "duration_estimate_s": 30,
       "persona_hint": "default",
-      "notes": "GAP — no captured fixture. UI-focused capture. Needs state where the menu actually has interesting content (skills learned, items found, party progression)."
+      "notes": "GAP — drops from cond 12-15 naturally. Harness hook: window._testOpenMenu = 'status' (or 'skilltree') — TestBridge.gd:426. Wire that into run.py once cond 12+ ships."
     }
   ]
 }

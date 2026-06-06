@@ -253,6 +253,34 @@ if (existsSync(chroniclesIndex)) {
   );
 }
 
+// 3c. Sync the Chronicles save-fixture bundle for the marketing-queue
+// fixture-picker UI. Arc's reply (CON_CLAUDE_FIXTURE_PUBLISH_OWNERSHIP.md
+// 2026-06-06) confirmed publishing is AppC's lane — his container has no
+// aws CLI. The bundle is ~16KB across MANIFEST.json + cond_*.json files;
+// changes ~once per gameplay-milestone, so syncing on every push-assets
+// run is cheap and avoids coordination overhead (Option B from his reply).
+//
+// AppC's marketing-fixtures.json references files by their actual
+// Chronicles filenames (cond_NN_after_event_M.json), so we upload them
+// verbatim to s3://allbyte.studio-site/savefixtures/data/. The src/lib/
+// marketingFixtures.ts surfaces that path in prod.
+const fixturesDir = join(chroniclesRoot, "WebTests", "fixtures", "saves", "frontier");
+if (existsSync(fixturesDir)) {
+  run(
+    `aws s3 sync "${fixturesDir}" s3://${bucket}/savefixtures/data ` +
+      `--region ${region} ` +
+      `--cache-control "public, max-age=300, must-revalidate" ` +
+      `--exclude "*" ` +
+      `--include "MANIFEST.json" ` +
+      `--include "cond_*.json"`
+  );
+  invalidationPaths.add("/savefixtures/data/*");
+} else {
+  console.log(
+    `No save fixtures at ${fixturesDir}. Skipping fixture bundle sync.`
+  );
+}
+
 // 4. Resolve CloudFront distribution ID and issue one invalidation.
 function resolveDistributionId() {
   if (process.env.AWS_CLOUDFRONT_DISTRIBUTION_ID) {

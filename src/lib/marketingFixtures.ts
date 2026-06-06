@@ -51,7 +51,8 @@ const IS_DEV = import.meta.env.DEV;
 //   Prod: served from S3 at /savefixtures/  (once Arc lands the publish step;
 //         until then prod path 404s and AppC just shows "missing" in the UI)
 const FIXTURE_BASE_DEV = "/test-data/WebTests/fixtures/saves/frontier/";
-const FIXTURE_BASE_PROD = "/savefixtures/";
+// Prod path matches the layout pushed by scripts/push-assets.js section 3c.
+const FIXTURE_BASE_PROD = "/savefixtures/data/";
 
 export function fixtureUrl(file: string): string {
   return (IS_DEV ? FIXTURE_BASE_DEV : FIXTURE_BASE_PROD) + file;

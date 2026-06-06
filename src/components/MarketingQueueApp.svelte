@@ -93,16 +93,12 @@
     if (!entry.fixture) return "# No fixture available — gap entry";
     const url = `${typeof window !== "undefined" ? window.location.origin : ""}${fixtureUrl(entry.fixture)}`;
     return [
-      "$env:ANTHROPIC_API_KEY = \"sk-ant-...\"  # only if you want SDK fallback",
-      "docker run --rm `",
-      "  -v ${PWD}/.tmp/capture-out:/home/pwuser/out `",
-      "  -v $HOME/.aws:/home/pwuser/.aws:ro `",
-      "  --add-host=host.docker.internal:host-gateway `",
-      "  -e DURATION_S=180 `",
-      `  -e SAVE_FIXTURE_URL="${url}" \``,
-      `  -e PERSONA=${entry.persona_hint} \``,
-      "  -e TARGET_URL=http://host.docker.internal:4321/play/ `",
-      "  allbyte/autoplay-capture",
+      "# Native Windows capture (uses your GPU at 60fps).",
+      "# Prereqs: ffmpeg in PATH, python+playwright+boto3 installed.",
+      "./tests/autoplay-capture/run_capture.ps1 `",
+      `  -SaveFixtureUrl "${url}" \``,
+      `  -Persona ${entry.persona_hint} \``,
+      "  -DurationS 180",
     ].join("\n");
   }
 

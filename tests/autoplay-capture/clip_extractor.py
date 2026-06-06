@@ -175,7 +175,7 @@ def main() -> int:
             print(f"[clip] {i:03d} skipped — too short ({clip_duration:.1f}s)")
             continue
         if clip_duration > MAX_CLIP_S:
-            print(f"[clip] {i:03d} clamping {clip_duration:.1f}s → {MAX_CLIP_S:.1f}s")
+            print(f"[clip] {i:03d} clamping {clip_duration:.1f}s -> {MAX_CLIP_S:.1f}s")
             clip_duration = MAX_CLIP_S
             clip_end = clip_start + clip_duration
 
@@ -184,7 +184,7 @@ def main() -> int:
         out_thumb = clips_dir / f"{clip_name}.thumb.png"
         out_meta = clips_dir / f"{clip_name}.json"
 
-        print(f"[clip] {i:03d} cutting {clip_start:.1f}s..{clip_end:.1f}s ({clip_duration:.1f}s) → {out_mp4.name}")
+        print(f"[clip] {i:03d} cutting {clip_start:.1f}s..{clip_end:.1f}s ({clip_duration:.1f}s) -> {out_mp4.name}")
         _ffmpeg_clip(mp4_path, out_mp4, clip_start, clip_duration)
         _ffmpeg_thumbnail(mp4_path, out_thumb, clip_start + clip_duration / 2)
 

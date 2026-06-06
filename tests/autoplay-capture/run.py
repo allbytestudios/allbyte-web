@@ -38,7 +38,7 @@ DEFAULT_TARGET_URL = os.environ.get(
     # dev server's auto-admin flow (import.meta.env.DEV → tier=admin in
     # auth.svelte.ts) routes the iframe to /godot/index.html (debug
     # variant), leaving the dev-overlay panel visible in captures.
-    "http://host.docker.internal:4321/play/?build=public",
+    "http://localhost:4321/play/?build=public",
 )
 DEFAULT_FIXTURE = os.environ.get("FIXTURE_PATH", "")  # empty = skip fixture load
 DEFAULT_PERSONA = os.environ.get("PERSONA", "default")
@@ -48,7 +48,7 @@ DEFAULT_PERSONA = os.environ.get("PERSONA", "default")
 # Set to empty to skip and fall back to driving Title manually.
 DEFAULT_SAVE_FIXTURE_URL = os.environ.get(
     "SAVE_FIXTURE_URL",
-    "http://host.docker.internal:4321/test-data/WebTests/fixtures/saves/frontier/cond_01_after_event_1.json",
+    "http://localhost:4321/test-data/WebTests/fixtures/saves/frontier/cond_01_after_event_1.json",
 )
 DEFAULT_DURATION_S = int(os.environ.get("DURATION_S", "60"))
 DEFAULT_STARTUP_SKIP_S = int(os.environ.get("STARTUP_SKIP_S", "22"))
@@ -100,36 +100,24 @@ class CaptureSession:
         # llvmpipe (set via env in the Dockerfile + --use-gl=desktop) is
         # the CPU rasterizer that lets Godot's web shell pass its WebGL2
         # capability check.
-        # Chromium treats `host.docker.internal` as an insecure HTTP origin
-        # by default — and Godot's web shell refuses to boot without a
-        # secure context (rule: SharedArrayBuffer + crossOriginIsolated
-        # require https:// or localhost). The flag below tells Chromium
-        # to treat the target as if it were https, which unblocks the
-        # secure-context check while still using plain HTTP transport.
-        secure_origin = self.target_url.rsplit("/", 1)[0].rstrip("/")
-        # The flag expects a comma-separated list of origins. Strip path.
-        from urllib.parse import urlparse
-        parsed = urlparse(self.target_url)
-        secure_origin = f"{parsed.scheme}://{parsed.netloc}"
-
+        # Native Windows: Chromium uses the host's GPU. localhost is
+        # already a secure origin so no insecure-origin override needed.
+        # The anti-throttle flags remain useful (rAF can still get
+        # backgrounded if the user clicks away from Chromium).
         browser = await playwright.chromium.launch(
             headless=False,
             args=[
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
-                "--use-gl=desktop",
-                "--enable-webgl",
-                "--ignore-gpu-blocklist",
                 "--enable-features=SharedArrayBuffer",
-                # Prevent Chromium from throttling rAF / timers when the
-                # tab loses focus or backgrounds. Xvfb has no "visible
-                # window" concept and the heuristic was kicking in,
-                # dropping the game to ~15fps mid-session.
                 "--disable-background-timer-throttling",
                 "--disable-backgrounding-occluded-windows",
                 "--disable-renderer-backgrounding",
                 "--disable-features=CalculateNativeWinOcclusion",
-                f"--unsafely-treat-insecure-origin-as-secure={secure_origin}",
+                # Position + size so ffmpeg gdigrab's 1920x1080 region
+                # from top-left captures exactly the Chromium content.
+                "--window-position=0,0",
+                "--window-size=1920,1080",
             ],
         )
         context = await browser.new_context(viewport={"width": 1920, "height": 1080})

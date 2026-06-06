@@ -38,12 +38,20 @@ MIN_CLIP_S = float(os.environ.get("CLIP_MIN_DURATION_S", "5"))
 MAX_CLIP_S = float(os.environ.get("CLIP_MAX_DURATION_S", "60"))
 
 
-def _cluster_events(events, kind, gap_s):
-    """Group consecutive events of given kind into time clusters.
+def _cluster_events(events, kinds, gap_s):
+    """Group consecutive events of any of the given kinds into time clusters.
 
-    Returns list of (start_t, end_t, events_in_cluster). Clusters are
-    bounded by gaps >= gap_s in event timestamps."""
-    filtered = [e for e in events if e["kind"] == kind]
+    `kinds` is a string (single kind) or a set/tuple of kinds — both forms
+    accepted so the extractor can group combat-related signals together
+    (e.g., '[combat]' AND `unit_died` events form one combat cluster)."""
+    if isinstance(kinds, str):
+        kind_set = {kinds}
+    else:
+        kind_set = set(kinds)
+    filtered = sorted(
+        (e for e in events if e["kind"] in kind_set),
+        key=lambda e: e["t"],
+    )
     clusters = []
     current = []
     for ev in filtered:
@@ -134,7 +142,12 @@ def main() -> int:
     # movement; clips taken from that window are static.
     relevant = [e for e in events if e["t"] >= startup_skip_s]
 
-    clusters = _cluster_events(relevant, "combat", CLUSTER_GAP_S)
+    # Cluster on any combat-signal: [combat] log lines + unit_died kills +
+    # [skill] cast events all count as "combat happening." Empirically the
+    # current build's combat log fires unit_died reliably; [combat] tag is
+    # less consistent. Grouping all three captures combat regardless of
+    # which channel is the noisy one in any given build.
+    clusters = _cluster_events(relevant, ("combat", "unit_died", "skill"), CLUSTER_GAP_S)
     if not clusters:
         print("[clip] no combat clusters found; nothing to extract")
         # Write an empty manifest so the marketing queue knows the session

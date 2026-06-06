@@ -3,7 +3,7 @@ import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
 import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, writeFileSync, realpathSync, watch as fsWatch } from "node:fs";
 import { join, normalize, resolve, sep, relative } from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import chokidar from "chokidar";
 
 const chroniclesRoot = resolve(
@@ -387,6 +387,148 @@ function captionDrafter() {
   };
 }
 
+// Dev-only POST endpoint that promotes a marketing-queue clip to /artwork.
+//
+// 1. Copies the clip's MP4 + thumbnail from s3://.../captures/latest/clips/
+//    to s3://.../captures/recordings/<id>.* so the file survives the next
+//    autoplay-capture run that overwrites /captures/latest/.
+// 2. Appends a new entry to src/data/recordings.json with the supplied
+//    title/description (which the UI pulls from the editable caption
+//    textareas) + the stable S3 URL.
+// 3. Returns the new entry so the UI can confirm + link to /artwork.
+//
+// The entry lands with draft:true so it's admin-only until the owner
+// commits + pushes recordings.json. After that, it's publicly visible
+// at /artwork/.
+//
+// Production: this middleware doesn't exist. The marketing queue's
+// approve button is hidden in prod.
+function marketingApproveToArtwork() {
+  const MAX_BODY = 16 * 1024;
+  const BUCKET = process.env.AWS_S3_BUCKET || "allbyte.studio-site";
+  const SRC_PREFIX = "captures/latest/clips";
+  const DST_PREFIX = "captures/recordings";
+
+  function awsCopy(srcKey, dstKey) {
+    const res = spawnSync(
+      "aws",
+      ["s3", "cp", `s3://${BUCKET}/${srcKey}`, `s3://${BUCKET}/${dstKey}`],
+      { encoding: "utf8" },
+    );
+    return { code: res.status, stderr: res.stderr || "", stdout: res.stdout || "" };
+  }
+
+  function slugify(s) {
+    return String(s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+  }
+
+  return {
+    name: "allbyte-marketing-approve-to-artwork",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.method !== "POST" || (req.url || "").replace(/\/$/, "") !== "/api/marketing/approve-to-artwork") {
+          return next();
+        }
+        let body = "", tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
+        req.on("end", () => {
+          if (tooLarge) return;
+          let payload;
+          try { payload = JSON.parse(body); } catch {
+            res.statusCode = 400;
+            return res.end(JSON.stringify({ error: "invalid JSON body" }));
+          }
+          const { clip, title, description, category, scene, duration_s } = payload || {};
+          if (!clip || typeof clip !== "string" || !/^[A-Za-z0-9_-]{1,32}$/.test(clip)) {
+            res.statusCode = 400;
+            return res.end(JSON.stringify({ error: "invalid clip name" }));
+          }
+
+          // Stable, sortable ID. Timestamp prefix means future approvals
+          // don't collide with prior ones, even for the same source clip.
+          const ts = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+          const slug = slugify(title) || clip;
+          const id = `capture-${ts}-${slug}`.slice(0, 80);
+
+          // Copy MP4 + thumbnail to the durable recordings prefix.
+          const mp4Copy = awsCopy(`${SRC_PREFIX}/${clip}.mp4`, `${DST_PREFIX}/${id}.mp4`);
+          if (mp4Copy.code !== 0) {
+            res.statusCode = 502;
+            return res.end(JSON.stringify({
+              error: "aws s3 cp (mp4) failed",
+              detail: (mp4Copy.stderr || mp4Copy.stdout || "").slice(-500),
+            }));
+          }
+          const thumbCopy = awsCopy(`${SRC_PREFIX}/${clip}.thumb.png`, `${DST_PREFIX}/${id}.thumb.png`);
+          // Thumb failure is non-fatal — the recordings page falls back to
+          // first-frame extraction if no thumbnail exists.
+          const thumbOk = thumbCopy.code === 0;
+
+          // Read + append + write recordings.json. Pretty-printed so the
+          // diff is reviewable when AllByte commits the file.
+          const recordingsPath = join(process.cwd(), "src", "data", "recordings.json");
+          let recordings;
+          try {
+            recordings = JSON.parse(readFileSync(recordingsPath, "utf8"));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({
+              error: "couldn't read recordings.json",
+              detail: String(err.message || err),
+            }));
+          }
+          if (!Array.isArray(recordings.recordings)) recordings.recordings = [];
+
+          const newEntry = {
+            id,
+            title: title || `Capture ${ts}`,
+            description: description || "",
+            scene: scene || "Unknown",
+            category: category || "gameplay",
+            duration_s: Number.isFinite(duration_s) ? duration_s : 30,
+            src: `https://allbyte.studio/${DST_PREFIX}/${id}.mp4`,
+            ...(thumbOk ? { thumbnail: `https://allbyte.studio/${DST_PREFIX}/${id}.thumb.png` } : {}),
+            draft: true,
+            captured_at: new Date().toISOString(),
+            source_clip: clip,
+          };
+          recordings.recordings.push(newEntry);
+
+          try {
+            writeFileSync(recordingsPath, JSON.stringify(recordings, null, 2) + "\n");
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({
+              error: "couldn't write recordings.json",
+              detail: String(err.message || err),
+            }));
+          }
+
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({
+            ok: true,
+            entry: newEntry,
+            thumb_uploaded: thumbOk,
+          }));
+        });
+      });
+    },
+  };
+}
+
 // Dev-only POST endpoint for owner decision write-back.
 // Writes to agent_chat.ndjson in the Chronicles repo.
 function decisionWriteback() {
@@ -694,7 +836,7 @@ export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
   vite: {
-    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter()],
+    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

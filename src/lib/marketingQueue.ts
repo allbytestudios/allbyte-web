@@ -85,6 +85,63 @@ export function clipThumbUrl(thumbFile: string): string {
   return `${CLIPS_BASE}${thumbFile}`;
 }
 
+export interface ApproveToArtworkRequest {
+  clip: string;
+  title?: string;
+  description?: string;
+  category?: string;
+  scene?: string;
+  duration_s?: number;
+}
+
+export interface ApproveToArtworkResult {
+  ok: boolean;
+  error?: string;
+  detail?: string;
+  entry?: {
+    id: string;
+    title: string;
+    description: string;
+    scene: string;
+    category: string;
+    duration_s: number;
+    src: string;
+    thumbnail?: string;
+    draft: boolean;
+    captured_at: string;
+    source_clip: string;
+  };
+  thumb_uploaded?: boolean;
+}
+
+/**
+ * Promote a marketing-queue clip to /artwork/Recordings. Copies the clip's
+ * MP4 + thumb to the durable s3 .../captures/recordings/ prefix and appends
+ * an entry to src/data/recordings.json. New entry lands with draft:true so
+ * it stays admin-only until the owner commits the file.
+ *
+ * Dev-only: needs the host's aws CLI + write access to src/data/.
+ */
+export async function approveToArtwork(
+  req: ApproveToArtworkRequest,
+  signal?: AbortSignal,
+): Promise<ApproveToArtworkResult> {
+  if (!IS_DEV) {
+    return { ok: false, error: "Adding to artwork requires the local dev server" };
+  }
+  try {
+    const res = await fetch("/api/marketing/approve-to-artwork", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal,
+      body: JSON.stringify(req),
+    });
+    return await res.json();
+  } catch (e) {
+    return { ok: false, error: String((e as Error)?.message ?? e) };
+  }
+}
+
 export interface PublishResult {
   ok: boolean;
   error?: string;

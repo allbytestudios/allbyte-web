@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
-    fetchManifest, fetchClipMeta, publishToPlatform, draftCaptions,
+    fetchManifest, fetchClipMeta, publishToPlatform, draftCaptions, approveToArtwork,
     clipMp4Url, clipThumbUrl,
     type Manifest, type ManifestEntry, type ClipMeta, type PublishResult,
-    type DraftCaptionsResult,
+    type DraftCaptionsResult, type ApproveToArtworkResult,
   } from "../lib/marketingQueue";
   import {
     manifest as fixtureManifest, checkAll, summarize, fixtureUrl,
@@ -54,6 +54,24 @@
   // Per-clip caption-drafting state. Key: clip name. busy = request in
   // flight, result = last response.
   let draftStates = $state<Record<string, { busy: boolean; result?: DraftCaptionsResult }>>({});
+
+  // Per-clip artwork-approval state. Same shape pattern as draftStates.
+  let approveStates = $state<Record<string, { busy: boolean; result?: ApproveToArtworkResult }>>({});
+
+  async function approveClipToArtwork(clipName: string) {
+    const meta = clipMetas[clipName];
+    if (!meta) return;
+    const cap = meta.draft_captions ?? {};
+    approveStates[clipName] = { busy: true };
+    const result = await approveToArtwork({
+      clip: clipName,
+      title: currentCaption(clipName, "title", cap.title),
+      description: currentCaption(clipName, "discord", cap.discord),
+      scene: meta.scene_hint ?? undefined,
+      duration_s: meta.clip_window?.duration_s ?? meta.duration_s,
+    });
+    approveStates[clipName] = { busy: false, result };
+  }
 
   // Fixture-picker state.
   let fixtureHealth = $state<Record<string, EntryHealth>>({});
@@ -320,17 +338,38 @@
 
           {#snippet draftButton()}
             {@const ds = draftStates[selectedClip!]}
-            <button
-              class="draft-btn"
-              disabled={!IS_DEV || ds?.busy}
-              title={!IS_DEV ? "Drafting needs the local dev server (host's claude CLI)" : ""}
-              onclick={() => draftCaptionsForClip(selectedClip!)}
-            >
-              {ds?.busy ? "Drafting via claude CLI…" : (meta.draft_captions ? "Re-draft captions" : "Draft captions")}
-            </button>
+            {@const as = approveStates[selectedClip!]}
+            <div class="header-btn-row">
+              <button
+                class="draft-btn"
+                disabled={!IS_DEV || ds?.busy}
+                title={!IS_DEV ? "Drafting needs the local dev server (host's claude CLI)" : ""}
+                onclick={() => draftCaptionsForClip(selectedClip!)}
+              >
+                {ds?.busy ? "Drafting via claude CLI…" : (meta.draft_captions ? "Re-draft captions" : "Draft captions")}
+              </button>
+              <button
+                class="approve-btn"
+                disabled={!IS_DEV || as?.busy || !meta.draft_captions}
+                title={!IS_DEV ? "Adding to artwork needs the local dev server" : (!meta.draft_captions ? "Draft captions first" : "Copy to durable S3 path + append to recordings.json")}
+                onclick={() => approveClipToArtwork(selectedClip!)}
+              >
+                {as?.busy ? "Adding…" : "Add to artwork"}
+              </button>
+            </div>
             {#if ds?.result && !ds.result.ok}
               <div class="publish-result err">
                 Drafting failed: {ds.result.error ?? "unknown"}
+              </div>
+            {/if}
+            {#if as?.result}
+              {@const r = as.result}
+              <div class="publish-result" class:ok={r.ok} class:err={!r.ok}>
+                {#if r.ok}
+                  Added as <code>{r.entry?.id}</code>. Visible on <a href="/artwork/#recordings" target="_blank" rel="noopener">/artwork/</a> as draft (admin-only). Commit <code>src/data/recordings.json</code> to publish.
+                {:else}
+                  Add failed: {r.error}{r.detail ? ` — ${r.detail}` : ""}
+                {/if}
               </div>
             {/if}
           {/snippet}
@@ -756,7 +795,12 @@
   .captions-header h3 {
     margin: 0;
   }
-  .draft-btn {
+  .header-btn-row {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .draft-btn, .approve-btn {
     background: rgba(167, 243, 208, 0.12);
     border: 1px solid rgba(167, 243, 208, 0.35);
     color: #a7f3d0;
@@ -766,12 +810,21 @@
     border-radius: 3px;
     cursor: pointer;
   }
-  .draft-btn:hover:not(:disabled) {
+  .draft-btn:hover:not(:disabled),
+  .approve-btn:hover:not(:disabled) {
     background: rgba(167, 243, 208, 0.22);
   }
-  .draft-btn:disabled {
+  .draft-btn:disabled, .approve-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  .approve-btn {
+    background: rgba(251, 191, 36, 0.1);
+    border-color: rgba(251, 191, 36, 0.4);
+    color: #fbbf24;
+  }
+  .approve-btn:hover:not(:disabled) {
+    background: rgba(251, 191, 36, 0.22);
   }
   .empty-captions p {
     color: #6b7280;

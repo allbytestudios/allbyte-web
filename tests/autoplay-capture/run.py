@@ -34,7 +34,11 @@ from playwright.async_api import async_playwright, Page, ConsoleMessage
 
 DEFAULT_TARGET_URL = os.environ.get(
     "TARGET_URL",
-    "http://host.docker.internal:4321/play/",
+    # ?build=public forces the no-debug-overlay variant. Without it, the
+    # dev server's auto-admin flow (import.meta.env.DEV → tier=admin in
+    # auth.svelte.ts) routes the iframe to /godot/index.html (debug
+    # variant), leaving the dev-overlay panel visible in captures.
+    "http://host.docker.internal:4321/play/?build=public",
 )
 DEFAULT_FIXTURE = os.environ.get("FIXTURE_PATH", "")  # empty = skip fixture load
 DEFAULT_PERSONA = os.environ.get("PERSONA", "default")
@@ -117,6 +121,14 @@ class CaptureSession:
                 "--enable-webgl",
                 "--ignore-gpu-blocklist",
                 "--enable-features=SharedArrayBuffer",
+                # Prevent Chromium from throttling rAF / timers when the
+                # tab loses focus or backgrounds. Xvfb has no "visible
+                # window" concept and the heuristic was kicking in,
+                # dropping the game to ~15fps mid-session.
+                "--disable-background-timer-throttling",
+                "--disable-backgrounding-occluded-windows",
+                "--disable-renderer-backgrounding",
+                "--disable-features=CalculateNativeWinOcclusion",
                 f"--unsafely-treat-insecure-origin-as-secure={secure_origin}",
             ],
         )
@@ -326,11 +338,65 @@ class CaptureSession:
             await self.dismiss_title()
         await self.enable_autoplay()
         self.t0 = time.monotonic()
-        # AutoPlay's 22s startup delay (Arc-known quirk) — the first ~22s
-        # of every recording is static. We still record it for trim context,
-        # but downstream clip extractor uses STARTUP_SKIP_S to skip it when
-        # picking hero moments.
-        await asyncio.sleep(duration_s)
+
+        # Install a self-resetting fps counter in the iframe. It counts
+        # rAF callbacks per second — the same loop Godot drives its
+        # render off of, so this measures Godot's actual frame delivery
+        # rate (not just whatever Chromium thinks the page rate should
+        # be). The counter resets every poll, so each read gives the
+        # rate over the previous ~1s window.
+        await self._page.evaluate(
+            """
+            () => {
+                const f = document.querySelector('iframe');
+                const w = f && f.contentWindow;
+                if (!w) return;
+                if (w.__capture_fps_installed) return;
+                w.__capture_fps_installed = true;
+                w.__capture_fps_count = 0;
+                w.__capture_fps_window_start = performance.now();
+                const tick = () => {
+                    w.__capture_fps_count++;
+                    w.requestAnimationFrame(tick);
+                };
+                w.requestAnimationFrame(tick);
+            }
+            """
+        )
+
+        elapsed = 0.0
+        while elapsed < duration_s:
+            await asyncio.sleep(1.0)
+            elapsed = time.monotonic() - self.t0
+            try:
+                # Read+reset the counter atomically. fps is frames over
+                # the window since the last read.
+                fps = await self._page.evaluate(
+                    """
+                    () => {
+                        const f = document.querySelector('iframe');
+                        const w = f && f.contentWindow;
+                        if (!w || !w.__capture_fps_installed) return null;
+                        const now = performance.now();
+                        const dt_ms = now - w.__capture_fps_window_start;
+                        const fps = w.__capture_fps_count * 1000 / Math.max(dt_ms, 1);
+                        w.__capture_fps_count = 0;
+                        w.__capture_fps_window_start = now;
+                        return fps;
+                    }
+                    """
+                )
+            except Exception:
+                fps = None
+            if fps is not None:
+                # Log as a timeline event so the rate is plottable
+                # alongside autoplay events. payload is just the number.
+                self.events.append({
+                    "t": elapsed,
+                    "kind": "fps",
+                    "payload": f"{fps:.1f}",
+                })
+
         await self.disable_autoplay()
 
     async def finalize(self, timeline_path: Path, meta: dict[str, Any]) -> None:

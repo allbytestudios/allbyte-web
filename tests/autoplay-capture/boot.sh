@@ -18,7 +18,11 @@ set -euo pipefail
 OUT_DIR="${OUT_DIR:-/home/pwuser/out}"
 CAPTURE_NAME="${CAPTURE_NAME:-capture_$(date -u +%Y%m%dT%H%M%SZ)}"
 DISPLAY=":99"
-SCREEN_GEOMETRY="${SCREEN_GEOMETRY:-1920x1080x24}"
+# Smaller viewport gives the Mesa software rasterizer ~9x less pixels to
+# fill per frame. At 1920x1080 the game renders at ~1fps, unwatchable.
+# Override via env if you need higher resolution for marketing-grade
+# stills, but expect a proportional fps hit.
+SCREEN_GEOMETRY="${SCREEN_GEOMETRY:-1280x720x24}"
 
 mkdir -p "$OUT_DIR"
 MP4_PATH="$OUT_DIR/${CAPTURE_NAME}.mp4"
@@ -52,15 +56,18 @@ pactl set-default-sink captureSink
 
 # --- ffmpeg recording -------------------------------------------------------
 echo "[boot] starting ffmpeg → $MP4_PATH"
-# x11grab framerate=30 matches the Godot game's render cadence; bumping
-# higher just doubles file size. -loglevel error keeps the harness output
-# readable; ffmpeg is chatty by default.
-ffmpeg -hide_banner -loglevel error \
-    -f x11grab -framerate 30 -video_size "${SCREEN_GEOMETRY%x*}" -i "$DISPLAY" \
+# x11grab framerate 60 to catch battle-transition wipes and animation
+# frames that 30fps was dropping. Capture rate is independent of Godot's
+# actual render rate — if the game runs at 30fps internally, x11grab
+# captures every frame Xvfb displays (no duplicates added).
+# -loglevel info (not error) so capture failures surface in boot logs.
+ffmpeg -hide_banner -loglevel info \
+    -f x11grab -framerate 60 \
+    -video_size "${SCREEN_GEOMETRY%x*}" -i "$DISPLAY" \
     -f pulse -i captureSink.monitor \
     -c:v libx264 -preset ultrafast -pix_fmt yuv420p \
     -c:a aac -b:a 128k \
-    -y "$MP4_PATH" &
+    -y "$MP4_PATH" 2>>/home/pwuser/out/ffmpeg.log &
 FFMPEG_PID=$!
 echo "[boot] ffmpeg pid=$FFMPEG_PID"
 

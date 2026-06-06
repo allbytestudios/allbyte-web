@@ -72,13 +72,18 @@ def _cluster_events(events, kinds, gap_s):
 
 
 def _ffmpeg_clip(input_mp4: Path, out_mp4: Path, start_s: float, duration_s: float):
-    """Cut a clip from input_mp4. Re-encodes for frame-accurate boundaries."""
+    """Cut a clip from input_mp4. Re-encodes for frame-accurate boundaries.
+
+    -r 60 preserves the source 60fps rate; without it libx264 defaults to 30
+    and duplicates/drops frames. Source MP4 must be 60fps for this to be
+    correct."""
     cmd = [
         "ffmpeg", "-hide_banner", "-loglevel", "error",
         "-ss", f"{start_s:.3f}",
         "-i", str(input_mp4),
         "-t", f"{duration_s:.3f}",
         "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
+        "-r", "60",
         "-c:a", "aac", "-b:a", "128k",
         "-y", str(out_mp4),
     ]

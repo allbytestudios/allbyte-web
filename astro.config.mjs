@@ -294,6 +294,99 @@ function marketingPublish() {
   };
 }
 
+// Dev-only POST endpoint for caption drafting via the host's `claude` CLI.
+// Spawns tests/autoplay-capture/caption_drafter.py which shells out to
+// `claude -p ... --json-schema ...`. Consumes Claude Code subscription
+// quota, NOT the Anthropic API (per the owner's "use this account" pref).
+//
+// Request shape:
+//   { clip?: string }  — if present, draft just that one clip's captions.
+//                        Otherwise drafts the whole manifest.
+//
+// Production: middleware doesn't exist. UI button hides in prod.
+function captionDrafter() {
+  const MAX_BODY = 2 * 1024;
+  return {
+    name: "allbyte-caption-drafter",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.method !== "POST" || (req.url || "").replace(/\/$/, "") !== "/api/marketing/draft-captions") {
+          return next();
+        }
+        let body = "", tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
+        req.on("end", () => {
+          if (tooLarge) return;
+          let payload = {};
+          if (body) {
+            try { payload = JSON.parse(body); } catch {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "invalid JSON body" }));
+            }
+          }
+          const clip = typeof payload.clip === "string" ? payload.clip : null;
+          if (clip && !/^[A-Za-z0-9_-]{1,64}$/.test(clip)) {
+            res.statusCode = 400;
+            return res.end(JSON.stringify({ error: "invalid clip name" }));
+          }
+
+          const scriptPath = join(
+            process.cwd(),
+            "tests", "autoplay-capture", "caption_drafter.py",
+          );
+          const captureOut = process.env.CAPTURE_OUT_DIR ||
+            join(process.cwd(), ".tmp", "capture-out");
+          const clipsDir = join(captureOut, "clips");
+
+          const args = [scriptPath];
+          if (clip) args.push(clip);
+
+          const child = spawn("python", args, {
+            cwd: process.cwd(),
+            env: {
+              ...process.env,
+              CLIPS_DIR: clipsDir,
+              // CAPTION_BACKEND defaults to "cli" inside the script.
+            },
+          });
+          let stdout = "", stderr = "";
+          child.stdout.on("data", (d) => { stdout += d.toString(); });
+          child.stderr.on("data", (d) => { stderr += d.toString(); });
+          child.on("close", (code) => {
+            res.setHeader("Content-Type", "application/json");
+            if (code !== 0) {
+              res.statusCode = 502;
+              return res.end(JSON.stringify({
+                error: `caption_drafter exit ${code}`,
+                stdout: stdout.slice(-2000),
+                stderr: stderr.slice(-2000),
+              }));
+            }
+            res.end(JSON.stringify({
+              ok: true,
+              stdout: stdout.slice(-2000),
+              clip,
+            }));
+          });
+          child.on("error", (err) => {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: String(err.message ?? err) }));
+          });
+        });
+      });
+    },
+  };
+}
+
 // Dev-only POST endpoint for owner decision write-back.
 // Writes to agent_chat.ndjson in the Chronicles repo.
 function decisionWriteback() {
@@ -601,7 +694,7 @@ export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
   vite: {
-    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish()],
+    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

@@ -93,6 +93,42 @@ export interface PublishResult {
   stderr?: string;
 }
 
+export interface DraftCaptionsResult {
+  ok: boolean;
+  error?: string;
+  stdout?: string;
+  stderr?: string;
+  clip?: string;
+}
+
+/**
+ * Trigger caption drafting via the dev-only middleware. Spawns
+ * caption_drafter.py on the host, which by default shells out to
+ * `claude -p` (consuming Max subscription quota). Pass clip=null to
+ * draft all clips; pass a clip name to re-draft just one.
+ *
+ * Dev-only: needs the host's claude CLI installation.
+ */
+export async function draftCaptions(
+  clip: string | null,
+  signal?: AbortSignal,
+): Promise<DraftCaptionsResult> {
+  if (!IS_DEV) {
+    return { ok: false, error: "Caption drafting requires the local dev server (claude CLI lives on the host)" };
+  }
+  try {
+    const res = await fetch("/api/marketing/draft-captions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal,
+      body: JSON.stringify(clip ? { clip } : {}),
+    });
+    return await res.json();
+  } catch (e) {
+    return { ok: false, error: String((e as Error)?.message ?? e) };
+  }
+}
+
 /**
  * Publish a caption + clip to a platform via the dev-only Postiz CLI
  * middleware. Returns the result, including platform-specific error

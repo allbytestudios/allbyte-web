@@ -99,12 +99,11 @@ wait "$FFMPEG_PID" 2>/dev/null || true
 echo "[boot] extracting clips"
 python3 /home/pwuser/harness/clip_extractor.py || echo "[boot] clip extraction failed (non-fatal)"
 
-# --- Caption drafting (optional, gated on ANTHROPIC_API_KEY) ---------------
-# Per-clip Claude calls to draft platform-specific captions. Skips silently
-# if the API key isn't in the container env, so the smoke-test container
-# (no key) still exits cleanly.
-echo "[boot] drafting captions"
-python3 /home/pwuser/harness/caption_drafter.py || echo "[boot] caption drafting failed (non-fatal)"
+# Caption drafting is intentionally NOT chained here — it runs on the
+# HOST (where the `claude` CLI binary + auth state live), triggered from
+# the marketing-queue UI's "Draft captions" button. Container has no
+# claude binary, no Max-subscription auth. SDK fallback exists if you
+# want headless captioning later (CAPTION_BACKEND=sdk + ANTHROPIC_API_KEY).
 
 # --- S3 upload (optional, gated on AWS credentials presence) ---------------
 # Uploads clips + manifest + full-session MP4 + timeline to

@@ -35,7 +35,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ffmpeg \
         xvfb \
         x11-utils \
+        libgl1-mesa-dri \
+        libglx-mesa0 \
     && rm -rf /var/lib/apt/lists/*
+
+# Force Mesa's software (llvmpipe) WebGL driver. Xvfb has no GPU, so we
+# need software rasterization for WebGL2 — Godot's web shell refuses to
+# boot without it. Mesa's llvmpipe is CPU-only and matches the Playwright
+# base image's GL surface. SwiftShader would be cleaner but isn't bundled
+# with the v1.58 Playwright image.
+ENV LIBGL_ALWAYS_SOFTWARE=1
+ENV GALLIUM_DRIVER=llvmpipe
 
 # Run as a non-root user. PulseAudio refuses to start as root by default
 # and the Playwright base image expects user-mode operation anyway.

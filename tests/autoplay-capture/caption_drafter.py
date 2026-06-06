@@ -1,37 +1,43 @@
 """Draft platform-specific captions for each extracted clip.
 
 Reads the clip manifest + per-clip metadata produced by clip_extractor.py,
-calls Claude (Haiku 4.5) per clip to draft Bluesky / Discord / YouTube
-Shorts / generic-title caption variants, and writes them back into the
-per-clip JSON as `draft_captions`. The marketing-queue UI later reads
-these and presents them for owner approval.
+calls Claude per clip to draft Bluesky / Discord / YouTube Shorts / title
+variants, and writes them back into the per-clip JSON as `draft_captions`.
 
-API key handling: `ANTHROPIC_API_KEY` must be in the container env. If
-unset, this script skips with a friendly message — clips remain usable
-without captions, captions can be drafted in a later pass.
+Two backends — CLI (default) and SDK (opt-in):
 
-Skipped clips can be re-processed later by re-running this script over
-the same clips_dir; it overwrites `draft_captions` on each pass.
+  CLI (CAPTION_BACKEND=cli, default) — shells out to `claude -p ...
+  --json-schema ...` using the owner's Claude Code subscription quota.
+  Designed to run on the HOST, not inside the container, since the claude
+  binary + auth state live in the host's user home.
+
+  SDK (CAPTION_BACKEND=sdk) — uses the Anthropic Python SDK with
+  ANTHROPIC_API_KEY. Separate billing from the Max subscription. Available
+  for headless/CI runs where a Claude Code session isn't available.
+
+Skipped clips can be re-processed by re-running this script — it
+overwrites `draft_captions` on each pass.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
-try:
-    import anthropic  # type: ignore
-except ImportError:
-    print("[caption] anthropic SDK not installed; install via requirements.txt", file=sys.stderr)
-    sys.exit(0)
 
+# CLI backend tunables
+CLI_BINARY = os.environ.get("CLAUDE_CLI", "claude")
+CLI_TIMEOUT_S = int(os.environ.get("CAPTION_CLI_TIMEOUT_S", "120"))
+CLI_MODEL = os.environ.get("CAPTION_CLI_MODEL", "").strip()  # blank → CLI default
 
-# Haiku 4.5 is the right pick here — caption drafting is small-context,
-# repetitive, and benefits from speed + cost more than from intelligence
-# headroom. Bump to Sonnet later if voice consistency drifts.
-MODEL = os.environ.get("CAPTION_MODEL", "claude-haiku-4-5-20251001")
+# SDK backend tunables
+SDK_MODEL = os.environ.get("CAPTION_SDK_MODEL", "claude-haiku-4-5-20251001")
+
+BACKEND = os.environ.get("CAPTION_BACKEND", "cli").strip().lower()
 
 # System prompt is stable across all clips → prompt-cache eligible.
 # Brand voice cribbed from the project's published copy (Footer, devlogs,
@@ -74,38 +80,123 @@ Draft caption variants. Output JSON with EXACTLY these keys:
 Return ONLY the JSON object."""
 
 
-def draft_captions(client, clip_meta: dict) -> dict:
-    """One Claude call → captions JSON for one clip."""
+# JSON Schema for the CLI's --json-schema flag — guarantees structured
+# output without prompt-engineered parsing hacks.
+CAPTIONS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string", "maxLength": 120},
+        "bluesky": {"type": "string", "maxLength": 320},
+        "discord": {"type": "string", "maxLength": 2000},
+        "youtube_shorts": {"type": "string", "maxLength": 220},
+    },
+    "required": ["title", "bluesky", "discord", "youtube_shorts"],
+    "additionalProperties": False,
+}
+
+
+def _strip_code_fences(text: str) -> str:
+    text = text.strip()
+    if text.startswith("```"):
+        # ```json\n{...}\n``` → take the middle block
+        parts = text.split("```", 2)
+        if len(parts) >= 2:
+            text = parts[1]
+            if text.startswith("json"):
+                text = text[4:]
+        text = text.strip("`\n")
+    return text
+
+
+def _draft_via_cli(clip_meta: dict) -> dict:
+    """Use the `claude` CLI in --print mode with --json-schema for
+    structured output. Consumes Claude Code subscription quota."""
+    if not shutil.which(CLI_BINARY):
+        raise RuntimeError(
+            f"`{CLI_BINARY}` not in PATH; install Claude Code or set "
+            f"CAPTION_BACKEND=sdk + ANTHROPIC_API_KEY"
+        )
+    user_prompt = PROMPT_USER_TEMPLATE.format(meta_json=json.dumps(clip_meta, indent=2))
+    args = [
+        CLI_BINARY, "-p", user_prompt,
+        "--append-system-prompt", SYSTEM_PROMPT,
+        "--json-schema", json.dumps(CAPTIONS_SCHEMA),
+    ]
+    if CLI_MODEL:
+        args.extend(["--model", CLI_MODEL])
+    result = subprocess.run(
+        args,
+        capture_output=True,
+        text=True,
+        timeout=CLI_TIMEOUT_S,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"claude CLI exit {result.returncode}: "
+            f"{(result.stderr or result.stdout)[:500]}"
+        )
+    return json.loads(_strip_code_fences(result.stdout))
+
+
+def _draft_via_sdk(clip_meta: dict) -> dict:
+    """Use the Anthropic Python SDK with ANTHROPIC_API_KEY. Separate
+    billing from the Max subscription — only use when CLI isn't available
+    (CI, automation without an auth'd session)."""
+    try:
+        import anthropic  # type: ignore
+    except ImportError as e:
+        raise RuntimeError("anthropic SDK not installed; pip install anthropic") from e
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise RuntimeError("CAPTION_BACKEND=sdk but ANTHROPIC_API_KEY not set")
+    client = anthropic.Anthropic(api_key=api_key)
     user_msg = PROMPT_USER_TEMPLATE.format(meta_json=json.dumps(clip_meta, indent=2))
     resp = client.messages.create(
-        model=MODEL,
+        model=SDK_MODEL,
         max_tokens=1024,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_msg}],
     )
     text = "".join(
         block.text for block in resp.content if getattr(block, "type", None) == "text"
-    ).strip()
-    # Defensive: strip code fences if the model wrapped the JSON anyway.
-    if text.startswith("```"):
-        text = text.split("```", 2)[1]
-        if text.startswith("json"):
-            text = text[4:]
-        text = text.strip("`\n")
-    return json.loads(text)
+    )
+    return json.loads(_strip_code_fences(text))
+
+
+def draft_captions(clip_meta: dict) -> dict:
+    """Dispatch to the configured backend."""
+    if BACKEND == "sdk":
+        return _draft_via_sdk(clip_meta)
+    if BACKEND == "cli":
+        return _draft_via_cli(clip_meta)
+    raise ValueError(f"Unknown CAPTION_BACKEND={BACKEND!r}; expected 'cli' or 'sdk'")
 
 
 def main() -> int:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print("[caption] ANTHROPIC_API_KEY not set, skipping caption drafting")
+    # Pre-flight: confirm chosen backend is reachable. Skip cleanly if not
+    # — matches the existing "no API key → exit 0" UX from before so the
+    # smoke-test container still passes when nothing's configured.
+    try:
+        if BACKEND == "cli":
+            if not shutil.which(CLI_BINARY):
+                print(f"[caption] backend=cli but `{CLI_BINARY}` not in PATH; skipping. "
+                      f"Set CAPTION_BACKEND=sdk + ANTHROPIC_API_KEY to use the API instead.")
+                return 0
+        elif BACKEND == "sdk":
+            if not os.environ.get("ANTHROPIC_API_KEY"):
+                print("[caption] backend=sdk but ANTHROPIC_API_KEY not set; skipping.")
+                return 0
+        else:
+            print(f"[caption] unknown CAPTION_BACKEND={BACKEND!r}; skipping.", file=sys.stderr)
+            return 0
+    except Exception as e:
+        print(f"[caption] backend check failed: {e}", file=sys.stderr)
         return 0
 
     clips_dir_env = os.environ.get("CLIPS_DIR")
     if clips_dir_env:
         clips_dir = Path(clips_dir_env)
     else:
-        # Derive from MP4_PATH (the boot.sh-set output path)
         mp4_path = Path(os.environ.get("MP4_PATH", ""))
         clips_dir = mp4_path.parent / "clips" if mp4_path.name else Path("/home/pwuser/out/clips")
 
@@ -120,10 +211,19 @@ def main() -> int:
         print("[caption] manifest has no clips; nothing to caption")
         return 0
 
-    client = anthropic.Anthropic(api_key=api_key)
+    # Allow restricting to a single clip via CLI arg or env (used by the
+    # marketing-queue UI's "Draft captions" button to re-draft one clip).
+    target = None
+    if len(sys.argv) > 1:
+        target = sys.argv[1]
+    elif os.environ.get("CAPTION_TARGET_CLIP"):
+        target = os.environ["CAPTION_TARGET_CLIP"]
+
     drafted = 0
     failed = 0
     for entry in clips:
+        if target and entry["name"] != target:
+            continue
         meta_path = clips_dir / entry["meta"]
         if not meta_path.exists():
             print(f"[caption] {entry['name']}: meta file missing, skipped")
@@ -131,20 +231,19 @@ def main() -> int:
             continue
         meta = json.loads(meta_path.read_text())
         try:
-            captions = draft_captions(client, meta)
+            captions = draft_captions(meta)
         except Exception as e:
             print(f"[caption] {entry['name']}: drafting failed — {type(e).__name__}: {e}")
             failed += 1
             continue
         meta["draft_captions"] = captions
         meta_path.write_text(json.dumps(meta, indent=2))
-        # Mirror title into manifest entry for quick scan in the queue UI.
         entry["title"] = captions.get("title", "")
         drafted += 1
-        print(f"[caption] {entry['name']}: drafted ({captions.get('title', '?')!r})")
+        print(f"[caption] {entry['name']}: drafted via {BACKEND} ({captions.get('title', '?')!r})")
 
     manifest_path.write_text(json.dumps(manifest, indent=2))
-    print(f"[caption] done: {drafted} drafted, {failed} failed")
+    print(f"[caption] done: {drafted} drafted, {failed} failed (backend={BACKEND})")
     return 0
 
 

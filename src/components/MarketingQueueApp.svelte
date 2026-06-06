@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import {
-    fetchManifest, fetchClipMeta, publishToPlatform,
+    fetchManifest, fetchClipMeta, publishToPlatform, draftCaptions,
     clipMp4Url, clipThumbUrl,
     type Manifest, type ManifestEntry, type ClipMeta, type PublishResult,
+    type DraftCaptionsResult,
   } from "../lib/marketingQueue";
 
   const IS_DEV = import.meta.env.DEV;
@@ -44,6 +45,27 @@
 
   function onCaptionInput(clipName: string, field: string, e: Event) {
     captionEdits[`${clipName}.${field}`] = (e.currentTarget as HTMLTextAreaElement).value;
+  }
+
+  // Per-clip caption-drafting state. Key: clip name. busy = request in
+  // flight, result = last response.
+  let draftStates = $state<Record<string, { busy: boolean; result?: DraftCaptionsResult }>>({});
+
+  async function draftCaptionsForClip(clipName: string) {
+    draftStates[clipName] = { busy: true };
+    const result = await draftCaptions(clipName);
+    draftStates[clipName] = { busy: false, result };
+    // If successful, re-fetch the clip metadata so the new captions render.
+    if (result.ok) {
+      const fresh = await fetchClipMeta(findEntry(clipName)?.meta ?? "");
+      if (fresh) {
+        clipMetas[clipName] = fresh;
+        // Drop any pending edits — they were against the previous draft.
+        for (const k of Object.keys(captionEdits)) {
+          if (k.startsWith(`${clipName}.`)) delete captionEdits[k];
+        }
+      }
+    }
   }
 
   async function publish(clipName: string, field: string, mp4File: string) {
@@ -191,10 +213,30 @@
             preload="metadata"
           ></video>
 
+          {#snippet draftButton()}
+            {@const ds = draftStates[selectedClip!]}
+            <button
+              class="draft-btn"
+              disabled={!IS_DEV || ds?.busy}
+              title={!IS_DEV ? "Drafting needs the local dev server (host's claude CLI)" : ""}
+              onclick={() => draftCaptionsForClip(selectedClip!)}
+            >
+              {ds?.busy ? "Drafting via claude CLI…" : (meta.draft_captions ? "Re-draft captions" : "Draft captions")}
+            </button>
+            {#if ds?.result && !ds.result.ok}
+              <div class="publish-result err">
+                Drafting failed: {ds.result.error ?? "unknown"}
+              </div>
+            {/if}
+          {/snippet}
+
           {#if meta.draft_captions}
             {@const cap = meta.draft_captions}
             <section class="captions">
-              <h3>Draft captions</h3>
+              <div class="captions-header">
+                <h3>Draft captions</h3>
+                {@render draftButton()}
+              </div>
 
               {#snippet captionBlock(field: string, label: string, limit: number | null, rows: number, draft: string | undefined)}
                 {@const current = currentCaption(selectedClip!, field, draft)}
@@ -258,13 +300,15 @@
             </section>
           {:else}
             <section class="captions empty-captions">
-              <h3>No draft captions</h3>
+              <div class="captions-header">
+                <h3>No draft captions</h3>
+                {@render draftButton()}
+              </div>
               <p>
-                The caption drafter didn't run for this clip. Common causes:
-                <code>ANTHROPIC_API_KEY</code> wasn't set in the container,
-                or the Claude call failed. Re-run
-                <code>caption_drafter.py</code> against the clips dir to
-                retry.
+                Click <strong>Draft captions</strong> to generate caption
+                variants via the host's <code>claude</code> CLI (uses your
+                Claude Code subscription quota). The script runs locally —
+                no API key needed.
               </p>
             </section>
           {/if}
@@ -458,6 +502,33 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin: 0 0 0.5rem;
+  }
+  .captions-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .captions-header h3 {
+    margin: 0;
+  }
+  .draft-btn {
+    background: rgba(167, 243, 208, 0.12);
+    border: 1px solid rgba(167, 243, 208, 0.35);
+    color: #a7f3d0;
+    padding: 0.4rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.78rem;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .draft-btn:hover:not(:disabled) {
+    background: rgba(167, 243, 208, 0.22);
+  }
+  .draft-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
   .empty-captions p {
     color: #6b7280;

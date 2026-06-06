@@ -6,6 +6,10 @@
     type Manifest, type ManifestEntry, type ClipMeta, type PublishResult,
     type DraftCaptionsResult,
   } from "../lib/marketingQueue";
+  import {
+    manifest as fixtureManifest, checkAll, summarize, fixtureUrl,
+    type MarketingFixtureEntry, type EntryHealth, type CoverageSummary,
+  } from "../lib/marketingFixtures";
 
   const IS_DEV = import.meta.env.DEV;
 
@@ -51,6 +55,39 @@
   // flight, result = last response.
   let draftStates = $state<Record<string, { busy: boolean; result?: DraftCaptionsResult }>>({});
 
+  // Fixture-picker state.
+  let fixtureHealth = $state<Record<string, EntryHealth>>({});
+  let fixtureCoverage = $state<CoverageSummary | null>(null);
+  let fixtureCheckBusy = $state(false);
+  let selectedFixtureId = $state<string | null>(null);
+
+  async function runFixtureHealthCheck() {
+    fixtureCheckBusy = true;
+    try {
+      fixtureHealth = await checkAll();
+      fixtureCoverage = summarize(fixtureHealth);
+    } finally {
+      fixtureCheckBusy = false;
+    }
+  }
+
+  function dockerCommandFor(entry: MarketingFixtureEntry): string {
+    if (!entry.fixture) return "# No fixture available — gap entry";
+    const url = `${typeof window !== "undefined" ? window.location.origin : ""}${fixtureUrl(entry.fixture)}`;
+    return [
+      "$env:ANTHROPIC_API_KEY = \"sk-ant-...\"  # only if you want SDK fallback",
+      "docker run --rm `",
+      "  -v ${PWD}/.tmp/capture-out:/home/pwuser/out `",
+      "  -v $HOME/.aws:/home/pwuser/.aws:ro `",
+      "  --add-host=host.docker.internal:host-gateway `",
+      "  -e DURATION_S=180 `",
+      `  -e SAVE_FIXTURE_URL="${url}" \``,
+      `  -e PERSONA=${entry.persona_hint} \``,
+      "  -e TARGET_URL=http://host.docker.internal:4321/play/ `",
+      "  allbyte/autoplay-capture",
+    ].join("\n");
+  }
+
   async function draftCaptionsForClip(clipName: string) {
     draftStates[clipName] = { busy: true };
     const result = await draftCaptions(clipName);
@@ -84,6 +121,9 @@
   }
 
   onMount(async () => {
+    // Kick off the fixture health check immediately — independent of
+    // capture state, so even an empty queue shows the fixture picker.
+    runFixtureHealthCheck();
     const m = await fetchManifest();
     manifest = m;
     if (m && m.clips.length > 0) {
@@ -127,6 +167,71 @@
     return meta?.draft_captions?.title ?? entry.title ?? entry.name;
   }
 </script>
+
+<section class="fixture-panel">
+  <header class="fixture-panel-header">
+    <h2>
+      Capture from fixture
+      {#if fixtureCoverage}
+        <span class="coverage-pill" title="Coverage summary">
+          {fixtureCoverage.available}/{fixtureCoverage.total} available
+          {#if fixtureCoverage.missing > 0}<span class="coverage-warn"> · {fixtureCoverage.missing} missing</span>{/if}
+          {#if fixtureCoverage.gaps > 0}<span class="coverage-gap"> · {fixtureCoverage.gaps} gaps</span>{/if}
+        </span>
+      {/if}
+    </h2>
+    <button onclick={runFixtureHealthCheck} disabled={fixtureCheckBusy} class="verify-btn">
+      {fixtureCheckBusy ? "Checking…" : "Re-check"}
+    </button>
+  </header>
+
+  <ul class="fixture-list">
+    {#each fixtureManifest.entries as entry}
+      {@const h = fixtureHealth[entry.id]}
+      {@const status = h?.status ?? "unchecked"}
+      {@const isSelected = selectedFixtureId === entry.id}
+      <li class="fixture-row" class:selected={isSelected}>
+        <button class="fixture-row-btn" onclick={() => (selectedFixtureId = isSelected ? null : entry.id)}>
+          <span class="fixture-status status-{status}" title={status}>
+            {#if status === "available"}✓{:else if status === "missing"}✗{:else if status === "gap"}○{:else}…{/if}
+          </span>
+          <span class="fixture-category">{entry.category}</span>
+          <span class="fixture-title">{entry.story_beat}</span>
+          {#if entry.arc_cond !== null}
+            <span class="fixture-cond">cond {entry.arc_cond}</span>
+          {/if}
+          {#if entry.scene_anchor}
+            <span class="fixture-scene">{entry.scene_anchor}</span>
+          {/if}
+        </button>
+        {#if isSelected}
+          <div class="fixture-detail">
+            <p class="fixture-notes">{entry.notes}</p>
+            <div class="fixture-tags">
+              {#each entry.tags as t}<span class="fixture-tag">{t}</span>{/each}
+            </div>
+            {#if entry.fixture}
+              <p class="fixture-meta">
+                File: <code>{entry.fixture}</code> · Est. duration: {entry.duration_estimate_s}s · Persona: <code>{entry.persona_hint}</code>
+              </p>
+              <details>
+                <summary>Docker command for this fixture</summary>
+                <pre class="fixture-cmd">{dockerCommandFor(entry)}</pre>
+              </details>
+            {:else}
+              <p class="fixture-gap-note">
+                <strong>Gap — no captured fixture yet.</strong>
+                Needs Arc to capture this state during a Tier 5 run or
+                hand-craft via state injection. See coord docs in
+                <code>Desktop/GameDev/APP_CLAUDE_SAVE_FIXTURE_SCAFFOLDING.md</code>.
+              </p>
+            {/if}
+          </div>
+        {/if}
+      </li>
+    {/each}
+  </ul>
+</section>
 
 <section class="marketing-queue">
   {#if loading}
@@ -336,6 +441,144 @@
     color: #d1d5db;
     font-family: "Courier New", monospace;
   }
+  .fixture-panel {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 1rem 1rem 0;
+    color: #d1d5db;
+    font-family: "Courier New", monospace;
+  }
+  .fixture-panel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .fixture-panel-header h2 {
+    font-size: 0.82rem;
+    color: #a7f3d0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+  .coverage-pill {
+    font-size: 0.75rem;
+    color: #d1d5db;
+    background: rgba(167, 243, 208, 0.06);
+    border: 1px solid rgba(167, 243, 208, 0.2);
+    padding: 0.1rem 0.5rem;
+    border-radius: 3px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .coverage-warn { color: #f87171; }
+  .coverage-gap  { color: #fbbf24; }
+  .verify-btn {
+    background: rgba(167, 243, 208, 0.1);
+    border: 1px solid rgba(167, 243, 208, 0.3);
+    color: #a7f3d0;
+    padding: 0.25rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.72rem;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .fixture-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid rgba(167, 243, 208, 0.08);
+    border-radius: 4px;
+    background: rgba(167, 243, 208, 0.02);
+  }
+  .fixture-row { border-bottom: 1px solid rgba(167, 243, 208, 0.06); }
+  .fixture-row:last-child { border-bottom: none; }
+  .fixture-row-btn {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: inherit;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    display: grid;
+    grid-template-columns: 24px 90px 1fr auto auto;
+    gap: 0.75rem;
+    align-items: baseline;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.8rem;
+  }
+  .fixture-row-btn:hover { background: rgba(167, 243, 208, 0.05); }
+  .fixture-row.selected .fixture-row-btn { background: rgba(167, 243, 208, 0.08); }
+  .fixture-status {
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+  .status-available { color: #a7f3d0; }
+  .status-missing   { color: #f87171; }
+  .status-gap       { color: #fbbf24; }
+  .status-unchecked { color: #6b7280; }
+  .fixture-category {
+    color: #a7f3d0;
+    background: rgba(167, 243, 208, 0.08);
+    padding: 0.05rem 0.4rem;
+    border-radius: 2px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .fixture-title {
+    color: #d1d5db;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fixture-cond, .fixture-scene {
+    color: #6b7280;
+    font-size: 0.72rem;
+  }
+  .fixture-detail {
+    padding: 0.25rem 0.75rem 0.75rem 0.75rem;
+    background: rgba(167, 243, 208, 0.03);
+    border-top: 1px dashed rgba(167, 243, 208, 0.1);
+  }
+  .fixture-notes {
+    color: #d1d5db;
+    font-size: 0.78rem;
+    margin: 0.25rem 0;
+  }
+  .fixture-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; margin: 0.25rem 0; }
+  .fixture-tag {
+    font-size: 0.68rem;
+    background: rgba(167, 243, 208, 0.06);
+    border: 1px solid rgba(167, 243, 208, 0.15);
+    color: #a7f3d0;
+    padding: 0.05rem 0.35rem;
+    border-radius: 2px;
+  }
+  .fixture-meta { color: #6b7280; font-size: 0.72rem; margin: 0.25rem 0; }
+  .fixture-meta code { color: #a7f3d0; }
+  .fixture-cmd {
+    background: #0f1420;
+    border: 1px solid rgba(167, 243, 208, 0.15);
+    color: #a7f3d0;
+    padding: 0.5rem;
+    border-radius: 3px;
+    overflow-x: auto;
+    font-size: 0.72rem;
+    margin: 0.25rem 0;
+  }
+  .fixture-gap-note {
+    color: #fbbf24;
+    font-size: 0.78rem;
+    margin: 0.5rem 0;
+  }
+  .fixture-gap-note code { color: #d1d5db; }
 
   .loading, .empty {
     grid-column: 1 / -1;

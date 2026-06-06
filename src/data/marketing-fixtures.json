@@ -1,0 +1,163 @@
+{
+  "$schema": "./marketing-fixtures.schema.md",
+  "version": 1,
+  "description": "Marketing-side fixture manifest. Each entry maps a marketing-relevant game state to an Arc-side save fixture (or declares a gap). Arc's MANIFEST.json at ChroniclesOfNesis/WebTests/fixtures/saves/frontier/MANIFEST.json is the source of truth for what file exists; this manifest is the source of truth for what marketing wants to capture from.",
+  "entries": [
+    {
+      "id": "town-introduction",
+      "category": "scene",
+      "tags": ["town", "lore", "intro"],
+      "story_beat": "Naphtali intro complete, Elias in ChurchSquare",
+      "fixture": "cond_01_after_event_1.json",
+      "arc_cond": 1,
+      "scene_anchor": "ChurchSquare",
+      "duration_estimate_s": 60,
+      "persona_hint": "default",
+      "notes": "Pre-windmill exploration. Autoplay walks toward MainSquare → FrontRoad → Windmill1."
+    },
+    {
+      "id": "windmill-interior",
+      "category": "scene",
+      "tags": ["dungeon", "atmosphere", "windmill"],
+      "story_beat": "Inside Windmill1 after dialogue option 3",
+      "fixture": "cond_02_after_event_2.json",
+      "arc_cond": 2,
+      "scene_anchor": "Windmill1",
+      "duration_estimate_s": 45,
+      "persona_hint": "default",
+      "notes": "Windmill interior exploration. Good for moody dungeon shots."
+    },
+    {
+      "id": "windmill-second-floor",
+      "category": "scene",
+      "tags": ["dungeon", "puzzle", "windmill"],
+      "story_beat": "Second floor, broken gears inspected",
+      "fixture": "cond_03_after_event_3.json",
+      "arc_cond": 3,
+      "scene_anchor": "Windmill1SecondFloor",
+      "duration_estimate_s": 30,
+      "persona_hint": "default",
+      "notes": "Verticality + puzzle element. Showcase exploration variety."
+    },
+    {
+      "id": "windmill-slime-tension",
+      "category": "moment",
+      "tags": ["tension", "discovery", "windmill"],
+      "story_beat": "Saw basement slime, back on main floor",
+      "fixture": "cond_04_after_event_4.json",
+      "arc_cond": 4,
+      "scene_anchor": "Windmill1",
+      "duration_estimate_s": 30,
+      "persona_hint": "default",
+      "notes": "Pre-combat tension. Player has seen enemy but hasn't engaged yet."
+    },
+    {
+      "id": "windmill-ready-to-leave",
+      "category": "scene",
+      "tags": ["dungeon", "transition"],
+      "story_beat": "Post-Rein-report, ready to leave windmill",
+      "fixture": "cond_05_after_event_5.json",
+      "arc_cond": 5,
+      "scene_anchor": "Windmill1",
+      "duration_estimate_s": 30,
+      "persona_hint": "default",
+      "notes": "Dungeon-to-town transition. Footage candidate for pacing montage."
+    },
+    {
+      "id": "mayors-house-report",
+      "category": "scene",
+      "tags": ["town", "dialogue", "mayors-house"],
+      "story_beat": "Reported windmill slime to Mayor",
+      "fixture": "cond_06_after_event_6.json",
+      "arc_cond": 6,
+      "scene_anchor": "MayorsHouse",
+      "duration_estimate_s": 30,
+      "persona_hint": "default",
+      "notes": "Interior dialogue scene. Shows NPC interaction surface."
+    },
+    {
+      "id": "church-square-post-combat",
+      "category": "moment",
+      "tags": ["victory", "post-combat", "town"],
+      "story_beat": "Slimes defeated in ChurchSquare",
+      "fixture": "cond_08_after_event_8.json",
+      "arc_cond": 8,
+      "scene_anchor": "ChurchSquare",
+      "duration_estimate_s": 30,
+      "persona_hint": "default",
+      "notes": "Post-combat moment. Player victorious, town returning to normal. Good outro footage."
+    },
+    {
+      "id": "mayors-house-post-combat",
+      "category": "moment",
+      "tags": ["dialogue", "story", "mayors-house"],
+      "story_beat": "Post-combat debrief with Mayor",
+      "fixture": "cond_09_after_event_9.json",
+      "arc_cond": 9,
+      "scene_anchor": "MayorsHouse",
+      "duration_estimate_s": 30,
+      "persona_hint": "default",
+      "notes": "Story beat. Dialogue-heavy."
+    },
+    {
+      "id": "mayors-house-expanded-brief",
+      "category": "scene",
+      "tags": ["dialogue", "story", "mayors-house", "exposition"],
+      "story_beat": "Mayor's expanded brief on the situation",
+      "fixture": "cond_10_after_event_10.json",
+      "arc_cond": 10,
+      "scene_anchor": "MayorsHouse",
+      "duration_estimate_s": 45,
+      "persona_hint": "default",
+      "notes": "Quest expansion. Useful for narrative trailer pacing."
+    },
+    {
+      "id": "waterway-entry-combat",
+      "category": "combat",
+      "tags": ["combat", "dungeon", "waterway", "slime"],
+      "story_beat": "Inside Waterway1 just past door — first enemy in 5-8s",
+      "fixture": "cond_11_waterway1_entry.json",
+      "arc_cond": 11,
+      "scene_anchor": "Waterway1",
+      "duration_estimate_s": 60,
+      "persona_hint": "default",
+      "notes": "Arc-recommended combat-immediate fixture. Walk a few steps → slime-cluster encounter. Primary combat-clip target today."
+    },
+    {
+      "id": "first-boss-encounter",
+      "category": "combat",
+      "tags": ["combat", "boss", "tension", "setup"],
+      "story_beat": "Just before first major boss fight (state needed)",
+      "fixture": null,
+      "arc_cond": null,
+      "scene_anchor": null,
+      "duration_estimate_s": 90,
+      "persona_hint": "default",
+      "notes": "GAP — no captured fixture yet. Marketing intent: pre-fight setup tension clip. Needs Arc to capture during Tier 5 run reaching first scripted boss."
+    },
+    {
+      "id": "level-up-moment",
+      "category": "moment",
+      "tags": ["progression", "stats", "level-up", "ui"],
+      "story_beat": "Immediately before XP threshold cross",
+      "fixture": null,
+      "arc_cond": null,
+      "scene_anchor": null,
+      "duration_estimate_s": 45,
+      "persona_hint": "default",
+      "notes": "GAP — no captured fixture yet. Marketing intent: showcase the level-up + stat-spend UI Arc's been polishing in Phase 6.3."
+    },
+    {
+      "id": "status-menu-showcase",
+      "category": "menu",
+      "tags": ["ui", "status", "menu", "showcase"],
+      "story_beat": "Mid-game with skills + items unlocked, ready to open StatusMenu",
+      "fixture": null,
+      "arc_cond": null,
+      "scene_anchor": null,
+      "duration_estimate_s": 30,
+      "persona_hint": "default",
+      "notes": "GAP — no captured fixture. UI-focused capture. Needs state where the menu actually has interesting content (skills learned, items found, party progression)."
+    }
+  ]
+}

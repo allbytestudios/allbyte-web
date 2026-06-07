@@ -34,11 +34,13 @@ from playwright.async_api import async_playwright, Page, ConsoleMessage
 
 DEFAULT_TARGET_URL = os.environ.get(
     "TARGET_URL",
-    # ?build=public forces the no-debug-overlay variant. Without it, the
-    # dev server's auto-admin flow (import.meta.env.DEV → tier=admin in
-    # auth.svelte.ts) routes the iframe to /godot/index.html (debug
-    # variant), leaving the dev-overlay panel visible in captures.
-    "http://localhost:4321/play/?build=public",
+    # Use the debug build (default for dev auto-admin) so test hooks
+    # like _testImportSave + _testLoadPacks stay available. The visual
+    # debug overlay gets hidden via a TestBridge toggle once Arc lands
+    # the hook — until then captures may show it, which we crop/edit
+    # out for review. The public build was the previous workaround
+    # but it strips test hooks the harness depends on.
+    "http://localhost:4321/play/",
 )
 DEFAULT_FIXTURE = os.environ.get("FIXTURE_PATH", "")  # empty = skip fixture load
 DEFAULT_PERSONA = os.environ.get("PERSONA", "default")
@@ -120,11 +122,22 @@ class CaptureSession:
                 "--disable-backgrounding-occluded-windows",
                 "--disable-renderer-backgrounding",
                 "--disable-features=CalculateNativeWinOcclusion",
-                # Position + size so ffmpeg gdigrab's 1920x1080 region
-                # from top-left captures exactly the Chromium content.
+                # Kiosk = no tabs, no URL bar, fullscreen over the OS
+                # taskbar. Combined with the 1920x1080 gdigrab region at
+                # (0,0), the capture contains exactly the game canvas
+                # plus any iframe-side UI (debug HUD, combat panels) and
+                # nothing else.
+                "--kiosk",
+                "--start-fullscreen",
                 "--window-position=0,0",
                 "--window-size=1920,1080",
+                # Suppress the "Chrome is being controlled by automated
+                # test software" infobar that some Chromium builds show
+                # under Playwright; on by default in 1.58, kiosk hides
+                # it but the flag is belt-and-suspenders.
+                "--disable-infobars",
             ],
+            ignore_default_args=["--enable-automation"],
         )
         context = await browser.new_context(viewport={"width": 1920, "height": 1080})
         self._page = await context.new_page()

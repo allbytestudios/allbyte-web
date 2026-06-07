@@ -92,6 +92,21 @@ def main() -> int:
         if path.is_file():
             _put(path, f"{PREFIX}/clips/{path.name}")
 
+    # Stills dir if it exists (manifest + per-still PNGs and JSONs).
+    # screenshot_extractor.py writes here when wired into the pipeline.
+    stills_dir = clips_dir.parent / "stills"
+    if stills_dir.exists() and stills_dir.is_dir():
+        for path in sorted(stills_dir.iterdir()):
+            if path.is_file():
+                _put(path, f"{PREFIX}/stills/{path.name}")
+
+    # Chapters dir likewise (chapter_extractor.py output).
+    chapters_dir = clips_dir.parent / "chapters"
+    if chapters_dir.exists() and chapters_dir.is_dir():
+        for path in sorted(chapters_dir.iterdir()):
+            if path.is_file():
+                _put(path, f"{PREFIX}/chapters/{path.name}")
+
     # Full session MP4 + timeline at the prefix root, for re-processing
     # later (re-run clip_extractor + caption_drafter on the same source).
     for env_key in ("MP4_PATH", "TIMELINE_PATH"):

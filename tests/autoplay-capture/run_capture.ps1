@@ -40,7 +40,7 @@
 param(
     [int]$DurationS = $(if ($env:DURATION_S) { [int]$env:DURATION_S } else { 180 }),
     [string]$Persona = $(if ($env:PERSONA) { $env:PERSONA } else { "default" }),
-    [string]$TargetUrl = $(if ($env:TARGET_URL) { $env:TARGET_URL } else { "http://localhost:4321/play/?build=public" }),
+    [string]$TargetUrl = $(if ($env:TARGET_URL) { $env:TARGET_URL } else { "http://localhost:4321/play/" }),
     [string]$SaveFixtureUrl = $(if ($env:SAVE_FIXTURE_URL) { $env:SAVE_FIXTURE_URL } else { "http://localhost:4321/test-data/WebTests/fixtures/saves/frontier/cond_11_waterway1_entry.json" }),
     [string]$OutDir = $(if ($env:OUT_DIR) { $env:OUT_DIR } else { ".tmp/capture-out" }),
     [int]$VideoWidth = 1920,
@@ -162,6 +162,13 @@ try {
 # --- Clip extraction -------------------------------------------------------
 Write-Host "[capture] extracting clips"
 & python (Join-Path $repoRoot "tests\autoplay-capture\clip_extractor.py")
+
+# --- Still extraction ------------------------------------------------------
+# Pulls scene-entry + combat-mid + hero frames from the MP4 for
+# walkthrough review and marketing stills.
+$env:STILLS_DIR = Join-Path $outDirAbs "stills"
+Write-Host "[capture] extracting stills"
+& python (Join-Path $repoRoot "tests\autoplay-capture\screenshot_extractor.py")
 
 # --- Chapter aggregation ---------------------------------------------------
 # Aggregates timeline events + clip refs into walkthrough-shaped JSON.

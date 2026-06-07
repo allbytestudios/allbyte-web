@@ -163,6 +163,13 @@ try {
 Write-Host "[capture] extracting clips"
 & python (Join-Path $repoRoot "tests\autoplay-capture\clip_extractor.py")
 
+# --- Chapter aggregation ---------------------------------------------------
+# Aggregates timeline events + clip refs into walkthrough-shaped JSON.
+# Mostly-empty fields until Arc lands Completionist + walk-* emits — runs
+# regardless so the structure exists.
+Write-Host "[capture] aggregating chapter"
+& python (Join-Path $repoRoot "tests\autoplay-capture\chapter_extractor.py")
+
 # --- Caption drafting (skips cleanly if no claude CLI / no API key) -------
 Write-Host "[capture] drafting captions"
 & python (Join-Path $repoRoot "tests\autoplay-capture\caption_drafter.py")

@@ -54,14 +54,20 @@ DEFAULT_DURATION_S = int(os.environ.get("DURATION_S", "60"))
 DEFAULT_STARTUP_SKIP_S = int(os.environ.get("STARTUP_SKIP_S", "22"))
 
 # Console log patterns we capture as events on the timeline. Arc confirmed
-# these are stable Phase 2 grep sources; the formal allbyte:event-* emits
-# (Phase 4) will run in parallel without retiring these print() lines.
+# these are stable Phase 2 grep sources; the formal allbyte:event-* and
+# allbyte:walk-* postMessage emits (Phase 4 + walkthrough proposal) will
+# run in parallel without retiring these print() lines.
 EVENT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("combat", re.compile(r"^\[combat\]\s+(.*)$")),
     ("skill", re.compile(r"^\[skill\]\s+(.*)$")),
     ("autoplay", re.compile(r"^\[AutoPlay\]\s+(.*)$")),
     ("explore", re.compile(r"^\[explore.*?\]\s+(.*)$")),
     ("unit_died", re.compile(r"^\[CombatOverlay\]\s+unit_died:\s+(.*)$")),
+    # Walkthrough events — Arc's pending Completionist persona work
+    # (APP_CLAUDE_COMPLETIONIST_AND_WALKTHROUGH_EVENTS.md, 2026-06-06).
+    # Matches if Arc emits as print() lines; postMessage path is also
+    # covered by the listener installed in CaptureSession.boot.
+    ("walk", re.compile(r"^\[walk-([a-z-]+)\]\s+(.*)$")),
 ]
 
 
@@ -131,11 +137,26 @@ class CaptureSession:
         # Game posts `allbyte:ready` on init; saves.svelte.ts catches it and
         # flips saves.gameReady to true. We poll a parent-window mirror that
         # this harness installs.
+        # Capture-side listener: collects allbyte:ready (boot gate) +
+        # allbyte:event-* (Phase 1 emits) + allbyte:walk-* (Completionist
+        # walkthrough emits, pending). Stored on parent window queues
+        # which run.py drains every poll cycle.
         await self._page.evaluate(
             """
             window.__captureReady = false;
+            window.__capture_event_queue = window.__capture_event_queue || [];
+            window.__capture_walk_queue = window.__capture_walk_queue || [];
+            window.__capture_t0 = performance.now();
             window.addEventListener('message', (e) => {
-                if (e?.data?.type === 'allbyte:ready') window.__captureReady = true;
+                const d = e && e.data;
+                if (!d || typeof d.type !== 'string') return;
+                if (d.type === 'allbyte:ready') { window.__captureReady = true; return; }
+                const t = (performance.now() - window.__capture_t0) / 1000;
+                if (d.type.startsWith('allbyte:event-')) {
+                    window.__capture_event_queue.push({ t, type: d.type, data: d });
+                } else if (d.type.startsWith('allbyte:walk-')) {
+                    window.__capture_walk_queue.push({ t, type: d.type, data: d });
+                }
             });
             """
         )
@@ -356,6 +377,34 @@ class CaptureSession:
         while elapsed < duration_s:
             await asyncio.sleep(1.0)
             elapsed = time.monotonic() - self.t0
+            # Drain pending allbyte:event-* + allbyte:walk-* postMessage
+            # events into the timeline. No-op today (Arc hasn't shipped
+            # these emits yet) but ready when they land — same code path
+            # picks them up the day they fire.
+            try:
+                drained = await self._page.evaluate(
+                    """() => {
+                        const ev = window.__capture_event_queue || [];
+                        const wk = window.__capture_walk_queue || [];
+                        window.__capture_event_queue = [];
+                        window.__capture_walk_queue = [];
+                        return { event: ev, walk: wk };
+                    }"""
+                )
+                for ev in drained.get("event", []):
+                    self.events.append({
+                        "t": float(ev.get("t", elapsed)),
+                        "kind": ev["type"].replace("allbyte:event-", "event-"),
+                        "payload": json.dumps(ev.get("data", {})),
+                    })
+                for wk in drained.get("walk", []):
+                    self.events.append({
+                        "t": float(wk.get("t", elapsed)),
+                        "kind": wk["type"].replace("allbyte:walk-", "walk-"),
+                        "payload": json.dumps(wk.get("data", {})),
+                    })
+            except Exception:
+                pass
             try:
                 # Read+reset the counter atomically. fps is frames over
                 # the window since the last read.

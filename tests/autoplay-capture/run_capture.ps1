@@ -47,7 +47,13 @@ param(
     [int]$VideoHeight = 1080,
     [int]$Framerate = 60,
     [string]$AudioDevice = $(if ($env:AUDIO_DEVICE) { $env:AUDIO_DEVICE } else { "CABLE Output (VB-Audio Virtual Cable)" }),
-    [switch]$NoAudio
+    [switch]$NoAudio,
+    # -Headless runs Chromium without a visible window and captures via
+    # the Chrome DevTools Protocol's Page.startScreencast (no gdigrab).
+    # Use this for batch / unattended captures that shouldn't disrupt
+    # the desktop. Audio capture is intentionally skipped in headless —
+    # the visible mode is the path for marketing-grade audio.
+    [switch]$Headless
 )
 
 $ErrorActionPreference = "Stop"
@@ -90,9 +96,18 @@ $env:MP4_PATH = $mp4Path
 $env:TIMELINE_PATH = $timelinePath
 $env:CLIPS_DIR = Join-Path $outDirAbs "clips"
 $env:CAPTURE_FRAMERATE = "$Framerate"
+if ($Headless) {
+    Write-Host "[capture] mode: headless (no visible window; CDP screencast)"
+    $env:CAPTURE_HEADLESS = "1"
+    # Audio capture isn't supported in headless mode — Chromium routes
+    # to a null sink and there's no window to attach dshow to. Force
+    # NoAudio so the audio device env doesn't get set.
+    $NoAudio = $true
+} else {
+    $env:CAPTURE_HEADLESS = "0"
+}
 if ($NoAudio) {
     $env:CAPTURE_AUDIO_DEVICE = ""
-    $env:CAPTURE_NO_FFMPEG = ""
 } else {
     Write-Host "[capture] audio device: $AudioDevice"
     $env:CAPTURE_AUDIO_DEVICE = $AudioDevice

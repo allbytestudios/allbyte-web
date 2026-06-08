@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import base64
 import json
 import os
 import re
@@ -174,6 +175,134 @@ class FfmpegRecorder:
                 return -1
 
 
+class CDPScreencastRecorder:
+    """Headless-friendly capture: streams Chromium's render frames via the
+    Chrome DevTools Protocol's Page.startScreencast and pipes each frame
+    to an ffmpeg subprocess as a stream of JPEGs. Used when there's no
+    Chromium window to gdigrab (headless mode).
+
+    Pros over gdigrab: no window required, captures Chromium content
+    directly regardless of monitor / window position, works in headless
+    mode while still using the host GPU through ANGLE/D3D11.
+
+    Cons: no audio (Chromium routes to a null sink in headless), tied
+    to CDP's frame rate (typically near 60fps when render keeps up).
+    """
+
+    def __init__(
+        self,
+        page: Page,
+        mp4_path: str,
+        framerate: int = 60,
+        max_width: int = 1920,
+        max_height: int = 1080,
+        jpeg_quality: int = 85,
+    ) -> None:
+        self.page = page
+        self.mp4_path = mp4_path
+        self.framerate = framerate
+        self.max_width = max_width
+        self.max_height = max_height
+        self.jpeg_quality = jpeg_quality
+        self.cdp = None
+        self.proc: subprocess.Popen[bytes] | None = None
+        self._log_file = None
+        self._frames_written = 0
+
+    async def start(self) -> None:
+        # Open a CDP session against the page.
+        self.cdp = await self.page.context.new_cdp_session(self.page)
+
+        log_path = Path(self.mp4_path).with_suffix(".ffmpeg.log")
+        self._log_file = open(log_path, "wb")
+        # image2pipe with mjpeg accepts a stream of complete JPEG files,
+        # one per frame, encoded as raw bytes back-to-back.
+        args = [
+            "ffmpeg",
+            "-hide_banner", "-loglevel", "warning",
+            "-f", "image2pipe",
+            "-vcodec", "mjpeg",
+            "-framerate", str(self.framerate),
+            "-i", "-",
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
+            "-pix_fmt", "yuv420p",
+            "-y", self.mp4_path,
+        ]
+        print(f"[run.py] starting ffmpeg (image2pipe) → {self.mp4_path}", flush=True)
+        self.proc = subprocess.Popen(
+            args,
+            stdin=subprocess.PIPE,
+            stdout=self._log_file,
+            stderr=self._log_file,
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+        )
+
+        # Subscribe to screencast frames. The CDP callback is sync;
+        # spawn an async task per frame to decode, write, and ack so
+        # the next frame can be requested.
+        def _on_frame(params):
+            asyncio.create_task(self._handle_frame(params))
+        self.cdp.on("Page.screencastFrame", _on_frame)
+
+        await self.cdp.send("Page.startScreencast", {
+            "format": "jpeg",
+            "quality": self.jpeg_quality,
+            "maxWidth": self.max_width,
+            "maxHeight": self.max_height,
+            "everyNthFrame": 1,
+        })
+
+    async def _handle_frame(self, params: dict) -> None:
+        if not self.proc or not self.proc.stdin:
+            return
+        try:
+            data = base64.b64decode(params["data"])
+            self.proc.stdin.write(data)
+            self._frames_written += 1
+        except (BrokenPipeError, ValueError):
+            pass
+        # Ack so Chromium emits the next frame. Required — without the
+        # ack the screencast pauses.
+        try:
+            if self.cdp:
+                await self.cdp.send("Page.screencastFrameAck", {
+                    "sessionId": params["sessionId"],
+                })
+        except Exception:
+            pass
+
+    async def stop(self, timeout_s: float = 10.0) -> int:
+        if self.cdp:
+            try:
+                await self.cdp.send("Page.stopScreencast")
+            except Exception:
+                pass
+        if self.proc and self.proc.stdin:
+            try:
+                self.proc.stdin.flush()
+                self.proc.stdin.close()
+            except Exception:
+                pass
+        rc = -1
+        if self.proc:
+            try:
+                rc = self.proc.wait(timeout=timeout_s)
+            except subprocess.TimeoutExpired:
+                self.proc.kill()
+                try:
+                    rc = self.proc.wait(timeout=2.0)
+                except subprocess.TimeoutExpired:
+                    rc = -1
+        if self._log_file:
+            try:
+                self._log_file.close()
+            except Exception:
+                pass
+        print(f"[run.py] cdp-screencast wrote {self._frames_written} frames")
+        return rc
+
+
 # -- Capture session ---------------------------------------------------------
 
 
@@ -213,32 +342,45 @@ class CaptureSession:
         # already a secure origin so no insecure-origin override needed.
         # The anti-throttle flags remain useful (rAF can still get
         # backgrounded if the user clicks away from Chromium).
-        browser = await playwright.chromium.launch(
-            headless=False,
-            args=[
-                "--no-sandbox",
-                "--disable-dev-shm-usage",
-                "--enable-features=SharedArrayBuffer",
-                "--disable-background-timer-throttling",
-                "--disable-backgrounding-occluded-windows",
-                "--disable-renderer-backgrounding",
-                "--disable-features=CalculateNativeWinOcclusion",
-                # Kiosk = no tabs, no URL bar, fullscreen over the OS
-                # taskbar. ffmpeg attaches via window title (set after
-                # navigation), so monitor selection only affects what
-                # the owner sees during capture — owner prefers the
-                # LEFT monitor (primary at right (0,0) in this setup),
-                # so we land Chromium at negative X.
+        headless = os.environ.get("CAPTURE_HEADLESS", "0") == "1"
+        # Common args for both visible and headless modes.
+        common_args = [
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--enable-features=SharedArrayBuffer",
+            "--disable-background-timer-throttling",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-features=CalculateNativeWinOcclusion",
+            # Force GPU acceleration paths even when Chromium would
+            # otherwise blocklist or fall back. Important in headless
+            # where the heuristics are conservative.
+            "--enable-gpu-rasterization",
+            "--ignore-gpu-blocklist",
+            "--use-angle=d3d11",
+            "--enable-features=Vulkan",
+            "--disable-infobars",
+        ]
+        if headless:
+            # Pure headless. No window, no kiosk, no monitor position.
+            # CDP screencast streams frames straight from Chromium's
+            # compositor without needing a visible surface.
+            args = common_args + [
+                "--window-size=1920,1080",
+            ]
+        else:
+            # Visible kiosk on the owner's preferred monitor for the
+            # interactive workflow.
+            args = common_args + [
                 "--kiosk",
                 "--start-fullscreen",
                 f"--window-position={os.environ.get('CAPTURE_WINDOW_POSITION', '-1920,0')}",
                 "--window-size=1920,1080",
-                # Suppress the "Chrome is being controlled by automated
-                # test software" infobar that some Chromium builds show
-                # under Playwright; on by default in 1.58, kiosk hides
-                # it but the flag is belt-and-suspenders.
-                "--disable-infobars",
-            ],
+            ]
+        print(f"[run.py] launching Chromium (headless={headless})", flush=True)
+        browser = await playwright.chromium.launch(
+            headless=headless,
+            args=args,
             ignore_default_args=["--enable-automation"],
         )
         context = await browser.new_context(viewport={"width": 1920, "height": 1080})
@@ -613,59 +755,65 @@ async def main() -> int:
             "persona": args.persona,
             "t0_iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
-        recorder: FfmpegRecorder | None = None
+        # Recorder choice: visible mode uses gdigrab attached to the
+        # Chromium window; headless mode uses CDP screencast which
+        # streams frames directly out of the compositor without
+        # needing a visible surface.
+        headless = os.environ.get("CAPTURE_HEADLESS", "0") == "1"
+        recorder: "FfmpegRecorder | CDPScreencastRecorder | None" = None
         try:
             await session.boot(p)
-            # Boot is done: Chromium window exists, title is set, game
-            # has reached allbyte:ready. NOW we start ffmpeg so it can
-            # find the window by title. Without this ordering, ffmpeg
-            # starts before the window exists and gdigrab errors out.
             mp4_env = os.environ.get("MP4_PATH")
             if mp4_env and os.environ.get("CAPTURE_NO_FFMPEG") != "1":
-                # Debug: list current OS-level window titles so we can
-                # see what gdigrab can target. Useful for the multi-
-                # monitor / kiosk-title-not-set debugging.
-                # Find the real OS-level window title. Playwright's
-                # Chromium appends " - Google Chrome for Testing" to
-                # document.title, but ffmpeg's gdigrab needs the full
-                # exact string (uses Win32 FindWindow under the hood).
-                # So we set document.title to a unique marker, then
-                # query Get-Process for a window whose title CONTAINS
-                # the marker, and target ffmpeg at the full real title.
-                real_window_title = CAPTURE_WINDOW_TITLE
-                try:
-                    probe = subprocess.run(
-                        ["powershell", "-NoProfile", "-Command",
-                         f"Get-Process | Where-Object {{$_.MainWindowTitle -like '*{CAPTURE_WINDOW_TITLE}*'}} | "
-                         f"Select-Object -ExpandProperty MainWindowTitle -First 1"],
-                        capture_output=True, text=True, timeout=5,
+                framerate = int(os.environ.get("CAPTURE_FRAMERATE", "60"))
+                if headless:
+                    recorder = CDPScreencastRecorder(
+                        page=session._page,
+                        mp4_path=mp4_env,
+                        framerate=framerate,
                     )
-                    found = (probe.stdout or "").strip().splitlines()[0] if probe.stdout else ""
-                    if found:
-                        real_window_title = found
-                        print(f"[run.py] resolved window title: {real_window_title!r}", flush=True)
-                    else:
-                        print(f"[run.py] WARN: no window title matched {CAPTURE_WINDOW_TITLE!r}, "
-                              f"ffmpeg may fail. Falling back to bare marker.", flush=True)
-                except Exception as e:
-                    print(f"[run.py] window probe failed: {e}", flush=True)
-                recorder = FfmpegRecorder(
-                    mp4_path=mp4_env,
-                    window_title=real_window_title,
-                    audio_device=os.environ.get("CAPTURE_AUDIO_DEVICE"),
-                    framerate=int(os.environ.get("CAPTURE_FRAMERATE", "60")),
-                )
-                recorder.start()
-                # Give gdigrab a moment to find the window + start
-                # writing frames before autoplay kicks off.
+                    await recorder.start()
+                else:
+                    # Resolve the actual Chromium window title (Playwright
+                    # appends " - Google Chrome for Testing") so gdigrab's
+                    # exact-match FindWindow works.
+                    real_window_title = CAPTURE_WINDOW_TITLE
+                    try:
+                        probe = subprocess.run(
+                            ["powershell", "-NoProfile", "-Command",
+                             f"Get-Process | Where-Object {{$_.MainWindowTitle -like '*{CAPTURE_WINDOW_TITLE}*'}} | "
+                             f"Select-Object -ExpandProperty MainWindowTitle -First 1"],
+                            capture_output=True, text=True, timeout=5,
+                        )
+                        found = (probe.stdout or "").strip().splitlines()[0] if probe.stdout else ""
+                        if found:
+                            real_window_title = found
+                            print(f"[run.py] resolved window title: {real_window_title!r}", flush=True)
+                        else:
+                            print(f"[run.py] WARN: no window title matched {CAPTURE_WINDOW_TITLE!r}, "
+                                  f"gdigrab may fail.", flush=True)
+                    except Exception as e:
+                        print(f"[run.py] window probe failed: {e}", flush=True)
+                    recorder = FfmpegRecorder(
+                        mp4_path=mp4_env,
+                        window_title=real_window_title,
+                        audio_device=os.environ.get("CAPTURE_AUDIO_DEVICE"),
+                        framerate=framerate,
+                    )
+                    recorder.start()
+                # Brief settle so the recorder is producing frames
+                # before autoplay starts.
                 await asyncio.sleep(0.5)
             if args.fixture:
                 await session.load_fixture()
             await session.run(args.duration, save_fixture_url=args.save_fixture_url)
         finally:
             if recorder:
-                rc = recorder.stop()
-                print(f"[run.py] ffmpeg exit={rc}")
+                if isinstance(recorder, CDPScreencastRecorder):
+                    rc = await recorder.stop()
+                else:
+                    rc = recorder.stop()
+                print(f"[run.py] recorder exit={rc}")
             await session.finalize(timeline_path, meta)
 
     print(f"[run.py] done: {len(session.events)} events in timeline")

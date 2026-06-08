@@ -24,11 +24,20 @@ import asyncio
 import json
 import os
 import re
+import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any
 
 from playwright.async_api import async_playwright, Page, ConsoleMessage
+
+
+# Unique window title for ffmpeg gdigrab to target. Set on document.title
+# after navigation so we can capture Chromium's window contents regardless
+# of which monitor it lands on. Chromium in kiosk mode uses the page
+# title verbatim as the window title (no " - Chromium" suffix).
+CAPTURE_WINDOW_TITLE = os.environ.get("CAPTURE_WINDOW_TITLE", "AllByteCapture")
 
 # -- Config ------------------------------------------------------------------
 
@@ -71,6 +80,98 @@ EVENT_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     # covered by the listener installed in CaptureSession.boot.
     ("walk", re.compile(r"^\[walk-([a-z-]+)\]\s+(.*)$")),
 ]
+
+
+# -- ffmpeg lifecycle --------------------------------------------------------
+
+
+class FfmpegRecorder:
+    """Manages ffmpeg as a subprocess inside run.py instead of in the
+    PowerShell wrapper. We do this so we can launch ffmpeg AFTER the
+    Chromium window exists with our unique title — gdigrab `title=` mode
+    fails if the window doesn't exist yet, and we want to attach to the
+    specific window regardless of multi-monitor layout.
+
+    Lifecycle:
+        rec = FfmpegRecorder(mp4_path, window_title, audio_device)
+        rec.start()       # spawns ffmpeg as a child process
+        ... do work ...
+        rec.stop()        # sends 'q' to stdin, waits for graceful exit
+    """
+
+    def __init__(
+        self,
+        mp4_path: str,
+        window_title: str,
+        audio_device: str | None,
+        framerate: int = 60,
+    ) -> None:
+        self.mp4_path = mp4_path
+        self.window_title = window_title
+        self.audio_device = audio_device
+        self.framerate = framerate
+        self.proc: subprocess.Popen[bytes] | None = None
+
+    def start(self) -> None:
+        args: list[str] = [
+            "ffmpeg",
+            "-hide_banner", "-loglevel", "warning",
+            "-f", "gdigrab",
+            "-framerate", str(self.framerate),
+            "-draw_mouse", "0",
+            "-i", f"title={self.window_title}",
+        ]
+        if self.audio_device:
+            args.extend([
+                "-f", "dshow",
+                "-i", f"audio={self.audio_device}",
+            ])
+        args.extend([
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
+            "-pix_fmt", "yuv420p",
+        ])
+        if self.audio_device:
+            args.extend(["-c:a", "aac", "-b:a", "192k"])
+        args.extend(["-y", self.mp4_path])
+
+        # Redirect ffmpeg stderr to a sibling log file so capture
+        # failures (window not found, codec issues, etc.) leave a
+        # readable trail without polluting the main output stream.
+        log_path = Path(self.mp4_path).with_suffix(".ffmpeg.log")
+        print(f"[run.py] starting ffmpeg → {self.mp4_path}")
+        print(f"[run.py] capture target: title={self.window_title!r}")
+        print(f"[run.py] ffmpeg log: {log_path}", flush=True)
+        self._log_file = open(log_path, "wb")
+        self.proc = subprocess.Popen(
+            args,
+            stdin=subprocess.PIPE,
+            stdout=self._log_file,
+            stderr=self._log_file,
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+        )
+
+    def stop(self, timeout_s: float = 8.0) -> int:
+        if not self.proc:
+            return -1
+        # 'q' on stdin = graceful exit (writes MP4 moov atom). Without
+        # this ffmpeg can leave the file with no playable index.
+        try:
+            if self.proc.stdin:
+                self.proc.stdin.write(b"q")
+                self.proc.stdin.flush()
+                self.proc.stdin.close()
+        except Exception:
+            pass
+        try:
+            return self.proc.wait(timeout=timeout_s)
+        except subprocess.TimeoutExpired:
+            print("[run.py] ffmpeg didn't exit on q; killing", flush=True)
+            self.proc.kill()
+            try:
+                return self.proc.wait(timeout=2.0)
+            except subprocess.TimeoutExpired:
+                return -1
 
 
 # -- Capture session ---------------------------------------------------------
@@ -123,13 +224,14 @@ class CaptureSession:
                 "--disable-renderer-backgrounding",
                 "--disable-features=CalculateNativeWinOcclusion",
                 # Kiosk = no tabs, no URL bar, fullscreen over the OS
-                # taskbar. Combined with the 1920x1080 gdigrab region at
-                # (0,0), the capture contains exactly the game canvas
-                # plus any iframe-side UI (debug HUD, combat panels) and
-                # nothing else.
+                # taskbar. ffmpeg attaches via window title (set after
+                # navigation), so monitor selection only affects what
+                # the owner sees during capture — owner prefers the
+                # LEFT monitor (primary at right (0,0) in this setup),
+                # so we land Chromium at negative X.
                 "--kiosk",
                 "--start-fullscreen",
-                "--window-position=0,0",
+                f"--window-position={os.environ.get('CAPTURE_WINDOW_POSITION', '-1920,0')}",
                 "--window-size=1920,1080",
                 # Suppress the "Chrome is being controlled by automated
                 # test software" infobar that some Chromium builds show
@@ -146,6 +248,12 @@ class CaptureSession:
         # Godot's bootstrap keeps the network active for tens of seconds while
         # streaming the WASM + PCKs, so `networkidle` and `load` both time out.
         await self._page.goto(self.target_url, wait_until="domcontentloaded", timeout=60_000)
+        # Set a unique window title so ffmpeg gdigrab can attach to this
+        # specific Chromium window regardless of multi-monitor position
+        # or other Chromium instances the owner may have open.
+        await self._page.evaluate(
+            "(t) => { document.title = t; }", CAPTURE_WINDOW_TITLE
+        )
         # Wait for the iframe to mount and the game bootstrapper to be ready.
         # Game posts `allbyte:ready` on init; saves.svelte.ts catches it and
         # flips saves.gameReady to true. We poll a parent-window mirror that
@@ -505,12 +613,59 @@ async def main() -> int:
             "persona": args.persona,
             "t0_iso": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
+        recorder: FfmpegRecorder | None = None
         try:
             await session.boot(p)
+            # Boot is done: Chromium window exists, title is set, game
+            # has reached allbyte:ready. NOW we start ffmpeg so it can
+            # find the window by title. Without this ordering, ffmpeg
+            # starts before the window exists and gdigrab errors out.
+            mp4_env = os.environ.get("MP4_PATH")
+            if mp4_env and os.environ.get("CAPTURE_NO_FFMPEG") != "1":
+                # Debug: list current OS-level window titles so we can
+                # see what gdigrab can target. Useful for the multi-
+                # monitor / kiosk-title-not-set debugging.
+                # Find the real OS-level window title. Playwright's
+                # Chromium appends " - Google Chrome for Testing" to
+                # document.title, but ffmpeg's gdigrab needs the full
+                # exact string (uses Win32 FindWindow under the hood).
+                # So we set document.title to a unique marker, then
+                # query Get-Process for a window whose title CONTAINS
+                # the marker, and target ffmpeg at the full real title.
+                real_window_title = CAPTURE_WINDOW_TITLE
+                try:
+                    probe = subprocess.run(
+                        ["powershell", "-NoProfile", "-Command",
+                         f"Get-Process | Where-Object {{$_.MainWindowTitle -like '*{CAPTURE_WINDOW_TITLE}*'}} | "
+                         f"Select-Object -ExpandProperty MainWindowTitle -First 1"],
+                        capture_output=True, text=True, timeout=5,
+                    )
+                    found = (probe.stdout or "").strip().splitlines()[0] if probe.stdout else ""
+                    if found:
+                        real_window_title = found
+                        print(f"[run.py] resolved window title: {real_window_title!r}", flush=True)
+                    else:
+                        print(f"[run.py] WARN: no window title matched {CAPTURE_WINDOW_TITLE!r}, "
+                              f"ffmpeg may fail. Falling back to bare marker.", flush=True)
+                except Exception as e:
+                    print(f"[run.py] window probe failed: {e}", flush=True)
+                recorder = FfmpegRecorder(
+                    mp4_path=mp4_env,
+                    window_title=real_window_title,
+                    audio_device=os.environ.get("CAPTURE_AUDIO_DEVICE"),
+                    framerate=int(os.environ.get("CAPTURE_FRAMERATE", "60")),
+                )
+                recorder.start()
+                # Give gdigrab a moment to find the window + start
+                # writing frames before autoplay kicks off.
+                await asyncio.sleep(0.5)
             if args.fixture:
                 await session.load_fixture()
             await session.run(args.duration, save_fixture_url=args.save_fixture_url)
         finally:
+            if recorder:
+                rc = recorder.stop()
+                print(f"[run.py] ffmpeg exit={rc}")
             await session.finalize(timeline_path, meta)
 
     print(f"[run.py] done: {len(session.events)} events in timeline")

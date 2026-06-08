@@ -82,81 +82,33 @@ $timelinePath = Join-Path $outDirAbs "$captureName.timeline.json"
 Write-Host "[capture] session=$captureName"
 Write-Host "[capture] target=$TargetUrl persona=$Persona duration=${DurationS}s"
 
-# --- Start ffmpeg (background) ---------------------------------------------
-# gdigrab captures the desktop at the requested size/offset. We capture
-# only the top-left WxH region so Chromium maximized at that size fills
-# it exactly. Audio capture is intentionally omitted in v1 — wiring
-# dshow requires a Stereo-Mix or virtual-audio-capturer driver that
-# isn't universally available. Captions can fill the narrative gap.
-Write-Host "[capture] starting ffmpeg -> $mp4Path"
-# PowerShell 5.1 ProcessStartInfo uses Arguments (single string), not
-# ArgumentList. Build it with all args quoted so paths-with-spaces work.
-# Video: gdigrab top-left WxH region. Audio: dshow from the configured
-# device (typically the recording side of a VB-Audio Virtual Cable).
-$ffmpegArgs = [System.Collections.Generic.List[string]]::new()
-$ffmpegArgs.AddRange([string[]]@(
-    "-hide_banner", "-loglevel", "warning",
-    "-f", "gdigrab",
-    "-framerate", "$Framerate",
-    "-video_size", "${VideoWidth}x${VideoHeight}",
-    "-offset_x", "0", "-offset_y", "0",
-    "-draw_mouse", "0",
-    "-i", "desktop"
-))
-if (-not $NoAudio) {
+# Pass capture params via env so run.py can manage ffmpeg lifecycle
+# itself — it knows when Chromium's window exists with the right title,
+# so it can launch ffmpeg with -i title= mode and find the window
+# regardless of which monitor it lands on.
+$env:MP4_PATH = $mp4Path
+$env:TIMELINE_PATH = $timelinePath
+$env:CLIPS_DIR = Join-Path $outDirAbs "clips"
+$env:CAPTURE_FRAMERATE = "$Framerate"
+if ($NoAudio) {
+    $env:CAPTURE_AUDIO_DEVICE = ""
+    $env:CAPTURE_NO_FFMPEG = ""
+} else {
     Write-Host "[capture] audio device: $AudioDevice"
-    $ffmpegArgs.AddRange([string[]]@(
-        "-f", "dshow",
-        "-i", "`"audio=$AudioDevice`""
-    ))
+    $env:CAPTURE_AUDIO_DEVICE = $AudioDevice
 }
-$ffmpegArgs.AddRange([string[]]@(
-    "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p"
-))
-if (-not $NoAudio) {
-    $ffmpegArgs.AddRange([string[]]@("-c:a", "aac", "-b:a", "192k"))
-}
-$ffmpegArgs.AddRange([string[]]@("-y", "`"$mp4Path`""))
-$psi = New-Object System.Diagnostics.ProcessStartInfo
-$psi.FileName = "ffmpeg"
-$psi.Arguments = ($ffmpegArgs -join " ")
-$psi.RedirectStandardInput = $true
-$psi.UseShellExecute = $false
-$psi.CreateNoWindow = $true
-$ffmpegProc = [System.Diagnostics.Process]::Start($psi)
-if (-not $ffmpegProc) {
-    throw "Failed to start ffmpeg (check `$psi`)."
-}
-
-# Give ffmpeg ~1s to actually start recording before launching Chromium.
-Start-Sleep -Milliseconds 1000
 
 try {
-    # --- Run the Playwright harness ----------------------------------------
-    $env:MP4_PATH = $mp4Path
-    $env:TIMELINE_PATH = $timelinePath
-    $env:CLIPS_DIR = Join-Path $outDirAbs "clips"
-
+    # --- Run the Playwright harness (manages ffmpeg internally) -----------
     $runPy = Join-Path $repoRoot "tests\autoplay-capture\run.py"
     & python $runPy --target-url $TargetUrl --save-fixture-url $SaveFixtureUrl --persona $Persona --duration $DurationS
     $runExit = $LASTEXITCODE
     Write-Host "[capture] run.py exit=$runExit"
 } finally {
-    # --- Stop ffmpeg gracefully (send 'q' to stdin) -----------------------
-    if (-not $ffmpegProc.HasExited) {
-        Write-Host "[capture] stopping ffmpeg (graceful 'q')"
-        try {
-            $ffmpegProc.StandardInput.Write("q")
-            $ffmpegProc.StandardInput.Flush()
-        } catch {}
-        # Wait up to 8s for MP4 finalize. Force-kill if it hangs.
-        if (-not $ffmpegProc.WaitForExit(8000)) {
-            Write-Host "[capture] ffmpeg didn't exit on q; killing"
-            $ffmpegProc.Kill()
-            $ffmpegProc.WaitForExit(2000) | Out-Null
-        }
-    }
-    Write-Host "[capture] ffmpeg final exit=$($ffmpegProc.ExitCode)"
+    # run.py owns ffmpeg lifecycle; if it crashed mid-capture, any
+    # orphan ffmpeg processes will exit when their stdin pipe closes
+    # because the parent (python) is gone. No PowerShell cleanup needed
+    # in the normal path.
 }
 
 # --- Clip extraction -------------------------------------------------------

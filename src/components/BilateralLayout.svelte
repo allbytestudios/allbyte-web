@@ -273,8 +273,6 @@
 
   let { devlogTotal = 0, artCounts = { music: 0, artwork: 0 } } = $props();
 
-  let tierCounts = $state({ initiate: 0, hero: 0, legend: 0 });
-
   let cursorAudio;
   let audioReady = false;
 
@@ -297,11 +295,6 @@
     window.addEventListener("resize", checkMobile);
     window.addEventListener("click", initAudio, { once: true });
     window.addEventListener("touchstart", initAudio, { once: true });
-
-    fetch("https://api.allbyte.studio/counts")
-      .then(r => r.json())
-      .then(data => tierCounts = data)
-      .catch(() => {});
 
     return () => {
       window.removeEventListener("resize", checkMobile);
@@ -339,16 +332,6 @@
   <header class="site-header">
     <div class="header-row">
       <div class="header-left">
-        {#if isAdmin(auth.currentUser)}
-          <div class="tier-counts">
-          <span class="tier-label">Subscribers</span>
-          <div class="tier-pips">
-            <span class="tier-pip" style="--tier-color: #a7f3d0;"><img src="/tier-initiate.png" alt="" class="tier-icon" /><span class="pip-name">Initiate</span><span class="pip-count">{tierCounts.initiate}</span></span>
-            <span class="tier-pip" style="--tier-color: #fbbf24;"><img src="/tier-hero.png" alt="" class="tier-icon" /><span class="pip-name">Hero</span><span class="pip-count">{tierCounts.hero}</span></span>
-            <span class="tier-pip" style="--tier-color: #f97316;"><img src="/tier-legend.png" alt="" class="tier-icon" /><span class="pip-name">Legend</span><span class="pip-count">{tierCounts.legend}</span></span>
-            </div>
-          </div>
-        {/if}
       </div>
       <h1 class="site-title">
         <img src="/icon.png" alt="" class="site-icon" />
@@ -651,55 +634,6 @@
     object-fit: contain;
   }
 
-  .tier-counts {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    min-width: 13.75rem;
-  }
-
-  .tier-label {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 0.85rem;
-    color: rgba(224, 231, 255, 0.5);
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid rgba(224, 231, 255, 0.15);
-    padding-bottom: 0.25rem;
-    margin-bottom: 0.15rem;
-  }
-
-  .tier-pips {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-
-  .tier-pip {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .tier-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-    image-rendering: pixelated;
-    object-fit: contain;
-    flex-shrink: 0;
-  }
-
-  .pip-name {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.4rem;
-    color: var(--tier-color);
-  }
-
-  .pip-count {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.4rem;
-    color: rgba(224, 231, 255, 0.7);
-    margin-left: auto;
-  }
 
 
   .subscribe-btn {
@@ -1548,29 +1482,6 @@
 
     .site-title {
       font-size: 2rem;
-    }
-
-    .tier-counts {
-      align-items: center;
-    }
-
-    .tier-pips {
-      flex-direction: row;
-      gap: 2.5rem;
-      width: 100%;
-      justify-content: center;
-    }
-
-    .tier-pip {
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.15rem 0.35rem;
-    }
-
-    .pip-count {
-      width: 100%;
-      text-align: center;
-      margin-left: 0;
     }
 
     .demo-actions {

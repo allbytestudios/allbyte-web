@@ -595,9 +595,12 @@ Resources:
               if not user:
                   return err(401, "User not found")
 
-              tier = get_tier(user.get("stripeCustomerId"))
+              # Tier lives on the user record (written by Patreon login + the
+              # pledge webhook). The legacy Stripe SubscriptionsTable lookup is
+              # gone with the Patreon migration.
+              tier = user.get("tier")
               if tier not in ("hero", "legend"):
-                  return err(403, "Save sync requires a Hero or Legend subscription")
+                  return err(403, "Save sync requires a Hero or Legend membership")
 
               if method == "GET":
                   save_data = user.get("saveData")

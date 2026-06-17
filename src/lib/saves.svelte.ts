@@ -101,6 +101,16 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBr
     getErrorMessage: () => saves.errorMessage,
     isGameReady: () => saves.gameReady,
     getPreReadyQueueLength: () => preReadyQueue.length,
+    /** Cloud-sync eligibility (Hero/Legend) — for cloud-save tests. */
+    getIsSyncTier: () => isSyncTier(),
+    /** Force the current user's tier — cloud-save tests only. Needed because
+     *  dev initAuth auto-logs in as admin and never hits the mocked /auth/me. */
+    setTestTier: (tier: string) => {
+      if (!import.meta.env.DEV) return; // dev/test only — never mutate tier in prod
+      auth.currentUser = auth.currentUser
+        ? { ...auth.currentUser, tier }
+        : ({ userId: "test", email: "test@allbyte.studio", username: "test", tier, stripeCustomerId: null, notificationPreferences: null } as any);
+    },
     /** Sent messages from parent → game, captured for tests */
     sentMessages: [] as any[],
   };

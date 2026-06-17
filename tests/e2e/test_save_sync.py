@@ -20,7 +20,10 @@ import pytest
 def enter_play_mode(page, base_url):
     """Click the demo banner to enter play mode and wait for the iframe + bridge."""
     page.goto(f"{base_url}/", wait_until="domcontentloaded")
-    page.wait_for_load_state("networkidle")
+    # Do NOT wait_for_load_state("networkidle") here: the landing page keeps
+    # audio connections open (music player + cursor sfx), so it never reaches
+    # networkidle in dev and the wait times out. Wait for the element we need.
+    page.wait_for_selector(".demo-row", timeout=10000)
     # Set the test bypass flag BEFORE entering play mode so the bridge picks it up
     page.evaluate("window.__saves_test_skip_source_check = true")
     # Click the demo banner to launch the game
@@ -210,3 +213,108 @@ def test_pre_ready_queue_drains_on_ready(page, base_url):
     sent = get_sent_messages(page)
     types = [m["type"] for m in sent]
     assert "allbyte:request-saves" in types
+
+
+# === Export / Import (local file) ===
+
+
+def test_export_downloads_current_saves(page, base_url):
+    """allbyteRequestExport() downloads the cached saves as a JSON file whose
+    contents match the in-memory snapshot."""
+    enter_play_mode(page, base_url)
+    fire_game_message(page, {"type": "allbyte:ready", "protocolVersion": 1, "maxSaveSlots": 12})
+    page.wait_for_function("() => window.__saves_test.isGameReady() === true")
+
+    slot1 = json.dumps({"version": 1, "timestamp": 111, "test": "export"})
+    fire_game_message(page, {
+        "type": "allbyte:all-saves", "protocolVersion": 1,
+        "saves": {"slot_1": slot1},
+        "options": '{"volume":0.5}', "keymapping": '{"jump":"x"}',
+    })
+    page.wait_for_function("() => window.__saves_test.getCurrent().saves.slot_1 !== undefined")
+
+    # downloadSavesFile() fires the anchor download (after a ~300ms debounce).
+    with page.expect_download(timeout=5000) as dl_info:
+        page.evaluate("() => window.allbyteRequestExport()")
+    download = dl_info.value
+    assert "chronicles-of-nesis-saves" in download.suggested_filename
+    with open(download.path(), encoding="utf-8") as f:
+        content = json.load(f)
+    assert content["saves"]["slot_1"] == slot1
+    assert content["options"] == '{"volume":0.5}'
+    assert content["keymapping"] == '{"jump":"x"}'
+
+
+def test_import_loads_file_saves_into_game(page, base_url, tmp_path):
+    """Choosing a save file in the hidden import picker parses it and forwards
+    the saves to the game via allbyte:load-saves."""
+    enter_play_mode(page, base_url)
+    fire_game_message(page, {"type": "allbyte:ready", "protocolVersion": 1, "maxSaveSlots": 12})
+    page.wait_for_function("() => window.__saves_test.isGameReady() === true")
+
+    slot2 = json.dumps({"version": 1, "timestamp": 222, "test": "import"})
+    save_file = tmp_path / "import-saves.json"
+    save_file.write_text(json.dumps({
+        "version": 1, "exportedAt": "2026-06-17T00:00:00Z",
+        "saves": {"slot_2": slot2}, "options": "{}", "keymapping": "{}",
+    }), encoding="utf-8")
+
+    # The hidden file input (accept=json) is the import picker created by the bridge.
+    page.set_input_files("input[type=file][accept*='json']", str(save_file))
+
+    page.wait_for_function(
+        "() => window.__saves_test.sentMessages.some(m => m.type === 'allbyte:load-saves')",
+        timeout=3000,
+    )
+    load_msgs = [m for m in get_sent_messages(page) if m["type"] == "allbyte:load-saves"]
+    assert load_msgs, "expected an allbyte:load-saves message after import"
+    assert load_msgs[-1]["saves"]["slot_2"] == slot2
+    # And the local cache picked it up.
+    assert get_save_store_state(page, "getCurrent")["saves"]["slot_2"] == slot2
+
+
+# === Cloud sync (Hero/Legend, server round-trip) ===
+
+
+def test_cloud_sync_pulls_for_hero(page, base_url):
+    """A Hero/Legend user pulls from GET /saves on game-ready. (Dev initAuth
+    auto-logs in as admin, so the test forces the tier via setTestTier.)"""
+    methods = []
+
+    def saves_route(route):
+        methods.append(route.request.method)
+        if route.request.method == "GET":
+            route.fulfill(status=404, content_type="application/json", body="{}")
+        else:
+            route.fulfill(status=200, content_type="application/json",
+                          body='{"updatedAt":"2026-06-17T00:00:00Z"}')
+
+    page.route("**/saves", saves_route)
+
+    enter_play_mode(page, base_url)
+    page.evaluate("() => window.__saves_test.setTestTier('hero')")
+    page.wait_for_function("() => window.__saves_test.getIsSyncTier() === true", timeout=3000)
+
+    fire_game_message(page, {"type": "allbyte:ready", "protocolVersion": 1, "maxSaveSlots": 12})
+    # ready triggers syncFromServer() for hero → GET /saves.
+    page.wait_for_timeout(800)
+    assert "GET" in methods, f"expected a GET /saves cloud pull for hero, got {methods}"
+
+
+def test_cloud_sync_skipped_for_ineligible_tier(page, base_url):
+    """A non-eligible tier (e.g. Initiate) never touches the cloud /saves endpoint."""
+    methods = []
+
+    def saves_route(route):
+        methods.append(route.request.method)
+        route.fulfill(status=404, content_type="application/json", body="{}")
+
+    page.route("**/saves", saves_route)
+
+    enter_play_mode(page, base_url)
+    page.evaluate("() => window.__saves_test.setTestTier('initiate')")
+    page.wait_for_function("() => window.__saves_test.getIsSyncTier() === false")
+
+    fire_game_message(page, {"type": "allbyte:ready", "protocolVersion": 1, "maxSaveSlots": 12})
+    page.wait_for_timeout(800)
+    assert methods == [], f"ineligible tier must not hit cloud saves, got {methods}"

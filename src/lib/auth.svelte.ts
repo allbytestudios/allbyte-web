@@ -90,33 +90,6 @@ export async function initAuth() {
   }
 }
 
-export async function login(email: string, password: string): Promise<string | null> {
-  const resp = await fetch(`${API}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) return data.error || "Login failed";
-  localStorage.setItem("allbyte_token", data.token);
-  auth.authToken = data.token;
-  auth.currentUser = data.user;
-  return null;
-}
-
-export async function signup(email: string, username: string, password: string): Promise<string | null> {
-  const resp = await fetch(`${API}/auth/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, username, password }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) return data.error || "Signup failed";
-  localStorage.setItem("allbyte_token", data.token);
-  auth.authToken = data.token;
-  auth.currentUser = data.user;
-  return null;
-}
 
 export async function saveNotificationPrefs(
   preferences: Record<string, boolean> | null

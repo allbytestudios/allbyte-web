@@ -4,7 +4,7 @@
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import MilestoneBadge from "./MilestoneBadge.svelte";
   import gameVersion from "../data/game-version.json";
-  import { auth, initAuth, login, signup, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
+  import { auth, initAuth, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import { subscribeToFile } from "../lib/testEvents";
@@ -12,9 +12,7 @@
 
   let isMobile = $state(false);
   let showLoginModal = $state(false);
-  let loginMode = $state("signin");
   let loginError = $state("");
-  let loginLoading = $state(false);
   let oauthLoading = $state<"google" | "discord" | "patreon" | null>(null);
   let pendingAction = $state<string | null>(null);
 
@@ -320,52 +318,6 @@
     }
   }
 
-  async function handleLogin(e: SubmitEvent) {
-    e.preventDefault();
-    loginError = "";
-    loginLoading = true;
-    const form = e.target as HTMLFormElement;
-    const email = (form.email as HTMLInputElement).value;
-    const password = (form.password as HTMLInputElement).value;
-    const err = await login(email, password);
-    loginLoading = false;
-    if (err) {
-      loginError = err;
-    } else {
-      showLoginModal = false;
-      if (pendingAction === "subscribe") {
-        pendingAction = null;
-        window.location.href = "/subscribe/";
-      }
-    }
-  }
-
-  async function handleSignup(e: SubmitEvent) {
-    e.preventDefault();
-    loginError = "";
-    loginLoading = true;
-    const form = e.target as HTMLFormElement;
-    const email = (form.email as HTMLInputElement).value;
-    const username = (form.username as HTMLInputElement).value;
-    const password = (form.password as HTMLInputElement).value;
-    const confirm = (form.confirm as HTMLInputElement).value;
-    if (password !== confirm) {
-      loginError = "Passwords do not match";
-      loginLoading = false;
-      return;
-    }
-    const err = await signup(email, username, password);
-    loginLoading = false;
-    if (err) {
-      loginError = err;
-    } else {
-      showLoginModal = false;
-      if (pendingAction === "subscribe") {
-        pendingAction = null;
-        window.location.href = "/subscribe/";
-      }
-    }
-  }
 
   function onDemoEnter() {
     demoHovered = true;
@@ -428,7 +380,7 @@
   {#if showLoginModal}
     <div class="modal-overlay" onclick={closeLoginModal} role="presentation">
       <div class="modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="login-modal-title" bind:this={modalEl}>
-        <h2 id="login-modal-title" class="visually-hidden">{loginMode === "signin" ? "Sign In" : "Create Account"}</h2>
+        <h2 id="login-modal-title" class="visually-hidden">Sign in with Patreon</h2>
         <button class="modal-close" onclick={closeLoginModal} aria-label="Close login dialog">&times;</button>
 
         <div class="patreon-login">
@@ -970,75 +922,12 @@
     opacity: 1;
   }
 
-  .modal-tabs {
-    display: flex;
-    margin-bottom: 1.5rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.1);
-  }
-
-  .modal-tab {
-    flex: 1;
-    background: none;
-    border: none;
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.15rem;
-    color: rgba(224, 231, 255, 0.65);
-    padding: 0.75rem 0;
-    cursor: pointer;
-    transition: all 0.2s;
-    border-bottom: 2px solid transparent;
-  }
-
-  .modal-tab:hover {
-    color: rgba(224, 231, 255, 0.7);
-  }
-
-  .modal-tab.active {
-    color: var(--engine-accent);
-    border-bottom-color: var(--engine-accent);
-  }
-
   .login-error {
     color: #f97316;
     font-family: "Courier New", monospace;
     font-size: 0.85rem;
     margin: 0 0 0.75rem;
     text-align: center;
-  }
-
-  .login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .login-label {
-    font-family: "Courier New", monospace;
-    font-size: 0.85rem;
-    color: rgba(224, 231, 255, 0.85);
-    margin-bottom: -0.4rem;
-  }
-
-  .login-input {
-    font-family: "Courier New", monospace;
-    font-size: 0.95rem;
-    padding: 0.6rem 0.75rem;
-    min-height: 44px;
-    background: #0d1117;
-    border: 1px solid rgba(167, 243, 208, 0.3);
-    color: #e0e7ff;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .login-input:focus,
-  .login-input:focus-visible {
-    border-color: var(--engine-accent);
-    box-shadow: 0 0 0 2px rgba(167, 243, 208, 0.3);
-  }
-
-  .login-input::placeholder {
-    color: rgba(224, 231, 255, 0.45);
   }
 
   .visually-hidden {
@@ -1051,48 +940,6 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
-  }
-
-  .submit-btn {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1rem;
-    padding: 0.6rem;
-    background: var(--engine-accent);
-    color: #0d1117;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    transition: opacity 0.2s;
-  }
-
-  .submit-btn:hover {
-    opacity: 0.9;
-  }
-
-  .divider {
-    text-align: center;
-    margin: 1.25rem 0;
-    position: relative;
-    color: rgba(224, 231, 255, 0.65);
-    font-size: 0.85rem;
-  }
-
-  .divider::before,
-  .divider::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    width: 40%;
-    height: 1px;
-    background: rgba(224, 231, 255, 0.1);
-  }
-
-  .divider::before { left: 0; }
-  .divider::after { right: 0; }
-
-  .oauth-buttons {
-    display: flex;
-    gap: 0.75rem;
   }
 
   .oauth-btn {
@@ -1108,24 +955,6 @@
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.2s;
-  }
-
-  .google-btn {
-    background: #fff;
-    color: #333;
-  }
-
-  .google-btn:hover {
-    background: #f0f0f0;
-  }
-
-  .discord-btn {
-    background: #5865F2;
-    color: #fff;
-  }
-
-  .discord-btn:hover {
-    background: #4752c4;
   }
 
   /* Patreon-only login */
@@ -1178,9 +1007,6 @@
   .oauth-btn:disabled:hover {
     background: inherit;
   }
-
-  .google-btn:disabled:hover { background: #fff; }
-  .discord-btn:disabled:hover { background: #5865F2; }
 
   .oauth-spinner {
     width: 16px;

@@ -7,7 +7,7 @@ devlog: "studio"
 tags: ["aws", "infrastructure", "auth", "stripe", "self-hosting"]
 ---
 
-How I deployed a static site to AWS for under $5/month (minus Claude expense) — using Claude as the AI pair-programmer. You can reference my setup on [GitHub](https://github.com/allbytestudios/allbyte-web), or read [why I'm doing this instead of using Patreon](/devlog/patreon-vs-self-hosting/).
+How I deployed a static site to AWS for under $5/month (minus Claude expense) — using Claude as the AI pair-programmer. You can reference my setup on [GitHub](https://github.com/allbytestudios/allbyte-web).
 
 ## The Setup
 

@@ -70,23 +70,23 @@ Here's what the platforms actually charge, categorized so the conversation has a
 
 Not all of these are equally bad. Discord is genuinely free and where most game communities actually live. Plausible at $9/mo is a fair price for hosted analytics. itch.io's cut funds a platform that's been a public good for indie devs for years. But for anything where the price is a percentage of revenue or a tier that scales with success, the math gets worse the more you grow.
 
-## What two of these look like in practice
+## What this looks like in practice
 
-I've already replaced two of them in production.
+I've replaced one of these in production — and on another, I made the opposite call on purpose.
 
-**[Subscriptions instead of Patreon.](/devlog/patreon-vs-self-hosting/)** I built a tier system on Stripe Checkout + DynamoDB + Lambda + OAuth. Five tiers (free, Initiate, Hero, Legend, plus one-time donation amounts), JWT auth, Google and Discord login, the works. Runs for less than $5/month.
+**Payments: I went with Patreon after all.** I built most of a self-hosted tier system first — Stripe Checkout, DynamoDB, Lambda, OAuth, JWT auth, the tiers — and then chose not to ship it. Running your own payment stack means owning a surface that has to stay secure and maintained forever: billing, webhooks, and all the safety concerns that come with anything touching money. Patreon takes a cut, but it takes that entire surface off my plate — less for me to manage, and the money-safety burden becomes someone else's job. For *payments specifically*, I decided that trade was worth it. The important part is that the choice is contained: Patreon handles payments and nothing else. It doesn't touch how I host the site, own the URL, or serve the game itself. Those stay fully mine.
 
 **[PWA install instead of the App Store.](/devlog/playable-on-your-phone/)** I just spent a few days turning The Chronicles of Nesis into something playable on a phone from a URL, installable to the home screen, with auto-update that only fires at the title screen so it never interrupts a mission.
 
-Both run on infrastructure that costs less per month than a single Patreon supporter's subscription — for now. At some point cloud costs will become a concern, but I expect the tradeoff to still be worth it. I'll report on that as I find out.
+The PWA runs on infrastructure that costs less per month than a single supporter's subscription — for now. At some point cloud costs will become a concern, but I expect the tradeoff to still be worth it. I'll report on that as I find out.
 
-The reason I could justify the engineering for either is the same: AI assistance.
+The reason I could justify the engineering — including building a payment stack just to decide against shipping it — is the same: AI assistance.
 
 ## What AI actually changed
 
 A few years ago, a solo developer could *theoretically* self-host all of this. The pieces have existed — Stripe has had Checkout, AWS has had Lambda, web standards have supported PWA install. The barrier wasn't possibility. It was time.
 
-Building the Patreon replacement properly took roughly a week of evenings. Claude drafted the CloudFormation template, designed the DynamoDB schema, implemented the Lambda functions in Python, wired up OAuth flows for Google and Discord, generated the JWT auth logic, and handled the Stripe Checkout and webhook integration. I read every piece of code, fixed what didn't fit, and made the architectural decisions. But the engineering grind — the tedious "now I have to wire up OAuth state validation and HMAC-sign the callback parameter" — was hours instead of weeks.
+Building that payment stack properly took roughly a week of evenings. Claude drafted the CloudFormation template, designed the DynamoDB schema, implemented the Lambda functions in Python, wired up the OAuth flows, generated the JWT auth logic, and handled the Stripe Checkout and webhook integration. I read every piece of code, fixed what didn't fit, and made the architectural decisions. But the engineering grind — the tedious "now I have to wire up OAuth state validation and HMAC-sign the callback parameter" — was hours instead of weeks. I handed payments to Patreon in the end anyway, but the week wasn't wasted: building the thing is what let me judge the trade from experience instead of a spreadsheet, and the same work stood up the parts of the stack I kept.
 
 The PWA pipeline took just a few days of similar shape. Replacing Mailchimp with a transactional-email opt-in flow took an afternoon. Setting up CloudFront with correct COOP/COEP headers took an hour. Each of these used to be a project. Now each of them is a session.
 
@@ -100,7 +100,7 @@ In a word, marketing. In a detailed list:
 
 **Steam's discovery surface.** I can build my own URL. I can't build my own recommendation engine that surfaces my game to everyone else's audience. Steam has *made* games — its tag-and-recommend system has rank-changing power for indie titles that no marketing effort I could mount would match. Choosing not to use Steam is choosing to do my own outreach for every player. That's not free; it might not even be cheap.
 
-**Payment processing rails.** Stripe (or an equivalent) is the floor. You can avoid Patreon's cut on top of Stripe's cut, but you can't avoid Stripe's cut itself unless you become a bank.
+**Payment processing rails.** A processor's cut is the floor — you can't avoid it unless you become a bank. I went a step further and handed the *whole* payment layer to a platform: after building my own stack on Stripe, I decided Patreon's cut on top was the clearest case in my own setup of paying where the cut earns its keep. It buys me out of maintaining anything that touches money, and that turned out to be worth more than the points I'd save.
 
 **Google search ranking.** I host my own site, but Google still gatekeeps how people find it. SEO is the inescapable middleman.
 

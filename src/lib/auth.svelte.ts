@@ -21,7 +21,7 @@ class AuthStore {
 
 export const auth = new AuthStore();
 
-export function oauthLogin(provider: "google" | "discord") {
+export function oauthLogin(provider: "google" | "discord" | "patreon") {
   window.location.href = `${API}/auth/oauth/${provider}`;
 }
 

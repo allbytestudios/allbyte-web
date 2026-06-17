@@ -6,11 +6,15 @@ import PageHeader from "../components/PageHeader.astro";
 const title = "Subscribe — AllByte Studios";
 const description = "Support AllByte Studios and unlock minor version release builds, full asset access, and deep Dev Console inspection.";
 
+// Tiers are hosted on Patreon (campaign 16252801). Pledging happens on
+// Patreon; the site reads your membership when you log in with Patreon.
+const PATREON_LOGIN = "https://api.allbyte.studio/auth/oauth/patreon";
 const tiers = [
   {
     name: "Initiate",
     price: 3,
     color: "#a7f3d0",
+    patreonUrl: "https://www.patreon.com/checkout/AllByteStudios?rid=28882017",
     features: [
       "Minor version release build access",
       "All game assets unlocked",
@@ -20,6 +24,7 @@ const tiers = [
     name: "Hero",
     price: 7,
     color: "#fbbf24",
+    patreonUrl: "https://www.patreon.com/checkout/AllByteStudios?rid=28882292",
     features: [
       "Everything in Initiate",
       "Deep test suite inspection — per-test history, screenshots, live workers",
@@ -30,6 +35,7 @@ const tiers = [
     name: "Legend",
     price: 15,
     color: "#f97316",
+    patreonUrl: "https://www.patreon.com/checkout/AllByteStudios?rid=28882311",
     features: [
       "Everything in Hero",
       "Worker history — full agent task logs and durations",
@@ -58,28 +64,19 @@ const tiers = [
                 <li>{f}</li>
               ))}
             </ul>
-            <button class="tier-btn" data-tier={tier.name.toLowerCase()}>Subscribe</button>
+            <a class="tier-btn" href={tier.patreonUrl} target="_blank" rel="noopener noreferrer">Become a patron</a>
           </div>
         ))}
       </div>
 
       <div class="support-section">
-        <h2 class="support-title">What Your Donation Provides</h2>
+        <h2 class="support-title">Already a patron?</h2>
         <p class="support-body">
-          Donations allow me to spend more time focusing on developing and
-          porting the game and devlog content. If you like anything that this
-          site provides, please consider donating or subscribing.
+          Pledges are handled on Patreon. Once you've joined a tier, log in with
+          Patreon here to unlock your build access, asset downloads, and Dev
+          Console inspection — your tier syncs automatically.
         </p>
-      </div>
-
-      <div class="donate-section">
-        <h2 class="donate-title">One-Time Donation</h2>
-        <p class="donate-sub">Not ready to subscribe? A one-time contribution helps just as much.</p>
-        <div class="donate-options">
-          <button class="donate-btn" data-tier="donate_5">$5</button>
-          <button class="donate-btn" data-tier="donate_10">$10</button>
-          <button class="donate-btn" data-tier="donate_25">$25</button>
-        </div>
+        <a class="patreon-login-btn" href={PATREON_LOGIN}>Log in with Patreon</a>
       </div>
 
       <div class="faq-section">
@@ -87,11 +84,11 @@ const tiers = [
         <div class="faq-grid">
           <div class="faq-item">
             <h3>When do I get access?</h3>
-            <p>Immediately after subscribing. Build downloads and asset unlocks take effect right away.</p>
+            <p>Join a tier on Patreon, then log in with Patreon here. Your tier syncs on login and updates automatically whenever your pledge changes.</p>
           </div>
           <div class="faq-item">
             <h3>Can I change tiers?</h3>
-            <p>Upgrade or downgrade anytime. Changes take effect on your next billing cycle.</p>
+            <p>Upgrade or downgrade anytime from your Patreon account. The change syncs here automatically — no extra step on the site.</p>
           </div>
           <div class="faq-item">
             <h3>What's a minor version release build?</h3>
@@ -107,48 +104,11 @@ const tiers = [
 
     <Footer theme="engine" />
   </div>
-  <script>
-    const API = "https://api.allbyte.studio";
-
-    document.querySelectorAll("[data-tier]").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const tier = (btn as HTMLElement).dataset.tier;
-        btn.textContent = "Loading...";
-        (btn as HTMLButtonElement).disabled = true;
-        try {
-          const authToken = localStorage.getItem("allbyte_token");
-          const headers: Record<string, string> = { "Content-Type": "application/json" };
-          if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
-          const resp = await fetch(`${API}/checkout`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ tier }),
-          });
-          const data = await resp.json();
-          if (data.url) {
-            window.location.href = data.url;
-          } else {
-            alert("Something went wrong. Please try again.");
-          }
-        } catch {
-          alert("Could not connect to payment server.");
-        } finally {
-          btn.textContent = btn.classList.contains("donate-btn")
-            ? `$${(btn as HTMLElement).dataset.tier?.split("_")[1]}`
-            : "Subscribe";
-          (btn as HTMLButtonElement).disabled = false;
-        }
-      });
-    });
-
-    // Show success message if redirected back
-    if (new URLSearchParams(window.location.search).get("success") === "true") {
-      const banner = document.createElement("div");
-      banner.className = "success-banner";
-      banner.textContent = "Thank you for your support!";
-      document.querySelector(".content")?.prepend(banner);
-    }
-  </script>
+  <!--
+    No checkout script: pledging happens on Patreon (the "Become a patron"
+    links), and the "Log in with Patreon" link starts OAuth. The returned
+    JWT (#token=...) is consumed globally by initAuth in BaseLayout.
+  -->
 </BaseLayout>
 
 <style is:global>
@@ -261,6 +221,8 @@ const tiers = [
   .tier-btn {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.1rem;
+    display: block;
+    box-sizing: border-box;
     width: 100%;
     padding: 0.7rem;
     border: 1px solid var(--tier-color);
@@ -268,6 +230,8 @@ const tiers = [
     color: var(--tier-color);
     cursor: pointer;
     border-radius: 4px;
+    text-align: center;
+    text-decoration: none;
     transition: all 0.2s;
   }
 
@@ -316,6 +280,23 @@ const tiers = [
     color: rgba(224, 231, 255, 0.75);
     margin: 0 auto;
     max-width: 620px;
+  }
+
+  .patreon-login-btn {
+    display: inline-block;
+    margin-top: 1.25rem;
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.05rem;
+    padding: 0.6rem 1.6rem;
+    background: #ff424d;
+    color: #fff;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .patreon-login-btn:hover {
+    opacity: 0.88;
   }
 
   .donate-section {

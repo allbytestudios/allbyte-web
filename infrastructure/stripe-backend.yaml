@@ -1176,6 +1176,11 @@ Resources:
                   "auth_url": "https://discord.com/api/oauth2/authorize",
                   "scope": "identify email",
               },
+              "patreon": {
+                  "secret_name": "allbyte-studio/patreon-oauth",
+                  "auth_url": "https://www.patreon.com/oauth2/authorize",
+                  "scope": "identity identity[email] identity.memberships",
+              },
           }
 
           def get_secret(name):
@@ -1280,7 +1285,51 @@ Resources:
                   "token_url": "https://discord.com/api/oauth2/token",
                   "userinfo_url": "https://discord.com/api/users/@me",
               },
+              "patreon": {
+                  "secret_name": "allbyte-studio/patreon-oauth",
+                  "token_url": "https://www.patreon.com/api/oauth2/token",
+                  # identity + the caller's memberships in OUR campaign, with the
+                  # entitled tier(s) and the pledge amount. fields[] selects only
+                  # what we map. Brackets URL-encoded for the GET.
+                  "userinfo_url": (
+                      "https://www.patreon.com/api/oauth2/v2/identity"
+                      "?include=memberships.currently_entitled_tiers"
+                      "&fields%5Buser%5D=email,full_name"
+                      "&fields%5Bmember%5D=patron_status,currently_entitled_amount_cents"
+                  ),
+              },
           }
+
+          # Patreon tier mapping. Primary: entitled tier id -> our tier (set the
+          # PATREON_TIER_* env vars once the real campaign tier ids are known).
+          # Fallback (works today, no ids needed): pledge amount in cents.
+          PATREON_TIER_IDS = {
+              "28882017": "initiate",  # $3  (campaign 16252801)
+              "28882292": "hero",      # $7
+              "28882311": "legend",    # $15
+          }
+          PATREON_AMOUNT_TIERS = [(1500, "legend"), (700, "hero"), (300, "initiate")]
+
+          def patreon_tier(profile):
+              """Resolve the caller's tier from a Patreon /identity payload.
+              active_patron only; tier-id match first, amount-cents fallback."""
+              included = profile.get("included", []) or []
+              for inc in included:
+                  if inc.get("type") != "member":
+                      continue
+                  a = inc.get("attributes", {}) or {}
+                  if a.get("patron_status") != "active_patron":
+                      continue
+                  rels = (inc.get("relationships", {}) or {}).get("currently_entitled_tiers", {})
+                  for t in (rels.get("data", []) or []):
+                      mapped = PATREON_TIER_IDS.get(str(t.get("id", "")))
+                      if mapped and t.get("id"):
+                          return mapped
+                  cents = a.get("currently_entitled_amount_cents") or 0
+                  for threshold, name in PATREON_AMOUNT_TIERS:
+                      if cents >= threshold:
+                          return name
+              return "default"
 
           def get_secret(name):
               if name not in _cache:
@@ -1413,6 +1462,12 @@ Resources:
                       return redirect_error("Discord email not verified")
                   display_name = profile.get("global_name") or profile.get("username", "")
                   oauth_id = profile.get("id", "")
+              elif provider == "patreon":
+                  data = profile.get("data", {}) or {}
+                  attrs = data.get("attributes", {}) or {}
+                  email = (attrs.get("email") or "").strip().lower()
+                  display_name = attrs.get("full_name") or (email.split("@")[0] if email else "Patron")
+                  oauth_id = data.get("id", "")
 
               if not email:
                   return redirect_error("No email provided by provider")
@@ -1446,6 +1501,17 @@ Resources:
                       "tier": "default",
                   }
                   users.put_item(Item=user)
+
+              # Patreon is the tier source of truth: persist the tier read from
+              # the caller's membership so MeFunction (which reads the stored
+              # tier) returns it. The pledge webhook keeps it fresh afterward.
+              if provider == "patreon":
+                  users.update_item(
+                      Key={"userId": user["userId"]},
+                      UpdateExpression="SET #t = :t, patreonId = :pid",
+                      ExpressionAttributeNames={"#t": "tier"},
+                      ExpressionAttributeValues={":t": patreon_tier(profile), ":pid": oauth_id},
+                  )
 
               tier = get_tier(user.get("stripeCustomerId"))
               token = sign_jwt({
@@ -1616,6 +1682,115 @@ Resources:
               }
 
   # --- Lambda: Stripe Webhook ---
+  # --- Lambda: Patreon Webhook (keeps tier fresh on pledge changes) ---
+  # Patreon POSTs member events here on pledge create/update/delete. Verifies
+  # the HMAC-MD5 body signature, maps the membership to a tier, and writes it
+  # to the user (matched by the patron's email via email-index). The OAuth
+  # callback sets tier at login; this keeps it current between logins.
+  PatreonWebhookFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-patreon-webhook
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 15
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+      Code:
+        ZipFile: |
+          import json
+          import os
+          import hmac
+          import hashlib
+          import base64
+          import boto3
+
+          users = boto3.resource("dynamodb").Table(os.environ["USERS_TABLE"])
+          _cache = {}
+
+          # Mirror the OAuth callback's mapping: tier-id override first (set the
+          # PATREON_TIER_* env vars when ids are known), amount-cents fallback.
+          PATREON_TIER_IDS = {
+              "28882017": "initiate",  # $3  (campaign 16252801)
+              "28882292": "hero",      # $7
+              "28882311": "legend",    # $15
+          }
+          PATREON_AMOUNT_TIERS = [(1500, "legend"), (700, "hero"), (300, "initiate")]
+
+          def get_webhook_secret():
+              if "s" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["s"] = sm.get_secret_value(
+                      SecretId="allbyte-studio/patreon-webhook-secret"
+                  )["SecretString"].strip()
+              return _cache["s"]
+
+          def tier_from_member(data, is_delete):
+              if is_delete:
+                  return "default"
+              attrs = data.get("attributes", {}) or {}
+              if attrs.get("patron_status") != "active_patron":
+                  return "default"
+              rels = (data.get("relationships", {}) or {}).get("currently_entitled_tiers", {})
+              for t in (rels.get("data", []) or []):
+                  mapped = PATREON_TIER_IDS.get(str(t.get("id", "")))
+                  if mapped and t.get("id"):
+                      return mapped
+              cents = attrs.get("currently_entitled_amount_cents") or 0
+              for threshold, name in PATREON_AMOUNT_TIERS:
+                  if cents >= threshold:
+                      return name
+              return "default"
+
+          def patron_email(payload):
+              # The member's user rides along in `included` as a user resource.
+              for inc in (payload.get("included", []) or []):
+                  if inc.get("type") == "user":
+                      e = (inc.get("attributes", {}) or {}).get("email")
+                      if e:
+                          return e.strip().lower()
+              return ""
+
+          def update_tier_by_email(email, tier):
+              if not email:
+                  return
+              resp = users.query(
+                  IndexName="email-index",
+                  KeyConditionExpression="email = :e",
+                  ExpressionAttributeValues={":e": email},
+              )
+              for u in resp.get("Items", []):
+                  if u.get("tier") == "admin":
+                      continue  # never clobber an admin via a pledge event
+                  users.update_item(
+                      Key={"userId": u["userId"]},
+                      UpdateExpression="SET #t = :t",
+                      ExpressionAttributeNames={"#t": "tier"},
+                      ExpressionAttributeValues={":t": tier},
+                  )
+
+          def handler(event, context):
+              headers = {k.lower(): v for k, v in (event.get("headers") or {}).items()}
+              body = event.get("body") or ""
+              if event.get("isBase64Encoded"):
+                  body = base64.b64decode(body).decode()
+              # Patreon signs the raw body with HMAC-MD5 keyed on the webhook secret.
+              expected = hmac.new(get_webhook_secret().encode(), body.encode(), hashlib.md5).hexdigest()
+              if not hmac.compare_digest(headers.get("x-patreon-signature", ""), expected):
+                  return {"statusCode": 401, "body": "bad signature"}
+              evt = headers.get("x-patreon-event", "")
+              try:
+                  payload = json.loads(body)
+              except Exception:
+                  return {"statusCode": 400, "body": "bad json"}
+              data = payload.get("data", {}) or {}
+              tier = tier_from_member(data, evt.endswith(":delete"))
+              update_tier_by_email(patron_email(payload), tier)
+              print(f"[patreon-webhook] {evt} -> tier={tier}")
+              return {"statusCode": 200, "body": "ok"}
+
   WebhookFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -3174,6 +3349,30 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref WebhookFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
+  # Patreon webhook route — POST /webhook/patreon
+  PatreonWebhookIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt PatreonWebhookFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  PatreonWebhookRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /webhook/patreon"
+      Target: !Sub "integrations/${PatreonWebhookIntegration}"
+
+  PatreonWebhookPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PatreonWebhookFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"

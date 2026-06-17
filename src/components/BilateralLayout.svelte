@@ -15,10 +15,10 @@
   let loginMode = $state("signin");
   let loginError = $state("");
   let loginLoading = $state(false);
-  let oauthLoading = $state<"google" | "discord" | null>(null);
+  let oauthLoading = $state<"google" | "discord" | "patreon" | null>(null);
   let pendingAction = $state<string | null>(null);
 
-  function startOAuth(provider: "google" | "discord") {
+  function startOAuth(provider: "google" | "discord" | "patreon") {
     if (oauthLoading) return;
     if (pendingAction) sessionStorage.setItem("allbyte_pending_action", pendingAction);
     oauthLoading = provider;
@@ -431,58 +431,30 @@
         <h2 id="login-modal-title" class="visually-hidden">{loginMode === "signin" ? "Sign In" : "Create Account"}</h2>
         <button class="modal-close" onclick={closeLoginModal} aria-label="Close login dialog">&times;</button>
 
-        <div class="modal-tabs" role="tablist">
-          <button class="modal-tab" class:active={loginMode === "signin"} onclick={() => loginMode = "signin"} role="tab" aria-selected={loginMode === "signin"}>Sign In</button>
-          <button class="modal-tab" class:active={loginMode === "signup"} onclick={() => loginMode = "signup"} role="tab" aria-selected={loginMode === "signup"}>Create Account</button>
-        </div>
+        <div class="patreon-login">
+          <h3 class="patreon-login-heading">Sign in with Patreon</h3>
+          <p class="patreon-login-copy">
+            AllByte uses Patreon for accounts and membership tiers. Sign in with
+            your Patreon account — free or paid. Your tier unlocks automatically.
+          </p>
 
-        {#if loginError}
-          <p class="login-error" role="alert">{loginError}</p>
-        {/if}
+          {#if loginError}
+            <p class="login-error" role="alert">{loginError}</p>
+          {/if}
 
-        {#if loginMode === "signin"}
-          <form class="login-form" onsubmit={handleLogin}>
-            <label for="signin-email" class="login-label">Email</label>
-            <input id="signin-email" type="email" name="email" placeholder="you@example.com" class="login-input" required autocomplete="email" />
-            <label for="signin-password" class="login-label">Password</label>
-            <input id="signin-password" type="password" name="password" placeholder="Your password" class="login-input" required autocomplete="current-password" />
-            <button type="submit" class="submit-btn" disabled={loginLoading}>{loginLoading ? "Signing in..." : "Sign In"}</button>
-          </form>
-        {:else}
-          <form class="login-form" onsubmit={handleSignup}>
-            <label for="signup-email" class="login-label">Email</label>
-            <input id="signup-email" type="email" name="email" placeholder="you@example.com" class="login-input" required autocomplete="email" />
-            <label for="signup-username" class="login-label">Username</label>
-            <input id="signup-username" type="text" name="username" placeholder="Choose a username" class="login-input" required autocomplete="username" />
-            <label for="signup-password" class="login-label">Password</label>
-            <input id="signup-password" type="password" name="password" placeholder="Min 8 characters" class="login-input" required minlength="8" autocomplete="new-password" />
-            <label for="signup-confirm" class="login-label">Confirm Password</label>
-            <input id="signup-confirm" type="password" name="confirm" placeholder="Re-enter password" class="login-input" required autocomplete="new-password" />
-            <button type="submit" class="submit-btn" disabled={loginLoading}>{loginLoading ? "Creating account..." : "Create Account"}</button>
-          </form>
-        {/if}
-
-        <div class="divider"><span>or continue with</span></div>
-
-        <div class="oauth-buttons">
-          <button class="oauth-btn google-btn" disabled={oauthLoading !== null} onclick={() => startOAuth("google")} aria-label={oauthLoading === "google" ? "Redirecting to Google" : "Continue with Google"}>
-            {#if oauthLoading === "google"}
-              <span class="oauth-spinner" aria-hidden="true"></span>
-              Redirecting…
-            {:else}
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-              Google
-            {/if}
-          </button>
-          <button class="oauth-btn discord-btn" disabled={oauthLoading !== null} onclick={() => startOAuth("discord")} aria-label={oauthLoading === "discord" ? "Redirecting to Discord" : "Continue with Discord"}>
-            {#if oauthLoading === "discord"}
+          <button class="oauth-btn patreon-btn" disabled={oauthLoading !== null} onclick={() => startOAuth("patreon")} aria-label={oauthLoading === "patreon" ? "Redirecting to Patreon" : "Continue with Patreon"}>
+            {#if oauthLoading === "patreon"}
               <span class="oauth-spinner oauth-spinner-light" aria-hidden="true"></span>
               Redirecting…
             {:else}
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#fff" d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-              Discord
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#fff" d="M14.82 2.41c-3.96 0-7.18 3.22-7.18 7.18 0 3.94 3.22 7.15 7.18 7.15 3.95 0 7.16-3.21 7.16-7.15 0-3.96-3.21-7.18-7.16-7.18zM2 21.6h3.5V2.41H2V21.6z"/></svg>
+              Continue with Patreon
             {/if}
           </button>
+
+          <p class="patreon-login-foot">
+            Not a member yet? <a href="/subscribe/">See the tiers</a>.
+          </p>
         </div>
       </div>
     </div>
@@ -1154,6 +1126,48 @@
 
   .discord-btn:hover {
     background: #4752c4;
+  }
+
+  /* Patreon-only login */
+  .patreon-login {
+    text-align: center;
+  }
+
+  .patreon-login-heading {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.4rem;
+    color: #a7f3d0;
+    margin: 0 0 0.5rem;
+  }
+
+  .patreon-login-copy {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: rgba(224, 231, 255, 0.7);
+    margin: 0 auto 1.25rem;
+    max-width: 340px;
+  }
+
+  .patreon-btn {
+    width: 100%;
+    background: #ff424d;
+    color: #fff;
+  }
+
+  .patreon-btn:hover:not(:disabled) {
+    background: #e63a44;
+  }
+
+  .patreon-btn:disabled:hover { background: #ff424d; }
+
+  .patreon-login-foot {
+    font-size: 0.82rem;
+    color: rgba(224, 231, 255, 0.5);
+    margin: 1rem 0 0;
+  }
+
+  .patreon-login-foot a {
+    color: #a7f3d0;
   }
 
   .oauth-btn:disabled {

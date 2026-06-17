@@ -12,33 +12,24 @@ import re
 # === Phase 1: Critical Accessibility ===
 
 
-def test_login_modal_inputs_have_labels(page, base_url):
-    """Every input in the login modal has either a <label for> or aria-label."""
+def test_login_modal_patreon_button_accessible(page, base_url):
+    """The Patreon-only login modal exposes an accessible 'Continue with Patreon'
+    control, and any inputs present are labeled. (Post-Patreon-migration: the modal
+    no longer has email/password forms or sign-in/sign-up tabs.)"""
     page.goto(f"{base_url}/", wait_until="domcontentloaded")
 
     # Open the modal
     page.click("button.login-btn")
     page.wait_for_selector(".modal", state="visible")
 
-    # Check sign-in form first
-    inputs = page.query_selector_all(".modal input")
-    assert len(inputs) >= 2, f"Expected at least 2 inputs in sign-in form, got {len(inputs)}"
-    for inp in inputs:
-        input_id = inp.get_attribute("id")
-        aria_label = inp.get_attribute("aria-label")
-        # Either id with matching label, or aria-label
-        if input_id:
-            label = page.query_selector(f'label[for="{input_id}"]')
-            assert label is not None, f"Input #{input_id} has no matching <label for>"
-        else:
-            assert aria_label, "Input has no id and no aria-label"
+    # The single Patreon login control must have an accessible name.
+    btn = page.query_selector(".modal .patreon-btn")
+    assert btn is not None, "Patreon login button not found in modal"
+    accessible_name = (btn.get_attribute("aria-label") or btn.inner_text() or "").strip()
+    assert accessible_name, "Patreon login button needs an accessible name (aria-label or text)"
 
-    # Switch to sign-up tab
-    page.click('button.modal-tab:has-text("Create Account")')
-    page.wait_for_timeout(100)
-    inputs = page.query_selector_all(".modal input")
-    assert len(inputs) >= 4, f"Expected at least 4 inputs in sign-up form, got {len(inputs)}"
-    for inp in inputs:
+    # Guard the invariant: any inputs that exist must be labeled (none expected now).
+    for inp in page.query_selector_all(".modal input"):
         input_id = inp.get_attribute("id")
         aria_label = inp.get_attribute("aria-label")
         if input_id:

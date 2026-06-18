@@ -1,0 +1,193 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Footer from "../components/Footer.astro";
+
+const lastUpdated = "June 18, 2026";
+---
+
+<BaseLayout title="Privacy Policy — AllByte Studios">
+  <main class="legal-page">
+    <article class="legal-body">
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: {lastUpdated}</p>
+
+      <p>
+        This site (<strong>allbyte.studio</strong>) is operated by AllByte
+        Studios, a solo independent game developer (referred to here as
+        &ldquo;I,&rdquo; &ldquo;me,&rdquo; or &ldquo;AllByte&rdquo;). This policy
+        explains what information I collect when you visit the site, log in, or
+        play <em>The Chronicles of Nesis</em>, and how I handle it. I keep data
+        collection to the minimum needed to run the site.
+      </p>
+
+      <h2>Information I collect</h2>
+      <ul>
+        <li>
+          <strong>Account information (via Patreon).</strong> Logging in is
+          handled entirely through Patreon. When you authorize the connection, I
+          receive your Patreon user ID, your name, your email address, and your
+          current membership tier. I store these to identify your account and to
+          unlock the content your tier grants.
+        </li>
+        <li>
+          <strong>Cloud save data.</strong> If you choose to sync your game
+          progress, the save data you upload is stored so it can be restored on
+          your other devices. Saves are only synced when you opt in.
+        </li>
+        <li>
+          <strong>Technical data.</strong> Like any website, my hosting and
+          content-delivery layer (Amazon Web Services / CloudFront) records
+          standard request logs &mdash; IP address, browser type, and the pages
+          requested &mdash; used for security and to keep the site running.
+        </li>
+        <li>
+          <strong>Browser storage.</strong> I store a login token and a few
+          interface preferences (such as music-player state) in your browser's
+          local/session storage. These stay on your device.
+        </li>
+      </ul>
+
+      <h2>How I use it</h2>
+      <ul>
+        <li>To authenticate you and keep you signed in.</li>
+        <li>To grant the site and game features your membership tier includes.</li>
+        <li>To sync and restore your game saves when you opt in.</li>
+        <li>To operate, secure, and troubleshoot the site.</li>
+      </ul>
+      <p>
+        I do not sell your personal information, and I do not use it for
+        third-party advertising.
+      </p>
+
+      <h2>Payments</h2>
+      <p>
+        All memberships and payments are processed entirely by
+        <strong>Patreon</strong>. I never receive, see, or store your card
+        number or any other payment details. Patreon's handling of that data is
+        governed by <a href="https://privacy.patreon.com/" rel="noopener">Patreon's
+        own privacy policy</a>.
+      </p>
+
+      <h2>Service providers</h2>
+      <ul>
+        <li>
+          <strong>Patreon</strong> &mdash; account login, membership, and payment
+          processing.
+        </li>
+        <li>
+          <strong>Amazon Web Services</strong> &mdash; website hosting, storage,
+          and the backend that powers login and cloud saves.
+        </li>
+      </ul>
+      <p>
+        These providers process data only to deliver their part of the service.
+      </p>
+
+      <h2>Data retention</h2>
+      <p>
+        I keep your account information for as long as your account exists. Cloud
+        saves are retained until you overwrite or delete them, or until your
+        account is removed. Server logs are retained for a limited period for
+        security and operational purposes.
+      </p>
+
+      <h2>Your choices</h2>
+      <ul>
+        <li>
+          You can revoke this site's access to your Patreon account at any time
+          from your Patreon account settings.
+        </li>
+        <li>
+          You can request access to, or deletion of, the personal information
+          tied to your account by emailing me (see below).
+        </li>
+      </ul>
+
+      <h2>Children</h2>
+      <p>
+        This site is not directed to children under 13, and I do not knowingly
+        collect personal information from them.
+      </p>
+
+      <h2>Security</h2>
+      <p>
+        Login tokens are signed and transmitted over HTTPS, and passwords are not
+        stored on my systems (login is delegated to Patreon). No method of
+        transmission or storage is perfectly secure, but I take reasonable steps
+        to protect your information.
+      </p>
+
+      <h2>Changes</h2>
+      <p>
+        I may update this policy as the site evolves. The &ldquo;last
+        updated&rdquo; date above reflects the current version.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about this policy or your data? Email
+        <a href="mailto:allbytestudios@gmail.com">allbytestudios@gmail.com</a>.
+      </p>
+    </article>
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .legal-page {
+    background: #1a1e26;
+    color: #e0e7ff;
+    min-height: 80dvh;
+    padding: 3rem 1.25rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .legal-body {
+    max-width: 46rem;
+    width: 100%;
+    font-family: "Courier New", Courier, monospace;
+    line-height: 1.7;
+  }
+
+  h1 {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2.25rem;
+    color: #a7f3d0;
+    margin-bottom: 0.25rem;
+  }
+
+  h2 {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.4rem;
+    color: #a7f3d0;
+    margin: 2.25rem 0 0.5rem;
+  }
+
+  .updated {
+    color: rgba(224, 231, 255, 0.5);
+    font-size: 0.9rem;
+    margin: 0 0 1.5rem;
+  }
+
+  p,
+  li {
+    color: rgba(224, 231, 255, 0.82);
+  }
+
+  ul {
+    padding-left: 1.25rem;
+  }
+
+  li {
+    margin: 0.4rem 0;
+  }
+
+  a {
+    color: #a7f3d0;
+  }
+
+  strong {
+    color: #e0e7ff;
+  }
+</style>

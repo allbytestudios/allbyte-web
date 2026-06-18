@@ -1,0 +1,170 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Footer from "../components/Footer.astro";
+
+const lastUpdated = "June 18, 2026";
+---
+
+<BaseLayout title="Terms of Service — AllByte Studios">
+  <main class="legal-page">
+    <article class="legal-body">
+      <h1>Terms of Service</h1>
+      <p class="updated">Last updated: {lastUpdated}</p>
+
+      <p>
+        These terms govern your use of <strong>allbyte.studio</strong> and
+        <em>The Chronicles of Nesis</em>, operated by AllByte Studios, a solo
+        independent game developer (&ldquo;I,&rdquo; &ldquo;me,&rdquo; or
+        &ldquo;AllByte&rdquo;). By using the site, you agree to these terms. If
+        you don't agree, please don't use the site.
+      </p>
+
+      <h2>The service</h2>
+      <p>
+        The site provides a browser-playable build of <em>The Chronicles of
+        Nesis</em>, a development blog, artwork and music showcases, and
+        membership features. I may add, change, or remove features at any time.
+      </p>
+
+      <h2>Accounts</h2>
+      <p>
+        Accounts and sign-in are handled through Patreon. You are responsible for
+        activity under your account and for keeping your Patreon credentials
+        secure. You must provide accurate information and be old enough to use
+        Patreon in your jurisdiction.
+      </p>
+
+      <h2>Memberships and payments</h2>
+      <p>
+        Membership tiers are offered and billed entirely through Patreon and are
+        subject to <a href="https://policies.patreon.com/" rel="noopener">Patreon's
+        terms</a>. Tiers unlock access to certain site and game content. You can
+        change or cancel your membership at any time through Patreon; I do not
+        process payments and cannot issue charges or refunds directly &mdash;
+        billing matters are handled by Patreon.
+      </p>
+
+      <h2>Intellectual property</h2>
+      <p>
+        All artwork, music, fonts, characters, story, game content, and code on
+        this site are created and owned by AllByte Studios (or used under
+        license) and are protected by copyright. The art, music, and typography
+        are entirely handcrafted. You may not copy, redistribute, extract,
+        decompile, or repackage any of these assets, in whole or in part, without
+        my written permission.
+      </p>
+
+      <h2>Game license</h2>
+      <p>
+        I grant you a personal, non-exclusive, non-transferable license to play
+        <em>The Chronicles of Nesis</em> through this site for your own personal,
+        non-commercial enjoyment. You may not host, mirror, resell, or
+        commercially exploit the game or its assets.
+      </p>
+
+      <h2>Acceptable use</h2>
+      <p>You agree not to:</p>
+      <ul>
+        <li>Attempt to circumvent membership gates or access controls.</li>
+        <li>Extract, scrape, or reverse-engineer game assets or source.</li>
+        <li>Disrupt, overload, or attempt to gain unauthorized access to the site or its backend.</li>
+        <li>Use the site to break any applicable law or to infringe others' rights.</li>
+      </ul>
+
+      <h2>Disclaimer</h2>
+      <p>
+        The site and game are provided &ldquo;as is&rdquo; and &ldquo;as
+        available,&rdquo; without warranties of any kind. As a solo developer, I
+        can't guarantee the site will be uninterrupted, error-free, or that saves
+        will never be lost &mdash; though I do my best to keep everything working.
+      </p>
+
+      <h2>Limitation of liability</h2>
+      <p>
+        To the fullest extent permitted by law, AllByte Studios will not be liable
+        for any indirect, incidental, or consequential damages arising from your
+        use of the site or game.
+      </p>
+
+      <h2>Changes</h2>
+      <p>
+        I may update these terms as the site evolves. Continued use after an
+        update means you accept the revised terms. The &ldquo;last updated&rdquo;
+        date above reflects the current version.
+      </p>
+
+      <h2>Governing law</h2>
+      <p>
+        These terms are governed by the laws of the United States and the state
+        in which AllByte Studios operates, without regard to conflict-of-law
+        rules.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about these terms? Email
+        <a href="mailto:allbytestudios@gmail.com">allbytestudios@gmail.com</a>.
+      </p>
+    </article>
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .legal-page {
+    background: #1a1e26;
+    color: #e0e7ff;
+    min-height: 80dvh;
+    padding: 3rem 1.25rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .legal-body {
+    max-width: 46rem;
+    width: 100%;
+    font-family: "Courier New", Courier, monospace;
+    line-height: 1.7;
+  }
+
+  h1 {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2.25rem;
+    color: #a7f3d0;
+    margin-bottom: 0.25rem;
+  }
+
+  h2 {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.4rem;
+    color: #a7f3d0;
+    margin: 2.25rem 0 0.5rem;
+  }
+
+  .updated {
+    color: rgba(224, 231, 255, 0.5);
+    font-size: 0.9rem;
+    margin: 0 0 1.5rem;
+  }
+
+  p,
+  li {
+    color: rgba(224, 231, 255, 0.82);
+  }
+
+  ul {
+    padding-left: 1.25rem;
+  }
+
+  li {
+    margin: 0.4rem 0;
+  }
+
+  a {
+    color: #a7f3d0;
+  }
+
+  strong {
+    color: #e0e7ff;
+  }
+</style>

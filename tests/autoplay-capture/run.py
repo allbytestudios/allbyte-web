@@ -609,6 +609,17 @@ class CaptureSession:
         if not loaded:
             await self.dismiss_title()
         await self.enable_autoplay()
+        # Marketing-clean: hide the always-on debug overlay (version/MODE/packs/
+        # AP/hp panel, bound to GlobalWorld.show_pack_overlay) and suppress
+        # scripted scene-entry events so dialogue boxes don't pop mid-capture.
+        await self._page.evaluate(
+            """() => {
+                const w = document.querySelector('iframe')?.contentWindow;
+                if (!w) return;
+                w._testSetGlobalWorldFlag = JSON.stringify({name: 'show_pack_overlay', value: false});
+                w._testSuppressSceneEntryEvents = true;
+            }"""
+        )
         self.t0 = time.monotonic()
 
         # Install a self-resetting fps counter in the iframe. It counts
@@ -640,6 +651,14 @@ class CaptureSession:
         while elapsed < duration_s:
             await asyncio.sleep(1.0)
             elapsed = time.monotonic() - self.t0
+            # Re-assert HUD-off each tick — scene transitions reset GlobalWorld flags.
+            try:
+                await self._page.evaluate(
+                    "() => { const w=document.querySelector('iframe')?.contentWindow;"
+                    " if(w) w._testSetGlobalWorldFlag = JSON.stringify({name:'show_pack_overlay', value:false}); }"
+                )
+            except Exception:
+                pass
             # Drain pending allbyte:event-* + allbyte:walk-* postMessage
             # events into the timeline. No-op today (Arc hasn't shipped
             # these emits yet) but ready when they land — same code path

@@ -116,7 +116,14 @@ if ($NoAudio) {
 try {
     # --- Run the Playwright harness (manages ffmpeg internally) -----------
     $runPy = Join-Path $repoRoot "tests\autoplay-capture\run.py"
-    & python $runPy --target-url $TargetUrl --save-fixture-url $SaveFixtureUrl --persona $Persona --duration $DurationS
+    # NOTE: --opt=value form is deliberate. PowerShell 5.1 silently DROPS
+    # empty-string arguments to native commands, so `--save-fixture-url ""`
+    # would lose its value and argparse would consume the next flag as the
+    # URL. The single-token `--save-fixture-url=` survives and argparse reads
+    # it as an empty string → run.py dismisses the Title and starts a new
+    # game from the beginning. This is the only way to request a from-start
+    # capture through the wrapper.
+    & python $runPy "--target-url=$TargetUrl" "--save-fixture-url=$SaveFixtureUrl" "--persona=$Persona" "--duration=$DurationS"
     $runExit = $LASTEXITCODE
     Write-Host "[capture] run.py exit=$runExit"
 } finally {

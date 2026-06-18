@@ -1,0 +1,503 @@
+{
+  "version": 1,
+  "generatedAt": "",
+  "scope": "laria",
+  "stub": false,
+  "source": "Arc scene graph (structure) + Chronicles DataStore (NPCs/treasure/shop) + AppC captures (stills)",
+  "description": "Laria walkthrough \u2014 Arc scene graph + Chronicles item/shop data + AppC stills. STARTER guide prose (draft for owner edit). NPC/event content omitted (condition-gated).",
+  "startScene": "FrontRoad",
+  "canonicalOrder": [
+    "FrontRoad",
+    "GeneralStore",
+    "Windmill1",
+    "Windmill1SecondFloor",
+    "Windmill1Basement",
+    "MainSquare",
+    "MayorsHouse",
+    "MayorsHouseUpstairs",
+    "Windmill2",
+    "Windmill2SecondFloor",
+    "Windmill2Basement",
+    "ChurchSquare",
+    "ChurchInterior",
+    "EliasHouse"
+  ],
+  "scenes": [
+    {
+      "id": "FrontRoad",
+      "displayName": "Laria Front Road",
+      "kind": "village",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "newgame",
+      "parentScene": null,
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/FrontRoad/FrontRoad.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Laria Front Road \u2014 one of Laria's open squares.",
+      "guide": "Your first steps into Laria. The road from the Overworld opens onto the village's front square, the windmill's sails turning on the rise ahead. From here Laria fans out \u2014 the general store sits right off the road, with the main square and the windmill a short walk on.",
+      "exits": [
+        {
+          "to": "GeneralStore",
+          "label": "Enter General Store",
+          "bidirectional": true
+        },
+        {
+          "to": "MainSquare",
+          "label": "To Main Square",
+          "bidirectional": true
+        },
+        {
+          "to": "Overworld",
+          "label": "To Overworld",
+          "bidirectional": false,
+          "external": true
+        },
+        {
+          "to": "Windmill1",
+          "label": "To Windmill",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": []
+    },
+    {
+      "id": "GeneralStore",
+      "displayName": "General Store",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "newgame",
+      "parentScene": "FrontRoad",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/FrontRoad/GeneralStore.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "General Store \u2014 reached from Laria Front Road.",
+      "guide": "Laria's general store. The merchant's shelves cover the early essentials \u2014 healing herbs, a leather chestpiece and boots, a flask of liquor for the road. Stock up before heading deeper; there are no shops further in.",
+      "exits": [
+        {
+          "to": "FrontRoad",
+          "label": "Exit to Front Road",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": [
+        "Coins (chest)",
+        "Mugwort (40g) (shop)",
+        "Irid Liquor (100g) (shop)",
+        "Leather Chestpiece (150g) (shop)",
+        "Leather Boots (60g) (shop)",
+        "Valerian Powder (25g) (shop)"
+      ]
+    },
+    {
+      "id": "Windmill1",
+      "displayName": "Front Road Windmill",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "early",
+      "parentScene": "FrontRoad",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/FrontRoad/Windmill1.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Front Road Windmill \u2014 reached from Laria Front Road.",
+      "guide": "The windmill by the front road. A stair threads the structure top to bottom \u2014 up to the second floor, down to the basement. Worth a full sweep; Laria's windmills tend to hide a chest or two.",
+      "exits": [
+        {
+          "to": "FrontRoad",
+          "label": "Exit to Front Road",
+          "bidirectional": true
+        },
+        {
+          "to": "Windmill1Basement",
+          "label": "Down to Basement",
+          "bidirectional": true
+        },
+        {
+          "to": "Windmill1SecondFloor",
+          "label": "Up to 2nd Floor",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": [
+        "Irid Liquor \u00d72 (chest)"
+      ]
+    },
+    {
+      "id": "Windmill1SecondFloor",
+      "displayName": "Front Road Windmill \u2014 2nd Floor",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "early",
+      "parentScene": "Windmill1",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/FrontRoad/Windmill1SecondFloor.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Front Road Windmill \u2014 2nd Floor \u2014 reached from Front Road Windmill.",
+      "guide": "The windmill's upper floor, up among the gears and grain. A quiet corner of the village \u2014 check the shelves and crates before climbing back down.",
+      "exits": [
+        {
+          "to": "Windmill1",
+          "label": "Down to 1st Floor",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": []
+    },
+    {
+      "id": "Windmill1Basement",
+      "displayName": "Front Road Windmill \u2014 Basement",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "early",
+      "parentScene": "Windmill1",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/FrontRoad/Windmill1Basement.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Front Road Windmill \u2014 Basement \u2014 reached from Front Road Windmill.",
+      "guide": "Beneath the front-road windmill. The basement is dim and close; keep a careful eye for anything tucked against the walls before heading back up.",
+      "exits": [
+        {
+          "to": "Windmill1",
+          "label": "Up to 1st Floor",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": []
+    },
+    {
+      "id": "MainSquare",
+      "displayName": "Main Square",
+      "kind": "village",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "newgame",
+      "parentScene": null,
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/MainSquare/MainSquare.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Main Square \u2014 one of Laria's open squares.",
+      "guide": "The heart of Laria. The market square sits beneath a second windmill, ringed by the village's homes with the mountains rising behind. Roads run off in every direction \u2014 to the church square, back to the front road, and into the mayor's house and the windmill that frame the square.",
+      "exits": [
+        {
+          "to": "ChurchSquare",
+          "label": "To Church Square",
+          "bidirectional": true
+        },
+        {
+          "to": "FrontRoad",
+          "label": "To Front Road",
+          "bidirectional": true
+        },
+        {
+          "to": "MayorsHouse",
+          "label": "Enter Mayor's House",
+          "bidirectional": true
+        },
+        {
+          "to": "Windmill2",
+          "label": "Enter Windmill",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": []
+    },
+    {
+      "id": "MayorsHouse",
+      "displayName": "Mayor's House",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "newgame",
+      "parentScene": "MainSquare",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/MainSquare/MayorsHouse.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Mayor's House \u2014 reached from Main Square.",
+      "guide": "The mayor's house, just off the main square \u2014 a step up from the village homes, and the kind of place where village business (and the odd loose coin) tends to collect. Stairs lead up to the rooms above.",
+      "exits": [
+        {
+          "to": "MainSquare",
+          "label": "Exit to Main Square",
+          "bidirectional": true
+        },
+        {
+          "to": "MayorsHouseUpstairs",
+          "label": "Up to 2nd Floor",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": [
+        "Health Relic (chest)",
+        "Valerian Powder \u00d73 (chest)"
+      ]
+    },
+    {
+      "id": "MayorsHouseUpstairs",
+      "displayName": "Mayor's House \u2014 Upstairs",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "newgame",
+      "parentScene": "MayorsHouse",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/MainSquare/MayorsHouseUpstairs.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Mayor's House \u2014 Upstairs \u2014 reached from Mayor's House.",
+      "guide": "The mayor's upper rooms \u2014 the private quarters above the main hall. Quiet, and worth a look before you head back down.",
+      "exits": [
+        {
+          "to": "MayorsHouse",
+          "label": "Down to 1st Floor",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": []
+    },
+    {
+      "id": "Windmill2",
+      "displayName": "Main Square Windmill",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "early",
+      "parentScene": "MainSquare",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/MainSquare/Windmill2.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Main Square Windmill \u2014 reached from Main Square.",
+      "guide": "The windmill on the main square. Like its twin by the front road, it runs top to bottom \u2014 second floor above, basement below. Sweep both before moving on.",
+      "exits": [
+        {
+          "to": "MainSquare",
+          "label": "Exit to Main Square",
+          "bidirectional": true
+        },
+        {
+          "to": "Windmill2Basement",
+          "label": "Down to Basement",
+          "bidirectional": true
+        },
+        {
+          "to": "Windmill2SecondFloor",
+          "label": "Up to 2nd Floor",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": []
+    },
+    {
+      "id": "Windmill2SecondFloor",
+      "displayName": "Main Square Windmill \u2014 2nd Floor",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "early",
+      "parentScene": "Windmill2",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/MainSquare/Windmill2SecondFloor.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Main Square Windmill \u2014 2nd Floor \u2014 reached from Main Square Windmill.",
+      "guide": "The main-square windmill's upper floor, up among the workings. Give the room a once-over before descending.",
+      "exits": [
+        {
+          "to": "Windmill2",
+          "label": "Down to 1st Floor",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": []
+    },
+    {
+      "id": "Windmill2Basement",
+      "displayName": "Main Square Windmill \u2014 Basement",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "early",
+      "parentScene": "Windmill2",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/MainSquare/Windmill2Basement.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Main Square Windmill \u2014 Basement \u2014 reached from Main Square Windmill.",
+      "guide": "The cellar beneath the main-square windmill. Dim and tucked away; check the corners on your way through.",
+      "exits": [
+        {
+          "to": "Windmill2",
+          "label": "Up to 1st Floor",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": []
+    },
+    {
+      "id": "ChurchSquare",
+      "displayName": "Church Square",
+      "kind": "village",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "newgame",
+      "parentScene": null,
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/ChurchSquare/ChurchSquare.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Church Square \u2014 one of Laria's open squares.",
+      "guide": "Laria's church square. The chapel stands over a quieter corner of the village, its doors open to the interior. Paths lead on to the main square and to Elias's house just off the square.",
+      "exits": [
+        {
+          "to": "ChurchInterior",
+          "label": "Enter Church",
+          "bidirectional": true
+        },
+        {
+          "to": "EliasHouse",
+          "label": "Enter Elias's House",
+          "bidirectional": true
+        },
+        {
+          "to": "MainSquare",
+          "label": "To Main Square",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": []
+    },
+    {
+      "id": "ChurchInterior",
+      "displayName": "Church Interior",
+      "kind": "interior",
+      "pack": "Laria",
+      "condGate": null,
+      "music": null,
+      "partyPreset": "newgame",
+      "parentScene": "ChurchSquare",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/ChurchSquare/ChurchInterior.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Church Interior \u2014 reached from Church Square.",
+      "guide": "Inside Laria's chapel. Light falls through the stained glass across a worn wooden floor, a short flight of steps leading deeper in. A still place \u2014 and, like most chapels, one that rewards a careful look.",
+      "exits": [
+        {
+          "to": "ChurchSquare",
+          "label": "Exit to Church Square",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": [
+        "Leather Boots (chest)"
+      ]
+    },
+    {
+      "id": "EliasHouse",
+      "displayName": "Elias's House",
+      "kind": "interior",
+      "pack": null,
+      "condGate": null,
+      "music": null,
+      "partyPreset": "newgame",
+      "parentScene": "ChurchSquare",
+      "cameraHint": null,
+      "scenePath": "res://World/ScenesAndScripts/Laria/ChurchSquare/EliasHouse.tscn",
+      "media": {
+        "clip": null,
+        "thumb": "still.png",
+        "still": "still.png"
+      },
+      "lead": "Elias's House \u2014 reached from Church Square.",
+      "guide": "Elias's house \u2014 where your story begins. A small, lived-in room off the church square, with more than one chest worth opening before you leave: there's coin here, and a couple of useful herbs.",
+      "exits": [
+        {
+          "to": "ChurchSquare",
+          "label": "Exit to Church Square",
+          "bidirectional": true
+        }
+      ],
+      "callouts": [],
+      "items": [
+        "Coins (chest)",
+        "Amaranth (chest)",
+        "Aconite (chest)"
+      ]
+    }
+  ]
+}

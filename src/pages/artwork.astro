@@ -5,6 +5,20 @@ import spriteGifs from "../data/sprite-gifs.json";
 import manifest from "../../scripts/asset-manifest.json";
 import screenshotsData from "../data/screenshots.json";
 import recordingsData from "../data/recordings.json";
+import assetIndex from "../data/asset-index.json";
+
+// Music (folded in from the former /music page)
+const GATED_TRACKS = new Set([
+  "Anthem3", "Anthem4", "DwarvenRuins", "ImpendingConclusion", "Sleep", "Victory",
+]);
+function formatTrackName(name: string): string {
+  return name
+    .replace(/([A-Z])/g, " $1")
+    .replace(/(\d+)/g, " $1")
+    .replace(/_/g, " ")
+    .replace(/^rest zapsplat.*/, "Rest Theme")
+    .trim();
+}
 
 const title = "Artwork — AllByte Studios";
 const description = "Hand-crafted sprites, animations, screenshots, and recordings from The Chronicles of Nesis.";
@@ -119,6 +133,14 @@ function animationGateFor(character: string, animation: string): {
     </header>
 
     <main class="content">
+      <nav class="art-tabs" role="tablist" aria-label="Artwork sections">
+        <button class="art-tab active" data-tab="sprites" role="tab" aria-selected="true">Sprites</button>
+        <button class="art-tab" data-tab="screenshots" role="tab" aria-selected="false">Screenshots</button>
+        <button class="art-tab" data-tab="music" role="tab" aria-selected="false">Music</button>
+        <button class="art-tab" data-tab="typography" role="tab" aria-selected="false">Typography</button>
+      </nav>
+
+      <div class="tab-panel active" data-panel="sprites" role="tabpanel">
       <!-- Allies -->
       <section class="category-section">
         <h2 class="category-title">Allies</h2>
@@ -289,7 +311,9 @@ function animationGateFor(character: string, animation: string): {
           </div>
         </div>
       </section>
+      </div><!-- /sprites panel -->
 
+      <div class="tab-panel" data-panel="screenshots" role="tabpanel" hidden>
       <!-- Screenshots — JSON-driven from src/data/screenshots.json.
            Items with draft:true render only for admins (revealed via the
            same client-side tier check the rest of this page uses).
@@ -391,7 +415,44 @@ function animationGateFor(character: string, animation: string): {
           ))}
         </div>
       </section>
+      </div><!-- /screenshots panel -->
 
+      <div class="tab-panel" data-panel="music" role="tabpanel" hidden>
+        <!-- Music — folded in from the former /music page. Drives the global
+             MusicPlayer via music-player:load/play events. -->
+        <section class="category-section">
+          <h2 class="category-title">Music</h2>
+          <p class="section-note">Original compositions for The Chronicles of Nesis.</p>
+          <div class="track-list">
+            {assetIndex.music.map((track, i) => {
+              const gated = GATED_TRACKS.has(track.name);
+              return (
+                <button
+                  class={`track-card track-btn${gated ? " gated" : ""}`}
+                  data-index={i}
+                  data-gated={gated ? "true" : "false"}
+                  data-required-tier={gated ? "initiate" : ""}
+                >
+                  <div class="track-info">
+                    <span class="track-number">{String(i + 1).padStart(2, "0")}</span>
+                    <span class="track-name">{formatTrackName(track.name)}</span>
+                    {gated && <span class="gate-badge">&#128274; Initiate+</span>}
+                  </div>
+                  <span class="play-hint"><span class="hint-play">&#9654; Play</span><span class="hint-active">&#9654; Now Playing</span></span>
+                </button>
+              );
+            })}
+            <div class="track-card locked-card">
+              <div class="track-info">
+                <span class="track-number">??</span>
+                <span class="track-name locked-name">&#128274; More tracks coming soon</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div><!-- /music panel -->
+
+      <div class="tab-panel" data-panel="typography" role="tabpanel" hidden>
       <!-- Typography -->
       <section class="category-section">
         <h2 class="category-title">Typography</h2>
@@ -406,11 +467,13 @@ function animationGateFor(character: string, animation: string): {
           <p class="char-row char-row-symbols">{symbols}</p>
         </div>
       </section>
+      </div><!-- /typography panel -->
     </main>
 
     <Footer theme="heart" />
   </div>
   <script>
+    import assetIndex from "../data/asset-index.json";
     const API = "https://api.allbyte.studio";
     const TIER_RANK: Record<string, number> = {
       default: 0,
@@ -463,6 +526,15 @@ function animationGateFor(character: string, animation: string): {
           }
         });
 
+        // Unlock gated music tracks for the user's tier
+        document.querySelectorAll<HTMLButtonElement>('.track-btn.gated').forEach(btn => {
+          const required = btn.dataset.requiredTier || "initiate";
+          if (tierAtLeast(tier, required)) {
+            btn.classList.remove("gated");
+            btn.querySelector(".gate-badge")?.remove();
+          }
+        });
+
         // Reveal draft Screenshot / Recording cards for admins only.
         // Drafts ship with the static build (gitignored assets live in
         // /captures/ on prod) but are hidden by default CSS. Admin
@@ -477,9 +549,112 @@ function animationGateFor(character: string, animation: string): {
     }
 
     checkTierAndUnlock();
+
+    // === Tabs: SPA-style section switching + URL hash ===
+    const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".art-tab"));
+    const panels = Array.from(document.querySelectorAll<HTMLElement>(".tab-panel"));
+    const VALID = ["sprites", "screenshots", "music", "typography"];
+    function showTab(name: string) {
+      if (!VALID.includes(name)) name = "sprites";
+      tabs.forEach((t) => {
+        const on = t.dataset.tab === name;
+        t.classList.toggle("active", on);
+        t.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      panels.forEach((p) => {
+        const on = p.dataset.panel === name;
+        p.classList.toggle("active", on);
+        p.hidden = !on;
+      });
+    }
+    tabs.forEach((t) =>
+      t.addEventListener("click", () => {
+        const name = t.dataset.tab || "sprites";
+        showTab(name);
+        history.replaceState(null, "", "#" + name);
+      })
+    );
+    const initialTab = (location.hash || "").replace("#", "");
+    if (initialTab) showTab(initialTab);
+    window.addEventListener("hashchange", () => showTab((location.hash || "").replace("#", "")));
+
+    // === Music player wiring (folded in from the former /music page) ===
+    const trackButtons = document.querySelectorAll<HTMLButtonElement>(".track-btn");
+    let musicLoaded = false;
+    function ensureLoaded(index: number) {
+      if (!musicLoaded) {
+        window.dispatchEvent(new CustomEvent("music-player:load", { detail: { tracks: assetIndex.music, index } }));
+        musicLoaded = true;
+      } else {
+        window.dispatchEvent(new CustomEvent("music-player:play", { detail: { index } }));
+      }
+    }
+    function highlightTrack(index: number) {
+      trackButtons.forEach((btn) => btn.classList.toggle("active", Number(btn.dataset.index) === index));
+    }
+    trackButtons.forEach((btn) =>
+      btn.addEventListener("click", () => {
+        if (btn.classList.contains("gated")) {
+          const req = btn.dataset.requiredTier || "initiate";
+          window.alert(`This track is part of the ${req[0].toUpperCase() + req.slice(1)} tier or above.\n\nSubscribe to unlock it.`);
+          return;
+        }
+        const index = Number(btn.dataset.index);
+        ensureLoaded(index);
+        highlightTrack(index);
+      })
+    );
+    window.addEventListener("music-player:track-changed", ((e: CustomEvent) => highlightTrack(e.detail.index)) as EventListener);
+    if (window.__musicPlayerPlaying && window.__musicPlayerIndex != null) highlightTrack(window.__musicPlayerIndex);
   </script>
 </BaseLayout>
 
+<style is:global>
+  /* --- Artwork SPA tabs --- */
+  .art-tabs {
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+    border-bottom: 2px solid #7a6e52; margin-bottom: 1.75rem;
+  }
+  .art-tab {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.2rem; color: #5a4d38;
+    background: none; border: none; border-bottom: 3px solid transparent;
+    padding: 0.5rem 1rem; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -2px; min-height: 44px;
+  }
+  .art-tab:hover { color: #2a2218; }
+  .art-tab.active { color: #2a2218; border-bottom-color: #5a4d38; font-weight: 600; }
+  .tab-panel[hidden] { display: none; }
+
+  /* --- Music track list (folded in from /music) --- */
+  .track-list { display: flex; flex-direction: column; gap: 0.75rem; max-width: 760px; }
+  .track-card {
+    background: #dbd0a0; border: 2px solid #7a6e52; border-radius: 4px;
+    padding: 1rem 1.25rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.15);
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .track-info { display: flex; align-items: baseline; gap: 0.75rem; flex: 1; min-width: 180px; }
+  .track-number { font-family: "Courier New", monospace; font-size: 0.9rem; color: #3a3020; flex-shrink: 0; }
+  .track-name { font-family: "AllByteCustom", Georgia, serif; font-size: 1.25rem; color: #2a2218; }
+  .track-btn { cursor: pointer; transition: background 0.15s, border-color 0.15s; width: 100%; text-align: left; font: inherit; }
+  .track-btn:hover { background: #cec08a; border-color: #5a4d38; }
+  .track-btn.active { background: #cec08a; border-color: #5a4d38; box-shadow: inset 3px 0 0 #5a4d38; }
+  .hint-active { display: none; }
+  .track-btn.active .hint-play { display: none; }
+  .track-btn.active .hint-active { display: inline; }
+  .play-hint { font-family: "AllByteCustom", Georgia, serif; font-size: 0.9rem; color: #3a3020; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+  .track-btn:hover .play-hint, .track-btn.active .play-hint { opacity: 1; }
+  .locked-card { opacity: 0.6; border-style: dashed; }
+  .locked-name { color: #3a3020; font-style: italic; }
+  .track-btn.gated { background: #c5b67e; border-style: dashed; cursor: not-allowed; }
+  .track-btn.gated:hover { background: #b8a872; }
+  .track-btn.gated .track-name { color: #5a4d38; font-style: italic; }
+  .track-btn .gate-badge {
+    font-family: "Courier New", monospace; font-size: 0.75rem; color: #5a4d38;
+    background: rgba(58,48,32,0.12); border: 1px solid rgba(58,48,32,0.35);
+    padding: 0.15rem 0.45rem; border-radius: 3px; margin-left: 0.6rem; letter-spacing: 0.05em; font-weight: 700;
+  }
+</style>
 <style is:global>
   .page {
     min-height: 100dvh;

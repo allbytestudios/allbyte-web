@@ -482,18 +482,26 @@
       <img src="/Flourish.png" alt="" class="flourish flourish-right" />
       <div class="mobile-links">
         <div class="card-wrapper">
-          <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
-            <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
-            <p>Original compositions for The Chronicles of Nesis.</p>
-            <span class="entry-count heart-count">({artCounts.music} tracks)</span>
+          <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
+            <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
+            <p>Sprites, screenshots, music &amp; the ModernGoth typeface.</p>
+            <span class="entry-count heart-count">Free · Initiate+ unlocks all</span>
           </a>
         </div>
         <div class="card-wrapper">
-          <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
-            <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
-            <p>Sprites, pre-rendered backgrounds &amp; the ModernGoth typeface.</p>
-            <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
-          </a>
+          {#if isAdmin(auth.currentUser)}
+            <a href="/walkthrough/" class="link-card heart-card" onmouseenter={playCursor}>
+              <h3>Walkthrough <span class="wt-badge">admin preview</span></h3>
+              <p>A scene by scene published guide to Nesis</p>
+              <span class="entry-count heart-count">Legend · in progress</span>
+            </a>
+          {:else}
+            <div class="link-card heart-card locked" role="note" aria-label="Walkthrough — coming soon, Legend tier">
+              <h3>Walkthrough <span class="lock" aria-hidden="true">🔒</span></h3>
+              <p>A scene by scene published guide to Nesis</p>
+              <span class="entry-count heart-count">Legend · coming soon</span>
+            </div>
+          {/if}
         </div>
       </div>
     </div>
@@ -504,7 +512,7 @@
           <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Devlog <span class="cursor-arrow"></span></h3>
             <p>Engineering, workflow, strategy, narrative &amp; craft posts.</p>
-            <span class="entry-count">({devlogTotal} {devlogTotal === 1 ? "entry" : "entries"})</span>
+            <span class="entry-count">Free · drafts for Hero+</span>
           </a>
         </div>
         <div class="card-wrapper">
@@ -533,16 +541,16 @@
           <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Devlog <span class="cursor-arrow"></span></h3>
             <p>Engineering, workflow, strategy, narrative &amp; craft posts — all in one feed with tag filters.</p>
-            <span class="entry-count">({devlogTotal} {devlogTotal === 1 ? "entry" : "entries"})</span>
+            <span class="entry-count">Free · drafts for Hero+</span>
           </a>
         </div>
       </div>
       <div class="cell heart-bg">
         <div class="card-wrapper">
-          <a href="/music/" class="link-card heart-card" onmouseenter={() => { musicHovered = true; playCursor(); }} onmouseleave={() => musicHovered = false}>
-            <h3>Music <img src={musicHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
-            <p>Original compositions for The Chronicles of Nesis.</p>
-            <span class="entry-count heart-count">({artCounts.music} tracks)</span>
+          <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
+            <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
+            <p>Sprites, screenshots, music &amp; the ModernGoth typeface.</p>
+            <span class="entry-count heart-count">Free · Initiate+ unlocks all</span>
           </a>
         </div>
       </div>
@@ -552,17 +560,25 @@
           <a href="/test/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Dev Console <span class="cursor-arrow"></span></h3>
             <p>Tests, agents, tickets &amp; milestones — live build status at a glance.</p>
-            <span class="entry-count">(public overview · Hero+ for depth)</span>
+            <span class="entry-count">Free overview · Hero+ for depth</span>
           </a>
         </div>
       </div>
       <div class="cell heart-bg">
         <div class="card-wrapper">
-          <a href="/artwork/" class="link-card heart-card" onmouseenter={() => { artworkHovered = true; playCursor(); }} onmouseleave={() => artworkHovered = false}>
-            <h3>Artwork <img src={artworkHovered ? "/BattleChargeRight.gif" : "/BattleChargeRight-still.png"} alt="" class="battle-icon" /> <img src={artworkHovered ? "/leftSword.png" : "/verticalSword.png"} alt="" class="sword-icon" /></h3>
-            <p>Sprites, pre-rendered backgrounds &amp; the ModernGoth typeface.</p>
-            <span class="entry-count heart-count">({artCounts.artwork} spritesheets)</span>
-          </a>
+          {#if isAdmin(auth.currentUser)}
+            <a href="/walkthrough/" class="link-card heart-card" onmouseenter={playCursor}>
+              <h3>Walkthrough <span class="wt-badge">admin preview</span></h3>
+              <p>A scene by scene published guide to Nesis</p>
+              <span class="entry-count heart-count">Legend · in progress</span>
+            </a>
+          {:else}
+            <div class="link-card heart-card locked" role="note" aria-label="Walkthrough — coming soon, Legend tier">
+              <h3>Walkthrough <span class="lock" aria-hidden="true">🔒</span></h3>
+              <p>A scene by scene published guide to Nesis</p>
+              <span class="entry-count heart-count">Legend · coming soon</span>
+            </div>
+          {/if}
         </div>
       </div>
     </div>
@@ -1339,6 +1355,16 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(0, 0, 0, 0.3), 0 2px 3px rgba(0, 0, 0, 0.2);
     position: relative;
     overflow: visible;
+  }
+
+  /* Locked (coming-soon) card — non-admins. Not a link, dimmed. */
+  .heart-card.locked { opacity: 0.72; cursor: default; }
+  .heart-card.locked .lock { font-size: 0.95em; }
+  .wt-badge {
+    font-family: "Courier New", monospace;
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em;
+    background: var(--heart-accent); color: var(--heart-card-bg);
+    padding: 0.1rem 0.4rem; border-radius: 3px; vertical-align: middle;
   }
 
   .heart-card:hover {

@@ -360,6 +360,12 @@ class CaptureSession:
             "--use-angle=d3d11",
             "--enable-features=Vulkan",
             "--disable-infobars",
+            # Let Web Audio start without a click. Godot's HTML5 audio driver
+            # still resumes its AudioContext on the first user gesture, but
+            # this clears the browser-level autoplay block so a single
+            # synthetic gesture (or the title's own audio) isn't fought by
+            # Chromium's policy. Needed for title-hold music capture.
+            "--autoplay-policy=no-user-gesture-required",
         ]
         if headless:
             # Pure headless. No window, no kiosk, no monitor position.
@@ -576,6 +582,57 @@ class CaptureSession:
                 return
         print(f"[run.py] dismiss_title: stayed at Title after {max_attempts} attempts")
 
+    async def run_title_hold(self, duration_s: int) -> None:
+        """Marketing capture of the Title screen itself — no autoplay, no
+        dismissal. AutoPlay sits at Title indefinitely on cold boot (see
+        load_save_fixture docstring), so we just hold there while the
+        recorder rolls: unlock Web Audio with one neutral gesture (Godot's
+        AudioContext won't start its title music without a user gesture),
+        hide the debug overlay, and wait out the duration."""
+        assert self._page is not None
+
+        async def _hud_off():
+            try:
+                await self._page.evaluate(
+                    "() => { const w=document.querySelector('iframe')?.contentWindow;"
+                    " if(w) w._testSetGlobalWorldFlag = JSON.stringify({name:'show_pack_overlay', value:false}); }"
+                )
+            except Exception:
+                pass
+
+        await _hud_off()
+        # Audio gesture (VISIBLE mode only): Godot's AudioContext needs one
+        # user gesture before the title music starts, and visible/gdigrab is
+        # the only mode that records audio. Headless captures no audio (frames
+        # only — music is muxed in post), so we SKIP the click there to avoid
+        # accidentally navigating into a menu and leaving the title screen.
+        headless = os.environ.get("CAPTURE_HEADLESS") == "1"
+        if not headless:
+            iframe = await self._page.query_selector("iframe")
+            if iframe:
+                box = await iframe.bounding_box()
+                if box:
+                    # Click bottom-left corner (empty art, clear of the
+                    # centered menu buttons) to satisfy the gesture without
+                    # advancing. NO Enter key.
+                    await self._page.mouse.click(
+                        box["x"] + box["width"] * 0.06,
+                        box["y"] + box["height"] * 0.92,
+                    )
+            await asyncio.sleep(0.5)
+            scene = await self._page.evaluate(
+                "() => { const f = document.querySelector('iframe'); return f?.contentWindow?.gameState?.scene || ''; }"
+            )
+            if scene and scene != "Title":
+                print(f"[run.py] WARN: title-hold gesture advanced to scene={scene!r}")
+
+        self.t0 = time.monotonic()
+        elapsed = 0.0
+        while elapsed < duration_s:
+            await asyncio.sleep(1.0)
+            elapsed = time.monotonic() - self.t0
+            await _hud_off()
+
     async def enable_autoplay(self) -> None:
         assert self._page is not None
         await self._page.evaluate(
@@ -760,6 +817,11 @@ async def main() -> int:
     parser.add_argument("--persona", default=DEFAULT_PERSONA)
     parser.add_argument("--duration", type=int, default=DEFAULT_DURATION_S)
     parser.add_argument("--save-fixture-url", default=DEFAULT_SAVE_FIXTURE_URL)
+    parser.add_argument(
+        "--mode", choices=["autoplay", "title"], default="autoplay",
+        help="autoplay: drive gameplay (default). title: hold on the Title "
+             "screen with music for a marketing showcase clip.",
+    )
     args = parser.parse_args()
 
     timeline_path = Path(os.environ.get("TIMELINE_PATH", "/home/pwuser/out/capture.timeline.json"))
@@ -823,9 +885,13 @@ async def main() -> int:
                 # Brief settle so the recorder is producing frames
                 # before autoplay starts.
                 await asyncio.sleep(0.5)
-            if args.fixture:
-                await session.load_fixture()
-            await session.run(args.duration, save_fixture_url=args.save_fixture_url)
+            if args.mode == "title":
+                # Marketing showcase: hold on the Title screen with music.
+                await session.run_title_hold(args.duration)
+            else:
+                if args.fixture:
+                    await session.load_fixture()
+                await session.run(args.duration, save_fixture_url=args.save_fixture_url)
         finally:
             if recorder:
                 if isinstance(recorder, CDPScreencastRecorder):

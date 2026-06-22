@@ -53,7 +53,15 @@ param(
     # Use this for batch / unattended captures that shouldn't disrupt
     # the desktop. Audio capture is intentionally skipped in headless —
     # the visible mode is the path for marketing-grade audio.
-    [switch]$Headless
+    [switch]$Headless,
+    # -TitleScreen captures the Title screen itself (with music) as a single
+    # whole-clip marketing showcase — no autoplay, no save fixture. Defaults
+    # to a 30s hold. The entire recording becomes one clip in the marketing
+    # queue (clip_extractor whole-clip mode).
+    [switch]$TitleScreen,
+    # -NoUpload keeps the capture local (skips the S3 push) so it stays a
+    # draft reviewable at the dev console's /test/marketing-queue/.
+    [switch]$NoUpload
 )
 
 $ErrorActionPreference = "Stop"
@@ -85,8 +93,21 @@ $captureName = "capture_$ts"
 $mp4Path = Join-Path $outDirAbs "$captureName.mp4"
 $timelinePath = Join-Path $outDirAbs "$captureName.timeline.json"
 
+# Title-screen showcase mode: hold on Title with music, emit the whole
+# recording as one clip. No autoplay, no save fixture.
+$Mode = "autoplay"
+if ($TitleScreen) {
+    $Mode = "title"
+    $SaveFixtureUrl = ""
+    if (-not $PSBoundParameters.ContainsKey('DurationS')) { $DurationS = 30 }
+    $env:CAPTURE_WHOLE_CLIP = "1"
+    $env:CAPTURE_CLIP_LABEL = "title-screen"
+} else {
+    $env:CAPTURE_WHOLE_CLIP = ""
+}
+
 Write-Host "[capture] session=$captureName"
-Write-Host "[capture] target=$TargetUrl persona=$Persona duration=${DurationS}s"
+Write-Host "[capture] mode=$Mode target=$TargetUrl persona=$Persona duration=${DurationS}s"
 
 # Pass capture params via env so run.py can manage ffmpeg lifecycle
 # itself — it knows when Chromium's window exists with the right title,
@@ -123,7 +144,7 @@ try {
     # it as an empty string → run.py dismisses the Title and starts a new
     # game from the beginning. This is the only way to request a from-start
     # capture through the wrapper.
-    & python $runPy "--target-url=$TargetUrl" "--save-fixture-url=$SaveFixtureUrl" "--persona=$Persona" "--duration=$DurationS"
+    & python $runPy "--target-url=$TargetUrl" "--save-fixture-url=$SaveFixtureUrl" "--persona=$Persona" "--duration=$DurationS" "--mode=$Mode"
     $runExit = $LASTEXITCODE
     Write-Host "[capture] run.py exit=$runExit"
 } finally {
@@ -156,7 +177,11 @@ Write-Host "[capture] drafting captions"
 & python (Join-Path $repoRoot "tests\autoplay-capture\caption_drafter.py")
 
 # --- S3 upload (skips cleanly if no AWS creds) ----------------------------
-Write-Host "[capture] uploading to S3"
-& python (Join-Path $repoRoot "tests\autoplay-capture\upload_to_s3.py")
+if ($NoUpload) {
+    Write-Host "[capture] skipping S3 upload (-NoUpload) - review locally at /test/marketing-queue/"
+} else {
+    Write-Host "[capture] uploading to S3"
+    & python (Join-Path $repoRoot "tests\autoplay-capture\upload_to_s3.py")
+}
 
 Write-Host "[capture] done - MP4 at $mp4Path"

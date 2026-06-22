@@ -143,6 +143,51 @@ def main() -> int:
     ))
     session_duration = float(meta.get("duration_s", 0))
 
+    # Whole-clip mode (title/showcase captures): there are no combat events
+    # to cluster on — the entire recording IS the clip. Emit it as a single
+    # reviewable clip so it lands in the marketing queue. Used by the
+    # title-hold capture path (run.py --mode title).
+    if os.environ.get("CAPTURE_WHOLE_CLIP") == "1":
+        label = os.environ.get("CAPTURE_CLIP_LABEL", "showcase")
+        full = session_duration if session_duration > 0 else MAX_CLIP_S
+        clip_start = 0.0
+        clip_duration = min(full, MAX_CLIP_S) if MAX_CLIP_S else full
+        clip_end = clip_start + clip_duration
+        clip_name = "clip_001"
+        out_mp4 = clips_dir / f"{clip_name}.mp4"
+        out_thumb = clips_dir / f"{clip_name}.thumb.png"
+        out_meta = clips_dir / f"{clip_name}.json"
+        print(f"[clip] whole-clip ({label}) 0.0s..{clip_duration:.1f}s -> {out_mp4.name}")
+        _ffmpeg_clip(mp4_path, out_mp4, clip_start, clip_duration)
+        _ffmpeg_thumbnail(mp4_path, out_thumb, clip_duration / 2)
+        clip_meta = {
+            "name": clip_name,
+            "source_mp4": mp4_path.name,
+            "label": label,
+            "start_s": clip_start,
+            "end_s": clip_end,
+            "duration_s": clip_duration,
+            "event_count": 0,
+            "scene_hint": label,
+            "persona": meta.get("persona"),
+            "clip_window": {"start_s": clip_start, "end_s": clip_end, "duration_s": clip_duration},
+        }
+        out_meta.write_text(json.dumps(clip_meta, indent=2))
+        (clips_dir / "manifest.json").write_text(json.dumps({
+            "source_mp4": mp4_path.name,
+            "source_timeline": timeline_path.name,
+            "persona": meta.get("persona"),
+            "session_duration_s": session_duration,
+            "clips": [{
+                "name": clip_name,
+                "mp4": out_mp4.name,
+                "thumb": out_thumb.name,
+                "meta": out_meta.name,
+            }],
+        }, indent=2))
+        print(f"[clip] done: 1 whole-clip written to {clips_dir}")
+        return 0
+
     # Filter out the AutoPlay startup window — Arc-known 22s before first
     # movement; clips taken from that window are static.
     relevant = [e for e in events if e["t"] >= startup_skip_s]

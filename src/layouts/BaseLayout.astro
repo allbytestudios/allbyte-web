@@ -8,12 +8,21 @@ import UpdateOverlay from "../components/UpdateOverlay.svelte";
 interface Props {
   title?: string;
   description?: string;
+  image?: string;
+  type?: string;
 }
 
 const {
   title = "AllByte Studios",
   description = "Indie game studio - Play Chronicles of Nesis, Read the Devlog, Browse the Asset Archive",
+  image = "/og-image.jpg",
+  type = "website",
 } = Astro.props;
+
+// Absolute URLs for link-preview cards (OG/Twitter require absolute, https).
+const SITE = "https://allbyte.studio";
+const canonical = new URL(Astro.url.pathname, SITE).href;
+const imageAbs = new URL(image, SITE).href;
 ---
 
 <!doctype html>
@@ -24,6 +33,23 @@ const {
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Open Graph + Twitter link-preview cards. Platforms (Bluesky, Threads,
+         X, Discord, etc.) render a thumbnail card from these when a link is
+         shared. Per-page overridable via the title/description/image props. -->
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content="AllByte Studios" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageAbs} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageAbs} />
 
     <!-- PWA: manifest + theme color drive Android install eligibility and
          the address-bar tint on mobile. -->

@@ -50,6 +50,25 @@ const tiers = [
     <PageHeader theme="engine" title="Support the Studio" backHref="/" backLabel="Home" />
 
     <main class="content">
+      <section class="support-intro">
+        <p class="intro-lead">
+          <em>The Chronicles of Nesis</em> is free to play, and it stays free
+          through the Alpha release.
+        </p>
+        <p>
+          I built it solo, and I host it myself on AWS &mdash; right now about
+          <strong>$15 a month</strong>. If you&rsquo;d like to help keep it online,
+          becoming a patron is the most direct way to keep the servers running.
+        </p>
+        <p class="intro-value">
+          Patrons (<strong>Initiate</strong> and up) also unlock everything after
+          Alpha as I port it in &mdash; so your support keeps the game online today
+          <em>and</em> gets you what&rsquo;s coming next. Curious where it goes?
+          Here&rsquo;s the <a href="/self-hosting-with-claude/">self-hosted stack and
+          its costs</a>.
+        </p>
+      </section>
+
       <div class="tiers">
         {tiers.map(tier => (
           <div class:list={["tier-card", { featured: tier.featured }]} style={`--tier-color: ${tier.color}`}>
@@ -128,6 +147,38 @@ const tiers = [
     padding: 2.5rem 1.5rem;
     width: 100%;
     box-sizing: border-box;
+  }
+
+  .support-intro {
+    max-width: 46rem;
+    margin: 0 auto 2.5rem;
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .support-intro p {
+    color: rgba(224, 231, 255, 0.85);
+    margin: 0 0 1rem;
+  }
+
+  .support-intro .intro-lead {
+    font-size: 1.25rem;
+    color: #e0e7ff;
+  }
+
+  .support-intro .intro-value {
+    border-left: 3px solid #a7f3d0;
+    padding-left: 1rem;
+    text-align: left;
+    color: #e0e7ff;
+  }
+
+  .support-intro strong {
+    color: #fff;
+  }
+
+  .support-intro a {
+    color: #a7f3d0;
   }
 
   .tiers {

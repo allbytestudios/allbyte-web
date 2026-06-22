@@ -2,6 +2,19 @@
   "_comment": "Recordings gallery for the /artwork/ page. Items with draft:true are admin-only visible. Items with src pointing at /captures/recordings/... play from S3 via CloudFront; once youtube_id is populated, the page uses a YouTube embed instead. Proposed items (proposed:true) don't have files yet — they're AppC pitch suggestions waiting for the autoplay-capture pipeline. On owner approval via the marketing-queue UI (POST /api/marketing/approve-to-artwork), the clip MP4 + thumbnail are copied from /captures/latest/ to the durable /captures/recordings/ prefix and a new entry is appended here with draft:true. Commit the file to publish.",
   "recordings": [
     {
+      "id": "capture-20260622-title-screen",
+      "title": "The Chronicles of Nesis — Title Screen",
+      "description": "The opening title screen: the quiet starting village of Larian Valley under drifting cloud shaders, scored by the main theme.",
+      "scene": "Title",
+      "category": "atmosphere",
+      "duration_s": 25,
+      "src": "https://allbyte.studio/captures/recordings/capture-20260622-title-screen.mp4",
+      "thumbnail": "https://allbyte.studio/captures/recordings/capture-20260622-title-screen.thumb.png",
+      "draft": false,
+      "captured_at": "2026-06-22T13:41:00Z",
+      "source_clip": "clip_001"
+    },
+    {
       "id": "proposal-cloud-shadows-demo",
       "title": "Cloud shadows over Laria",
       "description": "30-second loop showing the parallax cloud shadows passing over hill props in Laria-MainSquare. Calm atmosphere reel — no combat, just the visual feature.",

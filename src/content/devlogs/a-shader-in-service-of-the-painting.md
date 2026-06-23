@@ -6,7 +6,7 @@ category: "craft"
 devlog: "chronicles"
 tags: ["godot", "shaders", "art", "craft", "graphics"]
 heroImage: "/og-image.jpg"
-draft: true
+draft: false
 ---
 
 I handcrafted the clouds for the title screen and liked how they scrolled across the sky. But I wanted to add one more thing: if you look at any part of a cloud, it should slowly distort and shift — so slowly your mind almost doesn't register it happening. That called for a shader, and I figured expanding on the existing cloud artwork (rather than replacing it) wouldn't be too crazy.

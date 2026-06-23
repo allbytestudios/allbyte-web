@@ -5,7 +5,7 @@ import { getCollection } from "astro:content";
 import assetIndex from "../data/asset-index.json";
 import spriteGifs from "../data/sprite-gifs.json";
 
-const allPosts = (await getCollection("devlogs")).filter((p) => !p.data.draft);
+const allPosts = (await getCollection("devlogs")).filter((p) => !p.data.draft && !p.data.unlisted);
 const devlogTotal = allPosts.length;
 const artCounts = {
   music: assetIndex.music.length,

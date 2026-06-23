@@ -6,6 +6,7 @@ category: "engineering"
 devlog: "godot-and-claude"
 tags: ["mcp", "observability", "agents", "opentelemetry", "dashboard", "architecture"]
 draft: true
+unlisted: true
 ---
 
 <!--

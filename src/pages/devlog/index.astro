@@ -13,6 +13,7 @@ const DEVLOG_LABELS: Record<string, string> = {
 };
 
 const posts = (await getCollection("devlogs"))
+  .filter((p) => !p.data.unlisted)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 

@@ -13,6 +13,9 @@ const devlogs = defineCollection({
     tags: z.array(z.string()).default([]),
     heroImage: z.string().optional(),
     draft: z.boolean().optional().default(false),
+    // Keep the post's page reachable by URL but hide it from every listing
+    // (devlog index + landing count). For posts parked indefinitely.
+    unlisted: z.boolean().optional().default(false),
   }),
 });
 

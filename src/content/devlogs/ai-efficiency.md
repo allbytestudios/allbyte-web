@@ -6,6 +6,7 @@ category: "engineering"
 devlog: "studio"
 tags: ["claude", "efficiency", "tokens", "workflow", "ai-pair-programming"]
 draft: true
+unlisted: true
 ---
 
 Two weeks into working with my four-agent AI team ([Arc, Nix, Vera, Port](/devlog/arc-and-the-leads/)), Arc proposed a workflow change: **the drain pattern**.

@@ -1,0 +1,23 @@
+Scope of the MIT license (asset carve-out)
+==========================================
+
+The MIT License in `LICENSE` applies to the SOURCE CODE of this repository —
+the Astro / Svelte / TypeScript / JavaScript application code, the Python and
+shell scripts (including everything under `scripts/`), and the infrastructure
+and build configuration. As used in the MIT terms, "the Software" means this
+source code.
+
+The MIT license does NOT apply to the creative and proprietary works
+distributed in this repository. Those are © 2026 AllByte Studios, all rights
+reserved:
+
+  - Art, sprites, and images (e.g. `marketingImages/`, `public/*.png` /
+    `public/*.jpg`, `public/assets/`, and any game artwork)
+  - Music and audio (e.g. `public/assets/music/`)
+  - Fonts, including the ModernGoth typeface (`public/fonts/`)
+  - The compiled game build and its generated data (`public/godot/`, and the
+    game-data JSON under `src/data/`)
+  - Written content: devlog posts and site copy (`src/content/`)
+
+These assets are included only so the site can be built and run; they are not
+licensed for reuse.

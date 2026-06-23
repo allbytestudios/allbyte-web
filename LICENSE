@@ -1,28 +1,3 @@
-Scope of this license
-=====================
-
-The MIT License below applies to the SOURCE CODE of this repository — the
-Astro / Svelte / TypeScript / JavaScript application code, the Python and shell
-scripts (including everything under `scripts/`), and the infrastructure and
-build configuration.
-
-It does NOT apply to the creative and proprietary works distributed in this
-repository, which are © 2026 AllByte Studios, all rights reserved:
-
-  - Art, sprites, and images (e.g. `marketingImages/`, `public/*.png` /
-    `public/*.jpg`, `public/assets/`, and any game artwork)
-  - Music and audio (e.g. `public/assets/music/`)
-  - Fonts, including the ModernGoth typeface (`public/fonts/`)
-  - The compiled game build and its generated data (`public/godot/`, and the
-    game-data JSON under `src/data/`)
-  - Written content: devlog posts and site copy (`src/content/`)
-
-These assets are included only so the site can be built and run; they are not
-licensed for reuse. As used in the MIT terms below, "the Software" means the
-source code only, not these creative works.
-
----
-
 MIT License
 
 Copyright (c) 2026 AllByte Studios

@@ -28,4 +28,4 @@ Every push to `main` auto-deploys to [allbyte.studio](https://allbyte.studio). S
 Source code is [MIT](./LICENSE). The creative and proprietary works in this
 repo — art, sprites, music, fonts (including ModernGoth), the compiled game
 build, and written devlog/site content — are © AllByte Studios, all rights
-reserved. See the scope carve-out at the top of [LICENSE](./LICENSE).
+reserved. See [NOTICE](./NOTICE) for the exact scope carve-out.

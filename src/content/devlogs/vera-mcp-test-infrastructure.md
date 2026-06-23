@@ -1,11 +1,11 @@
 ---
-title: "Five Tiers and a Tool Surface: Testing a Godot Web Game"
+title: "Testing a Godot Web Game: Five Tiers and a Tool Surface"
 description: "The test framework is the real leverage behind building a game with AI — not the AI. Five test tiers, from microsecond unit checks to ten-minute story-arc playthroughs, and the nine-tool MCP surface my test lead drives them through."
 pubDate: 2026-06-23T18:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
 tags: ["testing", "mcp", "playwright", "godot", "quality-gates", "ai-pair-programming"]
-draft: true
+draft: false
 ---
 
 The thing that lets me build a game this fast with an AI isn't the AI. It's the test loop.

@@ -52,7 +52,3 @@ All to say — *why build a website?* I'm trying to do a lot of things with this
 Here's exactly that loop in action — a bug reported and live-fixed in three minutes with Godot, Claude, and Playwright:
 
 <iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/l3B92iLAXKM" title="Using Godot, Claude, and Playwright: report a bug and get a live fix in 3 minutes" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius: 6px; margin: 1rem 0;"></iframe>
-
-It's f'n cool.
-
-I really hope it works.

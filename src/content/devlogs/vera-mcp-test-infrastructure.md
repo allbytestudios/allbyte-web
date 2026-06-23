@@ -1,216 +1,132 @@
 ---
-title: "Vera-MCP: When a Custom Test Framework Outgrew Its Shell Scripts"
-description: "I built a four-tier test framework so AI agents could contribute at every level. Then I built an MCP server on top because the framework had complexity the shell wrappers couldn't carry. Tests, tiers, and the F1 phrase classifier that picks the right test shape from a ticket."
-pubDate: 2026-04-27T20:30:00Z
+title: "Five Tiers and a Tool Surface: Testing a Godot Web Game"
+description: "The test framework is the real leverage behind building a game with AI — not the AI. Five test tiers, from microsecond unit checks to ten-minute story-arc playthroughs, and the nine-tool MCP surface my test lead drives them through."
+pubDate: 2026-06-23T18:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
 tags: ["testing", "mcp", "playwright", "godot", "quality-gates", "ai-pair-programming"]
 draft: true
 ---
 
-<!--
-DRAFT NOTE — Vera-MCP deep-dive (post 3 of 4). Folds in the previously-drafted
-test-framework-four-tiers.md content as the framework-backstory section.
-Old draft can be deleted once this post is approved for promotion.
-Series:
-  1. Why build an MCP server? Why build three? (hub)
-  2. Port-MCP — Godot / web-export
-  3. (this) Vera-MCP — Test infrastructure
-  4. Arc-MCP — Orchestration
--->
+The thing that lets me build a game this fast with an AI isn't the AI. It's the test loop.
 
-Writing tests by hand has a natural ceiling. Writing tests with an AI agent that never gets bored has a very different ceiling — but only if the test framework itself is shaped so the agent can actually contribute at every level. Early on, Vera (my test lead) would write ten unit tests for a new scene and then shrug at anything bigger. The framework didn't give her anywhere to put integration or end-to-end work. So we built one.
+If an agent can make a change and get a reliable answer to "did that break anything?" in minutes, it can write code wicked fast. If it can't, you're back to one of two bad options: a human verifies every change by hand (slow), or the AI ships code nobody checked (risky). The test framework is what turns the first option into the third one — fast *and* safe. So the framework is the actual leverage, and it's worth shaping deliberately.
 
-It has four tiers now. Each has a specific job, a specific runtime budget, and a specific trigger. None of them overlap, and together they replace the one thing I care about catching: *a regression that reaches the live web build*.
+This is how it's shaped: five test tiers, and the tool surface my test lead — an agent named Vera — drives them through.
 
-This post is the third in a [four-part series on MCP](/devlog/why-build-mcp-and-why-three/). The first framed when MCP earns its complexity and why I split one server into three. This one covers the test-infrastructure server — Vera-MCP — and the framework story that led to it.
+## Why a browser game is a good test target
 
-## The four tiers
+The game ships as a Godot 4 web export, and that turns out to be a better automated-testing target than native Godot tests:
 
-The shape that worked, after several iterations:
+- **Real browser, real rendering.** WebGL shaders actually compile, the audio context actually fights the autoplay policy, input actually flows through the DOM. Native tests skip all of that and ship the bugs to real players.
+- **JavaScript interop is a free test bridge.** The game publishes its state to `window.gameState` every frame and reads commands back from `window._test*` hooks. No native harness gives you that shape for nothing.
+- **Screenshots don't lie.** Playwright captures the real WASM render output, pixel for pixel, so visual regressions are catchable.
+- **It validates the deploy path.** A test that passes against a locally-served build is exercising the same code that ships to allbyte.studio.
 
-### Tier 1 — Unit (GUT)
+All of that only compounds if the suite stays fast, organized, and writable. That's what the tier model is for.
 
-**Runtime:** ~8ms per test. **Where:** Godot GUT framework. **Scope:** pure functions, data transforms, small isolated classes.
+## The five tiers
 
-These are the cheap ones. They don't load scenes, don't touch the filesystem, don't spin up autoloads. Vera writes most of them first, alongside the ticket's success criteria, before Nix starts the implementation. When they fail, the cause is usually a single line.
+The core insight: most tests don't care *how you reached* a context — they care *what happens when you do X to it*. Treating "reach the context" as part of the test, via live gameplay setup, is expensive, duplicated everywhere, and a huge flakiness surface. Treating it as a separate, cheap concern solves nearly every scaling problem. The five tiers are ordered by exactly that — how expensive and how realistic the setup is, fastest and most isolated first.
 
-The bottom of the pyramid has to be free, or nothing above it earns its runtime.
+### Tier 1 — Unit (pure GDScript)
 
-### Tier 2 — Integration (scene-tree)
+**Runtime:** microseconds to milliseconds. **Scope:** pure class methods executed in isolation — no `SceneTree`, no autoloads, no scene. Helper math, static methods, class invariants.
 
-**Runtime:** ~100ms–1s per test. **Where:** GUT with scene tree. **Scope:** scene loading, autoload interactions, event bus, save/load round-trips.
+These are the free ones. They run through GUT on desktop headless. In practice this tier stays small, because most interesting GDScript invariants need at least a tree — which is the next tier.
 
-These tests instantiate real scenes and drive them through the event system. They catch the bugs unit tests can't see: an autoload race, a signal wired to the wrong handler, a save schema that silently drops a field.
+### Tier 2 — Engine-native headless (the fast inner loop)
 
-### Tier 3 — Playwright over WASM
+**Runtime:** ~8–9s cold start, then nearly free per additional assertion. **Scope:** a script that drives real Godot 4 headless against the game — no browser, no WASM, no PCK rebuild. Autoload presence, DataStore parses, signal wiring, save-schema round-trips.
 
-**Runtime:** 1–20s per test. **Where:** Playwright driving the Godot HTML5 export in a headless browser. **Scope:** the actual web build, with the actual TestBridge injecting inputs and reading state.
+The win here isn't raw cold-start time (Playwright amortizes that too). The win is that editing a `.gd` file lets a Tier 2 test run *immediately* — no `redeploy_web.sh` round-trip — and you get many assertions per cold start, with no Chrome zombies and no port races. It's the tier an agent lives in while iterating.
 
-This tier is the firewall between "works in the Godot editor" and "works on allbyte.studio". The web export has its own failure modes — SharedArrayBuffer headers, WASM memory limits, autoload init order under the browser's async loader — that Tier 1 and 2 can't touch. Every Tier 3 test runs the actual shipped build in the actual browser.
+### Tier 3 — Scene-fixture (WASM) — the default
 
-Port wrote the TestBridge; Vera writes the test shapes against it.
+**Runtime:** 1–3s per test. **Scope:** the actual web build running in a headless browser, with state reached one of two cheap ways:
 
-### Tier 4 — Happy-path playthrough
+- **Scene-based** — a tiny scene checked into `TestScenes/`, built only to exercise one subsystem. A movement room with four walls and a controller; a sprite-matrix scene that validates fifty sprites in one screenshot pass. The scene *is* the world, so it's perfectly deterministic and flat-scaling: a hundred tests in a scene pay the same setup as one.
+- **Save-fixture** — a JSON save state, checked into git, injected straight into a slot. For when the subject genuinely needs real game state (a specific event condition, a real cutscene aftermath). The harness never models the save schema; the game owns it, and a regenerate script re-captures fixtures when the schema moves.
 
-**Runtime:** minutes per run. **Where:** Playwright driving the web build like a player. **Scope:** *can a user actually play the game, start to finish on a defined path, without getting stuck?*
+This is where 60–70% of tests should live. Most of the suite's leverage is here.
 
-This is the newest tier and the one that changed how I think about "done." Tiers 1–3 can all pass while the game is unplayable — a menu option lands on the wrong scene, a required dialogue is skipped on some path, a boss fight softlocks if the player picks a particular loadout. The playthrough tier catches that because it literally plays the game.
+### Tier 4 — Live traversal + save/load (WASM)
 
-It runs a scripted-but-realistic path: launch the web build, go through the intro, make the expected player choices, walk the expected route, interact with the expected NPCs, and end on a known beat. Anything that would stop a real first-time player stops the test. No assertion scripting needed — if the scene graph wedges or the input queue stalls, the test stalls.
+**Runtime:** 15–30s per test. **Scope:** the full player-facing flow, end to end — boot, new game, walk out the door, room-to-room, a real save/load round-trip through the actual menu. These are *canaries*: maybe 5–10 across the whole suite. They're the hardest tests to keep green, by nature, so most things that feel like a Tier 4 test should really be a Tier 3 one with state set via a hook or fixture.
 
-> **This is essentially an acceptance test.** When Tier 4 passes, the milestone is releasable.
+### Tier 5 — Playthrough + events (WASM)
 
-The playthrough doesn't run on every ticket. It runs on every milestone release candidate, and it's what gates a push to production.
+**Runtime:** 2–10 minutes per section. **Scope:** playing through an actual slice of the story — advancing dialogue, walking between scenes, firing events in sequence, like a real player. Tier 4 asks "does this one traversal work?"; Tier 5 asks "does a *multi-scene story arc* cohere?" There are only a few of these, one per story section, and they run last.
 
-### Why four and not three
+> **This is the acceptance tier.** When the Tier 5 sections pass, the milestone is releasable. It's what gates a push to production.
 
-The old shape was three tiers and a lot of hope. Tier 3 tests exercised *scenes* but never a *playthrough*; the assumption was that if every scene worked in isolation, stringing them together would too. That assumption broke often enough — save state carrying wrong flags across scenes, dialogue branches that only misbehave after a specific earlier choice — that I stopped trusting a green Tier 3 run as "ship it."
+### Picking a tier
 
-Adding Tier 4 split the question into two cleaner ones:
-- **Does each piece work?** — Tiers 1–3
-- **Does the whole thing cohere into a game a player can finish?** — Tier 4
+The rule is a ladder — take the first one that works: pure method with no engine? Tier 1. Assertable against autoload/DataStore without a browser? Tier 2. Exercisable in an isolated test scene? Tier 3 (scene). Needs real game state? Tier 3 (save-fixture). Verifying one traversal or a save/load round-trip? Tier 4. Verifying a story arc plays through? Tier 5.
 
-Both answers are binary, both are automated, neither has to compromise for the other.
+This replaced an older four-tier model that carried a parallel "Shape A/B/C/D" vocabulary alongside it. Collapsing both into a single tier axis killed a recurring tax — *which bucket is this?* — that the agents (and I) kept paying. One axis, five rungs, no overlap.
 
-## The pain that surfaced at scale
+## The friction that surfaced at scale
 
-The framework above is a structure. Living inside it, day after day, surfaced friction the structure didn't predict.
+The tier model is a structure. Living inside it, day after day, surfaced friction the structure didn't predict — and an AI hits that friction roughly ten times faster than a human, because it never gets bored and just produces ten times the output across every place where the framework is soft.
 
-**Test scaffolding was repetitive.** Every new test started from a near-identical template: imports, fixture setup, a TestBridge handle, the assertion shape that matched the tier. Vera would copy a similar test, rename, edit. Sometimes she'd copy the wrong tier's template. Sometimes she'd forget the marker. The framework rewarded uniformity but didn't enforce it; the agent had to remember.
+- **Scaffolding was repetitive.** Every new test started from a near-identical template — imports, fixture wiring, a TestBridge handle, the assertion shape for its tier. Vera would copy a similar test and edit. Sometimes the wrong tier's template. Sometimes a forgotten marker.
+- **Marker audits were easy to miss.** Tests need tier markers so the runner can filter by speed. Without them, everything runs in the slow bucket; with the wrong one, a test runs in the wrong tier. Caught by hand, mostly.
+- **`test_index.json` was hand-maintained.** A registry mapping test IDs to paths and tiers, edited by hand, validated by nobody.
+- **Tier-aware running was a bash-flag dance.** "Run the menu subsystem's Tier 3 tests" meant remembering marker syntax, a file glob, fail-fast, last-failed, cache-disable flags — three or four invocations per regression cycle, each subtly different.
+- **Parsing pytest stdout was the worst of it.** The most frequent operation is "run this, find the failure." Pytest's output is human-friendly, which means programmatically scraping `FAILED` lines and tracebacks is neither hard nor reliable — and a chatty session pushes the real failure out of the `tail` window.
+- **Coverage was a manual cross-reference.** Every ticket names the test that should validate each success criterion. Nobody was checking those tests existed. Some did; some pointed at files that were never written.
 
-**Marker audit was easy to miss.** Tier 1 and Tier 2 tests need pytest markers (`@pytest.mark.tier1`, `@pytest.mark.tier2`) so the runner can filter by speed. Without markers, the runner runs everything; with the wrong markers, tests run in the wrong tier. Vera caught most marker mistakes by hand. Sometimes she didn't.
+None of this is unique to AI-driven testing. Any team at scale hits it. The agent just hits it sooner and harder. The fix was a tool surface that actually knows about the framework.
 
-**`test_index.json` was hand-maintained.** A separate registry mapping test IDs to file paths, tiers, and runner-tier hints. The dashboard reads it; the runner consumes it. Every new test required an `test_index.json` update, written by hand, validated by no one.
+## Vera-MCP — the surface on top
 
-**Tier-aware running was a dance of bash flags.** "Run Tier 1 tests for the menu subsystem" meant `pytest -m tier1 WebTests/test_menu*.py`. The flags worked but they're memory tax — Vera had to remember the marker syntax, the file glob, the `-x` for fail-fast, the `--lf` for last-failed, the `-p no:cacheprovider` to avoid stale cache. Every regression cycle was three or four bash invocations with subtly different flag sets.
+Nine tools, scoped to the test domain, each removing a specific item from that list. They're delivered as a private MCP server the agents call instead of raw bash.
 
-**Pytest stdout parsing was the bash-ratio winner.** Vera's most-frequent operation was "run this test, find the failure." Pytest's terminal output is human-friendly. Programmatically grepping for `FAILED` lines, extracting tracebacks, mapping screenshot paths back to test IDs — none of that is hard, none of it is reliable. Every chatty test session pushed the actual failure marker out of the `tail -50` window.
+**Authoring.** `test_scaffold(ticket_id)` reads a ticket's title, description, and success criteria, runs them through a small phrase classifier to infer the right tier and shape, and returns a fully-templated test file — imports, fixture wiring, the assertion skeleton, the right markers, a stub per declared criterion. The classifier doesn't have to be smart, just consistent; it lands the right shape on the first pass about 90% of the time, and wrong picks get caught at review.
 
-**Coverage was a manual cross-reference.** Each ticket had a `successCriteria.testPath` field naming the test that should validate that criterion. No one was checking that the named tests existed. Some did. Some didn't. Some pointed at files that hadn't been written yet. The list of unmet criteria was Vera's mental model, not a queryable artifact.
+**Hygiene.** `test_marker_audit` walks the suite and reports untagged tests, double-tagged tests, mis-tiered tests (a "tier 1" that secretly loads a scene and runs 800ms), and overall tier balance. `test_index_op` does structured, schema-validated, atomic CRUD on the registry so nobody hand-edits it. `xfail_manifest` scans every test file for its test / xfail / skip counts and returns the inventory up front — it front-loads what used to be the agent's whole triage discovery phase into one call.
 
-These pains aren't unique to AI-driven testing. Any team writing tests at scale hits them. AI agents just hit them ten times faster, because the agent doesn't get fatigued and bored — it just produces ten times as much output for ten times as many places where the framework's softness matters.
+**Running.** `test_run_by_tier({tier, glob, failed_only})` is the canonical tier-filtered run — the bash-flag dance, gone. `pick_tests` takes the changed files plus a declared change tier and a wall-time budget and returns the ordered set of tests to run as a regression gate, dropping lower-priority ones when the budget's blown. And `playwright_run` is the one I lean on most: it wraps pytest with a JSON report and returns a structured envelope instead of stdout to scrape.
 
-The right shape was a tool surface that knew about the framework. So I built one.
-
-## Vera-MCP — the surface that emerged
-
-Six tools, scoped to the test-infrastructure domain. Each one removes a specific pain from the list above.
-
-### `test_scaffold` — generate the right shape from a ticket
-
-Most tests live in one of four shapes. Shape A is a pure unit test — no scene tree, no fixtures beyond a couple of constructors. Shape B is an integration test that loads a save fixture into a specific scene and asserts post-load state. Shape C is a live-traversal test that drives the game through a sequence of inputs and reads state at checkpoints. Shape D is the playthrough scaffold for Tier 4.
-
-Picking the wrong shape is the most common test-writing mistake. So `test_scaffold` infers the shape from the ticket: it reads the ticket's title, description, success criteria, and runs them through an F1 phrase classifier — a small set of keyword-and-phrase rules that map ticket language onto shape selection. "Verify save survives reload" → Shape B. "Player walks from X to Y and dialogue Z fires" → Shape C. "Compute X correctly given Y" → Shape A. The classifier doesn't have to be smart; it has to be consistent. Wrong-shape selections are caught at code review, but the right one shows up about 90% of the time on the first pass.
-
-The agent calls `test_scaffold(ticket_id)` and gets back a fully-templated test file with imports, fixture wiring, the assertion skeleton matching the shape, the right markers, and a stub for each success criterion the ticket declared. Vera fills in the assertions; the boilerplate is gone.
-
-### `test_marker_audit` — enforce tier balance and prevent overlap
-
-The audit walks the test directory and reports:
-- Tests with no tier marker (silently running in the slow-default bucket).
-- Tests with multiple tier markers (ambiguous; runner picks one nondeterministically).
-- Tests whose marker doesn't match their actual runtime profile (a "tier1" test that loads a scene tree and runs for 800ms is mis-tiered).
-- Tier balance — how many tests are in each tier, whether any subsystem is missing tier-2 coverage, whether the pyramid shape is being maintained.
-
-This used to be Vera's mental load. Now it's a periodic audit she can run at end-of-session, and a CI gate that flags drift before it accumulates.
-
-### `test_index_op` — structured CRUD on the registry
-
-The agents stop hand-editing `test_index.json`. `test_index_op({action: "add", id, path, tier, ...})` validates the entry against a schema, deduplicates against existing entries, writes atomically. The dashboard reads the same file and gets a cleaner, never-corrupt view.
-
-### `test_run_by_tier` — the bash-flag-dance, gone
-
-`test_run_by_tier({tier: 2, glob: "menu*", failed_only: false})` becomes the canonical way to run a tier-filtered subset. It wraps `playwright_run` (below) with the right marker and file-glob arguments. No more remembering `-m tier2` vs `--marker tier2` (different across pytest versions). No more `-p no:cacheprovider`. No more `tail -50`-truncated output.
-
-### `playwright_run` — structured failures, no regex
-
-The pytest invocation pattern that ate the most time. Pre-MCP:
+Before:
 
 ```bash
-cd ChroniclesOfNesis && pytest WebTests/test_laria_z_church.py -v 2>&1 | tail -100
+pytest WebTests/test_laria_z_church.py -v 2>&1 | tail -100
+# then regex-scan for FAILED, tracebacks, screenshot paths — and hope
+# the failure wasn't in the lines above the tail window
 ```
 
-Then the agent regex-scans for `FAILED`, traces, screenshot paths. Sometimes it works. Sometimes the failure is in the lines before `tail -100`. Sometimes a test's traceback contains another test's name and the regex matches the wrong one.
-
-Post-MCP:
+After:
 
 ```
 playwright_run({pattern: "test_laria_z_church.py", headed: false})
 ```
 
-Returns:
-
 ```json
 {
-  "ok": false,
-  "passed": 6,
-  "failed": 2,
-  "errors": 0,
-  "skipped": 0,
-  "duration_s": 24.8,
+  "ok": false, "passed": 6, "failed": 2, "duration_s": 24.8,
   "failures": [
     {
       "test": "test_laria_z_church.py::test_priest_dialogue_advances",
-      "phase": "call",
-      "exception": "AssertionError: expected dialogue option 'Yes', got 'Maybe'",
+      "exception": "AssertionError: expected option 'Yes', got 'Maybe'",
       "screenshot": "WebTests/_artifacts/test_priest_dialogue_advances.png",
       "traceback_excerpt": "...last 6 lines..."
-    },
-    ...
+    }
   ]
 }
 ```
 
-Underneath, `playwright_run` invokes pytest with `--json-report`. The report is reliable; the regex was not. The agent maps over `failures[]` and acts per-failure. Re-runs use `failed_only: true`, which is `pytest --lf` with the state managed by the wrapper.
+The agent maps over `failures[]` and acts per-failure; a re-run uses `failed_only: true`. The report is reliable where the regex never was, and every regression cycle since the switch has been smoother.
 
-This is the single tool I'm most confident about. Every regression cycle since switching has been smoother.
+**Reporting.** `test_coverage_report` cross-references each ticket's named test against the suite and flags the gaps — criteria whose test file doesn't exist, or exists but doesn't assert what the criterion claimed. That catches the common failure mode: a ticket ships with a `testPath` that was always just a future plan. `visual_baseline` collapses the screenshot-regression workflow — capture a reference at a known-good version, then pixel-diff future runs against the committed baseline — into one call instead of a hand-rolled capture script per screen.
 
-### `test_coverage_report` — close the success-criteria loop
+## Where this actually stands
 
-Every ticket's `successCriteria` has a `testPath` — the test that's supposed to validate that criterion. The coverage report cross-references the tickets file against `WebTests/`. For every ticket:
-- Which criteria have a test file that exists?
-- Which criteria point at a file that doesn't exist?
-- Which criteria have a test file that exists but doesn't actually contain the assertions the criterion claimed?
+All nine tools ship and are in daily use. I want to be precise about what that does and doesn't mean.
 
-The third one requires shape-matching the test against the ticket's language; it's heuristic, not exhaustive. But the first two are mechanical and they catch the common failure mode: agent moves a ticket to "ready" with a `testPath` that's a future plan, no one writes the test, the ticket ships, the criterion is unverified.
+It does **not** mean I'm declaring this a proven, general-purpose product. Each tool earns its place through a parity check — it has to match its bash predecessor across a run of real sessions before the agent's instructions flip from "use bash" to "prefer the tool." That's a deliberately slow bar, because a test tool that's subtly wrong is worse than no tool.
 
-The report is machine-readable and feeds into the [Dev Console's tests tab](/devlog/dev-console-agent-dashboard/) so the gap is visible at-a-glance.
+The bet underneath all of it — that a test framework *shaped so an AI can contribute at every tier* gives back more than it costs — is one I'm still measuring, not one I've won. What I can say is that the reject-and-respawn rate on test work dropped noticeably once the framework conventions lived in the scaffold output instead of in an agent's memory, and that the structured `playwright_run` envelope alone paid for the whole effort.
 
-## Why Vera-MCP is on the OSS path
-
-The Godot ecosystem has two well-served test paths and one underserved one.
-
-The two well-served:
-- Pure GDScript unit tests via [GUT](https://github.com/bitwes/Gut) — mature, battle-tested.
-- Editor-side runtime control via several MCP servers — `tomyud1/godot-mcp`, `youichi-uda/godot-mcp-pro`, others.
-
-The underserved:
-- **Headless web-export tests, run in a real browser, with structured agent-callable orchestration.** Playwright + Godot HTML5 + WASM is a niche but increasingly important slice (browser-based games, web demos for indie titles, AI-pair-programming workflows that need a deployable output). I can't find an existing tool that ties test scaffolding, tier-aware running, and coverage analysis into one MCP surface for this stack.
-
-Vera-MCP is opinionated about the framework — it bakes in the four-tier model, the Shape A/B/C/D taxonomy, the marker conventions. That's a legitimate reason to keep it focused rather than trying to be a general-purpose Godot test MCP. But the core ideas — structured `playwright_run` envelope, marker-balance audit, ticket-criterion coverage report — generalize to any stack that wraps Playwright over a non-trivial runtime.
-
-Publishing posture: same arc as the other two — prove the concept on Chronicles first, then once the parity framework has cleared the bar (every tool needs N consecutive parity-matched runs against its bash equivalent before the CLAUDE.md instruction flips), extract a project-agnostic version. Probably 4–6 weeks of dogfooding from now. Until then, the architecture and design rationale are in `allbyte-mcp/docs/VERA_MCP.md` for anyone modeling their own.
-
-## How Vera spawns workers across tiers, post-MCP
-
-Every ticket has paired tests — Vera writes the test spec during Tech Review, and it's signed off before the ticket moves to Ready. During implementation, Vera can spawn multiple subagents in parallel: a GUT batch for Tier 1, an integration batch for Tier 2, a Playwright batch for Tier 3, a playthrough regeneration batch for Tier 4 when the path through a changed scene needs updating.
-
-Pre-MCP, each of those batches required Vera to brief the worker on framework conventions: which shape, which markers, which assertion style. The worker then guessed, sometimes wrongly, and the worker review caught it.
-
-Post-MCP, the worker calls `test_scaffold(ticket_id)` and the framework conventions are in the resulting file. Vera reviews assertion correctness, not framework conformance. The reject-and-respawn rate dropped notably — not measured rigorously, but enough to feel.
-
-## Status, and what comes next
-
-Vera-MCP is mid-build. As of this writing:
-
-- ✅ `test_scaffold` shipped — F1 classifier passing on a reference ticket set.
-- ✅ `test_marker_audit` shipped.
-- ✅ `playwright_run` shipped — the most-used tool of the six.
-- 🚧 `test_index_op` in flight.
-- 🚧 `test_run_by_tier` in flight (depends on `playwright_run`).
-- 🚧 `test_coverage_report` in flight.
-
-Each tool ships with parity coverage against its bash predecessor — N consecutive matched runs before its CLAUDE.md instruction flips from "use bash" to "prefer MCP." The [parity framework post in this series](/devlog/why-build-mcp-and-why-three/) covers the cutover protocol; the per-tool ledger is in `allbyte-mcp/docs/PARITY_LEDGER.md`.
-
-The hub post for this series covers the why-three. The [Port-MCP deep-dive](#) covers the Godot side. The [Arc-MCP deep-dive](#) covers the orchestration side, including the OTel-reality investigation that's the most surprising thing I learned in this whole arc. None of the three would have been worth doing without the others; together they're starting to feel like the right shape.
+Browser-tested Godot — Playwright over a real WASM build, with agent-callable orchestration around it — is a genuine gap in the ecosystem; the mature tools all stop at GUT or editor-side control. If the bet keeps holding up through more dogfooding, the project-agnostic core here is worth extracting. Until then it's specific to The Chronicles of Nesis, and the design rationale lives in the repo for anyone modeling their own.

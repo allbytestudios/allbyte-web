@@ -217,16 +217,25 @@ class CDPScreencastRecorder:
         self._log_file = open(log_path, "wb")
         # image2pipe with mjpeg accepts a stream of complete JPEG files,
         # one per frame, encoded as raw bytes back-to-back.
+        # CDP screencast emits frames change-driven, not at a steady rate — a
+        # static/turn-based scene yields far fewer frames than wall-clock
+        # seconds. Telling ffmpeg the input is a fixed framerate packs those
+        # sparse frames into a too-short, sped-up clip. Instead, stamp each
+        # frame with its real arrival time (-use_wallclock_as_timestamps) and
+        # emit a constant-rate output (-vsync cfr -r N), duplicating frames
+        # through quiet moments so playback matches real time.
         args = [
             "ffmpeg",
             "-hide_banner", "-loglevel", "warning",
             "-f", "image2pipe",
             "-vcodec", "mjpeg",
-            "-framerate", str(self.framerate),
+            "-use_wallclock_as_timestamps", "1",
             "-i", "-",
             "-c:v", "libx264",
             "-preset", "ultrafast",
             "-pix_fmt", "yuv420p",
+            "-vsync", "cfr",
+            "-r", str(self.framerate),
             "-y", self.mp4_path,
         ]
         print(f"[run.py] starting ffmpeg (image2pipe) → {self.mp4_path}", flush=True)

@@ -5,7 +5,7 @@ pubDate: 2026-06-23T15:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
 tags: ["godot", "migration", "gdscript", "tooling", "tscn"]
-draft: true
+draft: false
 ---
 
 The shipping web build of The Chronicles of Nesis runs on Godot 4.6.2. It started on Godot 3.6.2. This is the retrospective on the engine version jump — what broke, how I translated it, and which class of bug ate the most time.

@@ -2,10 +2,13 @@
   /**
    * Touch-only virtual gamepad overlay for the /play/ iframe.
    *
-   * Sits in the letterbox bars on phones — d-pad in the left bar, 4 face
-   * buttons (A/B/X/Y) in the right. The game canvas is unchanged at 1.38:1
-   * aspect, so on modern phone screens in landscape the bars are 50-150pt
-   * wide, plenty for thumb-sized buttons.
+   * Sits in the letterbox bars on phones — a traditional cross/plus d-pad in
+   * the left bar, 4 PlayStation-style face buttons (Triangle/Square/Circle/
+   * Cross, drawn as inline SVG) in the right. The internal button identities
+   * are still A/B/X/Y for the key mapping; only the glyphs are PS symbols, and
+   * the positions follow the PS convention (Cross=confirm bottom, Circle=cancel
+   * right). The game canvas is unchanged at 1.38:1 aspect, so on modern phone
+   * screens in landscape the bars are 50-150pt wide, plenty for thumb buttons.
    *
    * Input is translated to synthetic KeyboardEvents dispatched at the iframe's
    * contentWindow. The game's existing input map (project.godot [input]) maps
@@ -427,10 +430,22 @@
     onmouseup={dpadMouseEndH}
     onmouseleave={dpadMouseEndH}
   >
-    <span class="dpad-arrow dpad-up" class:active={dpadUp}>▲</span>
-    <span class="dpad-arrow dpad-left" class:active={dpadLeft}>◀</span>
-    <span class="dpad-arrow dpad-right" class:active={dpadRight}>▶</span>
-    <span class="dpad-arrow dpad-down" class:active={dpadDown}>▼</span>
+    <svg class="dpad-svg" viewBox="0 0 100 100" aria-hidden="true">
+      <!-- Traditional cross/plus body; each arm fills when that direction
+           is the one the engine currently sees (class:active). -->
+      <path
+        class="dpad-body"
+        d="M36,2 L64,2 L64,36 L98,36 L98,64 L64,64 L64,98 L36,98 L36,64 L2,64 L2,36 L36,36 Z"
+      />
+      <rect class="dpad-arm" class:active={dpadUp}    x="39" y="5"  width="22" height="33" rx="3" />
+      <rect class="dpad-arm" class:active={dpadDown}  x="39" y="62" width="22" height="33" rx="3" />
+      <rect class="dpad-arm" class:active={dpadLeft}  x="5"  y="39" width="33" height="22" rx="3" />
+      <rect class="dpad-arm" class:active={dpadRight} x="62" y="39" width="33" height="22" rx="3" />
+      <polygon class="dpad-chevron" points="50,10 44,19 56,19" />
+      <polygon class="dpad-chevron" points="50,90 44,81 56,81" />
+      <polygon class="dpad-chevron" points="10,50 19,44 19,56" />
+      <polygon class="dpad-chevron" points="90,50 81,44 81,56" />
+    </svg>
   </div>
 
   <div
@@ -446,10 +461,18 @@
     onmouseup={faceMouseEndH}
     onmouseleave={faceMouseEndH}
   >
-    <span class="face-btn face-y" class:active={faceHeld === "Y"} aria-label="Y button (secondary)">Y</span>
-    <span class="face-btn face-x" class:active={faceHeld === "X"} aria-label="X button (select)">X</span>
-    <span class="face-btn face-b" class:active={faceHeld === "B"} aria-label="B button (cancel)">B</span>
-    <span class="face-btn face-a" class:active={faceHeld === "A"} aria-label="A button (confirm)">A</span>
+    <span class="face-btn face-y" class:active={faceHeld === "Y"} aria-label="Triangle button (secondary)">
+      <svg class="face-icon" viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,4 21,20 3,20" /></svg>
+    </span>
+    <span class="face-btn face-x" class:active={faceHeld === "X"} aria-label="Square button (select)">
+      <svg class="face-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1" /></svg>
+    </span>
+    <span class="face-btn face-b" class:active={faceHeld === "B"} aria-label="Circle button (cancel)">
+      <svg class="face-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5" /></svg>
+    </span>
+    <span class="face-btn face-a" class:active={faceHeld === "A"} aria-label="Cross button (confirm)">
+      <svg class="face-icon" viewBox="0 0 24 24" aria-hidden="true"><line x1="6.5" y1="6.5" x2="17.5" y2="17.5" /><line x1="17.5" y1="6.5" x2="6.5" y2="17.5" /></svg>
+    </span>
   </div>
 </div>
 
@@ -503,10 +526,37 @@
     right: max(8px, env(safe-area-inset-right, 0px));
   }
 
-  /* Arrow / button glyphs inside the zones — visuals only, never receive
-     events directly. .active is toggled by the touch handler when the
-     finger is currently mapped to that direction/button. */
-  .dpad-arrow,
+  /* === Traditional cross/plus D-pad (single SVG) === */
+  .dpad-svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 116px;
+    height: 116px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    overflow: visible;
+  }
+  .dpad-body {
+    fill: rgba(10, 14, 23, 0.6);
+    stroke: rgba(167, 243, 208, 0.65);
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+  }
+  .dpad-arm {
+    fill: transparent;
+    transition: fill 0.08s;
+  }
+  .dpad-arm.active {
+    fill: rgba(167, 243, 208, 0.4);
+  }
+  .dpad-chevron {
+    fill: rgba(224, 231, 255, 0.85);
+  }
+
+  /* === Face buttons — circular, PlayStation-style symbol inside ===
+     Visuals only, never receive events directly. .active is toggled by the
+     touch handler when the finger is currently mapped to that button. */
   .face-btn {
     position: absolute;
     width: 56px;
@@ -514,11 +564,6 @@
     border-radius: 50%;
     border: 2px solid rgba(167, 243, 208, 0.65);
     background: rgba(10, 14, 23, 0.55);
-    color: rgba(224, 231, 255, 0.92);
-    font-family: "Courier New", monospace;
-    font-size: 1.05rem;
-    font-weight: bold;
-    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -526,28 +571,38 @@
     transition: background 0.08s, transform 0.08s;
   }
 
-  .dpad-arrow.active,
   .face-btn.active {
-    background: rgba(167, 243, 208, 0.35);
+    background: rgba(167, 243, 208, 0.2);
     transform: scale(0.93);
   }
 
-  /* D-pad cross layout — 144x144 zone bounds. */
-  .dpad-up    { top: 0;    left: 44px; }
-  .dpad-down  { bottom: 0; left: 44px; }
-  .dpad-left  { top: 44px; left: 0;    }
-  .dpad-right { top: 44px; right: 0;   }
+  .face-icon {
+    width: 56%;
+    height: 56%;
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
 
-  /* Face diamond layout, A bottom (confirm = most common). */
+  /* Face diamond layout: Cross bottom (confirm = most common), Circle right
+     (cancel), Square left (select), Triangle top (secondary). Matches the
+     PlayStation symbol→position convention. */
   .face-y { top: 0;    left: 44px; }
   .face-a { bottom: 0; left: 44px; }
   .face-x { top: 44px; left: 0;    }
   .face-b { top: 44px; right: 0;   }
 
-  .face-a { border-color: rgba(34, 197, 94, 0.7); }
-  .face-b { border-color: rgba(239, 68, 68, 0.7); }
-  .face-x { border-color: rgba(96, 165, 250, 0.7); }
-  .face-y { border-color: rgba(251, 191, 36, 0.7); }
+  /* Border + symbol stroke per button, in the standard symbol colors. */
+  .face-a { border-color: rgba(96, 165, 250, 0.75); }   /* Cross — blue */
+  .face-b { border-color: rgba(248, 113, 113, 0.75); }  /* Circle — red */
+  .face-x { border-color: rgba(244, 114, 182, 0.75); }  /* Square — pink */
+  .face-y { border-color: rgba(52, 211, 153, 0.75); }   /* Triangle — green */
+
+  .face-a .face-icon { stroke: #60a5fa; }
+  .face-b .face-icon { stroke: #f87171; }
+  .face-x .face-icon { stroke: #f472b6; }
+  .face-y .face-icon { stroke: #34d399; }
 
   /* On very narrow phones (iPhone SE landscape ~ 75pt bars) shrink the
      zone so it doesn't overhang into the game canvas. */
@@ -557,20 +612,18 @@
       width: 120px;
       height: 120px;
     }
-    .dpad-arrow,
+    .dpad-svg {
+      width: 96px;
+      height: 96px;
+    }
     .face-btn {
       width: 46px;
       height: 46px;
-      font-size: 0.95rem;
     }
-    .dpad-up,
-    .dpad-down,
     .face-y,
     .face-a {
       left: 37px;
     }
-    .dpad-left,
-    .dpad-right,
     .face-x,
     .face-b {
       top: 37px;

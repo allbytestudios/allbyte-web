@@ -7,6 +7,7 @@
   import { auth, initAuth, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
+  import { pickerVersions, defaultVersion, versionById, isUnlocked } from "../lib/gameVersions";
   import { subscribeToFile } from "../lib/testEvents";
   import { onMount } from "svelte";
 
@@ -78,6 +79,17 @@
   let demoHovered = $state(false);
   let playMode = $state(false);
   let gameUrl = $state("");
+
+  // Tier-gated game-version picker (above the Play-Now gif). pickerList is the
+  // deployed builds; locked ones render disabled as an upsell. selectedVersionId
+  // is the manual pick, falling back to the richest build the user can play
+  // (re-resolves once auth hydrates).
+  let pickedVersionId = $state<string | null>(null);
+  const pickerList = $derived(pickerVersions());
+  const selectedVersionId = $derived(pickedVersionId ?? defaultVersion(auth.currentUser).id);
+  function selectedGamePath(): string {
+    return (versionById(selectedVersionId) ?? defaultVersion(auth.currentUser)).path;
+  }
   let gameIframe = $state<HTMLIFrameElement | null>(null);
 
   // PWA install prompt: Chrome/Edge fires `beforeinstallprompt` on
@@ -130,7 +142,7 @@
   }
 
   function launchGame() {
-    gameUrl = "/godot/index.html";
+    gameUrl = selectedGamePath();
     playMode = true;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handlePlayKey);
@@ -224,7 +236,7 @@
   function finishReload() {
     reloadReadyResolve = null;
     if (!gameIframe) return;
-    gameUrl = `/godot/index.html?t=${Date.now()}`;
+    gameUrl = `${selectedGamePath()}?t=${Date.now()}`;
   }
 
   function onGameMessage(ev: MessageEvent) {
@@ -421,6 +433,25 @@
       <div class="overlay-badges" onclick={(e) => e.stopPropagation()}>
         <MilestoneBadge />
       </div>
+      {#if pickerList.length > 1}
+        <div class="version-picker" onclick={(e) => e.stopPropagation()} role="presentation">
+          <label class="version-picker-label" for="game-version-select">Version</label>
+          <select
+            id="game-version-select"
+            class="version-select"
+            value={selectedVersionId}
+            onchange={(e) => (pickedVersionId = (e.currentTarget as HTMLSelectElement).value)}
+          >
+            {#each pickerList as v (v.id)}
+              <option value={v.id} disabled={!isUnlocked(v, auth.currentUser)}>
+                {isUnlocked(v, auth.currentUser)
+                  ? v.label
+                  : `${v.label} — ${v.minTier === "legend" ? "Legend" : "Initiate+"}`}
+              </option>
+            {/each}
+          </select>
+        </div>
+      {/if}
       <div class="demo-link">
         <div class="demo-banner">
           <img src={demoHovered ? "/ChroniclesOfNesisTitle.gif" : "/ChroniclesOfNesisTitle-still.png"} alt="The Chronicles of Nesis Demo" class="demo-gif" />
@@ -1091,6 +1122,39 @@
       max-width: none;
       width: 100%;
     }
+  }
+
+  .version-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    margin: 0.5rem auto 0;
+    max-width: 960px;
+    width: 90%;
+    font-family: "Courier New", Courier, monospace;
+  }
+
+  .version-picker-label {
+    font-size: 0.78rem;
+    color: rgba(167, 243, 208, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .version-select {
+    background: #0d1117;
+    color: #e0e7ff;
+    border: 1px solid rgba(167, 243, 208, 0.3);
+    border-radius: 4px;
+    padding: 0.3rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .version-select:hover {
+    border-color: rgba(167, 243, 208, 0.6);
   }
 
   .demo-row {

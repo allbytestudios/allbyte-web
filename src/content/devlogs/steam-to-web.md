@@ -5,6 +5,7 @@ pubDate: 2026-04-10T23:00:00Z
 category: "narrative"
 devlog: "chronicles"
 tags: ["chronicles-of-nesis", "ai", "claude", "playwright", "indie", "infrastructure"]
+heroImage: "/steam-to-web-hero.jpg"
 ---
 
 ## AllByte
@@ -47,6 +48,10 @@ Chronicles of Nesis is the test case because it's four years of a codebase I car
 ## The Conclusion
 
 All to say — *why build a website?* I'm trying to do a lot of things with this one. As with all meaningful projects, it should have a lot of win cases. I want to keep working on Chronicles of Nesis. I love it. Now I can make it playable in the browser (or so I hope), focus more on the art, and have Claude do the code. I can ship an enterprise-grade website with cost optimization and real features — again, thanks to Claude — and write a devlog about how Claude enables others to do the same. And probably the biggest win, and the hardest to achieve: I can provide an example — ideally a runbook — for others to use Playwright with Godot and Claude to make great games.
+
+Here's exactly that loop in action — a bug reported and live-fixed in three minutes with Godot, Claude, and Playwright:
+
+<iframe width="100%" height="400" src="https://www.youtube-nocookie.com/embed/l3B92iLAXKM" title="Using Godot, Claude, and Playwright: report a bug and get a live fix in 3 minutes" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius: 6px; margin: 1rem 0;"></iframe>
 
 It's f'n cool.
 

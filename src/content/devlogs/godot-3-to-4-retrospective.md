@@ -24,7 +24,7 @@ Every rule below was discovered the hard way, by chasing a visible symptom back 
 
 ## The .tscn side: mechanical, and tooled
 
-Scene files (`.tscn`) and standalone text resources (`.tres`) carry a big share of the breakage, and almost all of it is mechanical text rewriting. I wrote a Python migrator (`migrate_g3_to_g4_tscn.py`) that codifies every `.tscn`/`.tres` rule I found, and Claude drives it through an agent-callable wrapper (`batch_g3_to_g4`) that runs `--check` (dry run, counts only) by default and `--apply` to rewrite in place. It reports per-file rule-bucket counts so I can see exactly what changed.
+Scene files (`.tscn`) and standalone text resources (`.tres`) carry a big share of the breakage, and almost all of it is mechanical text rewriting. I wrote a Python migrator ([`migrate_g3_to_g4_tscn.py`](https://github.com/allbytestudios/allbyte-web/blob/main/scripts/migrate_g3_to_g4_tscn.py), open source in this site's repo) that codifies every `.tscn`/`.tres` rule I found, and Claude drives it through an agent-callable wrapper (`batch_g3_to_g4`) that runs `--check` (dry run, counts only) by default and `--apply` to rewrite in place. It reports per-file rule-bucket counts so I can see exactly what changed.
 
 The rules it applies:
 

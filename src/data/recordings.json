@@ -7,9 +7,9 @@
       "description": "The opening title screen: the quiet starting village of Larian Valley under drifting cloud shaders, scored by the main theme.",
       "scene": "Title",
       "category": "atmosphere",
-      "duration_s": 25,
-      "src": "https://allbyte.studio/captures/recordings/capture-20260622-title-screen.mp4",
-      "thumbnail": "https://allbyte.studio/captures/recordings/capture-20260622-title-screen.thumb.png",
+      "duration_s": 74,
+      "src": "https://allbyte.studio/captures/recordings/capture-20260622-title-fulltheme.mp4",
+      "thumbnail": "https://allbyte.studio/captures/recordings/capture-20260622-title-fulltheme.thumb.png",
       "draft": false,
       "captured_at": "2026-06-22T13:41:00Z",
       "source_clip": "clip_001"

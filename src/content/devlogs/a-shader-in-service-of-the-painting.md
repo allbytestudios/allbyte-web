@@ -12,7 +12,7 @@ draft: true
 I handcrafted the clouds for the title screen and liked how they scrolled across the sky. But I wanted to add one more thing: if you look at any part of a cloud, it should slowly distort and shift — so slowly your mind almost doesn't register it happening. That called for a shader, and I figured expanding on the existing cloud artwork (rather than replacing it) wouldn't be too crazy.
 
 <video controls preload="metadata" width="100%" poster="/og-image.jpg" style="border-radius: 6px; margin: 1rem 0;">
-  <source src="https://allbyte.studio/captures/recordings/capture-20260622-title-screen.mp4" type="video/mp4" />
+  <source src="https://allbyte.studio/captures/recordings/capture-20260622-title-fulltheme.mp4" type="video/mp4" />
 </video>
 
 ## Keeping each cloud unique
@@ -61,7 +61,3 @@ They sit low (about 22% opacity) and drift slowly. Good enough to ship, but I'll
 - The shadow doesn't match the cloud above it — it's a generic blob, not that cloud's shape.
 - It animates on its own clock, separate from the cloud's drift.
 - One soft lobe, flat top-down projection — no sun-angle skew.
-
-## Why not just generate clouds
-
-Because then they wouldn't be *my* clouds. Fully procedural clouds look generic and won't match a painted palette. Keeping the hand-painted sheet as the source and adding only the drift, the slow distortion, and the shadows let the art stay the art — the shader just keeps it from ever looking like a repeated sprite.

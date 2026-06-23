@@ -5,7 +5,7 @@ pubDate: 2026-06-23T16:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
 tags: ["godot", "wasm", "web-export", "browser", "debugging", "performance"]
-draft: true
+draft: false
 ---
 
 The Chronicles of Nesis is a 300MB tactical RPG. It runs in a browser tab at allbyte.studio as a Godot 4 WebAssembly export. Getting it there surfaced a long list of failures that the official export docs don't cover — and most of them are *silent*. The tab freezes with no error, a sprite renders with no texture, a function never runs with no warning. This post is the reference I wish I'd had: the concrete headers, flags, symptoms, root causes, and fixes, grouped by theme.

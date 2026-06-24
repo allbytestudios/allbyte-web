@@ -5,7 +5,7 @@ pubDate: 2026-06-24T15:00:00Z
 category: "craft"
 devlog: "chronicles"
 tags: ["art", "tactical-rpg", "pre-rendered", "level-design", "godot"]
-draft: true
+draft: false
 ---
 
 Almost nobody ships pre-rendered backgrounds anymore. They were everywhere on the PS1 — Final Fantasy VII through IX, the early Resident Evils — a static 2D backdrop with real-time characters composited on top. The moment hardware could render 3D in real time, the technique was dropped as the stop-gap it had been. The usual epitaph: fixed camera, can't change anything mid-scene, enormous to store.
@@ -82,11 +82,3 @@ So depth becomes a design lever, not a free choice:
 When you try to force the two together, the failure surfaces at interaction time: a unit snaps to the nearest cell to reach an enemy, and if that move crosses real painted depth, the unit appears to **jump across depth to a cell that reads wrong** — the math is right, the picture disagrees.
 
 So the rule I paint by: dramatic depth is reserved for set-piece, non-combat scenes; anywhere a grid has to live, the camera height keeps every point roughly equidistant and the board stays a board. Painting *around* the grid — knowing which scenes get to be dramatic and which have to stay honest — is most of the discipline.
-
-## How it goes together in-engine
-
-The game runs in Godot 4. Each battle scene is a fixed camera over the hand-painted backdrop. The grid is isometric, fit to that specific painting's angle, with the move/attack/confirm highlights all sharing the same cell transform so they land exactly on the painted ground. Units are drawn into the scene with y-sorting, so a character lower on screen overlaps one behind them — cheap pseudo-depth that sells real-time sprites standing in a static painting. Everything renders pixel-crisp (nearest-neighbor), so the brushwork stays sharp at any zoom. Out in the overworld, where there's no grid, I let the depth loose: parallax layers, drifting clouds, the whole frame breathing.
-
-## Why bother
-
-Because the constraint *is* the craft. A near-dead technique, judged purely on fidelity, lost to real-time 3D years ago. But judged on what a tactical RPG actually needs — a readable board, a composed frame, a fixed angle you can hand-tune art and rules onto together — it isn't a throwback. It's the right substrate, and the discipline of painting around the grid is what makes the board both beautiful and playable at once.

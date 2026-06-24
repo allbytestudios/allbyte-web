@@ -39,6 +39,14 @@ SDK_MODEL = os.environ.get("CAPTION_SDK_MODEL", "claude-haiku-4-5-20251001")
 
 BACKEND = os.environ.get("CAPTION_BACKEND", "cli").strip().lower()
 
+# Two-link convention (see infrastructure/marketing/social-posting-playbook.md
+# § "Links: always two"). Every generated caption carries the constant Play-now
+# CTA plus a contextual link. The contextual link defaults to the site home but
+# can be overridden per-clip (clip meta `context_url`) or per-run (env), e.g. to
+# point a clip at the devlog it pairs with.
+PLAY_URL = os.environ.get("CAPTION_PLAY_URL", "https://allbyte.studio/play/")
+SITE_URL = os.environ.get("CAPTION_SITE_URL", "https://allbyte.studio/")
+
 # System prompt is stable across all clips → prompt-cache eligible.
 # Brand voice cribbed from the project's published copy (Footer, devlogs,
 # subscribe page) — first-person singular, High-Tech Artisan dual identity,
@@ -56,8 +64,9 @@ Brand voice (load-bearing):
 The game:
 - Name: The Chronicles of Nesis (never abbreviate to "Chronicles")
 - Genre: Fantasy tactical RPG — turn-based party combat, dungeon traversal, PS1-era aesthetic
-- Engine: Godot 3.5
+- Engine: Godot 4 (the shipping web/title build)
 - Style: Pre-rendered backgrounds, sprite-based combat
+- Free to play in the browser right now — captions should make that obvious
 - Studio: AllByte Studios
 
 The clips come from an automated auto-play harness — the game is being played by an AI persona (Scout = avoids encounters when possible, default = engages by zone proximity). Mention this is an autoplay clip when relevant for context; don't pretend it's a human playthrough.
@@ -70,12 +79,16 @@ PROMPT_USER_TEMPLATE = """Clip metadata:
 {meta_json}
 ```
 
+Two links to include (these are all link-friendly platforms — put them in the caption):
+- PLAY NOW (primary CTA — drops the player straight into the free browser build): {play_url}
+- MORE (secondary — the page this post is about): {context_url}
+
 Draft caption variants. Output JSON with EXACTLY these keys:
 
-- "title": ≤80 chars, headline-style. Plain sentence, no clickbait.
-- "bluesky": ≤290 chars. Lowercase hashtags chosen from this set as relevant: #indiedev #godot #godotengine #tacticalrpg #jrpg #gamedev. Pick 2-3 max.
-- "discord": any length 1-3 sentences, server-announcement tone, casual but not effusive. No @everyone or role mentions.
-- "youtube_shorts": ≤180 chars total. Keyword-dense for discovery — "Godot tactical RPG", "indie dev", "AI autoplay" are the priorities.
+- "title": ≤80 chars, headline-style. Plain sentence, no clickbait. NO links.
+- "bluesky": ≤290 chars INCLUDING both links. Lowercase hashtags chosen from this set as relevant: #indiedev #godot #godotengine #tacticalrpg #jrpg #gamedev. Pick 2-3 max. End with the PLAY NOW link, then the MORE link.
+- "discord": 1-3 sentences, server-announcement tone, casual but not effusive. No @everyone or role mentions. Include both links (PLAY NOW first).
+- "youtube_shorts": ≤180 chars total. Keyword-dense for discovery — "Godot tactical RPG", "indie dev", "AI autoplay" are the priorities. Include the PLAY NOW link; add the MORE link only if it still fits.
 
 Return ONLY the JSON object."""
 
@@ -108,6 +121,21 @@ def _strip_code_fences(text: str) -> str:
     return text
 
 
+def _build_user_prompt(clip_meta: dict) -> str:
+    """Format the per-clip user prompt, resolving the contextual link.
+    Precedence: clip meta `context_url` → env CAPTION_CONTEXT_URL → site home."""
+    context_url = (
+        clip_meta.get("context_url")
+        or os.environ.get("CAPTION_CONTEXT_URL")
+        or SITE_URL
+    )
+    return PROMPT_USER_TEMPLATE.format(
+        meta_json=json.dumps(clip_meta, indent=2),
+        play_url=PLAY_URL,
+        context_url=context_url,
+    )
+
+
 def _draft_via_cli(clip_meta: dict) -> dict:
     """Use the `claude` CLI in --print mode with --json-schema for
     structured output. Consumes Claude Code subscription quota."""
@@ -116,7 +144,7 @@ def _draft_via_cli(clip_meta: dict) -> dict:
             f"`{CLI_BINARY}` not in PATH; install Claude Code or set "
             f"CAPTION_BACKEND=sdk + ANTHROPIC_API_KEY"
         )
-    user_prompt = PROMPT_USER_TEMPLATE.format(meta_json=json.dumps(clip_meta, indent=2))
+    user_prompt = _build_user_prompt(clip_meta)
     args = [
         CLI_BINARY, "-p", user_prompt,
         "--append-system-prompt", SYSTEM_PROMPT,
@@ -150,7 +178,7 @@ def _draft_via_sdk(clip_meta: dict) -> dict:
     if not api_key:
         raise RuntimeError("CAPTION_BACKEND=sdk but ANTHROPIC_API_KEY not set")
     client = anthropic.Anthropic(api_key=api_key)
-    user_msg = PROMPT_USER_TEMPLATE.format(meta_json=json.dumps(clip_meta, indent=2))
+    user_msg = _build_user_prompt(clip_meta)
     resp = client.messages.create(
         model=SDK_MODEL,
         max_tokens=1024,

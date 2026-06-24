@@ -7,13 +7,20 @@
  * 4G/throttled connection — caching wins on both.
  *
  * Cache strategy:
- *   /godot/index.html  → network-first (deploys must land; falls back to
- *                        cache when offline so the PWA can still launch).
+ *   /godot/**​/index.html (and bare dir form) → network-first (deploys must
+ *                        land; falls back to cache when offline so the PWA
+ *                        can still launch). This covers BOTH the root debug
+ *                        build (/godot/index.html) and variant subdirs like
+ *                        the public build (/godot/public/index.html).
  *   /godot/*           → cache-first. Godot's engine fetches index.wasm and
  *                        index.pck with `?v=<game-version>` query strings
  *                        (see GODOT_CONFIG.fileSizes in index.html), so a
  *                        game version bump changes the URL and naturally
- *                        evicts the old cache entry on next request.
+ *                        evicts the old cache entry on next request. NOTE:
+ *                        this self-eviction only works for exports that
+ *                        actually carry the `?v=` query — the public build
+ *                        must too, or its bare-named assets pin stale (the
+ *                        export-side half of the 2026-06-24 /play/ loop fix).
  *   everything else    → pass through.
  *
  * Cache versioning: the CACHE_NAME constant below is bumped when this
@@ -39,7 +46,14 @@
 // deploys forever. Versioning the cache name and bumping it per release
 // is what makes /play/ actually update on prod deploys.
 const BUILD_VERSION = "__BUILD_VERSION__";
-const CACHE_NAME = `chronicles-godot-${BUILD_VERSION}`;
+// CACHE_SCHEMA is bumped when the caching *rules* below change (independent of
+// the game version). Because the activate handler deletes every cache whose
+// name != CACHE_NAME, changing this string forces a one-time wipe of all prior
+// caches on the next deploy. Bumped to "s2" on 2026-06-24 to evict stale
+// public builds that were pinned cache-first under the old index.html-only
+// network-first rule (the /play/ reload-loop bug).
+const CACHE_SCHEMA = "s2";
+const CACHE_NAME = `chronicles-godot-${CACHE_SCHEMA}-${BUILD_VERSION}`;
 
 self.addEventListener("install", (event) => {
   // New worker takes over without waiting for tabs to close. Acceptable
@@ -66,9 +80,14 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (!url.pathname.startsWith("/godot/")) return;
 
-  // index.html (and its bare-slash form) revalidates on every deploy in
-  // prod — keep that contract by going network-first.
-  if (url.pathname === "/godot/index.html" || url.pathname === "/godot/") {
+  // Any build entry point under /godot/ must revalidate on every deploy so a
+  // separately-redeployed Godot export is picked up: the root debug build
+  // (/godot/index.html) AND variant subdirs like the public build
+  // (/godot/public/index.html), plus their bare-slash forms. The original
+  // rule only matched /godot/index.html exactly, which left
+  // /godot/public/index.html cache-first and pinned stale — the root of the
+  // 2026-06-24 /play/ reload loop (direct loads resolve to the public build).
+  if (url.pathname.endsWith("/index.html") || url.pathname.endsWith("/")) {
     event.respondWith(networkFirst(event.request));
     return;
   }

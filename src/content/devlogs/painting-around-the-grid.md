@@ -27,7 +27,7 @@ This post is about what makes that world renderable — the pre-rendered backgro
 
 The thing about a fixed camera is that the player *looks* at the frame. Not for the half-second a moving 3D camera grants before it pans away — for as long as they're in that room. Resident Evil understood this and leaned into it: a set camera let the directors compose each shot for exactly the tension they wanted. The static frame isn't a constraint you tolerate, it's a frame you get to author.
 
-Mine aren't 3D scenes rendered down to 2D, which is what "pre-rendered" technically meant. They're **hand-painted**. That's more control, not less — there's no rig, no render, no lighting bake between me and the image. I paint the exact frame I want. (Art here is always handcrafted; this is just the most literal version of it.)
+Mine aren't 3D scenes rendered down to 2D, which is what "pre-rendered" technically meant. They're **hand-painted**. That's more control, not less — there's no rig, no render, no lighting bake between me and the image. I paint the exact frame I want.
 
 ## The catch: I'm composing the grid at the same time
 

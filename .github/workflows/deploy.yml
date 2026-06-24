@@ -116,26 +116,34 @@ jobs:
           fi
           echo "PASS: Play page returned 200"
 
-          # Test HTTPS headers
+          # Test HTTPS headers.
+          # HSTS is applied site-wide via the CloudFront ResponseHeadersPolicy,
+          # so check it on the homepage.
           HEADERS=$(curl -sI https://allbyte.studio)
-          if echo "$HEADERS" | grep -q "cross-origin-opener-policy: same-origin"; then
-            echo "PASS: COOP header present"
-          else
-            echo "FAIL: Missing COOP header"
-            exit 1
-          fi
-
-          if echo "$HEADERS" | grep -q "cross-origin-embedder-policy: require-corp"; then
-            echo "PASS: COEP header present"
-          else
-            echo "FAIL: Missing COEP header"
-            exit 1
-          fi
-
-          if echo "$HEADERS" | grep -q "strict-transport-security"; then
+          if echo "$HEADERS" | grep -qi "strict-transport-security"; then
             echo "PASS: HSTS header present"
           else
             echo "FAIL: Missing HSTS header"
+            exit 1
+          fi
+
+          # COOP/COEP cross-origin isolation is applied ONLY to /godot/* (the
+          # WASM iframe content) by GodotHeadersFunction in cloudformation.yaml
+          # — NOT the wrapper pages. So verify them on a /godot/ path, not the
+          # homepage. (Checking the homepage was the long-standing bug that made
+          # every deploy conclude "failure" and silently skip the Deploy QA run.)
+          GODOT_HEADERS=$(curl -sI https://allbyte.studio/godot/index.html)
+          if echo "$GODOT_HEADERS" | grep -qi "cross-origin-opener-policy: same-origin"; then
+            echo "PASS: COOP header present on /godot/"
+          else
+            echo "FAIL: Missing COOP header on /godot/"
+            exit 1
+          fi
+
+          if echo "$GODOT_HEADERS" | grep -qi "cross-origin-embedder-policy: require-corp"; then
+            echo "PASS: COEP header present on /godot/"
+          else
+            echo "FAIL: Missing COEP header on /godot/"
             exit 1
           fi
 

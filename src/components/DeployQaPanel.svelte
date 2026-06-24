@@ -83,7 +83,23 @@
         errorMsg = `index fetch HTTP ${res.status}`;
         return;
       }
-      const data = await res.json();
+      // CloudFront serves a missing S3 object as the SPA fallback
+      // (index.html, HTTP 200, text/html) — NOT a 404. So a non-JSON 200
+      // means "no QA runs have been produced yet", not an error. Guard on
+      // content-type and on a parse failure so the panel shows the clean
+      // empty state instead of a JSON syntax error.
+      const ctype = res.headers.get("content-type") || "";
+      if (!ctype.includes("json")) {
+        loadState = "no_data";
+        return;
+      }
+      let data: any;
+      try {
+        data = await res.json();
+      } catch {
+        loadState = "no_data";
+        return;
+      }
       index = (data?.runs ?? []) as IndexEntry[];
       loadState = index.length > 0 ? "ready" : "no_data";
       // Auto-select the latest run on first load

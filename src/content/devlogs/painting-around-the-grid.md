@@ -1,6 +1,6 @@
 ---
-title: "Painting Around the Grid: Hand-Painted Backgrounds in a Tactical RPG"
-description: "Pre-rendered backgrounds nearly died with the PS1. I use a hand-painted cousin of the technique — and for a tactical RPG, the fixed camera that killed it is exactly the right tool. Plus the one hard constraint: a grid can't carry depth of field."
+title: "Painting Around the Grid: Pre-Rendered Backgrounds in a Tactical RPG"
+description: "Pre-rendered backgrounds nearly died with the PS1. I use them anyway — and for a tactical RPG, the fixed camera that killed them is exactly the right tool. Plus the one hard constraint: a grid can't carry depth of field."
 pubDate: 2026-06-24T15:00:00Z
 category: "craft"
 devlog: "chronicles"
@@ -10,7 +10,7 @@ draft: true
 
 Almost nobody ships pre-rendered backgrounds anymore. They were everywhere on the PS1 — Final Fantasy VII through IX, the early Resident Evils — a static 2D backdrop with real-time characters composited on top. The moment hardware could render 3D in real time, the technique was dropped as the stop-gap it had been. The usual epitaph: fixed camera, can't change anything mid-scene, enormous to store.
 
-I use a hand-painted cousin of it. Not for nostalgia — for a tactical RPG it's the right tool, and the "limitation" everyone retired is the whole reason it works.
+I use them anyway. Not for nostalgia — for a tactical RPG it's the right tool, and the "limitation" everyone retired is the whole reason it works.
 
 ## The fixed camera was never the weakness
 

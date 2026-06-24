@@ -16,6 +16,13 @@ What I wanted was the *beauty* of a pre-rendered backdrop — the composed, pain
 
 This post is about what makes that world renderable — the pre-rendered backgrounds and the tactical grid — and why the fixed camera everyone retired is exactly what lets a painted frame and a tactical board fit together.
 
+<figure style="margin: 1.25rem 0;">
+  <video controls autoplay loop muted playsinline preload="metadata" width="100%" style="border-radius: 6px; display: block;">
+    <source src="https://allbyte.studio/captures/recordings/town-tour-laria.mp4" type="video/mp4" />
+  </video>
+  <figcaption style="text-align: center; font-size: 0.85rem; opacity: 0.7; margin-top: 0.4rem;">A wander through the sleepy starting village — parallax and hand-painted, pre-rendered backgrounds.</figcaption>
+</figure>
+
 ## The fixed camera was never the weakness
 
 The thing about a fixed camera is that the player *looks* at the frame. Not for the half-second a moving 3D camera grants before it pans away — for as long as they're in that room. Resident Evil understood this and leaned into it: a set camera let the directors compose each shot for exactly the tension they wanted. The static frame isn't a constraint you tolerate, it's a frame you get to author.
@@ -30,9 +37,23 @@ I paint against a reference layer for grid placement and angle. So the compositi
 
 A real-time 3D tactical game structurally can't do this. Its camera rotates, so the grid has to read from every angle and the scene can't be hand-tuned to any one of them. Committing to a single frame is exactly what lets me tune both at once.
 
+<figure style="margin: 1.25rem 0;">
+  <video controls autoplay loop muted playsinline preload="metadata" width="100%" style="border-radius: 6px; display: block;">
+    <source src="https://allbyte.studio/captures/recordings/combat-transition.mp4" type="video/mp4" />
+  </video>
+  <figcaption style="text-align: center; font-size: 0.85rem; opacity: 0.7; margin-top: 0.4rem;">Into combat: the tactical grid drops onto the painted ground and the battle begins.</figcaption>
+</figure>
+
 ## Faking depth on a flat painting
 
 A pre-rendered backdrop is dead flat — it's a picture. But walk around one of my scenes and it reads like a space you move *into*, not just across. That's a deliberate mechanic — I call it the depth-of-field system (no relation to the camera-lens kind) — and it's cruder than it looks.
+
+<figure style="margin: 1.25rem 0;">
+  <video controls autoplay loop muted playsinline preload="metadata" width="100%" style="border-radius: 6px; display: block;">
+    <source src="https://allbyte.studio/captures/recordings/dwarven-ruin-entrance.mp4" type="video/mp4" />
+  </video>
+  <figcaption style="text-align: center; font-size: 0.85rem; opacity: 0.7; margin-top: 0.4rem;">The Dwarven Ruin entrance — depth of field running the whole scene: shrink, slow, and the pull toward the vanishing point.</figcaption>
+</figure>
 
 Each scene can carry a perspective zone: a box I lay over the painted ground, its bottom edge "near," its top edge "far," aimed at a vanishing point on the painting's horizon. While you're inside it, the game measures how deep you are — a straight 0-to-1 ratio from the front of the box to the back — and uses that one number to blend three things between their near and far values:
 

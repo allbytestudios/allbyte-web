@@ -1,6 +1,6 @@
 ---
 title: "Painting Around the Grid: Pre-Rendered Backgrounds in a Tactical RPG"
-description: "Pre-rendered backgrounds nearly died with the PS1. I use them anyway — and for a tactical RPG, the fixed camera that killed them is exactly the right tool. Plus the one hard constraint: a grid can't carry depth of field."
+description: "Pre-rendered backgrounds nearly died with the PS1 — bringing them back was part of the vision, not a compromise. Hand-painted fixed-camera scenes for a tactical RPG you can actually explore, and the one hard constraint: a grid can't carry depth of field."
 pubDate: 2026-06-24T15:00:00Z
 category: "craft"
 devlog: "chronicles"

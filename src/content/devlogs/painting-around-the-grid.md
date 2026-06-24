@@ -1,6 +1,6 @@
 ---
 title: "Painting Around the Grid: Pre-Rendered Backgrounds in a Tactical RPG"
-description: "Pre-rendered backgrounds nearly died with the PS1 — bringing them back was part of the vision, not a compromise. Hand-painted fixed-camera scenes for a tactical RPG you can actually explore, and the one hard constraint: a grid can't carry depth of field."
+description: "Pre-rendered backgrounds nearly died with the PS1 — bringing them back was part of the vision, not a compromise. Hand-painted fixed-camera scenes for a tactical RPG you can actually explore: how I fake 3D depth on a flat painting, and why that depth is the one thing a tactical grid can't sit on."
 pubDate: 2026-06-24T15:00:00Z
 category: "craft"
 devlog: "chronicles"
@@ -30,20 +30,36 @@ I paint against a reference layer for grid placement and angle. So the compositi
 
 A real-time 3D tactical game structurally can't do this. Its camera rotates, so the grid has to read from every angle and the scene can't be hand-tuned to any one of them. Committing to a single frame is exactly what lets me tune both at once.
 
-## The hard part: a grid can't carry depth of field
+## Faking depth on a flat painting
 
-This is the constraint that decides, before I lay down a brushstroke, whether a scene can even have combat.
+A pre-rendered backdrop is dead flat — it's a picture. But walk around one of my scenes and it reads like a space you move *into*, not just across. That's a deliberate mechanic — I call it the depth-of-field system (no relation to the camera-lens kind) — and it's cruder than it looks.
 
-A tactical grid is a roughly flat plane of cells. For the cells to stay consistent, every point of the playable ground has to sit **roughly the same distance from the camera** — a high enough, angled enough view that foreshortening across the board is near-uniform. The moment a painting has real depth of field — ground receding hard toward a far vista, a big foreground — that uniformity breaks and the flat grid stops matching the painted ground.
+Each scene can carry a perspective zone: a box I lay over the painted ground, its bottom edge "near," its top edge "far," aimed at a vanishing point on the painting's horizon. While you're inside it, the game measures how deep you are — a straight 0-to-1 ratio from the front of the box to the back — and uses that one number to blend three things between their near and far values:
 
-So depth of field becomes a design lever, not a free choice:
+- **Scale** — you shrink as you head back.
+- **Speed** — you move slower the deeper you go (the wading-into-the-distance feel).
+- **Camera zoom** — the view eases in with depth.
 
-- **Laria's Main Square** has a little depth of field — small enough that the ground stays roughly equidistant, so it keeps its grid and supports combat.
-- The **Dwarven Ruin entrance** is the opposite: depth of field is the *whole scene*, the entire frame plunging inward. There's no honest way to lay a flat grid on that — so I made it a non-combat scene. The drama is the point, and combat would have to give it up.
+Then your *path* bends toward the vanishing point. Push up into the scene and a sideways nudge pulls you toward center; come back forward and it fans out toward the edges — the exact convergence of walking a road that narrows to a point. Stack shrink + slow + drift-to-center and a static painting becomes a space with a real *forward*.
+
+It isn't real perspective math — it's a linear map on screen height, tuned per scene. That's the whole trick: I'm not computing a correct projection, I'm dialing the numbers to one specific painting until it feels right. Every scene gets its own box, its own near/far scale and speed, its own vanishing point — and it runs on the whole party, so trailing members shrink and tighten their spacing as the line recedes.
+
+It's fragile in instructive ways, too. The Godot 3→4 jump silently flipped the sign of the angle function the drift relies on, and suddenly walking up the hill out of the church square shoved the lead character *left* instead of right — same line of code, opposite result. (It was [one of the silent renames I wrote about](/devlog/godot-3-to-4-retrospective/).)
+
+## The hard part: a grid can't live on that depth
+
+That depth is exactly what a tactical grid can't tolerate — and it's the constraint that decides, before I lay down a brushstroke, whether a scene can even have combat.
+
+A tactical grid is a roughly flat plane of cells. For the cells to stay consistent, every point of the playable ground has to sit **roughly the same distance from the camera** — a high enough, angled enough view that foreshortening across the board is near-uniform. The moment a scene leans hard on perspective — ground receding toward a far vista, a big foreground — that uniformity breaks and the flat grid stops matching the painted ground.
+
+So depth becomes a design lever, not a free choice:
+
+- **Laria's Main Square** has only a little — small enough that the ground stays roughly equidistant, so it keeps its grid and supports combat.
+- The **Dwarven Ruin entrance** is the opposite: the depth is the *whole scene*, the entire frame plunging inward. There's no honest way to lay a flat grid on that — so I made it a non-combat scene. The drama is the point, and combat would have to give it up.
 
 When you try to force the two together, the failure surfaces at interaction time: a unit snaps to the nearest cell to reach an enemy, and if that move crosses real painted depth, the unit appears to **jump across depth to a cell that reads wrong** — the math is right, the picture disagrees.
 
-So the rule I paint by: dramatic depth of field is reserved for set-piece, non-combat scenes; anywhere a grid has to live, the camera height keeps every point roughly equidistant and the board stays a board. Painting *around* the grid — knowing which scenes get to be dramatic and which have to stay honest — is most of the discipline.
+So the rule I paint by: dramatic depth is reserved for set-piece, non-combat scenes; anywhere a grid has to live, the camera height keeps every point roughly equidistant and the board stays a board. Painting *around* the grid — knowing which scenes get to be dramatic and which have to stay honest — is most of the discipline.
 
 ## How it goes together in-engine
 

@@ -1,103 +1,98 @@
-# Drop sheet — Pre-rendered artwork (drop #1 of the mechanics series)
+# Drop sheet — Town tour / pre-rendered (drop #1 of the mechanics series)
 
-**Status:** copy prepped, **waiting on Quinn's video.** Publish when the footage lands.
-**Video (Quinn, desktop Movie Maker):** the hand-painted / pre-rendered backdrops —
-the dramatic-depth showpiece (Dwarven Ruin entrance) + the Laria squares (Main Square,
-Church Square). Slow pans that let the painterly depth read. Specs in
-`APP_CLAUDE_VIDEO_QUALITY_RESEARCH.md` (1080p+/60, clean, real audio, 16:9 master +
-a vertical cut for Shorts/TikTok).
+**Status:** **READY.** Video encoded + uploaded; copy final. Awaiting owner OK to post.
+**Video:** https://allbyte.studio/captures/recordings/town-tour-laria.mp4
+  (30s, 1218×882, real in-engine audio, watermark-free — owner-captured 2026-06-24).
+  *Needs a vertical 9:16 cut before YouTube Shorts / TikTok (it's ~1.38:1).*
+**Angle (owner):** parallax + hand-painted pre-rendered backgrounds → golden-era JRPG
+vibes → "check out the sleepy starting village."
 
 ## Links (two-link convention)
-- **Play now (constant):** https://allbyte.studio/play/
+- **Play now (constant):** https://allbyte.studio/play/  ← primary CTA ("check it out here")
 - **Contextual:** the pre-rendered devlog → https://allbyte.studio/devlog/painting-around-the-grid/
-  - ⚠ **That devlog is currently `draft: true`. Un-draft it when this drop ships** (the
-    contextual link must resolve publicly). Pair the post + the video on the same day.
-
-## The hook (craft-first, not me-first)
-Pre-rendered backgrounds basically died with the PS1. Bringing them back — **every scene
-hand-painted** — for a tactical RPG **you can actually explore.** (Hand-painted is the
-un-fakeable, proves-human-authorship angle — lean on it; don't preach "no AI.")
+  - ⚠ That devlog is `draft: true`. **Either publish it** (recommended — embed this town-tour
+    video + the Dwarven Ruin clip as 2 of its 3 visuals) so the link resolves, **or** swap the
+    contextual link to the homepage `https://allbyte.studio/` for this drop.
 
 ---
 
-## Per-channel copy (ready to paste / queue)
+## Per-channel copy
 
 ### Bluesky  *(links inline; lowercase tags; alt-text the video)*
 ```
-pre-rendered backgrounds basically died with the PS1. i'm bringing them back — every scene hand-painted — for a tactical RPG you can actually explore.
+i use parallax + hand-painted, pre-rendered backgrounds to chase that golden-era JRPG feeling — a static painted frame you move *into*, not across. here's a wander through the sleepy starting village.
 
 play it free: https://allbyte.studio/play/
-how + why: https://allbyte.studio/devlog/painting-around-the-grid/
+how i build the scenes: https://allbyte.studio/devlog/painting-around-the-grid/
 
-#gamedev #godot #tacticalrpg
+#gamedev #godot #jrpg
 ```
 
-### Mastodon  *(public; CamelCase tags at end; alt-text required)*
+### Mastodon  *(public; CamelCase tags; alt-text required)*
 ```
-Pre-rendered backgrounds basically died with the PS1 — fixed camera, every scene a hand-painted frame. I'm bringing them back for a tactical RPG with a real world to explore, not just a mission select.
+I use parallax and hand-painted, pre-rendered backgrounds to chase that golden-era JRPG feeling — a static painted frame you move *into*, not across. Here's a quiet wander through the sleepy starting village.
 
 Play it free in the browser: https://allbyte.studio/play/
-How and why I do it: https://allbyte.studio/devlog/painting-around-the-grid/
+How I build the scenes: https://allbyte.studio/devlog/painting-around-the-grid/
 
-#GameDev #Godot #TacticalRPG #PixelArt #MastoArt
+#GameDev #Godot #JRPG #PixelArt #MastoArt
 ```
 
-### Threads  *(art + thought + a question in main; ONE tag; links in replies)*
+### Threads  *(video + thought + question in main; ONE tag; links in replies)*
 ```
 MAIN:
-Pre-rendered backgrounds basically died with the PS1 — fixed camera, every scene a hand-painted frame. I'm bringing the look back for a tactical RPG you can actually explore. Anyone else miss this style? #godot
+Parallax + hand-painted pre-rendered backgrounds, chasing that golden-era JRPG feeling — a quiet wander through the sleepy starting village. What games gave you this feeling? #godot
 
 REPLY 1: Play it free in the browser → https://allbyte.studio/play/
-REPLY 2: Wrote up how + why → https://allbyte.studio/devlog/painting-around-the-grid/
+REPLY 2: How I build the scenes → https://allbyte.studio/devlog/painting-around-the-grid/
 ```
 
-### X / Twitter  *(MANUAL; links in first reply, NOT body; 1–2 tags)*
+### X / Twitter  *(MANUAL; links in first reply, not body; 1–2 tags)*
 ```
 MAIN:
-Pre-rendered backgrounds basically died with the PS1. I'm bringing them back — hand-painted — for a tactical RPG you can explore. #madewithgodot #screenshotsaturday
+Chasing golden-era JRPG vibes — parallax + hand-painted pre-rendered backgrounds. A wander through the sleepy starting village. #madewithgodot #indiedev
 
-REPLY: Play free → https://allbyte.studio/play/  ·  how + why → https://allbyte.studio/devlog/painting-around-the-grid/
+REPLY: Play free → https://allbyte.studio/play/  ·  how I build the scenes → https://allbyte.studio/devlog/painting-around-the-grid/
 ```
 
-### Reddit — r/godot  *(MANUAL; self-post, value-first; links in a comment, not the title)*
+### Reddit — r/godot  *(MANUAL; self-post, value-first; links in a comment)*
 ```
-TITLE: I'm reviving PS1-style pre-rendered backgrounds — hand-painted — for a tactical RPG
+TITLE: Chasing golden-era JRPG vibes with parallax + hand-painted pre-rendered backgrounds — a wander through the starting village
 
 BODY (with the native video):
-A technique that basically died with the PS1: a fixed camera over a static, hand-painted
-backdrop with real-time characters on top. I'm bringing it back on purpose — the catch is
-the camera angle has to keep the ground roughly equidistant so a tactical grid still sits
-on it (dramatic depth of field gets reserved for non-combat scenes). Built in Godot 4,
-runs free in the browser. Happy to talk through how the grid lines up with the painting.
+The look I'm after is the old painted-backdrop JRPG feel — a fixed, hand-painted frame
+you move *into*, with parallax layers and a depth trick on top so it reads as a space
+rather than a flat picture. This is the sleepy starting village. Godot 4, free in the
+browser. Happy to talk through how the scenes are layered.
 
 FIRST COMMENT:
-Free to play in the browser: https://allbyte.studio/play/ — and I wrote up the how/why
-(incl. the depth-of-field-vs-grid problem): https://allbyte.studio/devlog/painting-around-the-grid/
+Free to play → https://allbyte.studio/play/ — and I wrote up how the scenes are built →
+https://allbyte.studio/devlog/painting-around-the-grid/
 ```
-*(r/IndieDev / r/tacticalrpg are secondary homes — reword the title, don't cross-post identically.)*
+*(r/JRPG, r/tacticalrpg, r/IndieDev secondary — reword the title, don't cross-post identically.)*
 
-### Discord  *(showcase channels; clip + one-liner + link; then stay and reply)*
+### Discord  *(showcase channels; video + one-liner + link; then stay and reply)*
 ```
-Bringing back PS1-style pre-rendered backgrounds — every scene hand-painted — for a tactical RPG with a world to explore. Free in the browser: https://allbyte.studio/play/  (wrote up how + why: https://allbyte.studio/devlog/painting-around-the-grid/)
-```
-
-### YouTube Shorts  *(vertical 9:16; hook in first ~2s; keyword-dense desc ≤180)*
-```
-TITLE: Reviving PS1 pre-rendered backgrounds for a tactical RPG
-DESC: Hand-painted pre-rendered backgrounds in a Godot 4 tactical RPG you can play free in the browser → https://allbyte.studio/play/  #Shorts #gamedev #godot #tacticalrpg #indiedev
+Chasing golden-era JRPG vibes — parallax + hand-painted pre-rendered backgrounds, a wander through the sleepy starting village. Free in the browser: https://allbyte.studio/play/  (how I build the scenes: https://allbyte.studio/devlog/painting-around-the-grid/)
 ```
 
-### dev.to  *(the long-form companion = the devlog itself)*
-Cross-post `painting-around-the-grid` with `canonical_url` → the allbyte.studio URL,
-tags `#gamedev #godot #showdev #devjournal`. Do this when the devlog un-drafts.
+### YouTube Shorts  *(needs the vertical 9:16 cut first; hook in first ~2s)*
+```
+TITLE: A wander through the starting village — golden-era JRPG vibes
+DESC: Parallax + hand-painted pre-rendered backgrounds in a Godot 4 tactical RPG, free in the browser → https://allbyte.studio/play/  #Shorts #gamedev #godot #jrpg #indiedev
+```
+
+### dev.to
+The long-form companion = the pre-rendered devlog. Cross-post with `canonical_url`
+when it un-drafts.
 
 ---
 
-## Ship checklist (when Quinn's video lands)
-1. Un-draft `painting-around-the-grid.md` (`draft: false`) + push so the contextual link resolves.
-2. Vertical cut for Shorts/TikTok; 16:9 for the rest (per the video-quality research).
-3. Auto channels via Postiz (Bluesky, Mastodon, Threads, Discord, YouTube). Link placement
-   per the playbook (X/Threads = reply).
-4. Manual: X + r/godot (and consider r/IndieDev / r/tacticalrpg, reworded).
-5. dev.to canonical cross-post of the devlog.
-6. Add the clip to the recordings gallery / "Add to artwork" bridge.
+## Ship checklist
+1. Decide the contextual link: publish the devlog (recommended) OR use the homepage.
+2. (If publishing) embed this town-tour clip + the Dwarven Ruin clip in the devlog, un-draft, push.
+3. Auto channels via Postiz (Bluesky, Mastodon, Threads, Discord) — media = the S3 video URL
+   (Meta can't fetch from the ts.net funnel; S3 URL works). Link placement per playbook.
+4. Manual: X + r/godot (+ r/JRPG / r/IndieDev, reworded).
+5. Vertical cut → YouTube Shorts / TikTok.
+6. Add the clip to the recordings gallery / artwork bridge.

@@ -1,0 +1,50 @@
+---
+title: "Painting Around the Grid: Hand-Painted Backgrounds in a Tactical RPG"
+description: "Pre-rendered backgrounds nearly died with the PS1. I use a hand-painted cousin of the technique — and for a tactical RPG, the fixed camera that killed it is exactly the right tool. Plus the one hard constraint: a grid can't carry depth of field."
+pubDate: 2026-06-24T15:00:00Z
+category: "craft"
+devlog: "chronicles"
+tags: ["art", "tactical-rpg", "pre-rendered", "level-design", "godot"]
+draft: true
+---
+
+Almost nobody ships pre-rendered backgrounds anymore. They were everywhere on the PS1 — Final Fantasy VII through IX, the early Resident Evils — a static 2D backdrop with real-time characters composited on top. The moment hardware could render 3D in real time, the technique was dropped as the stop-gap it had been. The usual epitaph: fixed camera, can't change anything mid-scene, enormous to store.
+
+I use a hand-painted cousin of it. Not for nostalgia — for a tactical RPG it's the right tool, and the "limitation" everyone retired is the whole reason it works.
+
+## The fixed camera was never the weakness
+
+The thing about a fixed camera is that the player *looks* at the frame. Not for the half-second a moving 3D camera grants before it pans away — for as long as they're in that room. Resident Evil understood this and leaned into it: a set camera let the directors compose each shot for exactly the tension they wanted. The static frame isn't a constraint you tolerate, it's a frame you get to author.
+
+Mine aren't 3D scenes rendered down to 2D, which is what "pre-rendered" technically meant. They're **hand-painted**. That's more control, not less — there's no rig, no render, no lighting bake between me and the image. I paint the exact frame I want. (Art here is always handcrafted; this is just the most literal version of it.)
+
+## The catch: I'm composing the grid at the same time
+
+Here's the part no general history of pre-rendered backgrounds gets to, because they're not about tactics games: **I'm not just painting a dramatic angle, I'm painting the board a tactical grid has to play on — at the same time.**
+
+I paint against a reference layer for grid placement and angle. So the composition and the playable space are authored together, in one pass: the most dramatic frame *and* a tactical grid that sits cleanly on it are the same decision. Drama and readability don't get traded off, because they were never separate steps.
+
+A real-time 3D tactical game structurally can't do this. Its camera rotates, so the grid has to read from every angle and the scene can't be hand-tuned to any one of them. Committing to a single frame is exactly what lets me tune both at once.
+
+## The hard part: a grid can't carry depth of field
+
+This is the constraint that decides, before I lay down a brushstroke, whether a scene can even have combat.
+
+A tactical grid is a roughly flat plane of cells. For the cells to stay consistent, every point of the playable ground has to sit **roughly the same distance from the camera** — a high enough, angled enough view that foreshortening across the board is near-uniform. The moment a painting has real depth of field — ground receding hard toward a far vista, a big foreground — that uniformity breaks and the flat grid stops matching the painted ground.
+
+So depth of field becomes a design lever, not a free choice:
+
+- **Laria's Main Square** has a little depth of field — small enough that the ground stays roughly equidistant, so it keeps its grid and supports combat.
+- The **Dwarven Ruin entrance** is the opposite: depth of field is the *whole scene*, the entire frame plunging inward. There's no honest way to lay a flat grid on that — so I made it a non-combat scene. The drama is the point, and combat would have to give it up.
+
+When you try to force the two together, the failure surfaces at interaction time: a unit snaps to the nearest cell to reach an enemy, and if that move crosses real painted depth, the unit appears to **jump across depth to a cell that reads wrong** — the math is right, the picture disagrees.
+
+So the rule I paint by: dramatic depth of field is reserved for set-piece, non-combat scenes; anywhere a grid has to live, the camera height keeps every point roughly equidistant and the board stays a board. Painting *around* the grid — knowing which scenes get to be dramatic and which have to stay honest — is most of the discipline.
+
+## How it goes together in-engine
+
+The game runs in Godot 4. Each battle scene is a fixed camera over the hand-painted backdrop. The grid is isometric, fit to that specific painting's angle, with the move/attack/confirm highlights all sharing the same cell transform so they land exactly on the painted ground. Units are drawn into the scene with y-sorting, so a character lower on screen overlaps one behind them — cheap pseudo-depth that sells real-time sprites standing in a static painting. Everything renders pixel-crisp (nearest-neighbor), so the brushwork stays sharp at any zoom. Out in the overworld, where there's no grid, I let the depth loose: parallax layers, drifting clouds, the whole frame breathing.
+
+## Why bother
+
+Because the constraint *is* the craft. A near-dead technique, judged purely on fidelity, lost to real-time 3D years ago. But judged on what a tactical RPG actually needs — a readable board, a composed frame, a fixed angle you can hand-tune art and rules onto together — it isn't a throwback. It's the right substrate, and the discipline of painting around the grid is what makes the board both beautiful and playable at once.

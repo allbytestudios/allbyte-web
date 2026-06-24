@@ -25,7 +25,16 @@
   // When Arc confirms both paths populate: flip the flag, the iframe routes
   // by tier. Add a re-resolve in onMount at the same time so SSR'd "public"
   // upgrades to "debug" for admin/legend users after auth hydrates.
-  const VARIANT_PATHS_AVAILABLE = true;
+  //
+  // TEMPORARILY FORCED OFF (2026-06-24): the public export at
+  // `/godot/public/` was looping on load (stale/threads-enabled cached build
+  // + missing files incl. Laria pack) and direct loads of /play/ resolve to
+  // it before auth hydrates, so anonymous/social visitors got an infinite
+  // "Loading" loop. Routing everyone to the single network-first `/godot/`
+  // path (the proven-working build) until Arc/Port fix the public export —
+  // see APP_CLAUDE_PUBLIC_BUILD_DEPLOY_GAPS.md. Flip back to true once the
+  // public build is verified clean on S3.
+  const VARIANT_PATHS_AVAILABLE = false;
 
   type Variant = "public" | "debug";
 

@@ -10,9 +10,9 @@ draft: true
 
 Almost nobody ships pre-rendered backgrounds anymore. They were everywhere on the PS1 — Final Fantasy VII through IX, the early Resident Evils — a static 2D backdrop with real-time characters composited on top. The moment hardware could render 3D in real time, the technique was dropped as the stop-gap it had been. The usual epitaph: fixed camera, can't change anything mid-scene, enormous to store.
 
-I brought them back on purpose. I wanted the *beauty* of a pre-rendered backdrop — the composed, painterly stillness the PS1 RPGs spent their whole graphics budget on — and to fuse it with two things that era never paired it with: the strategy of a tactical RPG, and the seamless flow of Chrono Trigger, where the world and its battles run together without the game ever stopping to change gears.
+I brought them back on purpose. I wanted the *beauty* of a pre-rendered backdrop — the composed, painterly stillness the PS1 RPGs spent their whole graphics budget on. But the fusion I was really after is something I rarely see in tactical RPGs: a *world to explore*. The genre tends to run mission-to-mission — pick a battle off a map, fight it, pick the next — without a place you actually wander. I wanted the tactics to live inside a real, walkable world of towns and dungeons, with the seamless flow of Chrono Trigger carrying you between exploring and fighting.
 
-This post is about the first half of that — the backgrounds and the grid — and why the fixed camera everyone retired is exactly what lets a painted frame and a tactical board fit together.
+This post is about what makes that world renderable — the pre-rendered backgrounds and the tactical grid — and why the fixed camera everyone retired is exactly what lets a painted frame and a tactical board fit together.
 
 ## The fixed camera was never the weakness
 

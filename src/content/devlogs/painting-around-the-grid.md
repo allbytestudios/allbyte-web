@@ -55,13 +55,14 @@ A pre-rendered backdrop is dead flat — it's a picture. But walk around one of 
   <figcaption style="text-align: center; font-size: 0.85rem; opacity: 0.7; margin-top: 0.4rem;">The Dwarven Ruin entrance — depth of field running the whole scene: shrink, slow, and the pull toward the vanishing point.</figcaption>
 </figure>
 
-Each scene can carry a perspective zone: a box I lay over the painted ground, its bottom edge "near," its top edge "far," aimed at a vanishing point on the painting's horizon. While you're inside it, the game measures how deep you are — a straight 0-to-1 ratio from the front of the box to the back — and uses that one number to blend three things between their near and far values:
+Each scene can carry a perspective zone: a box I lay over the painted ground, its bottom edge "near," its top edge "far," aimed at a vanishing point on the painting's horizon. While you're inside it, the game measures how deep you are — a straight 0-to-1 ratio from the front of the box to the back — and uses that one number to blend two things between their near and far values:
 
 - **Scale** — you shrink as you head back.
 - **Speed** — you move slower the deeper you go (the wading-into-the-distance feel).
-- **Camera zoom** — the view eases in with depth.
 
-Then your *path* bends toward the vanishing point. Push up into the scene and a sideways nudge pulls you toward center; come back forward and it fans out toward the edges — the exact convergence of walking a road that narrows to a point. Stack shrink + slow + drift-to-center and a static painting becomes a space with a real *forward*.
+(The same lerp can drive camera zoom too, but I rarely reach for it.)
+
+Then your *path* bends toward the reference point — the spot I set for the painting's perspective to converge on, which isn't necessarily straight up the screen. Head toward it, deeper into the scene, and a sideways nudge pulls your line of travel in; move away and it fans back out — the exact convergence of walking a road that narrows to a point. Stack shrink + slow + drift-toward-that-point and a static painting becomes a space with a real *forward*.
 
 It isn't real perspective math — it's a linear map on screen height, tuned per scene. That's the whole trick: I'm not computing a correct projection, I'm dialing the numbers to one specific painting until it feels right. Every scene gets its own box, its own near/far scale and speed, its own vanishing point — and it runs on the whole party, so trailing members shrink and tighten their spacing as the line recedes.
 

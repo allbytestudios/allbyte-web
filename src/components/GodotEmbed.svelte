@@ -6,6 +6,7 @@
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import MinimapPanel from "./MinimapPanel.svelte";
+  import { initPlayAnalytics } from "../lib/playAnalytics";
 
   interface Props {
     fixture?: string;
@@ -76,6 +77,7 @@
   let sseUnsub: (() => void) | null = null;
   let messageOff: (() => void) | null = null;
   let reloadReadyResolve: (() => void) | null = null;
+  let analyticsOff: (() => void) | null = null;
 
   function awaitReloadReady(timeoutMs = 2000): Promise<void> {
     return new Promise((resolve) => {
@@ -192,6 +194,16 @@
     loadPoller = setInterval(pollLoadStatus, 500);
     pollLoadStatus();
 
+    // Anonymous play-depth funnel (no-op off prod / until backend deployed).
+    // Reads the same-origin game scene so we can see how far players get.
+    analyticsOff = initPlayAnalytics(() => {
+      try {
+        return (iframeEl?.contentWindow as any)?.gameState?.scene ?? null;
+      } catch {
+        return null;
+      }
+    });
+
     if (!import.meta.env.DEV) return;
 
     sseUnsub = subscribeToFile("godot/reload", doReload);
@@ -209,6 +221,7 @@
   onDestroy(() => {
     sseUnsub?.();
     messageOff?.();
+    analyticsOff?.();
     teardownSaveBridge();
     stopLoadPolling();
     if (typeof window !== "undefined") {

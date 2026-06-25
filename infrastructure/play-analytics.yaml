@@ -1,0 +1,324 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Anonymous play-depth funnel for allbyte.studio. Standalone (NOT part of the
+  Stripe/Patreon stack, which is mid-migration) so it can be deployed/iterated in
+  isolation. Captures scene-progression beacons from /play/ and exposes an
+  admin-gated aggregate funnel. No PII: a session-scoped random id, the scene
+  names reached, time played, and the referrer HOST only (e.g. "reddit.com").
+
+Parameters:
+  SiteDomain:
+    Type: String
+    Default: https://allbyte.studio
+    Description: Allowed CORS origin for the write/read Function URLs.
+  AdminEmail:
+    Type: String
+    NoEcho: true
+    Description: >
+      Email claim that the read endpoint requires (the owner's login email).
+      Passed at deploy time so it never lives in the repo. JWTs are HS256-signed
+      and carry an "email" claim, so this is a trustworthy gate.
+  RetentionDays:
+    Type: Number
+    Default: 90
+    Description: Rows auto-expire via DynamoDB TTL after this many days.
+
+Resources:
+  PlayFunnelTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: allbyte-studio-play-funnel
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # --- Write (public beacon) ----------------------------------------------
+  WriteRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: write-funnel
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: dynamodb:PutItem
+                Resource: !GetAtt PlayFunnelTable.Arn
+
+  WriteFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-play-funnel-write
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 5
+      MemorySize: 128
+      Role: !GetAtt WriteRole.Arn
+      Environment:
+        Variables:
+          TABLE: !Ref PlayFunnelTable
+          SITE_DOMAIN: !Ref SiteDomain
+          RETENTION_DAYS: !Ref RetentionDays
+      Code:
+        ZipFile: |
+          import json, os, re, time, boto3
+
+          table = boto3.resource("dynamodb").Table(os.environ["TABLE"])
+          RETENTION = int(os.environ.get("RETENTION_DAYS", "90"))
+          SAFE = re.compile(r"[^A-Za-z0-9_./:\- ]")
+          EVENTS = {"open", "scene", "end"}
+
+          def clean(s, n):
+              if not isinstance(s, str):
+                  return ""
+              return SAFE.sub("", s)[:n]
+
+          def resp(code):
+              # CORS is applied by the Function URL config; body kept tiny.
+              return {"statusCode": code}
+
+          def handler(event, context):
+              method = event.get("requestContext", {}).get("http", {}).get("method", "")
+              if method == "OPTIONS":
+                  return resp(200)
+              if method != "POST":
+                  return resp(405)
+              body = event.get("body") or ""
+              if event.get("isBase64Encoded"):
+                  import base64
+                  try:
+                      body = base64.b64decode(body).decode("utf-8", "replace")
+                  except Exception:
+                      return resp(400)
+              if len(body) > 4096:
+                  return resp(413)
+              try:
+                  d = json.loads(body)
+              except Exception:
+                  return resp(400)
+
+              sid = clean(d.get("sid"), 64)
+              ev = d.get("ev")
+              if not sid or ev not in EVENTS:
+                  return resp(400)
+              scene = clean(d.get("scene"), 80)
+              ref = clean(d.get("ref"), 120)
+              try:
+                  dur = int(d.get("dur", 0))
+              except Exception:
+                  dur = 0
+              dur = max(0, min(dur, 86400))
+              now = int(time.time())
+              # sk groups by event so the reader can distinguish boot/scene/end.
+              sk = f"{ev}#{now:013d}#{scene}"[:120]
+              try:
+                  table.put_item(Item={
+                      "sessionId": sid,
+                      "sk": sk,
+                      "ev": ev,
+                      "scene": scene,
+                      "ref": ref,
+                      "dur": dur,
+                      "ts": now,
+                      "ttl": now + RETENTION * 86400,
+                  })
+              except Exception:
+                  return resp(500)
+              return resp(204)
+
+  WriteUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt WriteFunction.Arn
+      AuthType: NONE
+      Cors:
+        AllowOrigins:
+          - !Ref SiteDomain
+          - http://localhost:4321
+        AllowMethods: [POST, OPTIONS]
+        AllowHeaders: [content-type]
+        MaxAge: 3600
+
+  WritePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref WriteFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  # --- Read (admin-gated aggregate) ---------------------------------------
+  ReadRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: read-funnel
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: dynamodb:Scan
+                Resource: !GetAtt PlayFunnelTable.Arn
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:allbyte-studio/jwt-secret-*"
+
+  ReadFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-play-funnel-read
+      Runtime: python3.12
+      Handler: index.handler
+      Timeout: 15
+      MemorySize: 256
+      Role: !GetAtt ReadRole.Arn
+      Environment:
+        Variables:
+          TABLE: !Ref PlayFunnelTable
+          SITE_DOMAIN: !Ref SiteDomain
+          ADMIN_EMAIL: !Ref AdminEmail
+      Code:
+        ZipFile: |
+          import json, os, hmac, hashlib, base64, time, boto3
+
+          table = boto3.resource("dynamodb").Table(os.environ["TABLE"])
+          ADMIN_EMAIL = (os.environ.get("ADMIN_EMAIL") or "").strip().lower()
+          _cache = {}
+
+          def jwt_secret():
+              if "s" not in _cache:
+                  sm = boto3.client("secretsmanager")
+                  _cache["s"] = sm.get_secret_value(SecretId="allbyte-studio/jwt-secret")["SecretString"]
+              return _cache["s"]
+
+          def verify_jwt(token, secret):
+              parts = token.split(".")
+              if len(parts) != 3:
+                  return None
+              sig_input = f"{parts[0]}.{parts[1]}"
+              expected = base64.urlsafe_b64encode(
+                  hmac.new(secret.encode(), sig_input.encode(), hashlib.sha256).digest()
+              ).rstrip(b"=").decode()
+              if not hmac.compare_digest(parts[2], expected):
+                  return None
+              pad = parts[1] + "=" * (4 - len(parts[1]) % 4)
+              payload = json.loads(base64.urlsafe_b64decode(pad))
+              if payload.get("exp", 0) < time.time():
+                  return None
+              return payload
+
+          def resp(code, obj):
+              return {"statusCode": code, "headers": {"content-type": "application/json"},
+                      "body": json.dumps(obj)}
+
+          def handler(event, context):
+              method = event.get("requestContext", {}).get("http", {}).get("method", "")
+              if method == "OPTIONS":
+                  return {"statusCode": 200}
+              auth = (event.get("headers", {}) or {}).get("authorization", "")
+              if not auth.startswith("Bearer "):
+                  return resp(401, {"error": "no token"})
+              payload = verify_jwt(auth[7:], jwt_secret())
+              if not payload:
+                  return resp(401, {"error": "invalid token"})
+              if not ADMIN_EMAIL or (payload.get("email") or "").strip().lower() != ADMIN_EMAIL:
+                  return resp(403, {"error": "not admin"})
+
+              # Low-volume aggregate: full scan is fine for now (TTL-bounded).
+              sessions = {}
+              kwargs = {}
+              while True:
+                  page = table.scan(**kwargs)
+                  for it in page.get("Items", []):
+                      sid = it["sessionId"]
+                      s = sessions.setdefault(sid, {"scenes": set(), "dur": 0, "ref": ""})
+                      sc = it.get("scene")
+                      if sc:
+                          s["scenes"].add(sc)
+                      s["dur"] = max(s["dur"], int(it.get("dur", 0)))
+                      if it.get("ref") and not s["ref"]:
+                          s["ref"] = it["ref"]
+                  lek = page.get("LastEvaluatedKey")
+                  if not lek:
+                      break
+                  kwargs["ExclusiveStartKey"] = lek
+
+              scene_counts = {}
+              ref_counts = {}
+              durs = []
+              for s in sessions.values():
+                  for sc in s["scenes"]:
+                      scene_counts[sc] = scene_counts.get(sc, 0) + 1
+                  if s["ref"]:
+                      ref_counts[s["ref"]] = ref_counts.get(s["ref"], 0) + 1
+                  if s["dur"] > 0:
+                      durs.append(s["dur"])
+
+              durs.sort()
+              median = durs[len(durs)//2] if durs else 0
+              return resp(200, {
+                  "totalSessions": len(sessions),
+                  "bootedSessions": sum(1 for s in sessions.values() if s["scenes"]),
+                  "sceneCounts": scene_counts,
+                  "referrers": ref_counts,
+                  "medianDurationSec": median,
+                  "generatedAt": int(time.time()),
+              })
+
+  ReadUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt ReadFunction.Arn
+      AuthType: NONE
+      Cors:
+        AllowOrigins:
+          - !Ref SiteDomain
+          - http://localhost:4321
+        AllowMethods: [GET, OPTIONS]
+        AllowHeaders: [authorization, content-type]
+        MaxAge: 3600
+
+  ReadPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ReadFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+Outputs:
+  WriteEndpoint:
+    Description: POST scene beacons here (set as the frontend write URL).
+    Value: !GetAtt WriteUrl.FunctionUrl
+  ReadEndpoint:
+    Description: Admin-gated GET funnel aggregate (Bearer JWT).
+    Value: !GetAtt ReadUrl.FunctionUrl
+  TableName:
+    Value: !Ref PlayFunnelTable

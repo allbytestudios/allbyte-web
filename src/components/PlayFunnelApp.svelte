@@ -91,8 +91,6 @@
     return k.slice(2);
   }
 
-  // bootedNoMove as a share of booted = the control-confusion rate.
-  let noMoveRate = $derived(data ? pct(data.bootedNoMove, data.bootedSessions) : 0);
 </script>
 
 <div class="funnel">
@@ -123,22 +121,15 @@
         <div class="lbl">Booted <span class="sub">{pct(data.bootedSessions, data.totalSessions)}% of arrivals</span></div>
       </div>
       <div class="card">
-        <div class="num">{data.movedSessions}</div>
-        <div class="lbl">Moved <span class="sub">{pct(data.movedSessions, data.bootedSessions)}% of booted</span></div>
-      </div>
-      <div class="card" class:warn={noMoveRate >= 40}>
-        <div class="num">{data.bootedNoMove}</div>
-        <div class="lbl">Booted, never moved <span class="sub">{noMoveRate}% of booted</span></div>
-      </div>
-      <div class="card">
         <div class="num">{fmtDuration(data.medianDurationSec)}</div>
         <div class="lbl">Median session</div>
       </div>
     </div>
 
-    {#if noMoveRate >= 40 && data.bootedSessions >= 5}
-      <p class="signal">⚠ {noMoveRate}% of players who booted the game never moved — a strong control-discoverability signal.</p>
-    {/if}
+    <!-- "Moved"/"never moved" cards removed 2026-06-25: movedSessions is sampled
+         from the transient gameState.isMoving at a 4s poll, so it under-counts
+         badly (a player who walked 4 scenes still read as "never moved"). Scenes
+         reached (below) is the trustworthy starting-engagement signal. -->
 
     <div class="cols">
       <!-- Location funnel -->

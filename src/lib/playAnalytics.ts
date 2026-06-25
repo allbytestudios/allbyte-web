@@ -25,6 +25,19 @@ const SID_KEY = "ab_play_sid";
 
 type Ev = "open" | "scene" | "end";
 
+/**
+ * Snapshot of the game's same-origin `window.gameState` fields the funnel cares
+ * about. All confirmed present in the PUBLIC build (Arc, 2026-06-25):
+ * `gameState.scene` (current scene node name), `inBattle` (combat is an overlay,
+ * NOT a scene), `lastTriggeredEventId` (story progress 1→14), `isMoving`.
+ */
+export interface PlayState {
+  scene?: string | null;
+  inBattle?: boolean;
+  event?: number | string | null;
+  moving?: boolean;
+}
+
 function sessionId(): string {
   try {
     let id = sessionStorage.getItem(SID_KEY);
@@ -53,11 +66,17 @@ function referrerHost(): string {
 }
 
 /**
- * Start the funnel beacon. `sceneGetter` returns the game's current scene name
- * (or null if not booted yet). Returns a teardown fn. No-op unless on the prod
- * host and WRITE_URL is configured.
+ * Start the funnel beacon. `stateGetter` returns a snapshot of the game's
+ * current state (or null if not booted yet). Returns a teardown fn. No-op
+ * unless on the prod host and WRITE_URL is configured.
+ *
+ * Funnel "stages" are recorded as distinct `scene` events, deduped per session:
+ * location scenes use their raw name (e.g. "MainSquare"); progression
+ * milestones are namespaced "m:" so the dashboard can split them out
+ * ("m:moved", "m:combat", "m:event_<id>"). This keeps the backend schema
+ * unchanged while giving both a location funnel and a milestone funnel.
  */
-export function initPlayAnalytics(sceneGetter: () => string | null): () => void {
+export function initPlayAnalytics(stateGetter: () => PlayState | null): () => void {
   if (
     typeof window === "undefined" ||
     !WRITE_URL ||
@@ -85,20 +104,32 @@ export function initPlayAnalytics(sceneGetter: () => string | null): () => void 
     }
   }
 
+  // Record a funnel stage once per session.
+  function stage(token: string): void {
+    if (!token || seen.has(token)) return;
+    seen.add(token);
+    send("scene", token);
+  }
+
   // Arrival — counts /play loads even if the engine never boots (boot-rate).
   send("open", "");
 
   function tick(): void {
-    let scene: string | null = null;
+    let st: PlayState | null = null;
     try {
-      scene = sceneGetter();
+      st = stateGetter();
     } catch {
-      scene = null;
+      st = null;
     }
-    if (scene && !seen.has(scene)) {
-      seen.add(scene);
-      lastScene = scene;
-      send("scene", scene);
+    if (!st) return;
+    if (st.scene) {
+      lastScene = st.scene; // furthest location scene, sent on "end"
+      stage(st.scene);
+    }
+    if (st.moving) stage("m:moved");
+    if (st.inBattle) stage("m:combat");
+    if (st.event != null && st.event !== 0 && st.event !== "") {
+      stage(`m:event_${st.event}`);
     }
   }
   poller = setInterval(tick, POLL_MS);

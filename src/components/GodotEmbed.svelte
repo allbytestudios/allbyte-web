@@ -195,10 +195,20 @@
     pollLoadStatus();
 
     // Anonymous play-depth funnel (no-op off prod / until backend deployed).
-    // Reads the same-origin game scene so we can see how far players get.
+    // Reads same-origin gameState so we can see how far players get: location
+    // (scene), combat (inBattle — combat is an overlay, not a scene), story
+    // progress (lastTriggeredEventId), and first move (isMoving). All present
+    // in the public build per Arc (2026-06-25).
     analyticsOff = initPlayAnalytics(() => {
       try {
-        return (iframeEl?.contentWindow as any)?.gameState?.scene ?? null;
+        const g = (iframeEl?.contentWindow as any)?.gameState;
+        if (!g) return null;
+        return {
+          scene: g.scene ?? null,
+          inBattle: !!g.inBattle,
+          event: g.lastTriggeredEventId ?? null,
+          moving: !!g.isMoving,
+        };
       } catch {
         return null;
       }

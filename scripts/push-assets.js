@@ -139,14 +139,61 @@ if (existsSync(godotDir) && existsSync(godotIndex)) {
     }
   }
 
-  // 2c. Upload. Most files are immutable (.wasm, .pck, worklets), but
+  // 2b-public. Same obfuscation + consistency gate for the player-facing
+  // public build at /godot/public/ — the debug obfuscation above only covers
+  // /godot/, so without this the public build would ship with its script key
+  // exposed in index.wasm. Skips cleanly if the public subdir isn't present.
+  const publicGodotDir = join(godotDir, "public");
+  const publicGodotIndex = join(publicGodotDir, "index.html");
+  const publicShimPath = join(publicGodotDir, "pck-key-shim.js");
+  const havePublicBuild = existsSync(publicGodotDir) && existsSync(publicGodotIndex);
+  if (havePublicBuild) {
+    if (process.env.SKIP_GODOT_OBFUSCATION === "1") {
+      console.log("[push-assets] SKIP_GODOT_OBFUSCATION=1 — skipping public-build obfuscator.");
+    } else {
+      const cmd = `node "${join(root, "scripts", "obfuscate-godot-export.js")}" "${publicGodotDir}"`;
+      if (dryRun) {
+        console.log(`[dry-run] ${cmd}`);
+      } else {
+        console.log("[push-assets] Running Godot key obfuscator (public build)...");
+        try {
+          execSync(cmd, { stdio: "inherit" });
+        } catch (err) {
+          console.error(
+            "\n[push-assets] Public-build obfuscator refused. Fix local state per " +
+              "the message above before retrying. Aborting deploy."
+          );
+          process.exit(1);
+        }
+      }
+    }
+    if (!dryRun) {
+      const pubShimExists = existsSync(publicShimPath);
+      const pubHtmlRefsShim = readFileSync(publicGodotIndex, "utf8").includes("pck-key-shim.js");
+      if (pubShimExists !== pubHtmlRefsShim) {
+        console.error(
+          `\n[push-assets] HALT: public-build shim/HTML mismatch — ` +
+            `pck-key-shim.js ${pubShimExists ? "exists" : "missing"}, ` +
+            `public/index.html ${pubHtmlRefsShim ? "references" : "does not reference"} it. ` +
+            `Aborting.`
+        );
+        process.exit(1);
+      }
+    }
+  }
+
+  // 2c. Upload. Most files are immutable (.wasm, .pck, worklets), but every
   // index.html must revalidate so updates land without a manual CloudFront
-  // invalidation of that specific key.
+  // invalidation. Note: `--exclude "index.html"` matches the top-level key
+  // only — the nested public/index.html key is "public/index.html", so it
+  // needs its own exclude + must-revalidate cp (else it ships immutable and
+  // the public build can't update).
   run(
     `aws s3 sync "${godotDir}" s3://${bucket}/godot ` +
       `--region ${region} ` +
       `--cache-control "public, max-age=31536000, immutable" ` +
       `--exclude "index.html" ` +
+      `--exclude "public/index.html" ` +
       `--exclude ".gitkeep"`
   );
   run(
@@ -155,6 +202,14 @@ if (existsSync(godotDir) && existsSync(godotIndex)) {
       `--cache-control "public, max-age=0, must-revalidate" ` +
       `--content-type "text/html"`
   );
+  if (havePublicBuild) {
+    run(
+      `aws s3 cp "${publicGodotIndex}" s3://${bucket}/godot/public/index.html ` +
+        `--region ${region} ` +
+        `--cache-control "public, max-age=0, must-revalidate" ` +
+        `--content-type "text/html"`
+    );
+  }
 
   // 2d. Orphan-shim cleanup. `aws s3 sync` by default doesn't delete
   // files that exist in S3 but not locally, so when the obfuscator self-

@@ -90,6 +90,9 @@
   <a href="/test/marketing-queue/" class="nav-tab" class:active={active === "marketing"}>
     Marketing
   </a>
+  <a href="/test/play-funnel/" class="nav-tab" class:active={active === "players"}>
+    Players
+  </a>
 </nav>
 
 <style>

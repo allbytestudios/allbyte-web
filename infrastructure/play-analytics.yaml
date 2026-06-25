@@ -311,9 +311,16 @@ Resources:
 
               durs.sort()
               median = durs[len(durs)//2] if durs else 0
+              # "booted" = reached any scene; "moved" = fired the m:moved stage.
+              # bootedNoMove = booted players who never moved — the prime
+              # control-confusion signal (they loaded but didn't know how to play).
+              booted = sum(1 for s in sessions.values() if s["scenes"])
+              moved = sum(1 for s in sessions.values() if "m:moved" in s["scenes"])
               return resp(200, {
                   "totalSessions": len(sessions),
-                  "bootedSessions": sum(1 for s in sessions.values() if s["scenes"]),
+                  "bootedSessions": booted,
+                  "movedSessions": moved,
+                  "bootedNoMove": booted - moved,
                   "sceneCounts": scene_counts,
                   "referrers": ref_counts,
                   "medianDurationSec": median,

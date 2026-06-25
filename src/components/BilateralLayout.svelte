@@ -6,10 +6,11 @@
   import gameVersion from "../data/game-version.json";
   import { auth, initAuth, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
+  import { initPlayAnalytics } from "../lib/playAnalytics";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import { pickerVersions, defaultVersion, versionById, isUnlocked } from "../lib/gameVersions";
   import { subscribeToFile } from "../lib/testEvents";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
 
   let isMobile = $state(false);
   let showLoginModal = $state(false);
@@ -79,6 +80,9 @@
   let demoHovered = $state(false);
   let playMode = $state(false);
   let gameUrl = $state("");
+  // Teardown handle for the play-funnel beacon (homepage launches were
+  // previously uncounted — the beacon only lived in GodotEmbed on /play).
+  let analyticsOff: (() => void) | null = null;
 
   // Tier-gated game-version picker (above the Play-Now gif). pickerList is the
   // deployed builds; locked ones render disabled as an upsell. selectedVersionId
@@ -193,6 +197,8 @@
     document.body.style.overflow = "";
     window.removeEventListener("keydown", handlePlayKey);
     teardownSaveBridge();
+    analyticsOff?.();
+    analyticsOff = null;
     gameIframe = null;
     // Reverse the fullscreen/orientation lock from launchGame so the rest
     // of the site renders in its normal viewport. Both unlock/exit are
@@ -214,7 +220,33 @@
   $effect(() => {
     if (playMode && gameIframe) {
       initSaveBridge(gameIframe, { onExit: exitGame });
+      // Count homepage launches in the play-funnel too. The beacon only lived
+      // in GodotEmbed (/play), so plays started from "/" were invisible. On "/"
+      // document.referrer is still the real external source, so attribution is
+      // actually better here. Guard so a reload-remount of the iframe doesn't
+      // spin up a second beacon. No-op off the prod host (see playAnalytics).
+      if (!analyticsOff) {
+        analyticsOff = initPlayAnalytics(() => {
+          try {
+            const g = (gameIframe?.contentWindow as any)?.gameState;
+            if (!g) return null;
+            return {
+              scene: g.scene ?? null,
+              inBattle: !!g.inBattle,
+              event: g.lastTriggeredEventId ?? null,
+              moving: !!g.isMoving,
+            };
+          } catch {
+            return null;
+          }
+        });
+      }
     }
+  });
+
+  onDestroy(() => {
+    analyticsOff?.();
+    analyticsOff = null;
   });
 
   function handlePlayKey(e: KeyboardEvent) {

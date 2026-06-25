@@ -234,6 +234,7 @@
     analyticsOff?.();
     teardownSaveBridge();
     stopLoadPolling();
+    teardownKbNudge();
     if (typeof window !== "undefined") {
       window.removeEventListener("pointerdown", tryEnterFullscreen);
       window.removeEventListener("keydown", handleEscape);
@@ -378,6 +379,7 @@
     if (scene) {
       loadStatus = `Ready: ${scene}`;
       loadPanelVisible = false;
+      startKbNudge(scene);
       stopLoadPolling();
       return;
     }
@@ -405,6 +407,136 @@
       clearInterval(loadPoller);
       loadPoller = null;
     }
+  }
+
+  // --- Keyboard-suggestion nudge ------------------------------------------
+  // A bouncing hint nudging desktop players toward the keyboard scheme
+  // (WASD move + K/O/L/; actions), shown as Kenney keycap glyphs in large
+  // ModernGoth. The play-funnel showed most sessions stall before ever
+  // moving; a mouse-defaulter never discovers the keyboard works. Pure shell
+  // overlay (no game-side work). Behaviour (owner spec 2026-06-25):
+  //   - Shows on the Title scene (bottom-right, above the version) and again
+  //     on EliasHouse (in the letterbox), staying visible while on that scene.
+  //   - Each scene nudges once per device (localStorage) — not over and over.
+  //   - Two presses of any scheme key dismiss it for good (persisted): the
+  //     player has clearly found the keyboard. Touch devices + admin fixture
+  //     loads are skipped. The same-origin iframe lets us count keypresses
+  //     even while the game canvas has focus.
+  let showKbHint = $state(false);
+  let kbHintPos = $state<"title" | "elias">("title");
+  let kbUsed = false;
+  let kbPressCount = 0;
+  let kbActiveScene: "title" | "elias" | null = null;
+  let kbBootScene: string | null = null;
+  let kbScenePoller: ReturnType<typeof setInterval> | null = null;
+  let kbDoc: Document | null = null; // iframe doc we attached a listener to
+  let kbStarted = false;
+
+  const KB_KEYS = new Set([
+    "w", "a", "s", "d", "k", "o", "l", ";",
+    "W", "A", "S", "D", "K", "O", "L", ":",
+  ]);
+  const ELIAS_SCENE = "EliasHouse"; // re-nudge scene (confirm exact gameState.scene name)
+  const LS_USED = "ab_kb_used";
+  const LS_TITLE = "ab_kb_hint_title";
+  const LS_ELIAS = "ab_kb_hint_elias";
+
+  function lsGet(k: string): string | null {
+    try { return localStorage.getItem(k); } catch { return null; }
+  }
+  function lsSet(k: string, v: string): void {
+    try { localStorage.setItem(k, v); } catch { /* private mode — ignore */ }
+  }
+
+  function isDesktopPointer(): boolean {
+    try {
+      return (
+        window.matchMedia("(pointer: fine)").matches &&
+        !window.matchMedia("(pointer: coarse)").matches
+      );
+    } catch {
+      return true;
+    }
+  }
+
+  function onKbKey(e: KeyboardEvent): void {
+    if (!KB_KEYS.has(e.key)) return;
+    kbPressCount += 1;
+    if (kbPressCount >= 2) markKbUsed(); // found the keyboard — stop nudging for good
+  }
+
+  function markKbUsed(): void {
+    if (kbUsed) return;
+    kbUsed = true;
+    lsSet(LS_USED, "1");
+    showKbHint = false;
+    kbActiveScene = null;
+  }
+
+  function showAt(pos: "title" | "elias"): void {
+    kbHintPos = pos;
+    kbActiveScene = pos;
+    showKbHint = true;
+  }
+  function hideKbHint(): void {
+    showKbHint = false;
+    kbActiveScene = null;
+  }
+
+  function evalKbScene(scene: string | null): void {
+    if (kbUsed) { hideKbHint(); return; }
+    if (!scene) return;
+    if (scene === kbBootScene) {
+      if (lsGet(LS_TITLE) !== "1") showAt("title");
+      return;
+    }
+    if (scene === ELIAS_SCENE) {
+      if (lsGet(LS_ELIAS) !== "1") showAt("elias");
+      return;
+    }
+    // Left the nudge scene — consume its once-per-device flag and hide.
+    if (kbActiveScene === "title") lsSet(LS_TITLE, "1");
+    else if (kbActiveScene === "elias") lsSet(LS_ELIAS, "1");
+    hideKbHint();
+  }
+
+  function startKbNudge(bootScene: string): void {
+    if (kbStarted || fixture) return; // once per mount; skip admin fixture loads
+    if (!isDesktopPointer()) return; // touch users get the VirtualGamepad
+    kbStarted = true;
+    kbBootScene = bootScene;
+    kbUsed = lsGet(LS_USED) === "1";
+
+    // Catch keyboard use regardless of focus: parent window AND (same-origin)
+    // the game iframe's own document.
+    if (typeof window !== "undefined") window.addEventListener("keydown", onKbKey);
+    try {
+      kbDoc = iframeEl?.contentDocument ?? null;
+      kbDoc?.addEventListener("keydown", onKbKey);
+    } catch {
+      kbDoc = null;
+    }
+
+    if (kbUsed) return; // known keyboard user — never nudge
+
+    evalKbScene(bootScene); // Title check immediately
+    kbScenePoller = setInterval(() => {
+      try {
+        const g = (iframeEl?.contentWindow as any)?.gameState;
+        if (!g) return;
+        if (kbUsed) { teardownKbNudge(); return; }
+        evalKbScene(g.scene ?? null);
+      } catch {
+        /* iframe not accessible — ignore */
+      }
+    }, 1000);
+  }
+
+  function teardownKbNudge(): void {
+    if (kbScenePoller) { clearInterval(kbScenePoller); kbScenePoller = null; }
+    if (typeof window !== "undefined") window.removeEventListener("keydown", onKbKey);
+    try { kbDoc?.removeEventListener("keydown", onKbKey); } catch { /* ignore */ }
+    kbDoc = null;
   }
 </script>
 
@@ -436,6 +568,25 @@
     ></iframe>
     <VirtualGamepad iframe={iframeEl} />
     <MinimapPanel />
+    {#if showKbHint}
+      <div class="kb-hint-layer kb-hint-{kbHintPos}">
+        <div class="kb-hint" role="status" aria-live="polite">
+          <span class="kb-hint-text">Keyboard&nbsp;(</span>
+          <span class="kb-keys" aria-label="W A S D K O L semicolon">
+            <img src="/keys/keyboard_w.png" alt="" />
+            <img src="/keys/keyboard_a.png" alt="" />
+            <img src="/keys/keyboard_s.png" alt="" />
+            <img src="/keys/keyboard_d.png" alt="" />
+            <span class="kb-keys-gap"></span>
+            <img src="/keys/keyboard_k.png" alt="" />
+            <img src="/keys/keyboard_o.png" alt="" />
+            <img src="/keys/keyboard_l.png" alt="" />
+            <img src="/keys/keyboard_semicolon.png" alt="" />
+          </span>
+          <span class="kb-hint-text">)&nbsp;input suggested</span>
+        </div>
+      </div>
+    {/if}
     {#if loadPanelVisible}
       {@const pct = Math.min(100, Math.round((bytesDownloaded / EXPECTED_DOWNLOAD_BYTES) * 100))}
       {@const mbDl = (bytesDownloaded / (1024 * 1024)).toFixed(1)}
@@ -530,6 +681,85 @@
     height: 100%;
     border: none;
     display: block;
+  }
+
+  /* Keyboard-suggestion nudge. A placement layer (covers the container,
+     pointer-events: none) positions the bouncing pill per scene; the pill
+     draws the eye via peripheral motion and never blocks the game. */
+  .kb-hint-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    pointer-events: none;
+  }
+  /* Title: bottom-right, just above the in-game version line. */
+  .kb-hint-layer.kb-hint-title {
+    justify-content: flex-end;
+    align-items: flex-end;
+    padding: 0 0.9rem 2.6rem 0;
+  }
+  /* EliasHouse: down in the bottom letterbox bar. */
+  .kb-hint-layer.kb-hint-elias {
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 0.5rem;
+  }
+
+  .kb-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.95rem;
+    background: rgba(10, 14, 23, 0.92);
+    border: 1.5px solid #a7f3d0;
+    border-radius: 14px;
+    box-shadow: 0 0 18px rgba(167, 243, 208, 0.4);
+    white-space: nowrap;
+    animation: kbHintBounceY 1.15s ease-in-out infinite,
+      kbHintFadeIn 0.3s ease-out;
+  }
+  .kb-hint-text {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #eafff6;
+  }
+  .kb-keys {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.16rem;
+  }
+  .kb-keys img {
+    height: 1.7rem;
+    width: auto;
+    display: block;
+  }
+  .kb-keys-gap {
+    width: 0.5rem;
+  }
+
+  @keyframes kbHintBounceY {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-7px);
+    }
+  }
+  @keyframes kbHintFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .kb-hint {
+      animation: kbHintFadeIn 0.3s ease-out;
+    }
   }
 
   /* Load status overlay — sits at the bottom of the play container while

@@ -222,6 +222,29 @@ A few WASM hang families that the static rules can't catch by reading code, all 
 
 When a hang slips through anyway, the debugging procedure is in the **Debugging** section below.
 
+## The bug that left no error: `:=` on a web export
+
+Some failures hang. This one did the opposite — it made entire menus render *nothing*, with a completely clean console.
+
+The symptom: open the Equipment menu and it appears… empty. Call `EquipmentMenu.showV(true)` and nothing happens — no error, no warning, no stack trace, just a silent no-op. Skills and the Skill Tree did the same thing. Three menus, all "opening," all drawing blank.
+
+The culprit was a single character: `:=`.
+
+In Godot 4, `var x := some_expr` is the *inferred-type* assignment — the engine resolves the variable's type from the right-hand side at parse time. It's tidy, and on desktop it's harmless. But it carries a requirement: the RHS type has to be **statically resolvable**. And game code returns `Variant` everywhere — autoload property lookups, dictionary access, `get_node()` chains, `JavaScriptBridge.eval()` calls bridging into the browser. When the inferred type can't be resolved, the script doesn't run *wrong* — it fails to **load at all**. The class quietly registers as a bare placeholder `Node`, and every method you call on it does nothing. No error, because from the engine's point of view there's simply no method there to fail.
+
+On a desktop build you might catch it. On a WASM/web export — the script-class registry behaving slightly differently, no friendly editor in the loop — it just vanishes into a silent dead end. There were **107** of these `:=` assignments across the three menu files; converting each one to a plain `var x = some_expr` brought all three menus back to life in a single pass.
+
+The fix is almost anticlimactic — drop the colon. The lesson is the part that's easy to over-correct: `:=` isn't the villain, **unresolvable right-hand sides** are. Literal and clearly-typed assignments are perfectly safe and worth keeping on purpose:
+
+```gdscript
+const ELIAS_PATH := "res://Sprites/Allies/Elias/IdleDown.png"   # fine — String literal
+var hp := 3                                                     # fine — int
+var dir := Vector2(1, 1)                                        # fine — constructor
+var unit = some_autoload.get_current_unit()                    # use '=' — returns Variant
+```
+
+So the rule that went into the web-export catalog is scoped: reach for `=` the moment the right-hand side is a `Variant`-returning expression; keep `:=` for literals and obvious constructors. It's invisible until it isn't — another reminder that on a web export, "no error" doesn't always mean "no problem."
+
 ## Rendering: GLES2, and the textures that vanish
 
 **Use GLES2 for web.** The list of things that break on GLES3 in browsers is longer than what you gain. WebGL 1.0 (GLES2) has ~99% support; WebGL 2.0 fails on older iOS, Safari before 15, and some Android stock browsers. GLES2 costs you GPU particles (use `CPUParticles2D`), HDR/glow, screen-space effects (SSR/SSAO), GIProbes, and several shader builtins (`textureSize()`, `dFdx`/`dFdy`, `fwidth`, dynamic shader loops) — none of which a 2D tactical RPG misses.
@@ -366,6 +389,7 @@ When the runbook runs out, read the source — full clones of Godot, Emscripten,
 - Set `COOP: same-origin` + `COEP: require-corp` on every response, serve `.wasm` as `application/wasm`, and compress it. GitHub Pages can't do the headers — don't try.
 - Past ~30 `class_name` scripts or ~50MB, ship a minimal bootstrap project and stream the rest as `.pck` files via JS `fetch()` + `FS.writeFile()`, not Godot's `HTTPRequest`.
 - The whole hang list is one thread blocking: guard `set_mouse_mode`, `preload`, `print`, per-frame const dicts, sync `load`/`.instance`, `quit`, `user://`, `call_deferred` (always `return`), populated stubs, the live window size, and unchecked `load()`.
+- Use `=`, not `:=`, when the right-hand side returns `Variant` — inferred-type assignment that can't resolve its type silently fails to load the whole script on a web export (blank menus, clean console). Keep `:=` for literals and constructors.
 - GLES2 for the renderer. Watch for cross-pack textures resolving to null (assign at runtime, not via `ext_resource`).
 - Start audio on the first input; keep a resident paused `AudioStreamPlayer` per OGG to dodge the first-play vorbis decode stall.
 - A loading screen can't animate over an atomic blocking call — chunk it, hide-and-restore around it, or render the loader in HTML/CSS outside the canvas.

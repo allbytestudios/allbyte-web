@@ -11,13 +11,22 @@ Parameters:
     Type: String
     Default: https://allbyte.studio
     Description: Allowed CORS origin for the write/read Function URLs.
-  AdminEmail:
+  UsersTable:
     Type: String
+    Default: allbyte-studio-users
+    Description: >
+      DynamoDB users table (from the backend stack). The read endpoint's PRIMARY
+      admin gate is tier == "admin" on the caller's record here, so any admin
+      works automatically — no per-email config, single source of truth, matches
+      the rest of the app's admin model.
+  AdminEmails:
+    Type: String
+    Default: ""
     NoEcho: true
     Description: >
-      Email claim that the read endpoint requires (the owner's login email).
-      Passed at deploy time so it never lives in the repo. JWTs are HS256-signed
-      and carry an "email" claim, so this is a trustworthy gate.
+      OPTIONAL comma-separated email allowlist — a fallback gate used only if the
+      tier lookup is unavailable or mid-migration. Leave empty in normal
+      operation; the UsersTable tier check is what authorizes admins.
   RetentionDays:
     Type: String
     Default: "90"
@@ -215,6 +224,9 @@ Resources:
                 Action: dynamodb:Scan
                 Resource: !GetAtt PlayFunnelTable.Arn
               - Effect: Allow
+                Action: dynamodb:GetItem
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${UsersTable}"
+              - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:allbyte-studio/jwt-secret-*"
 
@@ -231,14 +243,35 @@ Resources:
         Variables:
           TABLE: !Ref PlayFunnelTable
           SITE_DOMAIN: !Ref SiteDomain
-          ADMIN_EMAIL: !Ref AdminEmail
+          USERS_TABLE: !Ref UsersTable
+          ADMIN_EMAILS: !Ref AdminEmails
       Code:
         ZipFile: |
           import json, os, hmac, hashlib, base64, time, boto3
 
           table = boto3.resource("dynamodb").Table(os.environ["TABLE"])
-          ADMIN_EMAIL = (os.environ.get("ADMIN_EMAIL") or "").strip().lower()
+          _USERS_TABLE = os.environ.get("USERS_TABLE") or ""
+          users = boto3.resource("dynamodb").Table(_USERS_TABLE) if _USERS_TABLE else None
+          # Optional comma-separated fallback allowlist. Primary gate is the tier
+          # lookup below, so this is normally empty.
+          ADMIN_EMAILS = {e.strip().lower() for e in (os.environ.get("ADMIN_EMAILS") or "").split(",") if e.strip()}
           _cache = {}
+
+          def is_admin(payload):
+              # Primary: real admin tier on the user's record — matches the rest
+              # of the app, so ANY admin works with no per-email config.
+              sub = payload.get("sub")
+              if users is not None and sub:
+                  try:
+                      item = users.get_item(Key={"userId": sub}).get("Item")
+                      if item and (item.get("tier") or "").strip().lower() == "admin":
+                          return True
+                  except Exception:
+                      pass  # fall through to the email allowlist
+              # Fallback: explicit allowlist (resilient if the tier lookup is
+              # unavailable or mid tier-model migration).
+              email = (payload.get("email") or "").strip().lower()
+              return bool(email and email in ADMIN_EMAILS)
 
           def jwt_secret():
               if "s" not in _cache:
@@ -276,7 +309,7 @@ Resources:
               payload = verify_jwt(auth[7:], jwt_secret())
               if not payload:
                   return resp(401, {"error": "invalid token"})
-              if not ADMIN_EMAIL or (payload.get("email") or "").strip().lower() != ADMIN_EMAIL:
+              if not is_admin(payload):
                   return resp(403, {"error": "not admin"})
 
               # Low-volume aggregate: full scan is fine for now (TTL-bounded).

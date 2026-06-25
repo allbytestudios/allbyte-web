@@ -17,7 +17,7 @@ const CLAUDE_PROJECTS = join(homedir(), ".claude", "projects");
 const OUT_PATH = resolve("src/data/claude-usage.json");
 const HISTORY_PATH = resolve("src/data/claude-usage-history.json");
 
-// Weekly budget — calibrated to Drew's Max account.
+// Weekly budget — calibrated to the owner's Max account.
 // 8907 msg since Wed reset = 69% weekly → budget ≈ 12900 messages/week.
 // Tune CLAUDE_WEEKLY_MESSAGES env var if this drifts.
 const WEEKLY_BUDGET_MESSAGES = Number(process.env.CLAUDE_WEEKLY_MESSAGES) || 12900;

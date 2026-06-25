@@ -52,7 +52,7 @@ const SHIM_REL = "pck-key-shim.js";
 // not within KeyDot's last-3KB window. So this marker-scan is a legacy
 // fallback; the primary path is now key-from-env (read game key from
 // docker/.env, scan whole WASM for those exact bytes). Game keys are exempt
-// from the no-secrets policy per Drew's 2026-05-11 clarification.
+// from the no-secrets policy per the owner's 2026-05-11 clarification.
 const START_MARKER = Buffer.from([0x00, 0x1b, 0x00, 0x00, 0x00, 0x00, 0x40]);
 const END_MARKER = Buffer.from([0x09, 0x00]);
 const KEY_LEN = 32;

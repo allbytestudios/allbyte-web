@@ -250,7 +250,7 @@ Two Claude instances work together on this project:
   - **Vera** — test implementation lead (Playwright, test shapes A/B/C/D, quality gates)
   - **Port** — web export lead (WASM, translation rules, pack pipeline)
 
-Arc is Drew's primary interface for the game side. Tickets follow: `PLANNING → TECH REVIEW → READY → IN PROGRESS → TESTING → DONE`. Each lead can spawn workers within a slot budget.
+Arc is the owner's primary interface for the game side. Tickets follow: `PLANNING → TECH REVIEW → READY → IN PROGRESS → TESTING → DONE`. Each lead can spawn workers within a slot budget.
 
 ### Data Files Arc Publishes
 The webapp consumes these from `ChroniclesOfNesis/tickets/` (and a couple from the repo root). The dev SSE allowlist in `astro.config.mjs` is the source of truth for which files trigger live updates:

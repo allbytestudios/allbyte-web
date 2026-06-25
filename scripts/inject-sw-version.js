@@ -42,7 +42,7 @@ const PLACEHOLDER = "__BUILD_VERSION__";
  * so every web-side commit triggered a fresh SW + cache wipe. That made
  * the UpdateOverlay fire reliably but had a bad side effect: every
  * unrelated web-side push (a CSS tweak, a typo fix) blew away the user's
- * cached game and forced a ~60MB re-download on next visit. Drew
+ * cached game and forced a ~60MB re-download on next visit. the owner
  * specifically flagged this on 2026-06-01.
  *
  * Web-side updates don't actually need the SW to fire — they're served

@@ -29,7 +29,7 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
   /* Reset body defaults so the play page can sit flush against the
      viewport edges. Without this, body's default 8px margin would push
      the play container 8px down and 8px right, and the matching 8px on
-     the bottom edge gets clipped — the "20px off at the bottom" Drew
+     the bottom edge gets clipped — the "20px off at the bottom" the owner
      was seeing on mobile. Scoped via :global() to this page only. */
   :global(html),
   :global(body) {

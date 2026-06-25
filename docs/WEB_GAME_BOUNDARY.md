@@ -164,7 +164,7 @@ events don't work.
    - Owner spec: "Back is synonymous with Quit in-game now." Until
      Arc's in-game quit ships, desktop users use ESC and mobile users
      close the tab / PWA window.
-   - Done out of order with Phase 2 (game side) because Drew prioritized
+   - Done out of order with Phase 2 (game side) because the owner prioritized
      clean UI now; Arc will add the in-game equivalents in Phase 2.
 
 3. **Phase 2 (game — Arc/Port, pending):**

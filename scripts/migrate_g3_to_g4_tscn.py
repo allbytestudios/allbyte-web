@@ -218,7 +218,7 @@ def apply_transforms(text: str) -> Tuple[str, dict]:
             text = rx.sub(repl, text)
             counts[bucket] += n
 
-    # YSort rewrite (Drew 2026-05-12): G3's [node type="YSort"] became
+    # YSort rewrite (the owner 2026-05-12): G3's [node type="YSort"] became
     # a `y_sort_enabled` property on Node2D in G4. Rewrite the header
     # line to type="Node2D" and inject `y_sort_enabled = true` on the
     # next line so children y-sort correctly. Symptom of missing

@@ -57,7 +57,7 @@ ENGINES = ["chromium", "firefox", "webkit"]
 # are silently-degrade warnings where the engine keeps going but assets
 # are missing.
 SUSPECT_PATTERNS = [
-    "core io stream peer gzip failed",   # the one Drew saw on MBA
+    "core io stream peer gzip failed",   # the one the owner saw on MBA
     "StreamPeerGZIP",                     # variants of the same
     "Failed to compile shader",
     "Shader compilation failed",
@@ -360,7 +360,7 @@ def write_markdown(path: Path, target: str, timestamp: str, results: list[dict])
     )
     lines.append(
         "- **Silent decompression failures** like the "
-        "`core io stream peer gzip failed` Drew hit on MacBook Air "
+        "`core io stream peer gzip failed` the owner hit on MacBook Air "
         "(2026-06-03). Symptom is missing-but-not-crashing assets; this "
         "harness surfaces the log line."
     )

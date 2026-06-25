@@ -1,7 +1,7 @@
 # Staging Environment — Plan
 
 **Status:** Plan, not yet implemented.
-**Audience:** Drew, for decision.
+**Audience:** the owner, for decision.
 **Last updated:** 2026-06-01.
 
 ## Goal

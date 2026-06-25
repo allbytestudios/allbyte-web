@@ -128,7 +128,7 @@
   //   2. Sliding between directions without lifting (touchmove rewrites the
   //      held set; old direction releases, new direction presses).
   //
-  // Face buttons stay discrete — they're momentary inputs and Drew said the
+  // Face buttons stay discrete — they're momentary inputs and the owner said the
   // per-button feel is fine there.
 
   /** Update the held-direction set based on touch position relative to the
@@ -260,7 +260,7 @@
   // Mirror of the d-pad zone but exclusive — only one face button held at a
   // time. Lets the user slide from B to A (or anywhere between adjacent
   // buttons) without lifting; the previously-held button releases and the
-  // new one presses. Drew's UX call: "I would like to slide between b and a,
+  // new one presses. the owner's UX call: "I would like to slide between b and a,
   // but we don't want multiple buttons pressed at the same time like d-pad".
   //
   // Direction → button mapping (diamond layout: Y top, A bottom, X left, B

@@ -8,7 +8,7 @@ each meaningful state. Files land in public/captures/screenshots/
 matching the schema in src/data/screenshots.json.
 
 Not the long-term harness — that's the autoplay-capture pipeline
-pending Arc's protocol. This is just a "give Drew something real to
+pending Arc's protocol. This is just a "give the owner something real to
 react to before then" utility.
 
 Run:

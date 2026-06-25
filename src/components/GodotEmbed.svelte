@@ -189,7 +189,7 @@
     }
 
     // Start the load-status poller. 500ms cadence balances responsiveness
-    // (Drew sees fresh log lines within half a second) against same-origin
+    // (the owner sees fresh log lines within half a second) against same-origin
     // poll overhead (touching iframe DOM is cheap but not free).
     loadPoller = setInterval(pollLoadStatus, 500);
     pollLoadStatus();
@@ -269,7 +269,7 @@
     error = "Game failed to load.";
   }
 
-  // Loading status panel — Drew flagged 2026-06-01 that he wants info
+  // Loading status panel — the owner flagged 2026-06-01 that he wants info
   // visible during the load phase, both for debugging and for users to
   // feel like something's happening. The Chronicles boot shell inside
   // the iframe shows the dot/icon animation; this panel sits BELOW that

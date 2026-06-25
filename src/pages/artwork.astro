@@ -364,7 +364,7 @@ function animationGateFor(character: string, animation: string): {
            src is populated, render as <video>; else if proposed, render
            as pitch card. Drafts are admin-only via client-side reveal.
            Approval flow: AppC captures via autoplay-capture pipeline →
-           writes to recordings.json with draft:true + src → Drew
+           writes to recordings.json with draft:true + src → the owner
            approves → AppC uploads to YouTube (unlisted) → youtube_id
            populated, draft flips to false. -->
       <section class="category-section">
@@ -490,7 +490,7 @@ function animationGateFor(character: string, animation: string): {
 
     async function checkTierAndUnlock() {
       // Dev convenience: localhost auto-reveals draft Screenshots /
-      // Recordings so Drew can preview captures without needing prod
+      // Recordings so the owner can preview captures without needing prod
       // auth tokens. Prod path below still requires admin tier.
       const host = window.location.hostname;
       const isLocalhost = host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0";
@@ -538,7 +538,7 @@ function animationGateFor(character: string, animation: string): {
         // Reveal draft Screenshot / Recording cards for admins only.
         // Drafts ship with the static build (gitignored assets live in
         // /captures/ on prod) but are hidden by default CSS. Admin
-        // viewers see them so Drew can approve/reject from the live
+        // viewers see them so the owner can approve/reject from the live
         // site, mirroring the devlog draft pattern.
         if (tier === "admin") {
           document.body.classList.add("is-admin-draft-viewer");

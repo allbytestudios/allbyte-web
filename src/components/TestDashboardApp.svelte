@@ -278,8 +278,8 @@
         </strong>
         <span>
           Numbers on this page may not reflect the latest test run. The local
-          file watcher on Drew's machine pushes fresh data every time a test
-          file changes — if this banner sticks, the watcher process has
+          file watcher on the owner's machine pushes fresh data every time a
+          test file changes — if this banner sticks, the watcher process has
           crashed or the desktop is asleep.
         </span>
       </div>

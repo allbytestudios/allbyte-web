@@ -6,7 +6,7 @@ a screenshot per engine + the iframe's `_consoleLogs`, and flags
 suspicious lines.
 
 Purpose: catch engine-class regressions that single-browser smoke
-testing misses. Origin: Drew hit `core io stream peer gzip failed` on
+testing misses. Origin: the owner hit `core io stream peer gzip failed` on
 MacBook Air Chrome on 2026-06-03 with silently-missing background hills,
 which the existing Windows-Chromium-only smoke test never flagged.
 
@@ -61,7 +61,7 @@ Reports land in `tests/cross-browser-qa/reports/<timestamp>/`:
 
 **Suspect** (any of these → exit code 1, but didn't crash the engine):
 
-- `core io stream peer gzip failed` — StreamPeerGZIP decompression failure (the symptom Drew hit; manifests as silently-missing assets)
+- `core io stream peer gzip failed` — StreamPeerGZIP decompression failure (the symptom the owner hit; manifests as silently-missing assets)
 - `StreamPeerGZIP` — variant of the above
 - `Failed to compile shader` / `Shader compilation failed` — engine-side shader translation failure
 - `shader translation` — generic shader translation issue
@@ -111,7 +111,7 @@ Add new patterns to `SUSPECT_PATTERNS` in `run.py` as you find them.
 
 ## Running on Mac
 
-To repro Drew's MacBook Air gzip issue, run this on a Mac:
+To repro the owner's MacBook Air gzip issue, run this on a Mac:
 
 ```
 python tests/cross-browser-qa/run.py --engines=chromium --target=prod

@@ -19,9 +19,9 @@ Parameters:
       Passed at deploy time so it never lives in the repo. JWTs are HS256-signed
       and carry an "email" claim, so this is a trustworthy gate.
   RetentionDays:
-    Type: Number
-    Default: 90
-    Description: Rows auto-expire via DynamoDB TTL after this many days.
+    Type: String
+    Default: "90"
+    Description: Rows auto-expire via DynamoDB TTL after this many days (string so it's a valid Lambda env var value).
 
 Resources:
   PlayFunnelTable:
@@ -145,26 +145,54 @@ Resources:
                   return resp(500)
               return resp(204)
 
-  WriteUrl:
-    Type: AWS::Lambda::Url
+  # Public ingress is an API Gateway HTTP API (this account blocks public
+  # Lambda Function URLs — AuthType NONE returns 403 despite a correct
+  # resource policy, which is also why the main backend uses API Gateway).
+  # HTTP API payload format v2.0 == Function URL event shape, so the Lambda
+  # handlers are unchanged.
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
     Properties:
-      TargetFunctionArn: !GetAtt WriteFunction.Arn
-      AuthType: NONE
-      Cors:
+      Name: allbyte-studio-play-analytics
+      ProtocolType: HTTP
+      CorsConfiguration:
         AllowOrigins:
           - !Ref SiteDomain
           - http://localhost:4321
-        AllowMethods: [POST, OPTIONS]
-        AllowHeaders: [content-type]
+        AllowMethods: [GET, POST]
+        AllowHeaders: [content-type, authorization]
         MaxAge: 3600
 
-  WritePermission:
+  HttpStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: $default
+      AutoDeploy: true
+
+  WriteIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt WriteFunction.Arn
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+
+  WriteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /play"
+      Target: !Sub "integrations/${WriteIntegration}"
+
+  WriteApiPermission:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref WriteFunction
-      Action: lambda:InvokeFunctionUrl
-      Principal: "*"
-      FunctionUrlAuthType: NONE
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*"
 
   # --- Read (admin-gated aggregate) ---------------------------------------
   ReadRole:
@@ -292,33 +320,36 @@ Resources:
                   "generatedAt": int(time.time()),
               })
 
-  ReadUrl:
-    Type: AWS::Lambda::Url
+  ReadIntegration:
+    Type: AWS::ApiGatewayV2::Integration
     Properties:
-      TargetFunctionArn: !GetAtt ReadFunction.Arn
-      AuthType: NONE
-      Cors:
-        AllowOrigins:
-          - !Ref SiteDomain
-          - http://localhost:4321
-        AllowMethods: [GET, OPTIONS]
-        AllowHeaders: [authorization, content-type]
-        MaxAge: 3600
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ReadFunction.Arn
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
 
-  ReadPermission:
+  ReadRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /funnel"
+      Target: !Sub "integrations/${ReadIntegration}"
+
+  ReadApiPermission:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref ReadFunction
-      Action: lambda:InvokeFunctionUrl
-      Principal: "*"
-      FunctionUrlAuthType: NONE
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*"
 
 Outputs:
   WriteEndpoint:
     Description: POST scene beacons here (set as the frontend write URL).
-    Value: !GetAtt WriteUrl.FunctionUrl
+    Value: !Sub "${HttpApi.ApiEndpoint}/play"
   ReadEndpoint:
     Description: Admin-gated GET funnel aggregate (Bearer JWT).
-    Value: !GetAtt ReadUrl.FunctionUrl
+    Value: !Sub "${HttpApi.ApiEndpoint}/funnel"
   TableName:
     Value: !Ref PlayFunnelTable

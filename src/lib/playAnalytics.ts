@@ -14,9 +14,9 @@
 // "end" event). If WRITE_URL is unset the whole module is a silent no-op, so
 // it's safe to ship before the backend stack is deployed.
 
-// Set to the WriteEndpoint output of the play-analytics CloudFormation stack
-// after deploy. Empty string = disabled (no-op).
-const WRITE_URL = "";
+// WriteEndpoint output of the play-analytics CloudFormation stack
+// (allbyte-studio-play-analytics, us-east-1). Empty string = disabled (no-op).
+const WRITE_URL = "https://pdtoj70foi.execute-api.us-east-1.amazonaws.com/play";
 
 // Only record real prod sessions — keeps localhost/dev noise out of the funnel.
 const PROD_HOST = "allbyte.studio";

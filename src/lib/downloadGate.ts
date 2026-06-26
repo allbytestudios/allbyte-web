@@ -11,9 +11,11 @@
 
 const ACK_KEY = "ab_download_acked";
 
-/** Approx first-load download in MB (WASM + index.pck to Title, then Laria.pck
- *  after New Game). Kept here so the gate copy and any future telemetry agree. */
-export const DOWNLOAD_MB = 100;
+/** Approx full first-session download in MB to play the demo: gzip WASM (~9MB)
+ *  + index.pck (~24MB) to Title, then Laria.pck (~43MB) after New Game. Down
+ *  from ~100MB since the WASM is now served gzip-encoded (~35→9MB). Kept here so
+ *  the gate copy and any future telemetry agree. */
+export const DOWNLOAD_MB = 75;
 
 export function downloadAcked(): boolean {
   try {

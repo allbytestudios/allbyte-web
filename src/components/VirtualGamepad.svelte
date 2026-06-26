@@ -59,6 +59,13 @@
    *  if a touch lingers or multitouch jitters. */
   const held = new Set<string>();
 
+  /** Set once any touch is seen. The mouse handlers below exist only for
+   *  desktop dev-testing; on a real touch device a tap can synthesize a
+   *  mousedown AFTER touchend, which would re-press the same direction and
+   *  move a second tile from one press. Once we've seen touch, the mouse
+   *  path stands down for good. */
+  let touchSeen = false;
+
   // === D-pad gesture state ===
   // Reactive flags so the visual arrows highlight what the engine sees.
   let dpadUp = $state(false);
@@ -143,21 +150,20 @@
 
     let nUp = false, nDown = false, nLeft = false, nRight = false;
     if (dist >= DEADZONE) {
-      // Screen y is inverted (positive = down), so use -dy for natural math.
-      // 8 sectors of 45deg each: cardinals fire one direction, diagonals
-      // fire two adjacent cardinals (which is how real d-pads work — the
-      // engine's input map then combines them into ui_up + ui_right etc.).
-      const angle = Math.atan2(-dy, dx);
-      const P = Math.PI;
-      const S = P / 8;
-      if      (angle >  -S && angle <=   S) { nRight = true; }
-      else if (angle >   S && angle <= 3*S) { nUp = true;   nRight = true; }
-      else if (angle > 3*S && angle <= 5*S) { nUp = true; }
-      else if (angle > 5*S && angle <= 7*S) { nUp = true;   nLeft = true; }
-      else if (angle > 7*S || angle <= -7*S) { nLeft = true; }
-      else if (angle > -7*S && angle <= -5*S) { nDown = true; nLeft = true; }
-      else if (angle > -5*S && angle <= -3*S) { nDown = true; }
-      else if (angle > -3*S && angle <=  -S) { nDown = true; nRight = true; }
+      // Cardinal-only via dominant axis: the d-pad is drawn as a traditional
+      // cross (4 arms) and movement is grid-based, so a tap resolves to exactly
+      // ONE direction — the axis with the larger offset wins. (Previously an
+      // 8-sector angle map also fired the two adjacent cardinals in the
+      // diagonal sectors, so an off-axis tap on the cross — or a thumb rolling
+      // slightly off-axis mid-press — sent up+right and moved two tiles: the
+      // "2 buttons from one d-pad press" bug.) Screen y is inverted (+ = down).
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        if (dx > 0) nRight = true;
+        else nLeft = true;
+      } else {
+        if (dy < 0) nUp = true;
+        else nDown = true;
+      }
     }
 
     // Diff current vs new and fire the appropriate key events.
@@ -185,6 +191,7 @@
   }
 
   function dpadTouchStart(e: TouchEvent) {
+    touchSeen = true;
     e.preventDefault();
     // Adopt the first changed touch as our active finger. Once tracked we
     // ignore other touches on this zone, so a second finger landing here
@@ -233,6 +240,7 @@
   // pointer, follow the mouse while button is held.
   let dpadMouseDown = false;
   function dpadMouseDownH(e: MouseEvent) {
+    if (touchSeen) return;
     e.preventDefault();
     dpadMouseDown = true;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -345,6 +353,7 @@
   }
 
   function faceTouchStart(e: TouchEvent) {
+    touchSeen = true;
     e.preventDefault();
     if (faceTouchId === null && e.changedTouches.length > 0) {
       faceTouchId = e.changedTouches[0].identifier;
@@ -387,6 +396,7 @@
   // Mouse fallback for desktop testing.
   let faceMouseDown = false;
   function faceMouseDownH(e: MouseEvent) {
+    if (touchSeen) return;
     e.preventDefault();
     faceMouseDown = true;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();

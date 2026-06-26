@@ -53,9 +53,48 @@
     }, 600);
   }
 
+  /** True if any embedded game has actually booted (reported a scene). A
+   *  booted game has progress worth protecting; a not-yet-booted one doesn't. */
+  function gameBooted(): boolean {
+    const frames = document.querySelectorAll("iframe");
+    for (const f of frames) {
+      try {
+        if ((f.contentWindow as any)?.gameState?.scene) return true;
+      } catch {
+        /* cross-origin / not ready — ignore */
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Deadlock-breaker. The owner spec defers applying an update to the game
+   * (apply at Title, no save at risk). But if the game is STUCK on loading —
+   * e.g. a stale-cache build the update is meant to fix — it can never call
+   * allbyteApplyUpdate(), so it would hang forever. If a game iframe is present
+   * and still hasn't booted a short time after the new SW takes over, auto-apply
+   * (reload): there's no in-progress save to lose, and the fresh SW now serves
+   * the correct build. A booted/running game is left untouched per spec.
+   */
+  function scheduleAutoApplyIfStuck() {
+    if (typeof document === "undefined" || !document.querySelector("iframe")) return;
+    try {
+      if (sessionStorage.getItem("ab_update_autoapplied")) return; // once per session, no loop
+    } catch {}
+    setTimeout(() => {
+      if (applying || gameBooted()) return;
+      try {
+        sessionStorage.setItem("ab_update_autoapplied", "1");
+      } catch {}
+      console.warn("[UpdateOverlay] update active but game not booted — auto-applying to recover");
+      applyUpdate();
+    }, 4000);
+  }
+
   function onControllerChange() {
     (window as any).allbyteUpdatePending = true;
     broadcastToIframes();
+    scheduleAutoApplyIfStuck();
   }
 
   onMount(() => {

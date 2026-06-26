@@ -152,10 +152,15 @@ const imageAbs = new URL(image, SITE).href;
         navigator.serviceWorker
           .register("/sw.js")
           .then((reg) => {
-            // Aggressive update check: re-poll the SW when the tab becomes
-            // visible. Without this, a user who leaves the PWA open across
-            // a deploy might not pick up the new build until they navigate
-            // (and Astro's ClientRouter doesn't trigger a real navigation).
+            // Force an update check on THIS load, not just on visibilitychange.
+            // A fresh page load / PWA relaunch calls register(), but that check
+            // is throttled and unreliable (proven by the SW recovery test:
+            // navigation alone didn't pick up a bumped SW). An explicit
+            // update() reliably detects a new worker, so a returning or
+            // relaunching user recovers from a stale build on the next open.
+            reg.update().catch(() => {});
+            // Also re-poll when the tab becomes visible, for a PWA left open
+            // across a deploy (no real navigation; ClientRouter doesn't count).
             document.addEventListener("visibilitychange", () => {
               if (document.visibilityState === "visible") {
                 reg.update().catch(() => {});

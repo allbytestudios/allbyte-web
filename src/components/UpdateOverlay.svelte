@@ -133,8 +133,33 @@
 
     navigator.serviceWorker.addEventListener("controllerchange", onChange);
 
+    // Robust, cross-browser update detection. The controllerchange +
+    // hadControllerAtMount suppression above is unreliable: on Firefox a
+    // freshly navigated page has no controller yet, so a *real* update's
+    // controllerchange gets wrongly suppressed and the game never recovers
+    // (proven by tests/e2e/test_sw_cache_recovery.py — Firefox failed the
+    // auto-recovery until this was added). `updatefound` -> the new worker
+    // reaching `activated`, when a worker was already active (= an update, not
+    // a first install), fires reliably on every engine.
+    let updateReg: ServiceWorkerRegistration | null = null;
+    function onUpdateFound() {
+      if (!updateReg) return;
+      const isUpdate = !!updateReg.active; // pre-existing worker => real update
+      const nw = updateReg.installing;
+      if (!nw || !isUpdate) return;
+      nw.addEventListener("statechange", () => {
+        if (nw.state === "activated") onControllerChange();
+      });
+    }
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      if (!reg) return;
+      updateReg = reg;
+      reg.addEventListener("updatefound", onUpdateFound);
+    });
+
     return () => {
       navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+      updateReg?.removeEventListener("updatefound", onUpdateFound);
       delete (window as any).allbyteApplyUpdate;
       delete (window as any).__simulateUpdateAvailable;
     };

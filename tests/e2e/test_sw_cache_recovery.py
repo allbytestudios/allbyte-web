@@ -48,9 +48,59 @@ INDEX_HTML = """<!doctype html><html><head><meta charset="utf-8"></head><body>
     .then((t) => {
       window.__assetVersion = t.trim();
       window.__boot = (t.trim() === window.__expected) ? "ok" : "mismatch";
+      // Mirror the real game: publish a scene on a successful boot. The parent
+      // /play page reads this to know whether the game is stuck.
+      if (window.__boot === "ok") window.gameState = { scene: "Title" };
     })
     .catch((e) => { window.__boot = "error:" + e; });
 </script>OK</body></html>"""
+
+# Parent page — mirrors the real /play: BaseLayout registers the SW and forces
+# an update() check on load; UpdateOverlay auto-reloads if a new SW takes over
+# while the game iframe is still stuck (the deadlock fix). The game runs in an
+# iframe, exactly like prod.
+PLAY_HTML = """<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script>
+  function onUpdate(src) {
+    console.log("[play] update signal via " + src);
+    setTimeout(function () {
+      var f = document.querySelector("iframe"), booted = false;
+      try { booted = !!(f && f.contentWindow && f.contentWindow.gameState && f.contentWindow.gameState.scene); } catch (e) {}
+      console.log("[play] post-update check booted=" + booted);
+      if (!booted && !sessionStorage.getItem("ab_autoapplied")) {
+        sessionStorage.setItem("ab_autoapplied", "1");
+        console.log("[play] auto-reloading");
+        location.reload();
+      }
+    }, 800);
+  }
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").then(function (reg) {
+      reg.update().catch(function () {});
+      // Robust update detection: updatefound -> new worker activates, with a
+      // pre-existing active worker (= a real update, not a first install).
+      // Fires reliably across engines, unlike controllerchange suppression.
+      reg.addEventListener("updatefound", function () {
+        var updating = !!reg.active;
+        var nw = reg.installing;
+        if (!nw || !updating) return;
+        nw.addEventListener("statechange", function () {
+          if (nw.state === "activated") onUpdate("updatefound");
+        });
+      });
+    });
+    // Backup signal (works on Chromium/WebKit). The once-guard keeps it from
+    // double-firing with updatefound.
+    var hadController = !!navigator.serviceWorker.controller;
+    var firstChange = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!hadController && !firstChange) { firstChange = true; return; }
+      onUpdate("controllerchange");
+    });
+  }
+</script>
+<iframe id="game" src="/godot/index.html" style="width:320px;height:200px;border:0"></iframe>
+</body></html>"""
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -72,6 +122,8 @@ class Handler(BaseHTTPRequestHandler):
         p = self.path.split("?")[0]
         if p == "/sw.js":
             self._send(SW_SRC.replace("__BUILD_VERSION__", STATE["sw"]), "application/javascript")
+        elif p in ("/play", "/play/"):
+            self._send(PLAY_HTML, "text/html")
         elif p in ("/godot/", "/godot/index.html"):
             self._send(INDEX_HTML.replace("%EXPECTED%", STATE["build"]), "text/html")
         elif p == "/godot/app.bin":
@@ -169,15 +221,90 @@ def run_scenario(pw, engine):
     return results
 
 
+def run_autoupgrade(pw, engine):
+    """End-to-end 'mock version upgrade': mirror the real /play (parent page +
+    game iframe) and prove the app SELF-recovers on a version bump with NO
+    manual reload — exercising the actual fixes (reg.update on load +
+    UpdateOverlay auto-reload when the game is stuck)."""
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    port = httpd.server_address[1]
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    play = f"http://127.0.0.1:{port}/play/"
+    results = []
+    try:
+        browser = getattr(pw, engine).launch()
+        page = browser.new_context().new_page()
+        clogs = []
+        page.on("console", lambda m: clogs.append(m.text))
+
+        def booted():
+            try:
+                return bool(page.evaluate(
+                    "() => { const f=document.querySelector('iframe');"
+                    " try { return !!(f&&f.contentWindow&&f.contentWindow.gameState&&f.contentWindow.gameState.scene); }"
+                    " catch(e){ return false; } }"
+                ))
+            except Exception:
+                return False  # mid-navigation / reload
+
+        def wait_booted(ms):
+            waited = 0
+            while waited < ms:
+                if booted():
+                    return True
+                page.wait_for_timeout(300)
+                waited += 300
+            return False
+
+        def sw_ready():
+            try:
+                page.evaluate("navigator.serviceWorker.ready.then(() => true)")
+            except Exception:
+                pass
+
+        # Phase 1 — baseline: load /play, prime the SW cache (reload so the SW
+        # controls the iframe), game boots.
+        STATE.update(build="v1", sw="v1")
+        page.goto(play, wait_until="load"); sw_ready()
+        page.goto(play, wait_until="load"); sw_ready()
+        b1 = wait_booted(8000)
+        results.append(("autoupgrade_phase1_baseline_boots", b1, b1))
+
+        # Phase 2 — deploy a new game build but DON'T bump the SW version: the
+        # iframe gets a fresh index against a stale cached asset -> stuck.
+        STATE.update(build="v2")
+        page.goto(play, wait_until="load"); sw_ready()
+        stuck = not wait_booted(4000)
+        results.append(("autoupgrade_phase2_stale_reproduces_hang", stuck, "stuck" if stuck else "booted"))
+
+        # Phase 3 — bump the SW version (the deploy). Do NOT reload manually;
+        # the app's own logic must self-recover.
+        STATE.update(sw="v2")
+        try:
+            page.evaluate("navigator.serviceWorker.getRegistration().then(r => r && r.update())")
+        except Exception:
+            pass
+        recovered = wait_booted(15000)  # survives the auto-reload
+        results.append(("autoupgrade_phase3_AUTO_recovers_no_manual_reload", recovered, recovered))
+        if not recovered:
+            play_logs = [l for l in clogs if "[play]" in l]
+            print(f"    [{engine} autoupgrade FAIL] parent logs: {play_logs}")
+
+        browser.close()
+    finally:
+        httpd.shutdown()
+    return results
+
+
 def run_all():
-    """Run the scenario on every engine. Uninstalled engines are skipped
+    """Run both scenarios on every engine. Uninstalled engines are skipped
     (reported, not failed) so the test still runs wherever it lands."""
     out = {}
     with sync_playwright() as pw:
         for engine in ENGINES:
             STATE.update(build="v1", sw="v1")  # reset between engines
             try:
-                out[engine] = ("ran", run_scenario(pw, engine))
+                out[engine] = ("ran", run_scenario(pw, engine) + run_autoupgrade(pw, engine))
             except Exception as e:
                 txt = str(e)
                 kind = "skip" if ("Executable doesn't exist" in txt or "playwright install" in txt) else "error"

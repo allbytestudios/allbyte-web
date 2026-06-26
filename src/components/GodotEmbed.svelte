@@ -427,7 +427,6 @@
   let kbUsed = false;
   let kbPressCount = 0;
   let kbActiveScene: "title" | "elias" | null = null;
-  let kbBootScene: string | null = null;
   let kbScenePoller: ReturnType<typeof setInterval> | null = null;
   let kbDoc: Document | null = null; // iframe doc we attached a listener to
   let kbStarted = false;
@@ -436,7 +435,12 @@
     "w", "a", "s", "d", "k", "o", "l", ";",
     "W", "A", "S", "D", "K", "O", "L", ":",
   ]);
-  const ELIAS_SCENE = "EliasHouse"; // re-nudge scene (confirm exact gameState.scene name)
+  // Scene names confirmed from the game's WebBootstrap (2026-06-25): the boot
+  // main_scene "MainLoader" is a transient shim that immediately swaps to
+  // Title.tscn (root node "Title"). So the title screen — the real drop-off —
+  // reports gameState.scene === "Title", NOT the first booted scene.
+  const TITLE_SCENE = "Title";
+  const ELIAS_SCENE = "EliasHouse";
   const LS_USED = "ab_kb_used";
   const LS_TITLE = "ab_kb_hint_title";
   const LS_ELIAS = "ab_kb_hint_elias";
@@ -486,7 +490,7 @@
   function evalKbScene(scene: string | null): void {
     if (kbUsed) { hideKbHint(); return; }
     if (!scene) return;
-    if (scene === kbBootScene) {
+    if (scene === TITLE_SCENE) {
       if (lsGet(LS_TITLE) !== "1") showAt("title");
       return;
     }
@@ -504,7 +508,6 @@
     if (kbStarted || fixture) return; // once per mount; skip admin fixture loads
     if (!isDesktopPointer()) return; // touch users get the VirtualGamepad
     kbStarted = true;
-    kbBootScene = bootScene;
     kbUsed = lsGet(LS_USED) === "1";
 
     // Catch keyboard use regardless of focus: parent window AND (same-origin)

@@ -48,6 +48,14 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 800})
+        # /play now gates the ~100 MB first load behind a consent notice that
+        # withholds the game iframe until the user clicks Continue (remembered
+        # per-device). Pre-acknowledge so the smoke emulates a returning/
+        # consented user and the iframe actually mounts. add_init_script runs
+        # before page scripts on every navigation. See src/lib/downloadGate.ts.
+        context.add_init_script(
+            "try { localStorage.setItem('ab_download_acked', '1'); } catch (e) {}"
+        )
         page = context.new_page()
 
         # Collect console events from page + game iframe.

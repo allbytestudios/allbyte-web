@@ -52,6 +52,14 @@ const BUILD_VERSION = "__BUILD_VERSION__";
 // caches on the next deploy. Bumped to "s2" on 2026-06-24 to evict stale
 // public builds that were pinned cache-first under the old index.html-only
 // network-first rule (the /play/ reload-loop bug).
+// NOT bumped for the 2026-06-26 gzip-WASM change: toCacheable() (below) is
+// backward-compatible — it normalizes new entries and leaves existing ones
+// untouched — so there's no need to wipe caches. Bumping would force every
+// returning user to re-download ~33MB (WASM+PCK+assets) for no benefit, since
+// they already hold a working uncompressed WASM. New/cold loads pick up the
+// gzip WASM naturally. (Cross-browser tested: caching a gzip-encoded response
+// verbatim replays fine on Chromium/Firefox/WebKit, so the strip is defensive,
+// not load-bearing — see tests/e2e/test_wasm_gzip_cache.py.)
 const CACHE_SCHEMA = "s2";
 const CACHE_NAME = `chronicles-godot-${CACHE_SCHEMA}-${BUILD_VERSION}`;
 
@@ -96,6 +104,28 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(cacheFirst(event.request));
 });
 
+// Re-wrap a response so it's safe to cache. A response that arrived from the
+// network with a transfer Content-Encoding (gzip on index.wasm) has a body
+// that's ALREADY been decoded by the browser, yet its headers still advertise
+// `content-encoding` + the compressed `content-length`. Cached verbatim and
+// replayed from cache, the browser re-applies the advertised decoding to the
+// already-plain body → corrupt bytes (a black-screen WASM). Strip those two
+// headers and re-wrap the decoded body so the cached entry is self-consistent
+// plaintext. Responses without content-encoding pass through untouched (the
+// common case — pck, audio, images).
+async function toCacheable(response) {
+  if (!response.headers.has("content-encoding")) return response;
+  const body = await response.arrayBuffer();
+  const headers = new Headers(response.headers);
+  headers.delete("content-encoding");
+  headers.delete("content-length");
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 async function cacheFirst(request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
@@ -104,11 +134,15 @@ async function cacheFirst(request) {
   // Only persist successful, same-origin responses. Don't poison the cache
   // with 404s or opaque responses (those would have `type: "opaque"`).
   if (response.ok && response.type === "basic") {
-    // Clone before consumption — Response bodies can only be read once.
-    cache.put(request, response.clone()).catch(() => {
-      // Cache writes can fail under quota pressure; that's OK, the user
-      // just doesn't get the next-load speedup. Don't break the request.
-    });
+    // Clone before consumption — Response bodies can only be read once. The
+    // network `response` is returned to the page intact (it decodes normally);
+    // the clone is normalized to plaintext for the cache.
+    toCacheable(response.clone())
+      .then((cacheable) => cache.put(request, cacheable))
+      .catch(() => {
+        // Cache writes can fail under quota pressure; that's OK, the user
+        // just doesn't get the next-load speedup. Don't break the request.
+      });
   }
   return response;
 }
@@ -118,7 +152,9 @@ async function networkFirst(request) {
   try {
     const response = await fetch(request);
     if (response.ok) {
-      cache.put(request, response.clone()).catch(() => {});
+      toCacheable(response.clone())
+        .then((cacheable) => cache.put(request, cacheable))
+        .catch(() => {});
     }
     return response;
   } catch (err) {

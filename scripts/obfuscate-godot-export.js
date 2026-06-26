@@ -159,10 +159,17 @@ function generateShim(offset, mask, wasmSha) {
 \t\t\t\treturn resp.arrayBuffer().then(function (buf) {
 \t\t\t\t\tvar view = new Uint8Array(buf);
 \t\t\t\t\tfor (var j = 0; j < KEY_LEN; j++) view[KEY_OFFSET + j] ^= mask[j];
+\t\t\t\t\t// Clean headers: keep the wasm content-type but DROP content-encoding
+\t\t\t\t\t// and content-length. buf is the already-decoded body; index.wasm is
+\t\t\t\t\t// served gzip-encoded for transport, so copying those headers onto this
+\t\t\t\t\t// synthetic plaintext Response would make instantiateStreaming try to
+\t\t\t\t\t// re-decode plain bytes / mismatch the length on some engines.
+\t\t\t\t\tvar cleanHeaders = new Headers();
+\t\t\t\t\tcleanHeaders.set("content-type", resp.headers.get("content-type") || "application/wasm");
 \t\t\t\t\treturn new Response(buf, {
 \t\t\t\t\t\tstatus: resp.status,
 \t\t\t\t\t\tstatusText: resp.statusText,
-\t\t\t\t\t\theaders: resp.headers,
+\t\t\t\t\t\theaders: cleanHeaders,
 \t\t\t\t\t});
 \t\t\t\t});
 \t\t\t});

@@ -21,7 +21,8 @@
  */
 
 import { execSync } from "child_process";
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, unlinkSync, statSync } from "fs";
+import { gzipSync } from "zlib";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -50,6 +51,52 @@ function run(cmd) {
 
 function capture(cmd) {
   return execSync(cmd, { encoding: "utf8" }).trim();
+}
+
+// Pre-compress a WASM and upload it gzip-encoded. CloudFront's automatic
+// compression skips files >10MB, so the ~35MB index.wasm would otherwise ship
+// uncompressed. WASM compresses ~75% (35MB → ~9MB), a big data/load win on the
+// mobile-heavy audience. The encrypted .pck files are NOT compressed (already
+// high-entropy — gzip claws back only 4-8%). Served with Content-Encoding:
+// gzip + Content-Type: application/wasm; the browser decodes transparently and
+// the obfuscation shim + sw.js both handle the decoded body (shim emits clean
+// headers, sw.js strips content-encoding before caching). Returns true on
+// upload, false if the source WASM is absent.
+function uploadGzippedWasm(localWasmPath, s3Key, label) {
+  if (!existsSync(localWasmPath)) return false;
+  const gzPath = `${localWasmPath}.gz`;
+  if (dryRun) {
+    console.log(`[dry-run] gzip ${localWasmPath} -> ${gzPath}`);
+    console.log(
+      `[dry-run] aws s3 cp "${gzPath}" s3://${bucket}/${s3Key} ` +
+        `--content-encoding gzip --content-type application/wasm`
+    );
+    return true;
+  }
+  const raw = readFileSync(localWasmPath);
+  const gz = gzipSync(raw, { level: 9 });
+  writeFileSync(gzPath, gz);
+  const pct = Math.round((1 - gz.length / raw.length) * 100);
+  console.log(
+    `[push-assets] gzip ${label}: ${(raw.length / 1048576).toFixed(1)}MB -> ` +
+      `${(gz.length / 1048576).toFixed(1)}MB (-${pct}%)`
+  );
+  try {
+    run(
+      `aws s3 cp "${gzPath}" s3://${bucket}/${s3Key} ` +
+        `--region ${region} ` +
+        `--cache-control "public, max-age=31536000, immutable" ` +
+        `--content-type "application/wasm" ` +
+        `--content-encoding "gzip"`
+    );
+  } finally {
+    try {
+      unlinkSync(gzPath);
+    } catch {
+      /* temp cleanup best-effort */
+    }
+  }
+  return true;
 }
 
 // Root-level game files that need to be on S3
@@ -188,12 +235,17 @@ if (existsSync(godotDir) && existsSync(godotIndex)) {
   // only — the nested public/index.html key is "public/index.html", so it
   // needs its own exclude + must-revalidate cp (else it ships immutable and
   // the public build can't update).
+  // index.wasm (both builds) is excluded here and uploaded gzip-encoded below
+  // — CloudFront won't auto-compress files >10MB, so we pre-compress the ~35MB
+  // WASM (~75% smaller) and serve it with Content-Encoding: gzip.
   run(
     `aws s3 sync "${godotDir}" s3://${bucket}/godot ` +
       `--region ${region} ` +
       `--cache-control "public, max-age=31536000, immutable" ` +
       `--exclude "index.html" ` +
       `--exclude "public/index.html" ` +
+      `--exclude "index.wasm" ` +
+      `--exclude "public/index.wasm" ` +
       `--exclude ".gitkeep"`
   );
   run(
@@ -208,6 +260,16 @@ if (existsSync(godotDir) && existsSync(godotIndex)) {
         `--region ${region} ` +
         `--cache-control "public, max-age=0, must-revalidate" ` +
         `--content-type "text/html"`
+    );
+  }
+
+  // 2c-bis. Upload the WASM(s) gzip-encoded (excluded from the sync above).
+  uploadGzippedWasm(join(godotDir, "index.wasm"), "godot/index.wasm", "main");
+  if (havePublicBuild) {
+    uploadGzippedWasm(
+      join(publicGodotDir, "index.wasm"),
+      "godot/public/index.wasm",
+      "public"
     );
   }
 

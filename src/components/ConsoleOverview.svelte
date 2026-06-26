@@ -595,6 +595,20 @@
     {#if siteTraffic?.dailyGameServes?.length}
       {@render trafficChart("Game Serves", siteTraffic.dailyGameServes)}
     {/if}
+    {#if siteTraffic?.devices && Object.keys(siteTraffic.devices).length}
+      {@const devs = Object.entries(siteTraffic.devices).sort((a, b) => b[1] - a[1])}
+      {@const devMax = devs[0]?.[1] || 1}
+      <div class="devices-panel">
+        <h3 class="devices-title">Devices <span class="devices-sub">unique visitors · non-bot · from CloudFront logs</span></h3>
+        {#each devs as [name, n]}
+          <div class="device-row">
+            <span class="device-name">{name}</span>
+            <div class="device-bar"><div class="device-fill" style="width:{Math.round((n / devMax) * 100)}%"></div></div>
+            <span class="device-n">{n}</span>
+          </div>
+        {/each}
+      </div>
+    {/if}
   {/if}
 
   <!-- Fixture picker (Legend+ only) -->
@@ -1429,5 +1443,49 @@
 
   @media (max-width: 768px) {
     .cards { grid-template-columns: 1fr; }
+  }
+
+  .devices-panel {
+    margin: 1rem auto 0;
+    max-width: 700px;
+    font-family: "Courier New", monospace;
+  }
+  .devices-title {
+    color: #a7f3d0;
+    font-size: 0.95rem;
+    margin: 0 0 0.6rem;
+  }
+  .devices-sub {
+    color: #6b7280;
+    font-size: 0.72rem;
+    font-weight: normal;
+  }
+  .device-row {
+    display: grid;
+    grid-template-columns: 9.5rem 1fr 3rem;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.25rem 0;
+    font-size: 0.8rem;
+  }
+  .device-name {
+    color: #cbd5e1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .device-bar {
+    background: rgba(192, 132, 252, 0.12);
+    border-radius: 3px;
+    height: 14px;
+    overflow: hidden;
+  }
+  .device-fill {
+    height: 100%;
+    background: #c084fc;
+  }
+  .device-n {
+    text-align: right;
+    color: rgba(224, 231, 255, 0.7);
   }
 </style>

@@ -1699,9 +1699,10 @@ Resources:
       Runtime: python3.12
       Handler: index.handler
       # Athena queries usually finish in 3-8s but can spike to 30s on a
-      # cold catalog. 60s gives plenty of headroom; cache-hit returns in
-      # tens of ms regardless.
-      Timeout: 60
+      # cold catalog. We now run TWO queries on a cache miss (traffic split +
+      # device breakdown), so 90s gives headroom; cache-hit returns in tens of
+      # ms regardless.
+      Timeout: 90
       MemorySize: 256
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -1990,6 +1991,78 @@ Resources:
                       break
               return by_date
 
+          def _run_device_query(now):
+              """Coarse OS+browser of real (non-owner, non-bot) visitors to the
+              entry pages. Distinct IPs ~ unique visitors. Best-effort — a
+              failure here must not break the main traffic split."""
+              owner_expr = _owner_filter_sql()
+              bot_expr = _bot_filter_sql()
+              start_date = (now - timedelta(days=DAYS_BACK)).strftime("%Y-%m-%d")
+              database = os.environ["GLUE_DATABASE"]
+              table = os.environ["GLUE_TABLE"]
+              os_case = (
+                  "CASE WHEN lower(cs_user_agent) LIKE '%iphone%' OR lower(cs_user_agent) LIKE '%ipad%' "
+                  "OR lower(cs_user_agent) LIKE '%ipod%' THEN 'iOS' "
+                  "WHEN lower(cs_user_agent) LIKE '%android%' THEN 'Android' "
+                  "WHEN lower(cs_user_agent) LIKE '%windows%' THEN 'Windows' "
+                  "WHEN lower(cs_user_agent) LIKE '%mac os%' OR lower(cs_user_agent) LIKE '%macintosh%' THEN 'macOS' "
+                  "WHEN lower(cs_user_agent) LIKE '%linux%' THEN 'Linux' ELSE 'Other' END"
+              )
+              br_case = (
+                  "CASE WHEN lower(cs_user_agent) LIKE '%edg%' THEN 'Edge' "
+                  "WHEN lower(cs_user_agent) LIKE '%firefox%' THEN 'Firefox' "
+                  "WHEN lower(cs_user_agent) LIKE '%chrome%' OR lower(cs_user_agent) LIKE '%crios%' THEN 'Chrome' "
+                  "WHEN lower(cs_user_agent) LIKE '%safari%' THEN 'Safari' ELSE 'Other' END"
+              )
+              dev_expr = f"{os_case} || ' ' || {br_case}"
+              query = f"""
+                  SELECT {dev_expr} AS dev, COUNT(DISTINCT c_ip) AS uniq
+                  FROM {table}
+                  WHERE log_date >= DATE '{start_date}' AND sc_status = 200
+                    AND ({WEBAPP_FILTER_SQL} OR cs_uri_stem = '{GAME_URL}')
+                    AND NOT ({owner_expr}) AND NOT ({bot_expr})
+                  GROUP BY {dev_expr}
+                  ORDER BY uniq DESC
+              """
+              start = athena.start_query_execution(
+                  QueryString=query,
+                  QueryExecutionContext={"Database": database},
+                  WorkGroup=os.environ["ATHENA_WORKGROUP"],
+              )
+              qid = start["QueryExecutionId"]
+              deadline = time.time() + 30
+              delay = 0.5
+              while time.time() < deadline:
+                  st = athena.get_query_execution(QueryExecutionId=qid)
+                  state = st["QueryExecution"]["Status"]["State"]
+                  if state == "SUCCEEDED":
+                      break
+                  if state in ("FAILED", "CANCELLED"):
+                      raise RuntimeError("device query " + state)
+                  time.sleep(delay)
+                  delay = min(delay * 1.5, 4.0)
+              else:
+                  raise TimeoutError("device query timed out")
+              devices = {}
+              token = None
+              while True:
+                  kwargs = {"QueryExecutionId": qid, "MaxResults": 1000}
+                  if token:
+                      kwargs["NextToken"] = token
+                  res = athena.get_query_results(**kwargs)
+                  for row in res["ResultSet"]["Rows"]:
+                      vals = [d.get("VarCharValue", "") for d in row.get("Data", [])]
+                      if not vals or vals[0] == "dev":
+                          continue
+                      try:
+                          devices[vals[0]] = int(vals[1] or 0)
+                      except (ValueError, IndexError):
+                          continue
+                  token = res.get("NextToken")
+                  if not token:
+                      break
+              return devices
+
           def _get_analytics(now):
               cached = _read_cache()
               if cached:
@@ -2028,10 +2101,15 @@ Resources:
                   e["owner"] + e["bots"] + e["other"]
                   for e in game_daily[-7:] + webapp_daily[-7:]
               )
+              try:
+                  devices = _run_device_query(now)
+              except Exception:
+                  devices = {}  # best-effort; never fail the main split
               payload = {
                   "totalRequests7d": total_7d,
                   "dailyGameServes": game_daily,
                   "dailyWebappServes": webapp_daily,
+                  "devices": devices,
                   "_cachedAt": int(time.time()),
               }
               _write_cache(payload)

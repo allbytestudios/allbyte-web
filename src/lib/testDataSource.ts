@@ -248,6 +248,9 @@ export interface SiteTraffic {
   // IP prefixes added to the bot classifier the same day.
   dailyGameServes: SiteTrafficDay[];
   dailyWebappServes: SiteTrafficDay[];
+  /** Coarse "OS Browser" -> unique-visitor count over the window (non-owner,
+   *  non-bot), derived from CloudFront access logs. */
+  devices?: Record<string, number>;
   /** Present only if the backend hit a non-fatal error producing data. */
   error?: string;
 }

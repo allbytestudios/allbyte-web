@@ -56,11 +56,27 @@ def check_sw_version() -> int:
     deploy-version drift, only visible against the live sw.js. Retries to ride
     out CloudFront invalidation propagation.
     """
+    # Compare against the COMMITTED game-version.json — that's what CI injects
+    # into the deployed sw.js. The working-tree copy drifts on local builds
+    # (sync-assets.js re-stamps it from the dev Godot project, which can be
+    # ahead of what's deployed), so reading it here would false-fail.
+    expected = None
     try:
-        expected = json.load(open(VERSION_FILE, encoding="utf-8"))["version"]
-    except Exception as e:
-        print(f"[smoke] WARN — couldn't read game-version.json ({e}); skipping sw.js version check")
-        return 0
+        import subprocess
+        expected = json.loads(
+            subprocess.check_output(
+                ["git", "show", "HEAD:src/data/game-version.json"],
+                cwd=os.path.dirname(VERSION_FILE), text=True, stderr=subprocess.DEVNULL,
+            )
+        )["version"]
+    except Exception:
+        pass
+    if not expected:
+        try:
+            expected = json.load(open(VERSION_FILE, encoding="utf-8"))["version"]
+        except Exception as e:
+            print(f"[smoke] WARN — couldn't read game-version.json ({e}); skipping sw.js version check")
+            return 0
     origin = "{0.scheme}://{0.netloc}".format(urlparse(URL))
     pat = re.compile(r'BUILD_VERSION\s*=\s*"([^"]+)"')
     got = None

@@ -23,6 +23,8 @@
    * deferred — to be wired alongside the same touch-handling layer when
    * a real touch design lands game-side.
    */
+  import { onMount } from "svelte";
+
   interface Props {
     /** The play iframe whose contentWindow receives synthetic key events. */
     iframe: HTMLIFrameElement | null;
@@ -124,6 +126,37 @@
     dispatchKey("keyup", mapping);
   }
 
+  /** Hard reset: release every held key, stop auto-repeat, clear touch tracking.
+   *  Safety net for any missed touchend/keyup so an input can't stay stuck down
+   *  (e.g. the page is backgrounded mid-press, or a touchend is dropped). Wired
+   *  to touchcancel, blur, and page-hide below. */
+  function releaseAll() {
+    stopFaceRepeat();
+    if (dpadUp) release("d-up", DPAD_KEYS.up);
+    if (dpadDown) release("d-down", DPAD_KEYS.down);
+    if (dpadLeft) release("d-left", DPAD_KEYS.left);
+    if (dpadRight) release("d-right", DPAD_KEYS.right);
+    if (faceHeld !== null) release(`f-${faceHeld}`, FACE_KEYS[faceHeld]);
+    dpadUp = dpadDown = dpadLeft = dpadRight = false;
+    faceHeld = null;
+    dpadTouchId = null;
+    faceTouchId = null;
+  }
+
+  onMount(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") releaseAll();
+    };
+    window.addEventListener("blur", releaseAll);
+    window.addEventListener("pagehide", releaseAll);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("blur", releaseAll);
+      window.removeEventListener("pagehide", releaseAll);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  });
+
   // === D-pad handling ===
   //
   // The d-pad is one touch zone, not four buttons. A finger anywhere in the
@@ -220,16 +253,22 @@
     );
   }
 
-  function dpadTouchEnd(e: TouchEvent) {
-    // Only release if the lifted touch is the one we were tracking.
-    let lifted = false;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === dpadTouchId) {
-        lifted = true;
-        break;
-      }
+  /** True if our tracked touch id is still among the active touches. We release
+   *  when it is NOT — i.e. our finger has lifted/cancelled. This is more robust
+   *  than matching `changedTouches`: mobile Firefox doesn't always list the
+   *  lifted touch there, which skipped the release and left the key stuck down
+   *  ("permanently holding X"). `touches` (the still-active set) is reliable. */
+  function touchStillActive(e: TouchEvent, id: number | null): boolean {
+    if (id === null) return false;
+    for (let i = 0; i < e.touches.length; i++) {
+      if (e.touches[i].identifier === id) return true;
     }
-    if (!lifted) return;
+    return false;
+  }
+
+  function dpadTouchEnd(e: TouchEvent) {
+    if (dpadTouchId === null) return;
+    if (touchStillActive(e, dpadTouchId)) return; // our finger still down
     e.preventDefault();
     dpadTouchId = null;
     updateDpadFromOffset(0, 0); // releases everything
@@ -380,14 +419,8 @@
   }
 
   function faceTouchEnd(e: TouchEvent) {
-    let lifted = false;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === faceTouchId) {
-        lifted = true;
-        break;
-      }
-    }
-    if (!lifted) return;
+    if (faceTouchId === null) return;
+    if (touchStillActive(e, faceTouchId)) return; // our finger still down
     e.preventDefault();
     faceTouchId = null;
     updateFaceFromOffset(0, 0);

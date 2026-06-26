@@ -97,7 +97,10 @@
   // resource timings and posts allbyte:download-progress; stops once booted.
   let dlPoller: ReturnType<typeof setInterval> | null = null;
   let dlBytes = 0;
-  const EXPECTED_DL_BYTES = 105 * 1024 * 1024;
+  // To-Title download (index.wasm + index.pck), so the boot shell's first-load
+  // bar reads 100% exactly when the player reaches Title — see the matching
+  // note in GodotEmbed.svelte. Laria.pck is excluded (preloads after Title).
+  const EXPECTED_DL_BYTES = 36879516 + 24929996; // WASM + index.pck (~59MB)
 
   function postDownloadProgress() {
     const w = gameIframe?.contentWindow as any;

@@ -323,12 +323,15 @@
   // is happening, and it's the only same-origin path that doesn't
   // require modifying the iframe's HTML to wrap fetch().
   //
-  // EXPECTED_DOWNLOAD_BYTES is a soft target — actual total depends on
-  // the current export. Today it's roughly index.wasm (~37MB) +
-  // index.pck (~24MB) + Laria.pck (~43MB) = ~104MB. The progress bar
-  // caps visually at 100% and the phase text takes over once downloads
-  // complete (WASM compile + engine init are CPU work, no fetch events).
-  const EXPECTED_DOWNLOAD_BYTES = 105 * 1024 * 1024;
+  // EXPECTED_DOWNLOAD_BYTES is the to-Title download: index.wasm (~37MB) +
+  // index.pck (~24MB) = ~59MB. The boot shell's first-load bar is designed
+  // around this total so it reads 100% exactly when the player reaches Title
+  // (verified: 37/59 → 63%, matching Arc's v0.7.2049 bar). We intentionally
+  // do NOT include Laria.pck (~43MB): it preloads in the background AFTER
+  // Title (Arc's Title.gd preload), and this poller stops once gameState.scene
+  // is set — so the bar completes at "you're in the game", not "everything
+  // incl. the next area is cached". Bytes are capped at 100% either way.
+  const EXPECTED_DOWNLOAD_BYTES = 36879516 + 24929996; // WASM + index.pck
   let bytesDownloaded = $state(0);
   let filesDownloaded = $state(0);
 

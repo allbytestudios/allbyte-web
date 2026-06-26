@@ -183,20 +183,23 @@
 
     let nUp = false, nDown = false, nLeft = false, nRight = false;
     if (dist >= DEADZONE) {
-      // Cardinal-only via dominant axis: the d-pad is drawn as a traditional
-      // cross (4 arms) and movement is grid-based, so a tap resolves to exactly
-      // ONE direction — the axis with the larger offset wins. (Previously an
-      // 8-sector angle map also fired the two adjacent cardinals in the
-      // diagonal sectors, so an off-axis tap on the cross — or a thumb rolling
-      // slightly off-axis mid-press — sent up+right and moved two tiles: the
-      // "2 buttons from one d-pad press" bug.) Screen y is inverted (+ = down).
-      if (Math.abs(dx) >= Math.abs(dy)) {
-        if (dx > 0) nRight = true;
-        else nLeft = true;
-      } else {
-        if (dy < 0) nUp = true;
-        else nDown = true;
-      }
+      // 8-direction, but CARDINAL-BIASED. Diagonals are supported (hold a corner
+      // to run diagonally), yet a tap that's even slightly off-axis still
+      // resolves to a single cardinal. We widen the four cardinal sectors to 60°
+      // each and shrink the diagonal corners to 30° each (vs the old 8×45° map
+      // where half the area was diagonal — that's what fired up+right from a
+      // tap meant as "right", the "2 buttons from one press" bug). A real-d-pad
+      // feel without accidental diagonals. Screen y is inverted (+ = down), so
+      // -dy makes the angle math natural: 0°=right, 90°=up, 180°=left, 270°=down.
+      const deg = (Math.atan2(-dy, dx) * 180 / Math.PI + 360) % 360;
+      if (deg >= 330 || deg < 30)       { nRight = true; }              // R   [330,30)  60°
+      else if (deg < 60)                { nUp = true; nRight = true; }  // UR  [30,60)   30°
+      else if (deg < 120)               { nUp = true; }                 // U   [60,120)  60°
+      else if (deg < 150)               { nUp = true; nLeft = true; }   // UL  [120,150) 30°
+      else if (deg < 210)               { nLeft = true; }               // L   [150,210) 60°
+      else if (deg < 240)               { nDown = true; nLeft = true; } // DL  [210,240) 30°
+      else if (deg < 300)               { nDown = true; }               // D   [240,300) 60°
+      else                              { nDown = true; nRight = true; }// DR  [300,330) 30°
     }
 
     // Diff current vs new and fire the appropriate key events.

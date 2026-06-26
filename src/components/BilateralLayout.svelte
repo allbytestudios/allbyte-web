@@ -7,6 +7,7 @@
   import { auth, initAuth, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   import { initPlayAnalytics } from "../lib/playAnalytics";
+  import { clearStaleGameCaches } from "../lib/swRecovery";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import { pickerVersions, defaultVersion, versionById, isUnlocked } from "../lib/gameVersions";
   import { subscribeToFile } from "../lib/testEvents";
@@ -145,12 +146,12 @@
     installPrompt = null;
   }
 
-  function launchGame() {
-    gameUrl = selectedGamePath();
+  async function launchGame() {
     playMode = true;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handlePlayKey);
-    // Request fullscreen + lock landscape. Best-effort:
+    // Request fullscreen + lock landscape — kept inside the user gesture
+    // (before the await below). Best-effort:
     //   - Android Chrome: both succeed; user lands in full-screen landscape.
     //   - Desktop: fullscreen requests OK, orientation.lock is a no-op.
     //   - iOS Safari: fullscreen partial (16+) and orientation.lock is
@@ -159,6 +160,10 @@
     //     install path (Add to Home Screen) is iOS's escape hatch — the
     //     manifest's "orientation": "landscape" is respected there.
     requestFullscreenLandscape();
+    // Clear any stale game service worker / caches before loading the iframe so
+    // a returning visitor doesn't dead-end on an old cached build (swRecovery).
+    await clearStaleGameCaches();
+    gameUrl = selectedGamePath();
   }
 
   /** True for touch devices on phone/small-tablet screens. Same gate the

@@ -7,6 +7,7 @@
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import MinimapPanel from "./MinimapPanel.svelte";
   import { initPlayAnalytics } from "../lib/playAnalytics";
+  import { clearStaleGameCaches } from "../lib/swRecovery";
 
   interface Props {
     fixture?: string;
@@ -305,6 +306,47 @@
   let bytesDownloaded = $state(0);
   let filesDownloaded = $state(0);
 
+  // --- Stale-cache recovery ------------------------------------------------
+  // A returning visitor's old service worker can dead-end the boot: the game's
+  // SW-registration path rejects with "Service worker already exists" and then
+  // neither reloads nor boots (permanent hang); and a stale cached WASM against
+  // a freshly-deployed encrypted PCK fails its MD5 check. The new nothreads
+  // build installs no SW on a clean load, so this is a transitional problem —
+  // detect the failure, clear the SW + caches, and reload once into the fresh
+  // build. Keyed on the exact engine stderr signatures the smoke test uses,
+  // with a stalled-download timeout backstop (never fires while bytes are still
+  // arriving, so a slow mobile download is never wastefully restarted).
+  const STALE_CACHE_SIGNATURES = [
+    "MD5 sum of the decrypted file does not match",
+    "Can't open encrypted pack-referenced file",
+    "open_and_parse",
+    "Cannot get class",
+    "Service worker already exists",
+    "Error while registering service worker",
+  ];
+  const RECOVERY_KEY = "ab_play_cache_recovered";
+  let recovering = false;
+  let lastBytesAt = loadStart; // timestamp of the last download-progress tick
+
+  async function recoverFromStaleCache(reason: string) {
+    if (recovering) return;
+    // Once per session: if a fresh, SW-free reload STILL fails, it isn't a cache
+    // problem — don't loop; fall through to the normal load path.
+    try { if (sessionStorage.getItem(RECOVERY_KEY)) return; } catch {}
+    recovering = true;
+    try { sessionStorage.setItem(RECOVERY_KEY, "1"); } catch {}
+    loadStatus = "Updating game files…";
+    console.warn(`[play] stale-cache recovery (${reason}) — clearing service worker + caches`);
+    await clearStaleGameCaches();
+    // Fresh, cache-busted navigation into the (now SW-free) build. The existing
+    // poller keeps running and hides the panel once the fresh build boots;
+    // `recovering` stays true so it never re-triggers detection.
+    loading = true;
+    error = "";
+    if (iframeEl) iframeEl.src = `${gameUrl}?_cb=${Date.now()}`;
+    else if (typeof window !== "undefined") window.location.reload();
+  }
+
   function pollLoadStatus() {
     loadElapsed = Math.floor((Date.now() - loadStart) / 1000);
 
@@ -350,6 +392,7 @@
         if (totalBytes !== bytesDownloaded || count !== filesDownloaded) {
           bytesDownloaded = totalBytes;
           filesDownloaded = count;
+          lastBytesAt = Date.now(); // download is progressing — not stalled
           // Owner spec (2026-06-01): web reports transport-level progress,
           // game owns the visible loading UI. Emit the postMessage so Arc's
           // Chronicles boot shell can drive a real progress bar instead of
@@ -382,6 +425,21 @@
       startKbNudge(scene);
       stopLoadPolling();
       return;
+    }
+
+    // Stale-cache / dead-end-boot detection (no scene yet). Recover once on a
+    // known failure signature, or on a long hang where the download has also
+    // stalled (so a slow-but-progressing mobile download is never restarted).
+    if (!recovering) {
+      const joined = logs.map((l) => String(l)).join("\n");
+      if (STALE_CACHE_SIGNATURES.some((s) => joined.includes(s))) {
+        recoverFromStaleCache("signature");
+        return;
+      }
+      if (loadElapsed > 75 && Date.now() - lastBytesAt > 20000) {
+        recoverFromStaleCache("timeout-stalled");
+        return;
+      }
     }
 
     // Show the last 3 log lines (most recent at bottom). Trim each line

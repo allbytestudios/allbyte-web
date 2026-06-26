@@ -84,6 +84,43 @@
   // previously uncounted — the beacon only lived in GodotEmbed on /play).
   let analyticsOff: (() => void) | null = null;
 
+  // Download-progress poster for the homepage launch — parity with GodotEmbed
+  // so the game's boot shell can drive a real progress bar on the first (long,
+  // ~59 MB) load instead of a frozen-looking dot animation. Reads the iframe's
+  // resource timings and posts allbyte:download-progress; stops once booted.
+  let dlPoller: ReturnType<typeof setInterval> | null = null;
+  let dlBytes = 0;
+  const EXPECTED_DL_BYTES = 105 * 1024 * 1024;
+
+  function postDownloadProgress() {
+    const w = gameIframe?.contentWindow as any;
+    if (!w) return;
+    try {
+      if (w.gameState?.scene) {
+        if (dlPoller) { clearInterval(dlPoller); dlPoller = null; }
+        return;
+      }
+      const perf = w.performance;
+      if (!perf?.getEntriesByType) return;
+      let total = 0, count = 0, recent: string | null = null;
+      for (const e of perf.getEntriesByType("resource")) {
+        if (typeof e.name !== "string" || !e.name.includes("/godot/")) continue;
+        const sz = (e as any).transferSize || (e as any).encodedBodySize || 0;
+        if (sz > 0) { total += sz; count++; recent = e.name; }
+      }
+      if (total !== dlBytes) {
+        dlBytes = total;
+        try {
+          w.postMessage(
+            { type: "allbyte:download-progress", bytesDownloaded: total,
+              expectedBytes: EXPECTED_DL_BYTES, filesDownloaded: count, currentFile: recent },
+            "*",
+          );
+        } catch { /* iframe not ready to receive */ }
+      }
+    } catch { /* iframe still booting */ }
+  }
+
   // Tier-gated game-version picker (above the Play-Now gif). pickerList is the
   // deployed builds; locked ones render disabled as an upsell. selectedVersionId
   // is the manual pick, falling back to the richest build the user can play
@@ -199,6 +236,7 @@
     teardownSaveBridge();
     analyticsOff?.();
     analyticsOff = null;
+    if (dlPoller) { clearInterval(dlPoller); dlPoller = null; }
     gameIframe = null;
     // Reverse the fullscreen/orientation lock from launchGame so the rest
     // of the site renders in its normal viewport. Both unlock/exit are
@@ -220,6 +258,7 @@
   $effect(() => {
     if (playMode && gameIframe) {
       initSaveBridge(gameIframe, { onExit: exitGame });
+      if (!dlPoller) dlPoller = setInterval(postDownloadProgress, 500);
       // Count homepage launches in the play-funnel too. The beacon only lived
       // in GodotEmbed (/play), so plays started from "/" were invisible. On "/"
       // document.referrer is still the real external source, so attribution is
@@ -247,6 +286,7 @@
   onDestroy(() => {
     analyticsOff?.();
     analyticsOff = null;
+    if (dlPoller) { clearInterval(dlPoller); dlPoller = null; }
   });
 
   function handlePlayKey(e: KeyboardEvent) {

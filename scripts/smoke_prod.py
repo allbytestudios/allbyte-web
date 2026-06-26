@@ -21,9 +21,13 @@ Exit codes:
   1  one or more suspect log lines found, or the game never became ready
 """
 
+import json
 import os
+import re
 import sys
 import time
+import urllib.request
+from urllib.parse import urlparse
 
 try:
     from playwright.sync_api import sync_playwright
@@ -35,6 +39,51 @@ URL = os.environ.get("SMOKE_URL", "https://allbyte.studio/play/")
 BOOT_TIMEOUT_S = 45  # generous; first-load with cold cache is slow
 READY_POLL_S = 1
 
+VERSION_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "src", "data", "game-version.json",
+)
+
+
+def check_sw_version() -> int:
+    """Assert the DEPLOYED sw.js BUILD_VERSION matches the game version.
+
+    This is the check that would have caught the 2026-06-26 stale-cache hang:
+    the SW keys its cache on BUILD_VERSION, so if the deployed sw.js lags the
+    game assets (e.g. game-version.json bumps never committed, CI kept stamping
+    the old version), returning users serve old WASM/PCK against the new
+    index.html → MD5 mismatch / hang. Mechanism tests can't catch this — it's a
+    deploy-version drift, only visible against the live sw.js. Retries to ride
+    out CloudFront invalidation propagation.
+    """
+    try:
+        expected = json.load(open(VERSION_FILE, encoding="utf-8"))["version"]
+    except Exception as e:
+        print(f"[smoke] WARN — couldn't read game-version.json ({e}); skipping sw.js version check")
+        return 0
+    origin = "{0.scheme}://{0.netloc}".format(urlparse(URL))
+    pat = re.compile(r'BUILD_VERSION\s*=\s*"([^"]+)"')
+    got = None
+    for attempt in range(6):  # ~30s for invalidation to propagate
+        try:
+            req = urllib.request.Request(
+                f"{origin}/sw.js?cb={attempt}", headers={"Cache-Control": "no-cache"}
+            )
+            sw = urllib.request.urlopen(req, timeout=10).read().decode("utf-8", "replace")
+            m = pat.search(sw)
+            got = m.group(1) if m else None
+            if got == expected:
+                print(f"[smoke] sw.js BUILD_VERSION == game version ({expected})")
+                return 0
+            print(f"[smoke] sw.js version {got!r} != game version {expected!r} (attempt {attempt + 1}/6)")
+        except Exception as e:
+            print(f"[smoke] sw.js fetch error (attempt {attempt + 1}/6): {e}")
+        time.sleep(5)
+    print(f"\n[smoke] FAIL — deployed sw.js BUILD_VERSION ({got!r}) never matched game version ({expected!r}).")
+    print("[smoke]   Returning users will serve a stale-keyed SW cache against new assets → hang.")
+    print("[smoke]   Fix: commit + deploy game-version.json so sw.js is stamped with the current version.")
+    return 1
+
 # Godot stderr lines that indicate a deploy-breaking failure.
 SUSPECT_PATTERNS = [
     "MD5 sum of the decrypted file does not match",
@@ -44,7 +93,7 @@ SUSPECT_PATTERNS = [
 ]
 
 
-def main() -> int:
+def check_boot() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 800})
@@ -140,6 +189,13 @@ def main() -> int:
 
         print(f"[smoke] OK — engine booted, no MD5/encryption errors")
         return 0
+
+
+def main() -> int:
+    # Run both checks for full diagnostics; fail if either fails.
+    sw_code = check_sw_version()
+    boot_code = check_boot()
+    return sw_code or boot_code
 
 
 if __name__ == "__main__":

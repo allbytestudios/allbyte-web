@@ -307,6 +307,72 @@ if (existsSync(godotDir) && existsSync(godotIndex)) {
   console.log("No public/godot/index.html found. Skipping Godot export.");
 }
 
+// 2e. Deploy a version-stamped sw.js alongside the game assets.
+//
+// The service worker keys its cache name on BUILD_VERSION (the game version).
+// That version only reached the DEPLOYED sw.js via the webapp build+commit
+// path (inject-sw-version on `npm run build`, shipped by CI). Game deploys
+// (this script) were decoupled from it, so a push-assets run that shipped new
+// /godot/* bytes WITHOUT a matching sw.js redeploy left returning users on a
+// stale-keyed cache serving old WASM/PCK against the new index.html → MD5
+// mismatch / hang. (Real incident 2026-06-26: game advanced to v0.7.2050 while
+// the deployed sw.js was still stamped v0.7.2047 — game-version.json bumps were
+// never committed, so CI kept injecting the stale version.)
+//
+// Fixing it at the source: every game deploy stamps the CURRENT game version
+// into sw.js and ships it, so the SW cache always invalidates in lockstep with
+// the assets it caches. (CI still deploys sw.js too; they agree as long as
+// game-version.json is committed — hence the dirty-tree warning below.)
+{
+  const swSrc = join(publicDir, "sw.js");
+  const versionFile = join(root, "src", "data", "game-version.json");
+  if (existsSync(swSrc) && existsSync(versionFile)) {
+    const version = JSON.parse(readFileSync(versionFile, "utf8")).version;
+    if (!version) {
+      console.warn("[push-assets] game-version.json has no version — skipping sw.js deploy");
+    } else {
+      const stamped = readFileSync(swSrc, "utf8").replaceAll("__BUILD_VERSION__", version);
+      const swTmp = join(publicDir, "sw.js.deploy");
+      if (dryRun) {
+        console.log(`[dry-run] stamp sw.js with ${version} and upload to s3://${bucket}/sw.js`);
+      } else {
+        writeFileSync(swTmp, stamped);
+        try {
+          run(
+            `aws s3 cp "${swTmp}" s3://${bucket}/sw.js ` +
+              `--region ${region} ` +
+              `--cache-control "no-cache, max-age=0, must-revalidate" ` +
+              `--content-type "application/javascript"`
+          );
+          console.log(`[push-assets] deployed sw.js stamped ${version}`);
+        } finally {
+          try { unlinkSync(swTmp); } catch { /* best-effort */ }
+        }
+      }
+      invalidationPaths.add("/sw.js");
+
+      // Drift guard: if game-version.json is uncommitted, the next webapp CI
+      // deploy will inject the OLD committed version into sw.js and undo what
+      // we just shipped. Warn loudly so the operator commits the bump.
+      try {
+        const dirty = execSync(
+          `git status --porcelain "${versionFile}"`,
+          { encoding: "utf8" }
+        ).trim();
+        if (dirty) {
+          console.warn(
+            `\n[push-assets] ⚠ game-version.json (${version}) is UNCOMMITTED. ` +
+              `Commit + push it, or the next webapp CI deploy will revert sw.js to ` +
+              `the stale committed version and returning users will hang on a stale cache.\n`
+          );
+        }
+      } catch {
+        /* not a git checkout or git unavailable — skip the guard */
+      }
+    }
+  }
+}
+
 // 3. Upload root-level game files individually
 for (const file of rootFiles) {
   const filePath = join(publicDir, file);

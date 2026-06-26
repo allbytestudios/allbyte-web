@@ -93,6 +93,52 @@ SUSPECT_PATTERNS = [
 ]
 
 
+def check_public_build() -> int:
+    """Boot the PUBLIC build (/godot/public/) directly and assert it reaches a
+    scene. This build is the anonymous homepage default (defaultVersion(null) ==
+    "alpha" → /godot/public/index.html), yet check_boot() only exercises /play
+    (the debug build). The public export has a history of shipping broken
+    (2026-06-24 loop), so smoke it independently. Loaded top-level (not iframed)
+    on a cold context — proves the deployed bytes boot; an iframe/cache hang is
+    a separate, SW-version concern covered by check_sw_version().
+    """
+    origin = "{0.scheme}://{0.netloc}".format(urlparse(URL))
+    url = f"{origin}/godot/public/index.html"
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_context(viewport={"width": 1280, "height": 800}).new_page()
+        print(f"[smoke] public build: {url}")
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+        except Exception as e:
+            print(f"[smoke] FAIL — public build navigation failed: {e}")
+            browser.close()
+            return 1
+        scene = None
+        for _ in range(BOOT_TIMEOUT_S):
+            page.wait_for_timeout(1000)
+            try:
+                scene = page.evaluate("window.gameState && window.gameState.scene || null")
+            except Exception:
+                scene = None
+            if scene:
+                break
+        try:
+            logs = page.evaluate("window._consoleLogs || []") or []
+        except Exception:
+            logs = []
+        browser.close()
+        bad = [ln for ln in logs if any(pat in ln for pat in SUSPECT_PATTERNS)]
+        if bad:
+            print(f"[smoke] FAIL — public build has {len(bad)} suspect line(s): {bad[0][:160]}")
+            return 1
+        if not scene:
+            print("[smoke] FAIL — public build never reported a scene (sat on loading)")
+            return 1
+        print(f"[smoke] public build booted, scene={scene}")
+        return 0
+
+
 def check_boot() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -192,10 +238,11 @@ def check_boot() -> int:
 
 
 def main() -> int:
-    # Run both checks for full diagnostics; fail if either fails.
+    # Run all checks for full diagnostics; fail if any fails.
     sw_code = check_sw_version()
     boot_code = check_boot()
-    return sw_code or boot_code
+    public_code = check_public_build()
+    return sw_code or boot_code or public_code
 
 
 if __name__ == "__main__":

@@ -65,6 +65,30 @@ function referrerHost(): string {
   }
 }
 
+// Coarse "OS Browser" class from the UA — no PII, just a bucket (e.g.
+// "iOS Safari", "Android Chrome", "Windows Firefox"). Lets the funnel show
+// device mix per stage without collecting the raw user-agent. Order matters:
+// Edge UAs contain "Chrome", and Chrome UAs contain "Safari".
+function deviceClass(): string {
+  try {
+    const ua = (navigator.userAgent || "").toLowerCase();
+    let os = "Other";
+    if (/iphone|ipad|ipod/.test(ua)) os = "iOS";
+    else if (ua.includes("android")) os = "Android";
+    else if (ua.includes("windows")) os = "Windows";
+    else if (ua.includes("mac os") || ua.includes("macintosh")) os = "macOS";
+    else if (ua.includes("linux")) os = "Linux";
+    let br = "Other";
+    if (ua.includes("edg")) br = "Edge";
+    else if (ua.includes("firefox") || ua.includes("fxios")) br = "Firefox";
+    else if (ua.includes("crios") || ua.includes("chrome")) br = "Chrome";
+    else if (ua.includes("safari")) br = "Safari";
+    return `${os} ${br}`;
+  } catch {
+    return "Other Other";
+  }
+}
+
 /**
  * Start the funnel beacon. `stateGetter` returns a snapshot of the game's
  * current state (or null if not booted yet). Returns a teardown fn. No-op
@@ -87,6 +111,7 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
 
   const sid = sessionId();
   const ref = referrerHost();
+  const dev = deviceClass();
   const startTs = Date.now();
   const seen = new Set<string>();
   let lastScene = "";
@@ -97,7 +122,7 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
 
   function send(ev: Ev, scene: string): void {
     try {
-      const body = JSON.stringify({ sid, ev, scene, dur: elapsed(), ref });
+      const body = JSON.stringify({ sid, ev, scene, dur: elapsed(), ref, dev });
       navigator.sendBeacon(WRITE_URL, new Blob([body], { type: "text/plain" }));
     } catch {
       /* best-effort; never break the page */

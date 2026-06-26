@@ -131,6 +131,7 @@ Resources:
                   return resp(400)
               scene = clean(d.get("scene"), 80)
               ref = clean(d.get("ref"), 120)
+              dev = clean(d.get("dev"), 40)  # coarse device/browser class, no PII
               try:
                   dur = int(d.get("dur", 0))
               except Exception:
@@ -146,6 +147,7 @@ Resources:
                       "ev": ev,
                       "scene": scene,
                       "ref": ref,
+                      "dev": dev,
                       "dur": dur,
                       "ts": now,
                       "ttl": now + RETENTION * 86400,
@@ -319,13 +321,15 @@ Resources:
                   page = table.scan(**kwargs)
                   for it in page.get("Items", []):
                       sid = it["sessionId"]
-                      s = sessions.setdefault(sid, {"scenes": set(), "dur": 0, "ref": ""})
+                      s = sessions.setdefault(sid, {"scenes": set(), "dur": 0, "ref": "", "dev": ""})
                       sc = it.get("scene")
                       if sc:
                           s["scenes"].add(sc)
                       s["dur"] = max(s["dur"], int(it.get("dur", 0)))
                       if it.get("ref") and not s["ref"]:
                           s["ref"] = it["ref"]
+                      if it.get("dev") and not s["dev"]:
+                          s["dev"] = it["dev"]
                   lek = page.get("LastEvaluatedKey")
                   if not lek:
                       break
@@ -333,12 +337,15 @@ Resources:
 
               scene_counts = {}
               ref_counts = {}
+              dev_counts = {}
               durs = []
               for s in sessions.values():
                   for sc in s["scenes"]:
                       scene_counts[sc] = scene_counts.get(sc, 0) + 1
                   if s["ref"]:
                       ref_counts[s["ref"]] = ref_counts.get(s["ref"], 0) + 1
+                  if s["dev"]:
+                      dev_counts[s["dev"]] = dev_counts.get(s["dev"], 0) + 1
                   if s["dur"] > 0:
                       durs.append(s["dur"])
 
@@ -356,6 +363,7 @@ Resources:
                   "bootedNoMove": booted - moved,
                   "sceneCounts": scene_counts,
                   "referrers": ref_counts,
+                  "devices": dev_counts,
                   "medianDurationSec": median,
                   "generatedAt": int(time.time()),
               })

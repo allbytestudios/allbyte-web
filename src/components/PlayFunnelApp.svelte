@@ -14,6 +14,7 @@
     bootedNoMove: number;
     sceneCounts: Record<string, number>;
     referrers: Record<string, number>;
+    devices?: Record<string, number>;
     medianDurationSec: number;
     generatedAt: number;
   }
@@ -82,6 +83,9 @@
   );
   let referrers = $derived(
     data ? Object.entries(data.referrers).sort((a, b) => b[1] - a[1]) : []
+  );
+  let devices = $derived(
+    data?.devices ? Object.entries(data.devices).sort((a, b) => b[1] - a[1]) : []
   );
 
   function milestoneLabel(k: string): string {
@@ -179,6 +183,22 @@
           {/each}
         {/if}
       </section>
+
+      <!-- Devices (play sessions, coarse class from UA — no PII) -->
+      <section>
+        <h3>Devices <span class="sub">(distinct sessions)</span></h3>
+        {#if devices.length === 0}
+          <p class="muted">No device data yet — appears as new play sessions come in.</p>
+        {:else}
+          {#each devices as [d, n]}
+            <div class="bar-row">
+              <span class="bar-label">{d}</span>
+              <div class="bar"><div class="fill dev" style="width:{pct(n, data.totalSessions)}%"></div></div>
+              <span class="bar-n">{n}</span>
+            </div>
+          {/each}
+        {/if}
+      </section>
     </div>
   {/if}
 </div>
@@ -224,6 +244,7 @@
   .fill { height: 100%; background: #a7f3d0; }
   .fill.alt { background: #fbbf24; }
   .fill.ref { background: #60a5fa; }
+  .fill.dev { background: #c084fc; }
   .bar-n { text-align: right; color: rgba(224, 231, 255, 0.7); }
   code { background: rgba(167, 243, 208, 0.1); padding: 0 0.3rem; border-radius: 3px; }
 </style>

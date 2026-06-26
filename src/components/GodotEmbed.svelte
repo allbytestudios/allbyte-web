@@ -7,6 +7,8 @@
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import MinimapPanel from "./MinimapPanel.svelte";
   import { initPlayAnalytics } from "../lib/playAnalytics";
+  import DownloadGate from "./DownloadGate.svelte";
+  import { downloadAcked, ackDownload } from "../lib/downloadGate";
 
   interface Props {
     fixture?: string;
@@ -16,6 +18,22 @@
   let loading = $state(true);
   let error = $state("");
   let iframeEl = $state<HTMLIFrameElement | null>(null);
+
+  // Download gate — hold the ~100 MB first load until the user consents.
+  // The iframe's `src` is the trigger: as long as we don't render the iframe,
+  // nothing is fetched. `allowed` gates that render; `showGate` shows the
+  // notice. The decision is made client-side in onMount (localStorage isn't
+  // available during SSR), so the server emits neither the iframe nor a wrong
+  // gate state. Admin fixture deep-loads skip the gate entirely.
+  let allowed = $state(false);
+  let showGate = $state(false);
+
+  function consentToDownload() {
+    ackDownload();
+    showGate = false;
+    allowed = true;
+    loadStart = Date.now(); // count load time from consent, not page arrival
+  }
 
   // Tier-gated build variants — see APP_CLAUDE_TIER_GATED_BUILDS.md.
   // Arc's deploy will produce two Godot exports (`/godot/public/` debug
@@ -180,6 +198,15 @@
   }
 
   onMount(() => {
+    // Decide the download gate now that localStorage is available. Already
+    // acknowledged (so cached) or an admin fixture load → straight through;
+    // otherwise hold the iframe behind the consent notice.
+    if (fixture || downloadAcked()) {
+      allowed = true;
+    } else {
+      showGate = true;
+    }
+
     // Listen anywhere on the page for the first user gesture and try the
     // fullscreen request once. Use pointerdown so it covers mouse + touch
     // with a single handler. { once: true } auto-removes after firing.
@@ -282,7 +309,7 @@
   //
   // Hides as soon as the engine reports a scene via window.gameState
   // (set by the title scene's _ready).
-  const loadStart = Date.now();
+  let loadStart = Date.now();
   let loadElapsed = $state(0);
   let loadStatus = $state("Starting...");
   let loadLogTail = $state<string[]>([]);
@@ -544,22 +571,26 @@
 </script>
 
 <div class="godot-container">
-  {#if loading}
-    <div class="loading-screen">
-      <div class="loading-title">AllByte Studios</div>
-      <div class="loading-subtitle">Loading game...</div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: 30%"></div>
-      </div>
-    </div>
-  {/if}
-
   {#if error}
     <div class="loading-screen">
       <div class="loading-title">AllByte Studios</div>
       <p class="loading-note">{error}</p>
     </div>
-  {:else}
+  {:else if showGate}
+    <DownloadGate
+      oncontinue={consentToDownload}
+      oncancel={() => (window.location.href = "/")}
+    />
+  {:else if allowed}
+    {#if loading}
+      <div class="loading-screen">
+        <div class="loading-title">AllByte Studios</div>
+        <div class="loading-subtitle">Loading game...</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: 30%"></div>
+        </div>
+      </div>
+    {/if}
     <iframe
       bind:this={iframeEl}
       src={gameUrl}

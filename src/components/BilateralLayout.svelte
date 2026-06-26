@@ -7,6 +7,8 @@
   import { auth, initAuth, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   import { initPlayAnalytics } from "../lib/playAnalytics";
+  import DownloadGate from "./DownloadGate.svelte";
+  import { downloadAcked, ackDownload } from "../lib/downloadGate";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import { pickerVersions, defaultVersion, versionById, isUnlocked } from "../lib/gameVersions";
   import { subscribeToFile } from "../lib/testEvents";
@@ -80,6 +82,11 @@
   let demoHovered = $state(false);
   let playMode = $state(false);
   let gameUrl = $state("");
+  // Download gate: when launching for the first time on this device, hold the
+  // ~100 MB download behind a consent notice. `playMode` goes true (the play
+  // overlay opens) but `gameUrl` stays empty — so the iframe isn't rendered and
+  // nothing is fetched — until the user consents.
+  let showGate = $state(false);
   // Teardown handle for the play-funnel beacon (homepage launches were
   // previously uncounted — the beacon only lived in GodotEmbed on /play).
   let analyticsOff: (() => void) | null = null;
@@ -183,10 +190,17 @@
   }
 
   function launchGame() {
-    gameUrl = selectedGamePath();
     playMode = true;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handlePlayKey);
+    // First launch on this device → show the download notice and hold the
+    // iframe (gameUrl stays "") until the user consents. Already acknowledged
+    // (so cached) → load straight away.
+    if (downloadAcked()) {
+      gameUrl = selectedGamePath();
+    } else {
+      showGate = true;
+    }
     // Request fullscreen + lock landscape. Best-effort:
     //   - Android Chrome: both succeed; user lands in full-screen landscape.
     //   - Desktop: fullscreen requests OK, orientation.lock is a no-op.
@@ -196,6 +210,13 @@
     //     install path (Add to Home Screen) is iOS's escape hatch — the
     //     manifest's "orientation": "landscape" is respected there.
     requestFullscreenLandscape();
+  }
+
+  // User consented at the download notice — remember it and start the load.
+  function consentToDownload() {
+    ackDownload();
+    showGate = false;
+    gameUrl = selectedGamePath();
   }
 
   /** True for touch devices on phone/small-tablet screens. Same gate the
@@ -230,6 +251,7 @@
 
   function exitGame() {
     playMode = false;
+    showGate = false;
     gameUrl = "";
     document.body.style.overflow = "";
     window.removeEventListener("keydown", handlePlayKey);
@@ -491,14 +513,18 @@
   <div class="demo-section" class:play-active={playMode}>
   {#if playMode}
     <div class="play-container">
-      <iframe
-        src={gameUrl}
-        title="The Chronicles of Nesis"
-        class="game-frame"
-        allow="cross-origin-isolated"
-        bind:this={gameIframe}
-      ></iframe>
-      <VirtualGamepad iframe={gameIframe} />
+      {#if showGate}
+        <DownloadGate oncontinue={consentToDownload} oncancel={exitGame} />
+      {:else}
+        <iframe
+          src={gameUrl}
+          title="The Chronicles of Nesis"
+          class="game-frame"
+          allow="cross-origin-isolated"
+          bind:this={gameIframe}
+        ></iframe>
+        <VirtualGamepad iframe={gameIframe} />
+      {/if}
     </div>
   {:else}
     <div class="demo-row" style="position: relative;" onclick={launchGame} onmouseenter={onDemoEnter} onmouseleave={onDemoLeave}>

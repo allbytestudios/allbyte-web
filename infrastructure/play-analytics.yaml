@@ -356,6 +356,30 @@ Resources:
               # control-confusion signal (they loaded but didn't know how to play).
               booted = sum(1 for s in sessions.values() if s["scenes"])
               moved = sum(1 for s in sessions.values() if "m:moved" in s["scenes"])
+
+              # Per-device engagement cross-tab — drives the "engagement by
+              # device" graph. For each device class: total sessions, booted
+              # (reached any scene), moved (fired m:moved), and past-Title
+              # (reached a gameplay scene beyond the title). Surfaces abnormal
+              # device engagement at a glance (e.g. a class with sessions but
+              # 0% boot = bots; low boot on one browser = a load problem).
+              dev_engage = {}
+              for s in sessions.values():
+                  dkey = s["dev"] or "(unknown)"
+                  e = dev_engage.setdefault(dkey, {"sessions": 0, "booted": 0, "moved": 0, "past": 0, "_durs": []})
+                  e["sessions"] += 1
+                  if s["scenes"]:
+                      e["booted"] += 1
+                  if "m:moved" in s["scenes"]:
+                      e["moved"] += 1
+                  if any(sc not in ("Title", "MainLoader", "") and not sc.startswith("m:") for sc in s["scenes"]):
+                      e["past"] += 1
+                  if s["dur"] > 0:
+                      e["_durs"].append(s["dur"])
+              for e in dev_engage.values():
+                  ds = sorted(e.pop("_durs"))
+                  e["medianDur"] = ds[len(ds) // 2] if ds else 0
+
               return resp(200, {
                   "totalSessions": len(sessions),
                   "bootedSessions": booted,
@@ -364,6 +388,7 @@ Resources:
                   "sceneCounts": scene_counts,
                   "referrers": ref_counts,
                   "devices": dev_counts,
+                  "deviceEngagement": dev_engage,
                   "medianDurationSec": median,
                   "generatedAt": int(time.time()),
               })

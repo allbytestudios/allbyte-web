@@ -15,6 +15,10 @@
     sceneCounts: Record<string, number>;
     referrers: Record<string, number>;
     devices?: Record<string, number>;
+    deviceEngagement?: Record<
+      string,
+      { sessions: number; booted: number; moved: number; past: number; medianDur: number }
+    >;
     medianDurationSec: number;
     generatedAt: number;
   }
@@ -86,6 +90,17 @@
   );
   let devices = $derived(
     data?.devices ? Object.entries(data.devices).sort((a, b) => b[1] - a[1]) : []
+  );
+  // Engagement by device: per class, sessions → booted → past-Title, sorted by
+  // volume. Surfaces abnormal engagement (a class with sessions but ~0% boot =
+  // bots; low boot on one browser = a load problem on that platform).
+  let deviceEngagement = $derived(
+    data?.deviceEngagement
+      ? Object.entries(data.deviceEngagement).sort((a, b) => b[1].sessions - a[1].sessions)
+      : []
+  );
+  let maxDeviceSessions = $derived(
+    deviceEngagement.reduce((m, [, e]) => Math.max(m, e.sessions), 0)
   );
 
   function milestoneLabel(k: string): string {
@@ -200,6 +215,41 @@
         {/if}
       </section>
     </div>
+
+    <!-- Engagement by device — nested funnel bar per class. Bar length ∝
+         sessions (comparable across classes); the medium fill = booted, the
+         bright fill = past-Title. Abnormal engagement shows at a glance. -->
+    <section class="device-engagement">
+      <h3>Engagement by device <span class="sub">(bar ∝ sessions · booted · past&nbsp;Title)</span></h3>
+      {#if deviceEngagement.length === 0}
+        <p class="muted">No device engagement yet — appears as new play sessions come in.</p>
+      {:else}
+        <div class="de-legend">
+          <span><i class="sw all"></i> sessions</span>
+          <span><i class="sw boot"></i> booted</span>
+          <span><i class="sw past"></i> past&nbsp;Title</span>
+        </div>
+        {#each deviceEngagement as [d, e]}
+          {@const bootPct = e.sessions ? Math.round((e.booted / e.sessions) * 100) : 0}
+          {@const pastPct = e.sessions ? Math.round((e.past / e.sessions) * 100) : 0}
+          {@const lowBoot = e.sessions >= 5 && bootPct < 40}
+          <div class="de-row" class:flag={lowBoot}>
+            <span class="bar-label" title={d}>{lowBoot ? "⚠ " : ""}{d}</span>
+            <div class="de-track">
+              <div class="de-bar" style="width:{Math.max(2, Math.round((e.sessions / maxDeviceSessions) * 100))}%">
+                <div class="de-seg boot" style="width:{bootPct}%"></div>
+                <div class="de-seg past" style="width:{pastPct}%"></div>
+              </div>
+            </div>
+            <span class="de-stat">{e.sessions}<span class="de-sub"> · {bootPct}% boot · {pastPct}% past</span></span>
+          </div>
+        {/each}
+        <p class="de-note muted">
+          Sessions but ~0% boot ⇒ likely bots/crawlers. Low boot on one browser ⇒ a load problem on
+          that platform (e.g. Safari/WebKit). High past-Title ⇒ real engaged players.
+        </p>
+      {/if}
+    </section>
   {/if}
 </div>
 
@@ -247,4 +297,22 @@
   .fill.dev { background: #c084fc; }
   .bar-n { text-align: right; color: rgba(224, 231, 255, 0.7); }
   code { background: rgba(167, 243, 208, 0.1); padding: 0 0.3rem; border-radius: 3px; }
+
+  /* Engagement-by-device graph */
+  .device-engagement { margin-top: 1.5rem; }
+  .de-legend { display: flex; gap: 1.1rem; font-size: 0.72rem; color: rgba(224, 231, 255, 0.6); margin-bottom: 0.55rem; }
+  .de-legend i.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 0.3rem; vertical-align: middle; }
+  .de-legend i.all { background: rgba(192, 132, 252, 0.22); }
+  .de-legend i.boot { background: #8b5cf6; }
+  .de-legend i.past { background: #a7f3d0; }
+  .de-row { display: grid; grid-template-columns: 10rem 1fr 13rem; align-items: center; gap: 0.5rem; margin: 0.35rem 0; font-size: 0.8rem; }
+  .de-row.flag .bar-label { color: #fca5a5; }
+  .de-track { background: rgba(255, 255, 255, 0.04); border-radius: 3px; height: 16px; }
+  .de-bar { position: relative; height: 100%; background: rgba(192, 132, 252, 0.22); border-radius: 3px; min-width: 2px; }
+  .de-seg { position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px; }
+  .de-seg.boot { background: #8b5cf6; }
+  .de-seg.past { background: #a7f3d0; }
+  .de-stat { text-align: right; color: rgba(224, 231, 255, 0.75); font-size: 0.74rem; }
+  .de-sub { color: rgba(224, 231, 255, 0.5); }
+  .de-note { font-size: 0.72rem; margin-top: 0.6rem; line-height: 1.5; }
 </style>

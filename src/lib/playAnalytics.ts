@@ -22,6 +22,39 @@ const WRITE_URL = "https://pdtoj70foi.execute-api.us-east-1.amazonaws.com/play";
 const PROD_HOST = "allbyte.studio";
 const POLL_MS = 4000;
 const SID_KEY = "ab_play_sid";
+const OWNER_KEY = "ab_play_owner";
+
+/**
+ * True for clients we exclude from the funnel — keeps bots and the owner's own
+ * playtesting out of the data:
+ *  - Automation: `navigator.webdriver` is true for headless/automated browsers
+ *    (crawlers that run JS, and our own Playwright E2E/smoke). Real browsers
+ *    report false. This is what removes the "sessions but 0% boot" bot classes.
+ *  - Owner devices: visiting any /play URL with `?owner=1` persists a marker in
+ *    localStorage; that device is excluded thereafter. Lets the owner mark each
+ *    machine/phone they test on without any account coupling (the funnel is
+ *    anonymous by design).
+ */
+function isExcludedClient(): boolean {
+  try {
+    if (new URLSearchParams(window.location.search).get("owner") === "1") {
+      try {
+        localStorage.setItem(OWNER_KEY, "1");
+      } catch {
+        /* private mode — marker won't persist, but this session is still excluded */
+      }
+    }
+    if (localStorage.getItem(OWNER_KEY) === "1") return true;
+  } catch {
+    /* storage unavailable — fall through to the webdriver check */
+  }
+  try {
+    if ((navigator as any).webdriver === true) return true;
+  } catch {
+    /* ignore */
+  }
+  return false;
+}
 
 type Ev = "open" | "scene" | "end";
 
@@ -104,7 +137,8 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
   if (
     typeof window === "undefined" ||
     !WRITE_URL ||
-    window.location.hostname !== PROD_HOST
+    window.location.hostname !== PROD_HOST ||
+    isExcludedClient()
   ) {
     return () => {};
   }

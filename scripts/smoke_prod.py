@@ -100,7 +100,7 @@ def check_sw_version() -> int:
             print(f"[smoke] sw.js fetch error (attempt {attempt + 1}/6): {e}")
         time.sleep(5)
     print(f"\n[smoke] FAIL — deployed sw.js BUILD_VERSION ({got!r}) never matched game version ({expected!r}).")
-    print("[smoke]   Returning users will serve a stale-keyed SW cache against new assets → hang.")
+    print("[smoke]   Returning users will serve a stale-keyed SW cache against new assets -> hang.")
     print("[smoke]   Fix: commit + deploy game-version.json so sw.js is stamped with the current version.")
     return 1
 
@@ -163,16 +163,6 @@ def check_boot() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 800})
-        # /play gates the first load behind a consent notice that withholds the
-        # game iframe until the user consents (remembered per-device). The ack is
-        # version-keyed — it stores the game version, and a version bump re-shows
-        # an "update" variant — so we pre-ack with the CURRENT version (not a bare
-        # "1") to emulate a returning/consented user and let the iframe mount.
-        # See src/lib/downloadGate.ts.
-        context.add_init_script(
-            "try { localStorage.setItem('ab_download_acked', %s); } catch (e) {}"
-            % json.dumps(game_version() or "1")
-        )
         page = context.new_page()
 
         # Collect console events from page + game iframe.
@@ -186,6 +176,18 @@ def check_boot() -> int:
         except Exception as e:
             print(f"[smoke] FAIL — page navigation failed: {e}")
             return 1
+
+        # /play gates the first load behind a consent notice that withholds the
+        # game iframe until the user consents. Click through it if present —
+        # version-independent (works for both the "fresh" and "update" variants),
+        # unlike a version-keyed localStorage pre-ack which would couple the smoke
+        # to whatever game version the DEPLOYED webapp bakes in (and false-fail
+        # mid-deploy, before the webapp redeploys). See src/lib/downloadGate.ts.
+        try:
+            page.click(".dl-go", timeout=6_000)
+            print("[smoke] clicked through the download gate")
+        except Exception:
+            pass  # no gate (already consented on this context) — fine
 
         # Wait for the iframe to mount. /play/ renders GodotEmbed which
         # injects an <iframe> after a brief loading screen.

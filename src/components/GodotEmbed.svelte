@@ -9,6 +9,56 @@
   import { initPlayAnalytics } from "../lib/playAnalytics";
   import DownloadGate from "./DownloadGate.svelte";
   import { downloadState, ackDownload } from "../lib/downloadGate";
+  import gameVersion from "../data/game-version.json";
+
+  // Build-freshness recovery — the "PWA stuck on an old version" fix.
+  //
+  // The service worker caches the whole game under a version-keyed name. On a
+  // new deploy a stale PWA can keep serving the OLD cached build: the SW update
+  // installs but the iframe gets handed stale assets before the new worker
+  // takes control, and the deferred-update logic won't reload a game that
+  // booted fine (only a STUCK one). So we verify after boot: if the loaded
+  // build's version != what this webapp expects, the SW served stale — force a
+  // SW update and reload once (sessionStorage-guarded against loops).
+  const EXPECTED_BUILD = (gameVersion.version || "").replace(/^v/, "");
+  let freshnessChecked = false;
+
+  async function checkBuildFreshness(loadedVersion: unknown) {
+    if (freshnessChecked) return;
+    freshnessChecked = true;
+    const loaded = String(loadedVersion ?? "").replace(/^v/, "");
+    if (!loaded || !EXPECTED_BUILD || loaded === EXPECTED_BUILD) return;
+    try {
+      if (sessionStorage.getItem("ab_stale_reload")) return; // already tried this session
+      sessionStorage.setItem("ab_stale_reload", "1");
+    } catch {
+      /* private mode — proceed without the loop guard */
+    }
+    console.warn(
+      `[freshness] loaded build ${loaded} != expected ${EXPECTED_BUILD} — refreshing to the new version`,
+    );
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      if (reg) {
+        await reg.update().catch(() => {});
+        // Our SW skipWaits, so the new worker activates on its own; reload when
+        // it takes control (controllerchange), or after a short fallback if it
+        // already controls this page.
+        let done = false;
+        const go = () => {
+          if (done) return;
+          done = true;
+          location.reload();
+        };
+        navigator.serviceWorker.addEventListener("controllerchange", go, { once: true });
+        setTimeout(go, 2500);
+        return;
+      }
+    } catch {
+      /* no SW access — fall through to a plain reload */
+    }
+    location.reload();
+  }
 
   interface Props {
     fixture?: string;
@@ -410,6 +460,8 @@
     // Game has reported a scene -> engine is up and rendering. Hide the
     // panel for good.
     if (scene) {
+      // Verify the SW served the CURRENT build, not a stale cached one.
+      checkBuildFreshness((iframeEl?.contentWindow as any)?.gameState?.version);
       loadStatus = `Ready: ${scene}`;
       loadPanelVisible = false;
       startKbNudge(scene);

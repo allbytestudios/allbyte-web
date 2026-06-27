@@ -8,7 +8,7 @@
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   import { initPlayAnalytics } from "../lib/playAnalytics";
   import DownloadGate from "./DownloadGate.svelte";
-  import { downloadAcked, ackDownload } from "../lib/downloadGate";
+  import { downloadState, ackDownload } from "../lib/downloadGate";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import { pickerVersions, defaultVersion, versionById, isUnlocked } from "../lib/gameVersions";
   import { subscribeToFile } from "../lib/testEvents";
@@ -87,6 +87,7 @@
   // overlay opens) but `gameUrl` stays empty — so the iframe isn't rendered and
   // nothing is fetched — until the user consents.
   let showGate = $state(false);
+  let gateMode = $state<"fresh" | "update">("fresh");
   // Teardown handle for the play-funnel beacon (homepage launches were
   // previously uncounted — the beacon only lived in GodotEmbed on /play).
   let analyticsOff: (() => void) | null = null;
@@ -199,9 +200,11 @@
     // First launch on this device → show the download notice and hold the
     // iframe (gameUrl stays "") until the user consents. Already acknowledged
     // (so cached) → load straight away.
-    if (downloadAcked()) {
+    const dlState = downloadState();
+    if (dlState === "ready") {
       gameUrl = selectedGamePath();
     } else {
+      gateMode = dlState; // "fresh" (first load) or "update" (version bumped)
       showGate = true;
     }
     // Request fullscreen + lock landscape. Best-effort:
@@ -517,7 +520,7 @@
   {#if playMode}
     <div class="play-container">
       {#if showGate}
-        <DownloadGate oncontinue={consentToDownload} oncancel={exitGame} />
+        <DownloadGate mode={gateMode} oncontinue={consentToDownload} oncancel={exitGame} />
       {:else}
         <iframe
           src={gameUrl}

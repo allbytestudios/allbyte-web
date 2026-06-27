@@ -9,6 +9,8 @@
 // Once acknowledged on a device we skip the gate forever — the build is
 // service-worker cached, so subsequent loads are instant and use no data.
 
+import gameVersion from "../data/game-version.json";
+
 const ACK_KEY = "ab_download_acked";
 
 /** Approx full first-session download in MB to play the demo: gzip WASM (~9MB)
@@ -17,17 +19,41 @@ const ACK_KEY = "ab_download_acked";
  *  the gate copy and any future telemetry agree. */
 export const DOWNLOAD_MB = 75;
 
-export function downloadAcked(): boolean {
+/** Current deployed game version — the service worker keys its cache on this,
+ *  so when it changes the whole game cache is wiped and re-downloaded. We store
+ *  it alongside the ack so a version bump re-prompts (the user is about to pull
+ *  ~75MB again, which is the exact data cost the gate exists to disclose). */
+function currentVersion(): string {
+  return gameVersion.version || "";
+}
+
+export type DownloadState =
+  | "fresh" // never consented on this device
+  | "update" // consented to an OLDER version — a re-download is coming
+  | "ready"; // consented to the current version (already cached)
+
+export function downloadState(): DownloadState {
+  let acked: string | null = null;
   try {
-    return localStorage.getItem(ACK_KEY) === "1";
+    acked = localStorage.getItem(ACK_KEY);
   } catch {
-    return false;
+    /* private mode — treat as fresh */
   }
+  if (!acked) return "fresh";
+  if (acked === currentVersion()) return "ready";
+  return "update";
+}
+
+/** True only when the user has consented to the CURRENT version (so it's
+ *  cached and no download is pending). A version bump flips this back to false
+ *  via downloadState() === "update". */
+export function downloadAcked(): boolean {
+  return downloadState() === "ready";
 }
 
 export function ackDownload(): void {
   try {
-    localStorage.setItem(ACK_KEY, "1");
+    localStorage.setItem(ACK_KEY, currentVersion());
   } catch {
     /* private mode — gate will just show again next time, which is fine */
   }

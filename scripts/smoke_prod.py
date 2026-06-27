@@ -45,6 +45,25 @@ VERSION_FILE = os.path.join(
 )
 
 
+def game_version():
+    """The COMMITTED game-version.json version — what CI bakes into the deployed
+    webapp (the download gate keys on it) and injects into sw.js. Prefer the
+    committed value over the working tree, which sync-assets.js re-stamps on
+    local builds. Returns None if unreadable."""
+    try:
+        import subprocess
+        return json.loads(subprocess.check_output(
+            ["git", "show", "HEAD:src/data/game-version.json"],
+            cwd=os.path.dirname(VERSION_FILE), text=True, stderr=subprocess.DEVNULL,
+        ))["version"]
+    except Exception:
+        pass
+    try:
+        return json.load(open(VERSION_FILE, encoding="utf-8"))["version"]
+    except Exception:
+        return None
+
+
 def check_sw_version() -> int:
     """Assert the DEPLOYED sw.js BUILD_VERSION matches the game version.
 
@@ -57,26 +76,11 @@ def check_sw_version() -> int:
     out CloudFront invalidation propagation.
     """
     # Compare against the COMMITTED game-version.json — that's what CI injects
-    # into the deployed sw.js. The working-tree copy drifts on local builds
-    # (sync-assets.js re-stamps it from the dev Godot project, which can be
-    # ahead of what's deployed), so reading it here would false-fail.
-    expected = None
-    try:
-        import subprocess
-        expected = json.loads(
-            subprocess.check_output(
-                ["git", "show", "HEAD:src/data/game-version.json"],
-                cwd=os.path.dirname(VERSION_FILE), text=True, stderr=subprocess.DEVNULL,
-            )
-        )["version"]
-    except Exception:
-        pass
+    # into the deployed sw.js. The working-tree copy drifts on local builds.
+    expected = game_version()
     if not expected:
-        try:
-            expected = json.load(open(VERSION_FILE, encoding="utf-8"))["version"]
-        except Exception as e:
-            print(f"[smoke] WARN — couldn't read game-version.json ({e}); skipping sw.js version check")
-            return 0
+        print("[smoke] WARN — couldn't read game-version.json; skipping sw.js version check")
+        return 0
     origin = "{0.scheme}://{0.netloc}".format(urlparse(URL))
     pat = re.compile(r'BUILD_VERSION\s*=\s*"([^"]+)"')
     got = None
@@ -159,13 +163,15 @@ def check_boot() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 800})
-        # /play now gates the ~100 MB first load behind a consent notice that
-        # withholds the game iframe until the user clicks Continue (remembered
-        # per-device). Pre-acknowledge so the smoke emulates a returning/
-        # consented user and the iframe actually mounts. add_init_script runs
-        # before page scripts on every navigation. See src/lib/downloadGate.ts.
+        # /play gates the first load behind a consent notice that withholds the
+        # game iframe until the user consents (remembered per-device). The ack is
+        # version-keyed — it stores the game version, and a version bump re-shows
+        # an "update" variant — so we pre-ack with the CURRENT version (not a bare
+        # "1") to emulate a returning/consented user and let the iframe mount.
+        # See src/lib/downloadGate.ts.
         context.add_init_script(
-            "try { localStorage.setItem('ab_download_acked', '1'); } catch (e) {}"
+            "try { localStorage.setItem('ab_download_acked', %s); } catch (e) {}"
+            % json.dumps(game_version() or "1")
         )
         page = context.new_page()
 

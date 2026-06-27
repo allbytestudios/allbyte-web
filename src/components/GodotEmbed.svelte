@@ -8,7 +8,7 @@
   import MinimapPanel from "./MinimapPanel.svelte";
   import { initPlayAnalytics } from "../lib/playAnalytics";
   import DownloadGate from "./DownloadGate.svelte";
-  import { downloadAcked, ackDownload } from "../lib/downloadGate";
+  import { downloadState, ackDownload } from "../lib/downloadGate";
 
   interface Props {
     fixture?: string;
@@ -27,6 +27,7 @@
   // gate state. Admin fixture deep-loads skip the gate entirely.
   let allowed = $state(false);
   let showGate = $state(false);
+  let gateMode = $state<"fresh" | "update">("fresh");
 
   function consentToDownload() {
     ackDownload();
@@ -201,9 +202,11 @@
     // Decide the download gate now that localStorage is available. Already
     // acknowledged (so cached) or an admin fixture load → straight through;
     // otherwise hold the iframe behind the consent notice.
-    if (fixture || downloadAcked()) {
+    const dlState = downloadState();
+    if (fixture || dlState === "ready") {
       allowed = true;
     } else {
+      gateMode = dlState; // "fresh" (first load) or "update" (version bumped)
       showGate = true;
     }
 
@@ -581,6 +584,7 @@
     </div>
   {:else if showGate}
     <DownloadGate
+      mode={gateMode}
       oncontinue={consentToDownload}
       oncancel={() => (window.location.href = "/")}
     />

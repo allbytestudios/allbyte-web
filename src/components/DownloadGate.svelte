@@ -6,19 +6,28 @@
     oncontinue: () => void;
     /** Optional back-out (homepage shows this; /play omits it). */
     oncancel?: () => void;
+    /** "fresh" = first load on this device; "update" = a new version bumped the
+     *  service-worker cache, so the full game re-downloads. */
+    mode?: "fresh" | "update";
   }
-  let { oncontinue, oncancel }: Props = $props();
+  let { oncontinue, oncancel, mode = "fresh" }: Props = $props();
 
   const conn = connectionInfo();
   const metered = conn.saveData || conn.slow;
+  const isUpdate = mode === "update";
 </script>
 
 <div class="dl-gate" role="dialog" aria-modal="true" aria-labelledby="dl-gate-title">
   <div class="dl-card">
-    <h2 id="dl-gate-title">Before you play</h2>
+    <h2 id="dl-gate-title">{isUpdate ? "Game updated" : "Before you play"}</h2>
     <p class="dl-lead">
-      The first load downloads about <strong>{DOWNLOAD_MB}&nbsp;MB</strong> — the game
-      engine and art. It runs entirely in your browser, so there's a one-time download.
+      {#if isUpdate}
+        A new version is ready. Updating re-downloads about
+        <strong>{DOWNLOAD_MB}&nbsp;MB</strong> — the engine and art are refreshed.
+      {:else}
+        The first load downloads about <strong>{DOWNLOAD_MB}&nbsp;MB</strong> — the game
+        engine and art. It runs entirely in your browser, so there's a one-time download.
+      {/if}
     </p>
     <ul class="dl-points">
       <li><span aria-hidden="true">📶</span> Best on <strong>Wi-Fi</strong> — on cellular this uses mobile data.</li>
@@ -34,7 +43,7 @@
 
     <div class="dl-actions">
       <button class="dl-go" onclick={oncontinue}>
-        Continue · ~{DOWNLOAD_MB}&nbsp;MB
+        {isUpdate ? "Update" : "Continue"} · ~{DOWNLOAD_MB}&nbsp;MB
       </button>
       {#if oncancel}
         <button class="dl-cancel" onclick={oncancel}>Not now</button>

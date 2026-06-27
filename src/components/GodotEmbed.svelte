@@ -35,27 +35,26 @@
       /* private mode — proceed without the loop guard */
     }
     console.warn(
-      `[freshness] loaded build ${loaded} != expected ${EXPECTED_BUILD} — refreshing to the new version`,
+      `[freshness] loaded build ${loaded} != expected ${EXPECTED_BUILD} — hard-refreshing to the new version`,
     );
+    // Hard self-heal. A plain reg.update() frequently no-ops on iOS standalone
+    // PWAs (and deleting the home-screen icon doesn't clear Safari's website
+    // data), so nuke the service worker + ALL caches and reload. The next load
+    // fetches /godot/* from the network (fresh build); the SW then re-registers
+    // and re-caches. Once-per-session guarded above so it can't loop, and gated
+    // on a real version mismatch so it never runs for up-to-date clients (this
+    // is NOT the unconditional unregister that re-downloaded every launch).
     try {
-      const reg = await navigator.serviceWorker?.getRegistration();
-      if (reg) {
-        await reg.update().catch(() => {});
-        // Our SW skipWaits, so the new worker activates on its own; reload when
-        // it takes control (controllerchange), or after a short fallback if it
-        // already controls this page.
-        let done = false;
-        const go = () => {
-          if (done) return;
-          done = true;
-          location.reload();
-        };
-        navigator.serviceWorker.addEventListener("controllerchange", go, { once: true });
-        setTimeout(go, 2500);
-        return;
-      }
+      const regs = (await navigator.serviceWorker?.getRegistrations?.()) ?? [];
+      await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
     } catch {
-      /* no SW access — fall through to a plain reload */
+      /* ignore */
+    }
+    try {
+      const keys = (await caches?.keys?.()) ?? [];
+      await Promise.all(keys.map((k) => caches.delete(k).catch(() => {})));
+    } catch {
+      /* ignore */
     }
     location.reload();
   }
@@ -123,10 +122,33 @@
     return "public";
   }
 
+  /** Installed-PWA detection: standalone/fullscreen display mode, plus iOS
+   *  Safari's navigator.standalone. The installed app is the player-facing
+   *  surface, so it gets the clean NON-DEBUG (public) build — no debug HUD /
+   *  TestBridge. Browser tabs keep the existing routing. */
+  function isStandalonePWA(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+      if ((navigator as any).standalone === true) return true; // iOS Safari
+      return (
+        !!window.matchMedia &&
+        (window.matchMedia("(display-mode: standalone)").matches ||
+          window.matchMedia("(display-mode: fullscreen)").matches)
+      );
+    } catch {
+      return false;
+    }
+  }
+
   function resolveGameUrl(): string {
-    // Arc's deploy layout (CON_CLAUDE_TIER_GATED_LANDED.md 2026-06-05):
+    // Installed PWA → the clean public (non-debug) build (owner: "pwa only
+    // install non debug"). The public export boots as of v0.7.2066+. Bonus:
+    // it's a different path than the debug build, so a PWA stuck on a stale
+    // /godot/ cache gets a fresh fetch from /godot/public/.
+    if (isStandalonePWA()) return "/godot/public/index.html";
+    // Browser — Arc's deploy layout (CON_CLAUDE_TIER_GATED_LANDED.md 2026-06-05):
     //   debug  → /godot/index.html         (current path, kept)
-    //   public → /godot/public/index.html  (new subdir, opt-in via BUILD_PUBLIC=1)
+    //   public → /godot/public/index.html  (new subdir)
     if (!VARIANT_PATHS_AVAILABLE) return "/godot/index.html";
     return resolveVariant() === "debug"
       ? "/godot/index.html"
@@ -249,6 +271,11 @@
   }
 
   onMount(() => {
+    // Re-resolve client-side — PWA (standalone) detection needs `window`, which
+    // isn't available during SSR, so the installed app routes to the public
+    // build here rather than the SSR default.
+    gameUrl = resolveGameUrl();
+
     // Decide the download gate now that localStorage is available. Already
     // acknowledged (so cached) or an admin fixture load → straight through;
     // otherwise hold the iframe behind the consent notice.

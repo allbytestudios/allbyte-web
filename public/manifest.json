@@ -4,7 +4,7 @@
   "short_name": "Chronicles of Nesis",
   "description": "A fantasy tactical RPG by AllByte Studios.",
   "start_url": "/play/",
-  "scope": "/",
+  "scope": "/play/",
   "display": "standalone",
   "orientation": "landscape",
   "theme_color": "#0a0e17",

@@ -85,7 +85,19 @@ const imageAbs = new URL(image, SITE).href;
           var inStandalone =
             window.matchMedia &&
             window.matchMedia("(display-mode: standalone)").matches;
-          if (inStandalone && window.location.pathname === "/") {
+          // OAuth callback guard: the login token comes back in the hash
+          // (".../#token=..."). If the installed PWA captures that redirect,
+          // we must NOT bounce to /play/ — that drops the token (hashes aren't
+          // carried on a location.replace) and dumps the user into the game
+          // unauthenticated. Let AuthInit process the token on "/" first. A
+          // session marker persists the skip across the hash-clear so the
+          // post-login pass doesn't bounce either; a fresh launch resets it.
+          if (/(?:^|[#&])token=/.test(window.location.hash || "")) {
+            try { sessionStorage.setItem("ab_oauth_landing", "1"); } catch (e) {}
+          }
+          var justAuthed = false;
+          try { justAuthed = sessionStorage.getItem("ab_oauth_landing") === "1"; } catch (e) {}
+          if (inStandalone && window.location.pathname === "/" && !justAuthed) {
             window.location.replace("/play/");
           }
         } catch (e) {}

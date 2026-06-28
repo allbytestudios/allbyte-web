@@ -99,6 +99,28 @@ function uploadGzippedWasm(localWasmPath, s3Key, label) {
   return true;
 }
 
+// Cache-bust guard (Arc 2026-06-28). Every shipped index.js must carry the
+// engine's versioned-binary fetch (".wasm?v=<ver>") — the root-cause fix that
+// makes a stale cached wasm a guaranteed cache-miss instead of a mismatched
+// pair that crashes with "out of bounds memory access". A build without it (an
+// export path that drifted, or one predating the patch) must NOT ship. Mirrors
+// Arc's build-time WebTests/test_infra_cache_bust.py on the push side; both
+// ends fail loudly rather than deploy un-busted.
+function assertCacheBust(indexJsPath, label) {
+  if (!existsSync(indexJsPath)) return; // build variant absent — not our concern here
+  const js = readFileSync(indexJsPath, "utf8");
+  if (!/\.wasm\?v=/.test(js)) {
+    console.error(
+      `\n[push-assets] ABORT — ${label} index.js is MISSING the versioned-fetch ` +
+        `cache-bust (.wasm?v=). This build predates the cache-bust or an export path ` +
+        `drifted; shipping it risks the stale-cache mismatch crash. Re-sync the current ` +
+        `build from DemoBuilds/WebExport and retry.\n`,
+    );
+    process.exit(1);
+  }
+  console.log(`[push-assets] cache-bust OK — ${label} index.js carries .wasm?v=`);
+}
+
 // Root-level game files that need to be on S3
 const rootFiles = [
   "Anthem2.mp3",
@@ -194,6 +216,13 @@ if (existsSync(godotDir) && existsSync(godotIndex)) {
   const publicGodotIndex = join(publicGodotDir, "index.html");
   const publicShimPath = join(publicGodotDir, "pck-key-shim.js");
   const havePublicBuild = existsSync(publicGodotDir) && existsSync(publicGodotIndex);
+
+  // Hard gate: refuse to ship either build without the versioned-fetch cache-bust.
+  assertCacheBust(join(godotDir, "index.js"), "debug /godot/");
+  if (havePublicBuild) {
+    assertCacheBust(join(publicGodotDir, "index.js"), "public /godot/public/");
+  }
+
   if (havePublicBuild) {
     if (process.env.SKIP_GODOT_OBFUSCATION === "1") {
       console.log("[push-assets] SKIP_GODOT_OBFUSCATION=1 — skipping public-build obfuscator.");

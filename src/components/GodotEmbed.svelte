@@ -22,28 +22,24 @@
   // SW update and reload once (sessionStorage-guarded against loops).
   const EXPECTED_BUILD = (gameVersion.version || "").replace(/^v/, "");
   let freshnessChecked = false;
+  let recoveryTriggered = false;
 
-  async function checkBuildFreshness(loadedVersion: unknown) {
-    if (freshnessChecked) return;
-    freshnessChecked = true;
-    const loaded = String(loadedVersion ?? "").replace(/^v/, "");
-    if (!loaded || !EXPECTED_BUILD || loaded === EXPECTED_BUILD) return;
+  // Hard self-heal for a stale service-worker cache. A plain reg.update() often
+  // no-ops on iOS standalone PWAs (and deleting the home-screen icon doesn't
+  // clear Safari's website data), so nuke the SW + ALL caches and reload. The
+  // next load fetches /godot/* fresh; the SW then re-registers and re-caches.
+  // Once-per-session guarded so it can't loop, and only ever called on a real
+  // staleness signal — never for up-to-date clients.
+  async function hardResetAndReload(reason: string) {
+    if (recoveryTriggered) return;
+    recoveryTriggered = true;
     try {
       if (sessionStorage.getItem("ab_stale_reload")) return; // already tried this session
       sessionStorage.setItem("ab_stale_reload", "1");
     } catch {
       /* private mode — proceed without the loop guard */
     }
-    console.warn(
-      `[freshness] loaded build ${loaded} != expected ${EXPECTED_BUILD} — hard-refreshing to the new version`,
-    );
-    // Hard self-heal. A plain reg.update() frequently no-ops on iOS standalone
-    // PWAs (and deleting the home-screen icon doesn't clear Safari's website
-    // data), so nuke the service worker + ALL caches and reload. The next load
-    // fetches /godot/* from the network (fresh build); the SW then re-registers
-    // and re-caches. Once-per-session guarded above so it can't loop, and gated
-    // on a real version mismatch so it never runs for up-to-date clients (this
-    // is NOT the unconditional unregister that re-downloaded every launch).
+    console.warn(`[recover] ${reason} — clearing SW + caches and reloading`);
     try {
       const regs = (await navigator.serviceWorker?.getRegistrations?.()) ?? [];
       await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
@@ -57,6 +53,37 @@
       /* ignore */
     }
     location.reload();
+  }
+
+  // Case 1 — boots but STALE: the loaded build's version != what this webapp
+  // expects, so the SW served an old (but self-consistent) cached build.
+  function checkBuildFreshness(loadedVersion: unknown) {
+    if (freshnessChecked) return;
+    freshnessChecked = true;
+    const loaded = String(loadedVersion ?? "").replace(/^v/, "");
+    if (!loaded || !EXPECTED_BUILD || loaded === EXPECTED_BUILD) return;
+    hardResetAndReload(`loaded build ${loaded} != expected ${EXPECTED_BUILD}`);
+  }
+
+  // Case 2 — MISMATCHED PAIR crash (Arc 2026-06-28): a cached old index.wasm
+  // served against a new index.pck (or vice-versa) traps with "out of bounds
+  // memory access" during instantiation — the game NEVER boots, so the version
+  // check above can't fire. Detect the fatal trap in the engine's captured
+  // console (window._consoleLogs) and self-heal the same way.
+  const CRASH_SIGNATURES = [
+    "out of bounds memory access",
+    "memory access out of bounds",
+    "Aborted(",
+  ];
+  function scanForEngineCrash(logs: unknown) {
+    if (recoveryTriggered || !Array.isArray(logs)) return;
+    for (const line of logs) {
+      const s = String(line);
+      if (CRASH_SIGNATURES.some((sig) => s.includes(sig))) {
+        hardResetAndReload(`engine crash (mismatched cached assets?): ${s.slice(0, 90)}`);
+        return;
+      }
+    }
   }
 
   interface Props {
@@ -432,6 +459,9 @@
       scene = w.gameState?.scene ?? null;
       logs = Array.isArray(w._consoleLogs) ? w._consoleLogs : [];
       bootShell = !!iframeEl.contentDocument?.getElementById("chronicles-shell");
+
+      // Catch a mismatched-cached-pair crash (never boots) — self-heal.
+      scanForEngineCrash(logs);
 
       // Sum bytes for resources fetched inside the iframe under /godot/*.
       // transferSize is what crossed the wire (0 for memory-cache hits and

@@ -278,6 +278,32 @@
     return window.matchMedia("(pointer: coarse) and (max-width: 1100px)").matches;
   }
 
+  // === Mobile-context signal → game (Arc's contract) =====================
+  // The in-engine Title control-hint HUD (mode icon + WASD/KLO glyphs) and the
+  // Title-Menu "Controls" button are desktop-only; on mobile WEB the controls
+  // are our web-side VirtualGamepad, so the engine HUD must be suppressed.
+  // The engine can't detect mobile-web itself — OS.has_feature("mobile") is
+  // FALSE in Chrome-mobile-web — so it reads a flag off the PARENT /play page:
+  //   parent._allbyteMobileContext === true   (OR'd with OS.has_feature)
+  // matching the existing parent-flag pattern (allbyteUpdatePending /
+  // allbyteRequestExit in Title.gd). See CON_CLAUDE_MOBILE_CONTEXT_CONTRACT.md.
+  //
+  // Source of truth = the SAME media query that renders the VirtualGamepad
+  // overlay, so the engine HUD hides EXACTLY when the touch gamepad shows (one
+  // source, no divergence — a 1200px touch tablet gets neither). This component
+  // runs ON the /play page (the iframe's parent), so `window` here is the
+  // parent window the engine reads. Set before the WASM boots, kept live across
+  // rotation so a resize during play retoggles it.
+  function pushMobileContext() {
+    if (typeof window === "undefined") return;
+    (window as any)._allbyteMobileContext = isMobileViewport();
+  }
+
+  // Live media-query listener so a rotation/resize DURING play retoggles the
+  // flag — the load poller stops once the game boots, so we can't ride it.
+  // Registered in onMount, torn down in onDestroy.
+  let mobileCtxMqlOff: (() => void) | null = null;
+
   let fullscreenAttempted = false;
   function tryEnterFullscreen() {
     if (fullscreenAttempted) return;
@@ -298,6 +324,11 @@
   }
 
   onMount(() => {
+    // Set the mobile-context flag FIRST — before the iframe/WASM boots — so the
+    // engine sees it at Title startup (Arc's contract). The download gate often
+    // holds the iframe behind a click anyway, but set it up-front regardless.
+    pushMobileContext();
+
     // Re-resolve client-side — PWA (standalone) detection needs `window`, which
     // isn't available during SSR, so the installed app routes to the public
     // build here rather than the SSR default.
@@ -320,6 +351,20 @@
     if (typeof window !== "undefined") {
       window.addEventListener("pointerdown", tryEnterFullscreen, { once: true });
       window.addEventListener("keydown", handleEscape);
+      if (window.matchMedia) {
+        const mql = window.matchMedia("(pointer: coarse) and (max-width: 1100px)");
+        const onChange = () => pushMobileContext();
+        mql.addEventListener("change", onChange);
+        // orientationchange/resize can flip the rule without firing `change`
+        // on some engines — belt-and-suspenders; the push is idempotent.
+        window.addEventListener("orientationchange", onChange);
+        window.addEventListener("resize", onChange);
+        mobileCtxMqlOff = () => {
+          mql.removeEventListener("change", onChange);
+          window.removeEventListener("orientationchange", onChange);
+          window.removeEventListener("resize", onChange);
+        };
+      }
     }
 
     // Start the load-status poller. 500ms cadence balances responsiveness
@@ -373,6 +418,7 @@
       window.removeEventListener("pointerdown", tryEnterFullscreen);
       window.removeEventListener("keydown", handleEscape);
     }
+    mobileCtxMqlOff?.();
   });
 
   // Wire the save bridge once the iframe is mounted. The /play/ URL is the
@@ -388,6 +434,9 @@
 
   function onLoad() {
     loading = false;
+    // Re-assert the parent mobile-context flag in case it was cleared; the
+    // engine re-reads it at Title startup on every (re)load.
+    pushMobileContext();
     if (fixture && iframeEl?.contentWindow) {
       // Give the game engine a moment to initialize TestBridge
       setTimeout(() => {

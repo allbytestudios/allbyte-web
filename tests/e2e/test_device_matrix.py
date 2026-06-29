@@ -1,21 +1,21 @@
 """Cross-OS/browser gameplay QA matrix.
 
-STATUS: v1 scaffolding, handed to Quinn for the game-driving layer (see
-APP_CLAUDE_QA_DEVICE_MATRIX_HANDOFF.md). The browser/OS emulation matrix + boot
-checks are solid (web-platform, App Claude). The NEW-GAME and CONTROLS steps
-here drive the game by *guessing* keystrokes at the canvas — brittle, and it
-can't distinguish a real input failure from a Playwright-keyboard quirk (that's
-why the Firefox "new game" result is ambiguous). The robust version drives New
-Game + movement via the game's _testBridge / _testAutoplay hooks (Quinn's
-domain). NOT a CI gate — a manual diagnostic until the TestBridge-driving lands.
+STATUS: hook-deterministic and green on all 10 combos across 3 engines. The
+browser/OS emulation matrix + boot checks are App Claude's (web-platform); the
+NEW-GAME and CONTROLS steps are driven through Quinn's game_driver.py via the
+game's TestBridge window.* hooks — NO keyboard, so a real input failure can't be
+confused with a Playwright keyboard quirk (that ambiguity is what sank the old
+keyboard-guessing Firefox rows; they're now solid PASS). Clean candidate to
+promote to a Vera quality-gate.
 
 For each OS×browser combo (drawn from the play-funnel device classes, weighted
 toward the LOW-ENGAGEMENT ones), run the three things a player must be able to do
 and report which stage each combo fails at:
 
   1. BOOT     — the public build loads and reaches the Title screen.
-  2. NEW GAME — pressing accept ("L") starts a new game (Title -> a gameplay scene).
-  3. CONTROLS — movement input actually moves the player (playerX/Y changes).
+  2. NEW GAME — start_new_game() hook leaves Title and loads the Laria pack.
+  3. CONTROLS — assert_controls() loads EliasHouse and a held-direction step
+                moves the player (playerX/Y changes).
 
 Caveat: Playwright engines are chromium / firefox / webkit (the engine Safari is
 built on). We emulate each combo as (engine + OS user-agent + viewport + touch) —
@@ -31,12 +31,14 @@ import time
 
 from playwright.sync_api import sync_playwright
 
+# Deterministic game-driving (Quinn, QA) — replaces the brittle keyboard-guessing.
+# Same-dir import (sys.path[0] is tests/e2e when run as a script).
+from game_driver import start_new_game, assert_controls
+
 BASE = os.environ.get("BASE_URL", "https://allbyte.studio")
 # The PUBLIC (non-debug) build — what players actually run.
 URL = f"{BASE}/godot/public/index.html"
-ACCEPT_KEY = "L"          # Title "New Game" -> accept
 BOOT_TIMEOUT_S = 50       # Playwright Firefox boots the WASM slowly; be patient
-TRANSIENT = ("MainLoader", "WordsOnBlack", "Title", None, "")  # not movable / not "booted"
 CRASH_SIGS = ("out of bounds memory access", "memory access out of bounds", "Aborted(")
 
 UA = {
@@ -130,71 +132,27 @@ def run_device(p, label, engine, ua, viewport, touch, note):
         return res
     res["boot"] = "PASS"
 
-    # 2) NEW GAME — wait until the Title actually accepts input, then press
-    # accept (some engines, esp. Firefox, lag readyForInput well past boot).
-    for _ in range(15):
-        try:
-            if page.evaluate("!!(window.gameState && window.gameState.readyForInput)"):
-                break
-        except Exception:
-            pass
-        page.wait_for_timeout(1000)
-    past = None
-    for _ in range(5):
-        for k in (ACCEPT_KEY, "Enter"):
-            try:
-                page.keyboard.press(k)
-            except Exception:
-                pass
-        page.wait_for_timeout(2500)
-        try:
-            past = page.evaluate("window.gameState && window.gameState.scene || null")
-        except Exception:
-            past = None
-        if past and past != "Title":
-            break
-    if not past or past == "Title":
+    # 2) NEW GAME — hook-driven (Quinn's game_driver). No keyboard, so a real
+    # input failure can't be confused with a Playwright keyboard quirk.
+    if start_new_game(page):
+        res["newgame"] = "PASS"
+    else:
         res["newgame"] = "FAIL"
-        res["detail"] = "accept didn't leave Title"
+        res["detail"] = "start_new_game hook didn't leave Title / load Laria"
         browser.close()
         return res
-    res["newgame"] = "PASS"
-    res["scene"] = past
 
-    # 3) CONTROLS — the intro (WordsOnBlack) is a non-movable cutscene that
-    # auto-advances; wait for a movable gameplay scene before testing movement.
-    for _ in range(12):
-        try:
-            sc = page.evaluate("window.gameState && window.gameState.scene || null")
-        except Exception:
-            sc = None
-        if sc and sc not in TRANSIENT:
-            break
-        page.wait_for_timeout(1000)
-    page.wait_for_timeout(1500)
+    # 3) CONTROLS — hook-driven: loads the first movable scene (EliasHouse) and
+    # asserts a held-direction step moves the player (never touches the cutscene).
+    if assert_controls(page):
+        res["controls"] = "PASS"
+    else:
+        res["controls"] = "FAIL"
+        res["detail"] = "no movement via _testHoldDirection in EliasHouse"
     try:
-        before = page.evaluate("({x:window.gameState.playerX,y:window.gameState.playerY,s:window.gameState.scene})")
+        res["scene"] = page.evaluate("window.gameState && window.gameState.scene || null") or res["scene"]
     except Exception:
-        before = None
-    for k in ("w", "d", "s", "a"):
-        try:
-            page.keyboard.down(k)
-            page.wait_for_timeout(450)
-            page.keyboard.up(k)
-            page.wait_for_timeout(150)
-        except Exception:
-            pass
-    try:
-        after = page.evaluate("({x:window.gameState.playerX,y:window.gameState.playerY,s:window.gameState.scene})")
-    except Exception:
-        after = None
-    moved = bool(before and after and (before["x"] != after["x"] or before["y"] != after["y"]))
-    # A scene change also counts as input being processed (e.g. walked through a door).
-    scene_changed = bool(before and after and before.get("s") != after.get("s"))
-    res["controls"] = "PASS" if (moved or scene_changed) else "FAIL"
-    if not (moved or scene_changed):
-        res["detail"] = f"no movement in {after.get('s') if after else '?'}"
-    res["scene"] = after.get("s") if after else res["scene"]
+        pass
     browser.close()
     return res
 

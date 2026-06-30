@@ -15,7 +15,6 @@
   import { onMount, onDestroy } from "svelte";
 
   let isMobile = $state(false);
-  let showLoginModal = $state(false);
   let loginError = $state("");
   let oauthLoading = $state<"google" | "discord" | "patreon" | null>(null);
   let pendingAction = $state<string | null>(null);
@@ -26,59 +25,8 @@
     oauthLoading = provider;
     oauthLogin(provider);
   }
-  let modalEl = $state<HTMLDivElement | null>(null);
-  let lastFocusedTrigger: HTMLElement | null = null;
-
-  function openLoginModal(e?: Event) {
-    pendingAction = null;
-    lastFocusedTrigger = (e?.currentTarget as HTMLElement) || (document.activeElement as HTMLElement);
-    showLoginModal = true;
-  }
-
-  function closeLoginModal() {
-    showLoginModal = false;
-    if (lastFocusedTrigger) {
-      setTimeout(() => lastFocusedTrigger?.focus(), 0);
-    }
-  }
-
-  $effect(() => {
-    if (!showLoginModal || !modalEl) return;
-    // Move focus to first focusable element in modal
-    setTimeout(() => {
-      const first = modalEl?.querySelector<HTMLElement>(
-        'input, button, [tabindex]:not([tabindex="-1"])'
-      );
-      first?.focus();
-    }, 0);
-
-    function handleKey(e: KeyboardEvent) {
-      if (!modalEl) return;
-      if (e.key === "Escape") {
-        e.preventDefault();
-        closeLoginModal();
-        return;
-      }
-      if (e.key !== "Tab") return;
-      const focusable = Array.from(
-        modalEl.querySelectorAll<HTMLElement>(
-          'input:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-        )
-      );
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  });
+  // Patreon-only auth: the header CTA goes straight to OAuth (startOAuth), so
+  // there's no provider-picker modal to focus-trap anymore.
   let demoHovered = $state(false);
   let playMode = $state(false);
   let gameUrl = $state("");
@@ -414,14 +362,6 @@
     };
   });
 
-  function handleSubscribeClick(e: Event) {
-    if (!auth.currentUser) {
-      e.preventDefault();
-      lastFocusedTrigger = e.currentTarget as HTMLElement;
-      pendingAction = "subscribe";
-      showLoginModal = true;
-    }
-  }
 
 
   function onDemoEnter() {
@@ -454,11 +394,21 @@
           {#if isAdmin(auth.currentUser)}
             <a href="/admin/users/" class="header-btn admin-btn" title="Admin user management"><span>Admin</span><span>Users</span></a>
           {/if}
-          <a href="/subscribe/" class="header-btn subscribe-btn" onclick={handleSubscribeClick}><span>Subscribe</span><span>Donate</span></a>
           {#if auth.currentUser}
             <button class="header-btn login-btn" onclick={logout}><span>Sign</span><span>Out</span></button>
           {:else}
-            <button class="header-btn login-btn" onclick={openLoginModal}><span>Log In</span><span>Sign Up</span></button>
+            <div class="patreon-cta">
+              <button class="patreon-cta-btn" disabled={oauthLoading !== null} onclick={() => startOAuth("patreon")} aria-label={oauthLoading === "patreon" ? "Redirecting to Patreon" : "Continue with Patreon"}>
+                {#if oauthLoading === "patreon"}
+                  <span class="oauth-spinner oauth-spinner-light" aria-hidden="true"></span>
+                  Redirecting…
+                {:else}
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#fff" d="M14.82 2.41c-3.96 0-7.18 3.22-7.18 7.18 0 3.94 3.22 7.15 7.18 7.15 3.95 0 7.16-3.21 7.16-7.15 0-3.96-3.21-7.18-7.16-7.18zM2 21.6h3.5V2.41H2V21.6z"/></svg>
+                  Continue with Patreon
+                {/if}
+              </button>
+              <a href="/subscribe/" class="patreon-cta-tiers">See tier benefits ›</a>
+            </div>
           {/if}
         </div>
         {#if auth.currentUser}
@@ -472,40 +422,6 @@
     <p class="site-tagline">Indie game studio, Devlog, Asset archive</p>
   </header>
 
-  {#if showLoginModal}
-    <div class="modal-overlay" onclick={closeLoginModal} role="presentation">
-      <div class="modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="login-modal-title" bind:this={modalEl}>
-        <h2 id="login-modal-title" class="visually-hidden">Sign in with Patreon</h2>
-        <button class="modal-close" onclick={closeLoginModal} aria-label="Close login dialog">&times;</button>
-
-        <div class="patreon-login">
-          <h3 class="patreon-login-heading">Sign in with Patreon</h3>
-          <p class="patreon-login-copy">
-            AllByte uses Patreon for accounts and membership tiers. Sign in with
-            your Patreon account — free or paid. Your tier unlocks automatically.
-          </p>
-
-          {#if loginError}
-            <p class="login-error" role="alert">{loginError}</p>
-          {/if}
-
-          <button class="oauth-btn patreon-btn" disabled={oauthLoading !== null} onclick={() => startOAuth("patreon")} aria-label={oauthLoading === "patreon" ? "Redirecting to Patreon" : "Continue with Patreon"}>
-            {#if oauthLoading === "patreon"}
-              <span class="oauth-spinner oauth-spinner-light" aria-hidden="true"></span>
-              Redirecting…
-            {:else}
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#fff" d="M14.82 2.41c-3.96 0-7.18 3.22-7.18 7.18 0 3.94 3.22 7.15 7.18 7.15 3.95 0 7.16-3.21 7.16-7.15 0-3.96-3.21-7.18-7.16-7.18zM2 21.6h3.5V2.41H2V21.6z"/></svg>
-              Continue with Patreon
-            {/if}
-          </button>
-
-          <p class="patreon-login-foot">
-            Not a member yet? <a href="/subscribe/">See the tiers</a>.
-          </p>
-        </div>
-      </div>
-    </div>
-  {/if}
 
   <!-- Hidden SSR mount of play-mode components so Astro's Vite build extracts
        their scoped CSS into a linked stylesheet. Without this, they're only
@@ -799,6 +715,43 @@
     background: #1a2332;
     border-color: rgba(167, 243, 208, 0.3);
   }
+
+  /* Patreon-only auth CTA: one Patreon-branded button (straight to OAuth) with
+     a small "See tier benefits" link beneath. Replaced the old Join + Login
+     buttons + the provider-picker modal. */
+  .patreon-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.3rem;
+  }
+  .patreon-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #ff424d;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.55rem 1.1rem;
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+  }
+  .patreon-cta-btn:hover:not(:disabled) { background: #e63a44; }
+  .patreon-cta-btn:disabled { opacity: 0.7; cursor: default; }
+  .patreon-cta-tiers {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #a7f3d0;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  .patreon-cta-tiers:hover { text-decoration: underline; }
 
 
   .admin-btn {

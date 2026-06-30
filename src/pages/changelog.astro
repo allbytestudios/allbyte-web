@@ -1,0 +1,159 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import Footer from "../components/Footer.astro";
+import changelog from "../data/changelog.json";
+
+// Player-facing group labels + display order. feat/fix lead; the engineering
+// types follow (kept visible on purpose — the "Engine" side is transparent
+// about how the game is built).
+const TYPE_META: Record<string, { label: string; order: number }> = {
+  feat:     { label: "New",         order: 1 },
+  fix:      { label: "Fixed",       order: 2 },
+  refactor: { label: "Improved",    order: 3 },
+  test:     { label: "Tested",      order: 4 },
+  tools:    { label: "Tooling",     order: 5 },
+  release:  { label: "Release",     order: 6 },
+  docs:     { label: "Docs",        order: 7 },
+  chore:    { label: "Maintenance", order: 8 },
+};
+
+function grouped(changes: { type: string; scope?: string; subject: string; sha: string }[]) {
+  const by: Record<string, typeof changes> = {};
+  for (const c of changes) (by[c.type] ??= []).push(c);
+  return Object.entries(by)
+    .map(([type, items]) => ({ type, label: TYPE_META[type]?.label ?? type, order: TYPE_META[type]?.order ?? 99, items }))
+    .sort((a, b) => a.order - b.order);
+}
+
+const releases = changelog.releases ?? [];
+const fmtDate = (d: string) =>
+  new Date(d + "T00:00:00Z").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+---
+
+<BaseLayout
+  title="What's New — The Chronicles of Nesis"
+  description="Release notes for The Chronicles of Nesis — what shipped in each public build, engineered with AI."
+>
+  <PageHeader
+    theme="engine"
+    title="What's New"
+    backHref="/"
+    backLabel="Home"
+    breadcrumbs={[{ href: "/", label: "Home" }]}
+  />
+
+  <main class="changelog">
+    <p class="intro">
+      Every public build of <strong>The Chronicles of Nesis</strong>, newest first.
+      Code &amp; infrastructure are AI-engineered; the art, music &amp; type are handcrafted.
+    </p>
+
+    {releases.length === 0 && <p class="muted">No releases recorded yet.</p>}
+
+    {releases.map((rel: any) => (
+      <section class="release">
+        <header class="release-head">
+          <h2 class="release-version">{rel.version}</h2>
+          <time class="release-date" datetime={rel.date}>{fmtDate(rel.date)}</time>
+          <span class="release-count">{rel.changes.length} change{rel.changes.length === 1 ? "" : "s"}</span>
+        </header>
+        {grouped(rel.changes).map((g) => (
+          <div class="group">
+            <h3 class={`group-label group-${g.type}`}>{g.label}</h3>
+            <ul class="changes">
+              {g.items.map((c: any) => (
+                <li class="change">
+                  {c.scope && <span class="scope">{c.scope}</span>}
+                  <span class="subject">{c.subject}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+    ))}
+  </main>
+
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .changelog {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 3rem;
+    color: var(--engine-text, #e0e7ff);
+    font-family: "Courier New", monospace;
+  }
+  .intro {
+    color: rgba(224, 231, 255, 0.7);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    border-left: 2px solid var(--engine-accent, #a7f3d0);
+    padding-left: 0.9rem;
+    margin-bottom: 2rem;
+  }
+  .muted { color: rgba(224, 231, 255, 0.55); }
+
+  .release {
+    border-top: 1px solid rgba(167, 243, 208, 0.15);
+    padding: 1.5rem 0;
+  }
+  .release-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+  }
+  .release-version {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--engine-accent, #a7f3d0);
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+  .release-date { color: rgba(224, 231, 255, 0.65); font-size: 0.85rem; }
+  .release-count { color: rgba(224, 231, 255, 0.4); font-size: 0.75rem; margin-left: auto; }
+
+  .group { margin: 0.6rem 0 0.9rem; }
+  .group-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.35rem;
+    color: rgba(224, 231, 255, 0.85);
+  }
+  .group-feat { color: #a7f3d0; }
+  .group-fix  { color: #fbbf24; }
+
+  .changes { list-style: none; margin: 0; padding: 0; }
+  .change {
+    display: flex;
+    gap: 0.55rem;
+    align-items: baseline;
+    padding: 0.18rem 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+  .change::before {
+    content: "›";
+    color: rgba(167, 243, 208, 0.5);
+    flex: none;
+  }
+  .scope {
+    flex: none;
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.1);
+    border-radius: 3px;
+    padding: 0 0.35rem;
+    font-size: 0.72rem;
+    align-self: center;
+  }
+  .subject { color: rgba(224, 231, 255, 0.9); }
+
+  @media (max-width: 600px) {
+    .release-count { display: none; }
+  }
+</style>

@@ -560,9 +560,12 @@
         <div class="demo-banner">
           <img src={demoHovered ? "/ChroniclesOfNesisTitle.gif" : "/ChroniclesOfNesisTitle-still.png"} alt="The Chronicles of Nesis Demo" class="demo-gif" />
           <img src="/ChroniclesOfNesisTitleName.png" alt="The Chronicles of Nesis" class="demo-title-overlay" />
-          <span class="demo-version-overlay" aria-label={`Build version ${gameVersion.version}`}>
-            {gameVersion.version.startsWith("v") ? gameVersion.version : `v${gameVersion.version}`}
-          </span>
+          <div class="demo-version-stack">
+            <span class="demo-version-overlay" aria-label={`Build version ${gameVersion.version}`}>
+              {gameVersion.version.startsWith("v") ? gameVersion.version : `v${gameVersion.version}`}
+            </span>
+            <a class="demo-changelog-link" href="/changelog/" onclick={(e) => e.stopPropagation()}>What's new ›</a>
+          </div>
         </div>
       </div>
       <div class="demo-actions">
@@ -1312,10 +1315,17 @@
   /* Build version overlaid on the GIF (bottom-right corner) so the demo
      actions row can use its full width for the Play/Install links rather
      than sharing space with version text. */
-  .demo-version-overlay {
+  .demo-version-stack {
     position: absolute;
     bottom: 0.6rem;
     right: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    pointer-events: none; /* version passes clicks through to Play; link re-enables below */
+  }
+  .demo-version-overlay {
     font-family: "Courier New", monospace;
     font-size: 0.85rem;
     color: rgba(167, 243, 208, 0.85);
@@ -1323,8 +1333,24 @@
     padding: 0.15rem 0.45rem;
     border-radius: 3px;
     letter-spacing: 0.02em;
-    pointer-events: none;
     line-height: 1;
+  }
+  .demo-changelog-link {
+    pointer-events: auto;
+    font-family: "Courier New", monospace;
+    font-size: 0.72rem;
+    color: rgba(167, 243, 208, 0.95);
+    background: rgba(10, 14, 23, 0.7);
+    padding: 0.12rem 0.45rem;
+    border-radius: 3px;
+    text-decoration: none;
+    border: 1px solid rgba(167, 243, 208, 0.3);
+    line-height: 1;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .demo-changelog-link:hover {
+    background: rgba(167, 243, 208, 0.15);
+    border-color: rgba(167, 243, 208, 0.6);
   }
 
   .demo-actions {

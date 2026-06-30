@@ -13,7 +13,19 @@
   let { oncontinue, oncancel, mode = "fresh" }: Props = $props();
 
   const conn = connectionInfo();
-  const metered = conn.saveData || conn.slow;
+  // The "slow/limited connection" estimate only matters on touch-primary
+  // devices (phones/tablets) that might be on cellular data. Desktops/laptops
+  // (pointer: fine — including touchscreen 2-in-1s, whose primary pointer is
+  // the trackpad) are assumed unmetered, so we suppress the lossy
+  // effectiveType/downlink estimate there — that's what false-positived on
+  // desktop Wi-Fi. We deliberately use bare (pointer: coarse) with NO width
+  // cap so a large tablet still qualifies. An EXPLICIT Data Saver opt-in is
+  // honored everywhere — it's a deliberate user signal, not a guess.
+  const touchPrimary =
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(pointer: coarse)").matches
+      : false;
+  const metered = conn.saveData || (touchPrimary && conn.slow);
   const isUpdate = mode === "update";
 </script>
 

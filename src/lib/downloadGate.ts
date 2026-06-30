@@ -62,7 +62,11 @@ export function ackDownload(): void {
 export interface ConnInfo {
   /** User enabled Data Saver. */
   saveData: boolean;
-  /** Effective connection is slow (2g/3g class). */
+  /** Connection looks slow or limited — a 2g/3g effectiveType bucket, a low
+   *  downlink estimate, OR high RTT. Deliberately tuned to favor FALSE POSITIVES
+   *  over false negatives: the warning is advisory (the user can always
+   *  continue), so an occasional false alarm is cheap, but silently letting a
+   *  genuinely slow/metered link start a ~75 MB download is the costly miss. */
   slow: boolean;
   /** The Network Information API exists. NOTE: iOS Safari + Firefox return
    *  false here, so a stronger network-aware warning is a *bonus* for Chromium
@@ -75,9 +79,22 @@ export function connectionInfo(): ConnInfo {
     const c = (navigator as any).connection;
     if (!c) return { saveData: false, slow: false, supported: false };
     const et: string = c.effectiveType || "";
+    const downlink: number | null =
+      typeof c.downlink === "number" ? c.downlink : null;
+    const rtt: number | null = typeof c.rtt === "number" ? c.rtt : null;
+
+    // Coarse bucket: anything below 4g. Includes "3g" on purpose — it's the
+    // common metered/slow case and we'd rather warn than miss it.
+    const slowBucket = et === "slow-2g" || et === "2g" || et === "3g";
+    // effectiveType is lossy; a link can report "4g" yet be genuinely slow.
+    // Catch those via the raw estimates. downlink is Mbps (0/unknown guarded);
+    // <2 Mbps means the ~75 MB download takes 5+ minutes. rtt is ms.
+    const slowDownlink = downlink !== null && downlink > 0 && downlink < 2;
+    const highLatency = rtt !== null && rtt >= 500;
+
     return {
       saveData: !!c.saveData,
-      slow: et === "slow-2g" || et === "2g" || et === "3g",
+      slow: slowBucket || slowDownlink || highLatency,
       supported: true,
     };
   } catch {

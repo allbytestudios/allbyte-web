@@ -10,6 +10,7 @@
     "sync:once": "node scripts/sync-test-data-watcher.js --once",
     "sync:dry": "node scripts/sync-test-data-watcher.js --once --dry-run",
     "sync:test": "node scripts/sync-test-data-watcher.js --self-test",
+    "sync:marketing": "node scripts/sync-marketing-posts.mjs",
     "usage": "node scripts/claude-usage.js",
     "push-packs": "node scripts/push-packs.js",
     "obfuscate-godot": "node scripts/obfuscate-godot-export.js",

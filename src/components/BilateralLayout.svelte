@@ -8,7 +8,7 @@
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   import { initPlayAnalytics } from "../lib/playAnalytics";
   import DownloadGate from "./DownloadGate.svelte";
-  import { downloadState, ackDownload } from "../lib/downloadGate";
+  import { downloadState, ackDownload, isTouchPrimary } from "../lib/downloadGate";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import { pickerVersions, defaultVersion, versionById, isUnlocked } from "../lib/gameVersions";
   import { subscribeToFile } from "../lib/testEvents";
@@ -147,9 +147,11 @@
     window.addEventListener("keydown", handlePlayKey);
     // First launch on this device → show the download notice and hold the
     // iframe (gameUrl stays "") until the user consents. Already acknowledged
-    // (so cached) → load straight away.
+    // (so cached) → load straight away. The size gate is touch-only (phones/
+    // tablets, possible cellular); desktop/laptop is assumed unmetered and
+    // loads straight through with no prompt.
     const dlState = downloadState();
-    if (dlState === "ready") {
+    if (dlState === "ready" || !isTouchPrimary()) {
       gameUrl = selectedGamePath();
     } else {
       gateMode = dlState; // "fresh" (first load) or "update" (version bumped)

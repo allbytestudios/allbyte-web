@@ -335,10 +335,11 @@
     gameUrl = resolveGameUrl();
 
     // Decide the download gate now that localStorage is available. Already
-    // acknowledged (so cached) or an admin fixture load → straight through;
-    // otherwise hold the iframe behind the consent notice.
+    // acknowledged (so cached), an admin fixture load, or a non-touch device
+    // (desktop/laptop — assumed unmetered) → straight through; otherwise hold
+    // the iframe behind the consent notice. The size gate is touch-only.
     const dlState = downloadState();
-    if (fixture || dlState === "ready") {
+    if (fixture || dlState === "ready" || !isTouchPrimary()) {
       allowed = true;
     } else {
       gateMode = dlState; // "fresh" (first load) or "update" (version bumped)

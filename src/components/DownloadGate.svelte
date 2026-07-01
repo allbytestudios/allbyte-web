@@ -42,8 +42,14 @@
       {/if}
     </p>
     <ul class="dl-points">
-      <li><span aria-hidden="true">📶</span> Best on <strong>Wi-Fi</strong> — on cellular this uses mobile data.</li>
-      <li><span aria-hidden="true">💾</span> <strong>Saved after</strong> the first time, so it opens instantly later.</li>
+      <li>
+        <span class="dl-ico" aria-hidden="true">📶</span>
+        <span class="dl-point-text">Best on <strong>Wi-Fi</strong> — on cellular this uses mobile data.</span>
+      </li>
+      <li>
+        <span class="dl-ico" aria-hidden="true">💾</span>
+        <span class="dl-point-text"><strong>Saved after</strong> the first time, so it opens instantly later.</span>
+      </li>
     </ul>
 
     {#if metered}
@@ -103,14 +109,24 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.6rem;
     font-size: 0.9rem;
-    line-height: 1.45;
+    line-height: 1.55;
   }
   .dl-points li {
     display: flex;
     gap: 0.6rem;
     align-items: baseline;
+  }
+  /* The icon is one flex child; ALL the copy is a single flex child so the
+     sentence flows as normal text. Without the wrapping span, flex would split
+     each inline <strong>/text run into its own gapped item and the words would
+     wrap onto separate rows. */
+  .dl-ico {
+    flex: none;
+  }
+  .dl-point-text {
+    flex: 1;
   }
   .dl-warn {
     margin: 0 0 1rem;

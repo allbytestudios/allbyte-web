@@ -28,6 +28,9 @@
     cross_browser_summary: {
       total: number;
       passed: number;
+      blocking_total?: number;
+      blocking_passed?: number;
+      advisory_engines?: string[];
       with_fatal: number;
       with_suspect: number;
       play_passed?: number;
@@ -48,6 +51,7 @@
     os: string;
     engine: string;
     status: string;
+    advisory?: boolean;
     scene?: string;
     boot_elapsed_s?: number;
     stages?: Stages | null;
@@ -281,12 +285,15 @@
               <span class="qa-run-trigger">via {m.trigger}</span>
             </div>
             <div class="qa-run-summary">
-              overall {cb.passed}/{cb.total}
+              overall {cb.blocking_passed ?? cb.passed}/{cb.blocking_total ?? cb.total}
               {#if cb.movement_passed != null}
                 · /play {cb.play_passed}/{cb.total}
                 · boot {cb.boot_passed}/{cb.total}
                 · new game {cb.new_game_passed}/{cb.total}
                 · movement {cb.movement_passed}/{cb.total}
+              {/if}
+              {#if cb.advisory_engines && cb.advisory_engines.length > 0}
+                · <span class="qa-neutral">advisory: {cb.advisory_engines.join(", ")}</span>
               {/if}
               {#if cb.with_fatal > 0}
                 · <span class="qa-fail">{cb.with_fatal} fatal</span>
@@ -317,9 +324,11 @@
                     <th>{os}</th>
                     {#each allEngines as engine}
                       {@const cell = cellAt(os, engine)}
-                      <td class={statusClass(cell?.status)}>
+                      <td class={cell?.advisory && cell?.status !== "ok" ? "qa-warn" : statusClass(cell?.status)}>
                         {#if cell}
-                          <div class="qa-cell-status">{cell.status}</div>
+                          <div class="qa-cell-status">
+                            {cell.status}{#if cell.advisory}<span class="qa-advisory">advisory</span>{/if}
+                          </div>
                           {#if cell.stages || cell.play_embed}
                             <div class="qa-stages">
                               <span class="qa-stage {statusClass(cell.play_embed?.status)}" title="/play/ embed boot">/play {stageMark(cell.play_embed?.status === 'ok' ? 'pass' : (cell.play_embed?.status ? 'fail' : undefined))}</span>
@@ -556,6 +565,16 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     font-size: 0.72rem;
+  }
+  .qa-advisory {
+    margin-left: 0.35rem;
+    padding: 0.02rem 0.28rem;
+    border-radius: 2px;
+    background: rgba(156, 163, 175, 0.18);
+    color: #9ca3af;
+    font-size: 0.58rem;
+    letter-spacing: 0.03em;
+    text-transform: none;
   }
   .qa-stages {
     display: flex;

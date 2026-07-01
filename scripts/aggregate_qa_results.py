@@ -148,6 +148,9 @@ def summarize_engine(
         "os": os_name,
         "engine": engine,
         "status": r.get("status", "unknown"),
+        # Advisory engines (e.g. Firefox, blocked by CI-headless WebGL limits)
+        # are reported but don't drag the run's overall status.
+        "advisory": bool(r.get("advisory")),
         "scene": r.get("scene"),
         "boot_elapsed_s": r.get("boot_elapsed_s"),
         # Gameplay stages (public build): boot / new_game / movement, each
@@ -191,6 +194,13 @@ def summarize_cross_browser(engines: list[dict]) -> dict:
     fatal = sum(1 for e in engines if (e.get("fatal_log_count") or 0) > 0)
     suspect = sum(1 for e in engines if (e.get("suspect_log_count") or 0) > 0)
 
+    # Blocking = the engines whose result actually gates the run's status
+    # (advisory engines like Firefox-in-CI are reported but don't gate).
+    blocking = [e for e in engines if not e.get("advisory")]
+    b_total = len(blocking)
+    b_ok = sum(1 for e in blocking if e.get("status") == "ok")
+    b_fatal = sum(1 for e in blocking if (e.get("fatal_log_count") or 0) > 0)
+
     def stage_passed(name: str) -> int:
         return sum(1 for e in engines if (e.get("stages") or {}).get(name) == "pass")
 
@@ -200,6 +210,12 @@ def summarize_cross_browser(engines: list[dict]) -> dict:
     return {
         "total": total,
         "passed": ok,
+        "blocking_total": b_total,
+        "blocking_passed": b_ok,
+        "blocking_with_fatal": b_fatal,
+        "advisory_engines": sorted(
+            {e["engine"] for e in engines if e.get("advisory")}
+        ),
         "with_fatal": fatal,
         "with_suspect": suspect,
         # Per-stage rollups across the matrix so the dashboard can show
@@ -212,11 +228,15 @@ def summarize_cross_browser(engines: list[dict]) -> dict:
 
 
 def derive_overall_status(cb: dict, ctrl: dict | None) -> str:
-    if cb["total"] == 0:
+    # Gate on the blocking (non-advisory) engines only.
+    b_total = cb.get("blocking_total", cb["total"])
+    b_passed = cb.get("blocking_passed", cb["passed"])
+    b_fatal = cb.get("blocking_with_fatal", cb["with_fatal"])
+    if b_total == 0:
         return "no_data"
-    if cb["with_fatal"] > 0:
+    if b_fatal > 0:
         return "failed"
-    if cb["passed"] < cb["total"]:
+    if b_passed < b_total:
         return "partial"
     if ctrl is not None and ctrl.get("status") != "ok":
         return "partial"

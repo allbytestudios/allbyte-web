@@ -70,7 +70,7 @@ until then use the existing clips noted below.
 
 | Day | Sub | Drop sheet | Hero video | Contextual link |
 |-----|-----|-----------|-----------|-----------------|
-| 0 | **r/IndieGaming** (new lead) | `reddit-web-native.md` | combat-transition (or dwarven-ruin DoF) | links in first comment |
+| 0 | **r/IndieGaming** (new lead) | `reddit-indiegaming-mechanic.md` | hybrid: dwarven-ruin → combat-transition (the painted bg becomes the grid) | links in first comment |
 | 1–2 | **r/WebGames** (secondary — warm up account first; play link in body) | `reddit-web-native.md` | town-tour or dwarven-ruin | play link in body |
 | optional | **r/playmygame** (built for self-promo; reciprocity culture — see sheet) | `reddit-web-native.md` | combat-transition | play link in body |
 | ~3 | **r/godot — flagship** | `reddit-godot-flagship.md` | combat-transition (→ trailer) | painting-around-the-grid + wasm comment link |

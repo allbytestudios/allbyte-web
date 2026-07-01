@@ -500,34 +500,6 @@
   {/if}
   </div>
 
-  <div class="notify-bar">
-      <div class="notify-bar-row">
-        {#if auth.currentUser}
-          <button
-            class="notify-bar-btn"
-            onclick={toggleSubscribed}
-            disabled={notifySaving}
-            title={auth.currentUser.notificationPreferences ? "Unsubscribe from email updates" : "Subscribe to email updates"}
-          >
-            &#9993; {auth.currentUser.notificationPreferences ? "Subscribed ✓" : "Email Me Updates"}
-          </button>
-          <!-- Legend's Square hidden until the feature is complete and in the subscription promise -->
-        {/if}
-        <a href="https://discord.gg/WfYC6gFJe" class="notify-bar-btn discord-notify-btn" target="_blank" rel="noopener noreferrer" title="Join the AllByte Discord server">
-          <svg class="discord-inline-icon" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
-          Discord
-        </a>
-        <a href="https://www.youtube.com/@AllByteStudios" class="notify-bar-btn youtube-notify-btn" target="_blank" rel="noopener noreferrer" title="AllByte Studios on YouTube">
-          <svg class="youtube-inline-icon" viewBox="0 0 461.001 461.001" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M365.257,67.393H95.744C42.866,67.393,0,110.259,0,163.137v134.728c0,52.878,42.866,95.744,95.744,95.744h269.513c52.878,0,95.744-42.866,95.744-95.744V163.137C461.001,110.259,418.135,67.393,365.257,67.393z M300.506,237.056l-126.06,60.123c-3.359,1.602-7.239-0.847-7.239-4.568V168.607c0-3.774,3.982-6.22,7.348-4.514l126.06,63.881C304.363,229.873,304.298,235.248,300.506,237.056z"/></svg>
-          YouTube
-        </a>
-        <a href="https://store.steampowered.com/app/3900010/The_Chronicles_of_Nesis/" class="notify-bar-btn steam-notify-btn" target="_blank" rel="noopener noreferrer" title="The Chronicles of Nesis on Steam">
-          <svg class="steam-inline-icon" viewBox="0 0 256 259" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M127.779 0C57.852 0 .469 55.394.013 124.609L68.95 153.16a35.615 35.615 0 0 1 20.15-6.213l30.15-43.635v-.613c0-26.36 21.457-47.817 47.818-47.817 26.36 0 47.818 21.457 47.818 47.817 0 26.361-21.457 47.818-47.818 47.818h-1.105l-42.926 30.658a35.796 35.796 0 0 1-35.638 37.149 35.87 35.87 0 0 1-34.992-28.333L1.592 168.53C17.2 220.124 65.89 258.18 123.578 258.18c70.692 0 128.003-57.31 128.003-128.003C251.581 59.487 198.47 0 127.779 0zM80.36 208.09l-15.082-6.232a26.887 26.887 0 0 0 14.49 14.088 26.941 26.941 0 0 0 35.26-14.468 26.796 26.796 0 0 0 .001-20.624 26.864 26.864 0 0 0-14.467-14.467l15.594 6.446a21.556 21.556 0 0 1-11.392 41.29 21.56 21.56 0 0 1-24.404-6.033zm114.007-57.39c0-17.568-14.29-31.858-31.858-31.858-17.569 0-31.858 14.29-31.858 31.858 0 17.569 14.29 31.858 31.858 31.858 17.569 0 31.858-14.29 31.858-31.858zm-55.737-.098c0-13.19 10.706-23.896 23.897-23.896 13.19 0 23.896 10.706 23.896 23.896 0 13.19-10.706 23.897-23.896 23.897-13.191 0-23.897-10.706-23.897-23.897z"/></svg>
-          Steam
-        </a>
-      </div>
-  </div>
-
   {#if isMobile}
     <!-- Mobile: stacked groups (Heart/Assets first) -->
     <div class="mobile-panel heart-bg" style="position: relative;">
@@ -639,6 +611,34 @@
   {/if}
 
   <footer class="site-footer">
+    <div class="footer-social">
+      {#if auth.currentUser}
+        <button
+          class="notify-bar-btn footer-social-btn"
+          onclick={toggleSubscribed}
+          disabled={notifySaving}
+          title={auth.currentUser.notificationPreferences ? "Unsubscribe from email updates" : "Subscribe to email updates"}
+        >
+          &#9993; {auth.currentUser.notificationPreferences ? "Subscribed ✓" : "Email Me Updates"}
+        </button>
+      {/if}
+      <a href="https://discord.gg/WfYC6gFJe" class="notify-bar-btn footer-social-btn discord-notify-btn" target="_blank" rel="noopener noreferrer" title="Join the AllByte Discord server">
+        <svg class="discord-inline-icon" viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
+        Discord
+      </a>
+      <a href="https://www.youtube.com/@AllByteStudios" class="notify-bar-btn footer-social-btn youtube-notify-btn" target="_blank" rel="noopener noreferrer" title="AllByte Studios on YouTube">
+        <svg class="youtube-inline-icon" viewBox="0 0 461.001 461.001" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M365.257,67.393H95.744C42.866,67.393,0,110.259,0,163.137v134.728c0,52.878,42.866,95.744,95.744,95.744h269.513c52.878,0,95.744-42.866,95.744-95.744V163.137C461.001,110.259,418.135,67.393,365.257,67.393z M300.506,237.056l-126.06,60.123c-3.359,1.602-7.239-0.847-7.239-4.568V168.607c0-3.774,3.982-6.22,7.348-4.514l126.06,63.881C304.363,229.873,304.298,235.248,300.506,237.056z"/></svg>
+        YouTube
+      </a>
+      <a href="https://store.steampowered.com/app/3900010/The_Chronicles_of_Nesis/" class="notify-bar-btn footer-social-btn steam-notify-btn" target="_blank" rel="noopener noreferrer" title="The Chronicles of Nesis on Steam">
+        <svg class="steam-inline-icon" viewBox="0 0 256 259" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M127.779 0C57.852 0 .469 55.394.013 124.609L68.95 153.16a35.615 35.615 0 0 1 20.15-6.213l30.15-43.635v-.613c0-26.36 21.457-47.817 47.818-47.817 26.36 0 47.818 21.457 47.818 47.817 0 26.361-21.457 47.818-47.818 47.818h-1.105l-42.926 30.658a35.796 35.796 0 0 1-35.638 37.149 35.87 35.87 0 0 1-34.992-28.333L1.592 168.53C17.2 220.124 65.89 258.18 123.578 258.18c70.692 0 128.003-57.31 128.003-128.003C251.581 59.487 198.47 0 127.779 0zM80.36 208.09l-15.082-6.232a26.887 26.887 0 0 0 14.49 14.088 26.941 26.941 0 0 0 35.26-14.468 26.796 26.796 0 0 0 .001-20.624 26.864 26.864 0 0 0-14.467-14.467l15.594 6.446a21.556 21.556 0 0 1-11.392 41.29 21.56 21.56 0 0 1-24.404-6.033zm114.007-57.39c0-17.568-14.29-31.858-31.858-31.858-17.569 0-31.858 14.29-31.858 31.858 0 17.569 14.29 31.858 31.858 31.858 17.569 0 31.858-14.29 31.858-31.858zm-55.737-.098c0-13.19 10.706-23.896 23.897-23.896 13.19 0 23.896 10.706 23.896 23.896 0 13.19-10.706 23.897-23.896 23.897-13.191 0-23.897-10.706-23.897-23.897z"/></svg>
+        Steam
+      </a>
+      <a href="https://x.com/AllByteStudios" class="notify-bar-btn footer-social-btn x-notify-btn" target="_blank" rel="noopener noreferrer" title="AllByte Studios on X">
+        <svg class="x-inline-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        X
+      </a>
+    </div>
     <a href="mailto:allbytestudios@gmail.com" class="footer-contact">allbytestudios@gmail.com</a>
     <span>&copy; 2026 AllByte Studios</span>
   </footer>
@@ -830,16 +830,6 @@
   }
 
   /* === Notification Bar === */
-  .notify-bar {
-    background: #12161c;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
-    padding: 0.4rem 1rem;
-  }
-
   .notify-bar-btn {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.3rem;
@@ -853,12 +843,6 @@
 
   .notify-bar-btn:hover {
     opacity: 0.7;
-  }
-
-  .notify-bar-row {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
   }
 
   .legend-square-btn {
@@ -908,11 +892,18 @@
     color: #66c0f4;
   }
 
-  @media (max-width: 640px) {
-    .notify-bar-row {
-      flex-direction: column;
-      gap: 0.4rem;
-    }
+  .x-notify-btn {
+    color: #a7f3d0 !important;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .x-inline-icon {
+    width: 0.9em;
+    height: 0.9em;
+    color: #e7ecff;
   }
 
   /* === Card Wrapper === */
@@ -1624,6 +1615,19 @@
     flex-direction: column;
     gap: 0.25rem;
     align-items: center;
+  }
+
+  .footer-social {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .footer-social-btn {
+    font-size: 1.05rem;
   }
 
   .footer-contact {

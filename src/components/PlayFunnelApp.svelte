@@ -19,6 +19,7 @@
       string,
       { sessions: number; booted: number; moved: number; past: number; medianDur: number }
     >;
+    daily?: { date: string; sessions: number; booted: number }[];
     medianDurationSec: number;
     generatedAt: number;
   }
@@ -103,6 +104,18 @@
     deviceEngagement.reduce((m, [, e]) => Math.max(m, e.sessions), 0)
   );
 
+  // Temporal: play sessions per day (UTC). Session-scoped + anonymous, so this
+  // is sessions/day, not unique returning players — the "when did traffic come"
+  // signal to line up against marketing drops.
+  let daily = $derived(data?.daily ?? []);
+  let maxDaily = $derived(daily.reduce((m, d) => Math.max(m, d.sessions), 0));
+  function dayLabel(iso: string): string {
+    // "2026-07-01" → "Jul 1"
+    const [y, m, d] = iso.split("-").map(Number);
+    const mo = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m - 1] ?? "";
+    return `${mo} ${d}`;
+  }
+
   function milestoneLabel(k: string): string {
     if (k === "m:moved") return "First move";
     if (k === "m:combat") return "Reached combat";
@@ -144,6 +157,28 @@
         <div class="lbl">Median session</div>
       </div>
     </div>
+
+    <!-- Sessions per day — temporal signal for "when did players show up" -->
+    <section class="daily">
+      <h3>Sessions per day <span class="sub">(UTC · dark = booted · anonymous, so sessions not unique players)</span></h3>
+      {#if daily.length === 0}
+        <p class="muted">No dated sessions yet — appears as new play sessions come in.</p>
+      {:else}
+        <div class="daily-chart">
+          {#each daily as d (d.date)}
+            <div class="day-col" title="{d.date}: {d.sessions} session{d.sessions === 1 ? '' : 's'}, {d.booted} booted">
+              <span class="day-n">{d.sessions}</span>
+              <div class="day-bar-track">
+                <div class="day-bar" style="height:{maxDaily ? Math.max(3, Math.round((d.sessions / maxDaily) * 100)) : 0}%">
+                  <div class="day-bar-booted" style="height:{d.sessions ? Math.round((d.booted / d.sessions) * 100) : 0}%"></div>
+                </div>
+              </div>
+              <span class="day-lbl">{dayLabel(d.date)}</span>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </section>
 
     <!-- "Moved"/"never moved" cards removed 2026-06-25: movedSessions is sampled
          from the transient gameState.isMoving at a 4s poll, so it under-counts
@@ -297,6 +332,52 @@
   .fill.dev { background: #c084fc; }
   .bar-n { text-align: right; color: rgba(224, 231, 255, 0.7); }
   code { background: rgba(167, 243, 208, 0.1); padding: 0 0.3rem; border-radius: 3px; }
+
+  /* Sessions-per-day chart */
+  .daily { margin-top: 1.5rem; }
+  .daily-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.35rem;
+    height: 140px;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+  }
+  .day-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    min-width: 26px;
+    height: 100%;
+    flex: 1 1 26px;
+  }
+  .day-n { font-size: 0.68rem; color: rgba(224, 231, 255, 0.7); }
+  .day-bar-track { flex: 1; width: 60%; display: flex; align-items: flex-end; }
+  .day-bar {
+    position: relative;
+    width: 100%;
+    background: rgba(167, 243, 208, 0.25);
+    border-radius: 3px 3px 0 0;
+    min-height: 3px;
+  }
+  .day-bar-booted {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%;
+    background: #a7f3d0;
+    border-radius: 0 0 3px 3px;
+  }
+  .day-lbl {
+    font-size: 0.62rem;
+    color: rgba(224, 231, 255, 0.5);
+    white-space: nowrap;
+    transform: rotate(-45deg);
+    transform-origin: center;
+    margin-top: 0.2rem;
+    height: 1.2em;
+  }
 
   /* Engagement-by-device graph */
   .device-engagement { margin-top: 1.5rem; }

@@ -321,11 +321,14 @@ Resources:
                   page = table.scan(**kwargs)
                   for it in page.get("Items", []):
                       sid = it["sessionId"]
-                      s = sessions.setdefault(sid, {"scenes": set(), "dur": 0, "ref": "", "dev": ""})
+                      s = sessions.setdefault(sid, {"scenes": set(), "dur": 0, "ref": "", "dev": "", "first_ts": None})
                       sc = it.get("scene")
                       if sc:
                           s["scenes"].add(sc)
                       s["dur"] = max(s["dur"], int(it.get("dur", 0)))
+                      ts = int(it.get("ts", 0))
+                      if ts and (s["first_ts"] is None or ts < s["first_ts"]):
+                          s["first_ts"] = ts
                       if it.get("ref") and not s["ref"]:
                           s["ref"] = it["ref"]
                       if it.get("dev") and not s["dev"]:
@@ -380,6 +383,21 @@ Resources:
                   ds = sorted(e.pop("_durs"))
                   e["medianDur"] = ds[len(ds) // 2] if ds else 0
 
+              # Temporal view: sessions bucketed by arrival day (UTC), so the
+              # dashboard can show WHEN traffic came in (correlate with marketing
+              # drops). Sessions are session-scoped + anonymous by design, so this
+              # is "play sessions/day", not unique returning players.
+              daily = {}
+              for s in sessions.values():
+                  if not s["first_ts"]:
+                      continue
+                  day = time.strftime("%Y-%m-%d", time.gmtime(s["first_ts"]))
+                  d = daily.setdefault(day, {"date": day, "sessions": 0, "booted": 0})
+                  d["sessions"] += 1
+                  if s["scenes"]:
+                      d["booted"] += 1
+              daily_list = [daily[k] for k in sorted(daily.keys())]
+
               return resp(200, {
                   "totalSessions": len(sessions),
                   "bootedSessions": booted,
@@ -389,6 +407,7 @@ Resources:
                   "referrers": ref_counts,
                   "devices": dev_counts,
                   "deviceEngagement": dev_engage,
+                  "daily": daily_list,
                   "medianDurationSec": median,
                   "generatedAt": int(time.time()),
               })

@@ -1,4 +1,4 @@
-# Drop — web-native / casual showcase subs (LADDER DAYS 3–4)
+# Drop — web-native / casual showcase subs (LADDER DAYS 0–2: r/IndieGaming leads, then r/WebGames)
 
 Covers the subs where "free, playable in your browser" is a *strength* and links are
 welcome — so the browser angle gets burned where it's an asset, keeping the *contrast*

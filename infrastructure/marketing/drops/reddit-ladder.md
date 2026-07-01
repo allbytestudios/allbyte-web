@@ -21,12 +21,33 @@ both:**
 
 **New lead = the subs where the hook stands on its own to strangers:** the
 contrast — console-RPG depth that's *also* one-click browser-playable, no
-download. Lead with r/WebGames + r/IndieGaming, then the r/godot flagship, then
-the WASM finale, then r/selfhosted (infra track). Save combat-transition for
-where it lands (flagship + web-native), not a likely-flop foothold sub.
+download. Lead with the web-native subs, then the r/godot flagship, then the WASM
+finale, then r/selfhosted (infra track). Save combat-transition for where it
+lands (flagship + web-native), not a likely-flop foothold sub.
 
 The two update sheets (`reddit-update-solodev.md`, `reddit-update-jrpg.md`) are
 **retired** — kept in-folder for reference, not in the schedule below.
+
+## Course correction #2 (2026-07-01) — r/IndieGaming leads, not r/WebGames
+
+Evaluated r/WebGames before spending the Day-0 slot there. Findings:
+- **Size:** ~139k members (+10.7%/yr). Mid-sized — but r/IndieGaming is **~493k**,
+  ~3.5× larger, with a better-fit audience for a depth-first tactical RPG.
+- **Signal is noisy.** It's the general-purpose browser-games sub (HTML5/puzzle/
+  word/IO + self-promo dominant); "signal varies more than the idle subs because
+  the topic is wider" — high variance, a slow tactical RPG competes against
+  30-second casual games for attention.
+- **Self-promo tenure rule (the real risk):** r/WebGames generally expects you to
+  have been a community member for a while before posting your own work — it's NOT
+  built for cold self-promo (unlike r/playmygame). Our account has **no r/WebGames
+  history**, so a first-time self-promo there risks a filter/removal.
+
+**So: r/IndieGaming is the new Day-0 lead.** r/WebGames drops to a *secondary*
+discovery post, and only after warming the account with a few genuine comments in
+the sub first (to clear the tenure expectation). Note the earlier "Account
+reality" bullet assumed WebGames self-promo was safe on karma/age alone — this
+supersedes that for WebGames specifically. (Data was qualitative — Reddit + the
+JS stat sites block scraping; eyeball r/WebGames/new + /top before committing.)
 
 ## Account reality (u/AllByteGames, read 2026-06-24)
 - ~5 months old, **38 karma, 10 contributions**, active in r/JRPG + r/SoloDevelopment.
@@ -43,11 +64,16 @@ everything below is pre-staged copy-paste.
 
 ## Schedule (revised)
 
+Hero video: **the 60s gameplay trailer** (in production — see
+`../trailer-60s-treatment.md`) becomes the hero across these once it lands;
+until then use the existing clips noted below.
+
 | Day | Sub | Drop sheet | Hero video | Contextual link |
 |-----|-----|-----------|-----------|-----------------|
-| 0 | **r/WebGames** (+ r/playmygame) | `reddit-web-native.md` | combat-transition | play link in body |
-| 1–2 | **r/IndieGaming** | `reddit-web-native.md` | dwarven-ruin (DoF) or town-tour | links in first comment |
-| ~3 | **r/godot — flagship** | `reddit-godot-flagship.md` | combat-transition | painting-around-the-grid + wasm comment link |
+| 0 | **r/IndieGaming** (new lead) | `reddit-web-native.md` | combat-transition (or dwarven-ruin DoF) | links in first comment |
+| 1–2 | **r/WebGames** (secondary — warm up account first; play link in body) | `reddit-web-native.md` | town-tour or dwarven-ruin | play link in body |
+| optional | **r/playmygame** (built for self-promo; reciprocity culture — see sheet) | `reddit-web-native.md` | combat-transition | play link in body |
+| ~3 | **r/godot — flagship** | `reddit-godot-flagship.md` | combat-transition (→ trailer) | painting-around-the-grid + wasm comment link |
 | ~7 | **r/godot — WASM finale** | `reddit-godot-wasm-finale.md` | (optional clip) | wasm-gotchas devlog |
 | around then | **r/selfhosted** (separate track) | `reddit-selfhosted-infra.md` | — | pay-the-platforms / self-hosting devlog |
 

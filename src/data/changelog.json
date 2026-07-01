@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-30T21:37:41.207Z",
+  "generatedAt": "2026-07-01T02:11:18.063Z",
   "releases": [
     {
       "version": "v0.7.2069",
@@ -5767,7 +5767,7 @@
         },
         {
           "type": "chore",
-          "subject": "cap portrait head-clip to 2 px (Drew rule)",
+          "subject": "cap portrait head-clip to 2 px (the owner rule)",
           "sha": "ed180d19"
         },
         {
@@ -5797,7 +5797,7 @@
         },
         {
           "type": "chore",
-          "subject": "pan-clamp uses backdrop bounds (Drew's rules)",
+          "subject": "pan-clamp uses backdrop bounds (the owner's rules)",
           "sha": "9aacb3cc"
         },
         {

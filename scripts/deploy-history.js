@@ -34,6 +34,14 @@ const MANIFEST = join(CHRONICLES, "tickets", "deploy_manifest.ndjson");
 // Build number = the last dotted component of vX.Y.Z (a global monotonic counter).
 const buildNum = (v) => parseInt(String(v).replace(/^v/, "").split(".").pop(), 10);
 
+// The repo is public. Game-side commit subjects sometimes name the owner; the
+// pre-push hook blocks the literal name in tracked content, so scrub it here so
+// regenerating the changelog never reintroduces it.
+const scrub = (s) =>
+  String(s ?? "")
+    .replace(/\bDrew's\b/g, "the owner's")
+    .replace(/\bDrew\b/g, "the owner");
+
 function git(args) {
   return execSync(`git ${args}`, { cwd: REPO, encoding: "utf8" }).trim();
 }
@@ -79,7 +87,7 @@ function main() {
     const changes = [];
     for (const rec of records) {
       if (rec.num > prevNum && rec.num <= rel.num) {
-        for (const c of rec.commits || []) changes.push({ type: c.type, scope: c.scope, subject: c.subject, sha: c.sha });
+        for (const c of rec.commits || []) changes.push({ type: c.type, scope: c.scope, subject: scrub(c.subject), sha: c.sha });
       }
     }
     if (changes.length === 0) { skipped++; continue; }

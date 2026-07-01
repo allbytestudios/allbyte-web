@@ -8,7 +8,7 @@
   import MinimapPanel from "./MinimapPanel.svelte";
   import { initPlayAnalytics } from "../lib/playAnalytics";
   import DownloadGate from "./DownloadGate.svelte";
-  import { downloadState, ackDownload, isTouchPrimary } from "../lib/downloadGate";
+  import { downloadState, ackDownload } from "../lib/downloadGate";
   import gameVersion from "../data/game-version.json";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
@@ -335,11 +335,10 @@
     gameUrl = resolveGameUrl();
 
     // Decide the download gate now that localStorage is available. Already
-    // acknowledged (so cached), an admin fixture load, or a non-touch device
-    // (desktop/laptop — assumed unmetered) → straight through; otherwise hold
-    // the iframe behind the consent notice. The size gate is touch-only.
+    // acknowledged (so cached) or an admin fixture load → straight through;
+    // otherwise hold the iframe behind the consent notice.
     const dlState = downloadState();
-    if (fixture || dlState === "ready" || !isTouchPrimary()) {
+    if (fixture || dlState === "ready") {
       allowed = true;
     } else {
       gateMode = dlState; // "fresh" (first load) or "update" (version bumped)

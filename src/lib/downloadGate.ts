@@ -59,24 +59,6 @@ export function ackDownload(): void {
   }
 }
 
-/** Touch-primary device (phone/tablet) — the only class of device we hold the
- *  download gate for, since they may be on cellular where a ~75 MB pull costs
- *  real money. Desktops/laptops (pointer: fine, incl. touchscreen 2-in-1s whose
- *  primary pointer is the trackpad) are assumed unmetered and load straight
- *  through with NO size prompt. Bare (pointer: coarse), no width cap, so a large
- *  tablet still qualifies. Same signal the slow-connection sub-warning uses. */
-export function isTouchPrimary(): boolean {
-  try {
-    return (
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(pointer: coarse)").matches
-    );
-  } catch {
-    return false;
-  }
-}
-
 export interface ConnInfo {
   /** User enabled Data Saver. */
   saveData: boolean;

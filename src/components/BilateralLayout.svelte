@@ -640,6 +640,11 @@
       </a>
     </div>
     <a href="mailto:allbytestudios@gmail.com" class="footer-contact">allbytestudios@gmail.com</a>
+    <nav class="footer-legal">
+      <a href="/privacy/">Privacy</a>
+      <span class="footer-legal-sep" aria-hidden="true">·</span>
+      <a href="/terms/">Terms</a>
+    </nav>
     <span>&copy; 2026 AllByte Studios</span>
   </footer>
 </div>
@@ -1639,6 +1644,27 @@
 
   .footer-contact:hover {
     color: rgba(167, 243, 208, 0.8);
+  }
+
+  .footer-legal {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .footer-legal a {
+    color: rgba(224, 231, 255, 0.6);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .footer-legal a:hover {
+    color: rgba(224, 231, 255, 0.9);
+  }
+
+  .footer-legal-sep {
+    opacity: 0.4;
   }
 
   @media (max-width: 768px) {

@@ -641,6 +641,8 @@
     </div>
     <a href="mailto:allbytestudios@gmail.com" class="footer-contact">allbytestudios@gmail.com</a>
     <nav class="footer-legal">
+      <a href="https://www.patreon.com/cw/AllByteStudios" target="_blank" rel="noopener">Patreon</a>
+      <span class="footer-legal-sep" aria-hidden="true">·</span>
       <a href="/privacy/">Privacy</a>
       <span class="footer-legal-sep" aria-hidden="true">·</span>
       <a href="/terms/">Terms</a>

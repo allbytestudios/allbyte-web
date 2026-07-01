@@ -1,14 +1,20 @@
-"""Cross-browser-engine smoke harness for /play/.
+"""Cross-browser-engine gameplay QA harness for Chronicles of Nesis.
 
-Boots Chronicles of Nesis in Chromium + Firefox + Webkit (Safari's engine,
-not actual Safari), waits for the Title scene, captures a screenshot per
-engine + the iframe's _consoleLogs, and flags suspicious lines (missing
-asset / shader compile / gzip decompression failures).
+Runs two things per engine (Chromium + Firefox + Webkit — Safari's engine,
+not actual Safari):
 
-The point isn't pixel-diff yet (that's v1). The point is:
-  - confirm each engine even reaches Title
-  - catch engine-class console errors that single-browser CI misses
-  - capture screenshots side-by-side so visual regressions are spottable
+  1. /play/ EMBED SMOKE (real user path) — load /play/, click through the
+     download gate, and confirm the game iframe mounts and boots to a scene.
+  2. PUBLIC-BUILD GAMEPLAY — on the gate-free /godot/public/ build, drive the
+     three things a player must be able to do, via Quinn's hook-based
+     game_driver (tests/e2e/game_driver.py — NO keyboard):
+       BOOT     — reaches the Title screen
+       NEW GAME — start_new_game() leaves Title and loads the Laria pack
+       MOVEMENT — assert_controls() imports EliasHouse and a held direction
+                  moves the player (playerX/Y changes)
+
+Also captures the iframe + game console logs and flags suspicious lines
+(missing asset / shader compile / gzip decompression / decryption failures).
 
 Usage:
   pip install playwright
@@ -20,15 +26,15 @@ Usage:
   python tests/cross-browser-qa/run.py --headed              # default is headless
 
 Reports: tests/cross-browser-qa/reports/<timestamp>/
-  - <engine>.png       — Title-scene screenshot per engine
-  - <engine>.logs.txt  — iframe _consoleLogs at the moment of capture
-  - results.json       — pass/fail summary + flagged log lines
+  - <engine>.png       — /play/ screenshot per engine
+  - <engine>.logs.txt  — combined iframe + public-build console logs
+  - results.json       — per-engine status + stages{boot,new_game,movement} + play_embed
   - report.md          — human-readable side-by-side summary
 
 Exit code:
-  0 — all engines booted, no suspect log patterns
-  1 — at least one engine had a suspect log pattern (gzip, shader, etc.)
-  2 — at least one engine failed to reach Title within timeout
+  0 — every engine: /play/ booted, all gameplay stages passed, no suspect logs
+  1 — otherwise-passing, but at least one engine had a suspect log pattern
+  2 — at least one engine failed the /play/ boot or a gameplay stage
 """
 
 from __future__ import annotations
@@ -44,9 +50,22 @@ from playwright.sync_api import sync_playwright
 BASE = Path(__file__).parent
 REPORTS_DIR = BASE / "reports"
 
+# Reuse Quinn's proven, hook-driven game driver (tests/e2e/game_driver.py) for
+# the NEW GAME + MOVEMENT stages — no keyboard, so a real input failure can't be
+# confused with a Playwright keyboard quirk. Verified across all 3 engines.
+sys.path.insert(0, str((BASE.parent / "e2e").resolve()))
+from game_driver import start_new_game, assert_controls, _wait  # noqa: E402
+
+# The real user path (iframe + COEP + download gate).
 TARGET_URLS = {
     "prod": "https://allbyte.studio/play/",
     "local": "http://localhost:4321/play/",
+}
+# The gate-free, top-level public build the game driver drives (window.gameState
+# is reachable directly — no iframe hop).
+PUBLIC_URLS = {
+    "prod": "https://allbyte.studio/godot/public/index.html",
+    "local": "http://localhost:4321/godot/public/index.html",
 }
 
 ENGINES = ["chromium", "firefox", "webkit"]
@@ -81,132 +100,211 @@ FATAL_PATTERNS = [
 
 BOOT_TIMEOUT_S = 60
 READY_POLL_S = 1
+NAV_ATTEMPTS = 3
 
 
-def test_engine(p, engine_name: str, target_url: str, headless: bool, out_dir: Path) -> dict:
-    """Boot /play/ in a single engine, capture state, return result."""
-    print(f"  [{engine_name}] launching...", flush=True)
-
+def _launch(p, engine_name: str, headless: bool):
     if engine_name == "chromium":
-        browser = p.chromium.launch(headless=headless)
-    elif engine_name == "firefox":
-        browser = p.firefox.launch(headless=headless)
-    elif engine_name == "webkit":
-        browser = p.webkit.launch(headless=headless)
-    else:
-        raise ValueError(f"Unknown engine: {engine_name}")
+        # swiftshader so a headless CI runner / GPU-less box still gets a WebGL
+        # context — the engine needs it to render and to actually move the
+        # player in the MOVEMENT stage.
+        return p.chromium.launch(
+            headless=headless,
+            args=[
+                "--use-gl=swiftshader",
+                "--enable-unsafe-swiftshader",
+                "--ignore-gpu-blocklist",
+            ],
+        )
+    if engine_name in ("firefox", "webkit"):
+        return getattr(p, engine_name).launch(headless=headless)
+    raise ValueError(f"Unknown engine: {engine_name}")
+
+
+def _goto_retry(page, url: str, attempts: int = NAV_ATTEMPTS) -> bool:
+    """Navigate, retrying transient 5xx. The QA races the deploy's CloudFront
+    invalidation — freshly-hashed bundles can 503 for a few seconds."""
+    for _ in range(attempts):
+        try:
+            resp = page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+            if resp is None or resp.status < 500:
+                return True
+        except Exception:
+            pass
+        page.wait_for_timeout(3000)
+    return False
+
+
+def _play_embed(context, play_url: str, out_dir: Path, engine_name: str) -> dict:
+    """Real user path: /play/ → click through the download gate → the game
+    iframe mounts and boots to a scene. Returns status + scene + iframe logs."""
+    page = context.new_page()
+    events: list[str] = []
+    page.on("console", lambda m: events.append(f"[{m.type}] {m.text}"))
+    page.on("pageerror", lambda e: events.append(f"[page-error] {e}"))
+
+    if not _goto_retry(page, play_url):
+        return {"status": "navigation_failed", "scene": None, "logs": [], "screenshot": None}
+
+    # Fresh browser → the download gate holds the iframe until "Continue". Click
+    # it. If it's absent (already acked / suppressed) the iframe renders anyway.
+    try:
+        page.wait_for_selector(".dl-go", timeout=8_000)
+        page.click(".dl-go")
+    except Exception:
+        pass
 
     try:
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
-        page = context.new_page()
+        handle = page.wait_for_selector("iframe", timeout=15_000)
+        iframe = handle.content_frame()
+    except Exception:
+        iframe = None
+    if iframe is None:
+        return {"status": "no_iframe", "scene": None, "logs": [], "screenshot": None}
 
-        # Capture page-level console + errors
-        page_events: list[str] = []
-        page.on("console", lambda m: page_events.append(f"[{m.type}] {m.text}"))
-        page.on("pageerror", lambda e: page_events.append(f"[page-error] {e}"))
+    iframe.on("console", lambda m: events.append(f"[iframe:{m.type}] {m.text}"))
 
+    scene = None
+    elapsed = 0
+    while elapsed < BOOT_TIMEOUT_S:
+        page.wait_for_timeout(READY_POLL_S * 1000)
+        elapsed += READY_POLL_S
         try:
-            page.goto(target_url, wait_until="domcontentloaded", timeout=30_000)
-        except Exception as e:
-            return {
-                "engine": engine_name,
-                "status": "navigation_failed",
-                "error": str(e),
-                "page_events": page_events,
-            }
-
-        # Wait for iframe to mount
-        try:
-            iframe_handle = page.wait_for_selector("iframe", timeout=15_000)
+            scene = iframe.evaluate("window.gameState?.scene || null")
         except Exception:
-            return {
-                "engine": engine_name,
-                "status": "no_iframe",
-                "page_events": page_events,
-            }
+            scene = None
+        if scene:
+            break
 
-        iframe = iframe_handle.content_frame()
-        if iframe is None:
-            return {
-                "engine": engine_name,
-                "status": "iframe_no_frame",
-                "page_events": page_events,
-            }
+    logs: list[str] = []
+    try:
+        raw = iframe.evaluate("(window._consoleLogs || []).slice(-200)")
+        logs = [str(x) for x in (raw or [])]
+    except Exception:
+        pass
 
-        # Capture iframe-level console + errors too
-        iframe.on("console", lambda m: page_events.append(f"[iframe:{m.type}] {m.text}"))
-        iframe.on("pageerror", lambda e: page_events.append(f"[iframe-error] {e}"))
+    page.wait_for_timeout(1200)
+    shot = out_dir / f"{engine_name}.png"
+    try:
+        page.screenshot(path=str(shot), full_page=False)
+        shot_name = shot.name
+    except Exception:
+        shot_name = None
 
-        # Wait for Godot to boot to a scene. gameState lives on the iframe's
-        # window (same pattern as scripts/smoke_prod.py).
-        scene = None
-        elapsed = 0
-        while elapsed < BOOT_TIMEOUT_S:
-            page.wait_for_timeout(READY_POLL_S * 1000)
-            elapsed += READY_POLL_S
-            try:
-                scene = iframe.evaluate("window.gameState?.scene || null")
-            except Exception:
-                scene = None
-            if scene:
-                break
+    # Close the /play/ page so its running WebGL game doesn't compete for
+    # network/CPU with the public-build gameplay checks (the ~43 MB Laria pack
+    # New Game pulls would otherwise race the still-open iframe past its timeout).
+    try:
+        page.close()
+    except Exception:
+        pass
 
-        if not scene:
-            screenshot_path = out_dir / f"{engine_name}.png"
-            page.screenshot(path=str(screenshot_path), full_page=False)
-            return {
-                "engine": engine_name,
-                "status": "boot_timeout",
-                "elapsed_s": elapsed,
-                "page_events": page_events,
-                "screenshot": screenshot_path.name,
-            }
+    return {
+        "status": "ok" if scene else "boot_timeout",
+        "scene": scene,
+        "boot_elapsed_s": elapsed if scene else None,
+        "logs": logs,
+        "screenshot": shot_name,
+    }
 
-        print(f"  [{engine_name}] booted to {scene} in {elapsed}s", flush=True)
 
-        # Capture _consoleLogs from inside the iframe (the index.html
-        # ARC-DEV-CONSOLE interceptor mirrors all GDScript print() and
-        # error output there).
-        iframe_logs: list[str] = []
+def _public_gameplay(context, public_url: str) -> tuple[dict, list[str]]:
+    """Gate-free public build: BOOT (reach Title) → NEW GAME (start_new_game)
+    → MOVEMENT (assert_controls). Hook-driven via game_driver. Returns the
+    stage verdicts + the game's console logs for classification."""
+    stages = {"boot": "fail", "new_game": "fail", "movement": "fail"}
+    logs: list[str] = []
+
+    # BOOT + NEW GAME share a page (New Game starts from Title). Only one game
+    # runs at a time — close each page before the next so the big pack downloads
+    # don't contend (that contention is what fails an otherwise-good New Game).
+    p1 = context.new_page()
+    if _goto_retry(p1, public_url) and _wait(p1, lambda s: s.get("ready"), 60):
+        if _wait(p1, lambda s: s.get("scene") == "Title", 60):
+            stages["boot"] = "pass"
+            if start_new_game(p1):
+                stages["new_game"] = "pass"
+    try:
+        raw = p1.evaluate("(window._consoleLogs || []).slice(-200)")
+        logs = [str(x) for x in (raw or [])]
+    except Exception:
+        pass
+    try:
+        p1.close()
+    except Exception:
+        pass
+
+    # MOVEMENT on a fresh page — assert_controls imports its own EliasHouse save
+    # and force-loads it, independent of the New-Game run above.
+    p2 = context.new_page()
+    if _goto_retry(p2, public_url) and _wait(p2, lambda s: s.get("ready"), 60):
+        if assert_controls(p2):
+            stages["movement"] = "pass"
+    try:
+        p2.close()
+    except Exception:
+        pass
+
+    return stages, logs
+
+
+def test_engine(
+    p, engine_name: str, play_url: str, public_url: str, headless: bool, out_dir: Path
+) -> dict:
+    """Run the full per-engine QA: the /play/ embed smoke (real user path) plus
+    the public-build BOOT → NEW GAME → MOVEMENT gameplay stages."""
+    print(f"  [{engine_name}] launching...", flush=True)
+    browser = _launch(p, engine_name, headless)
+    try:
+        # Separate contexts so the /play/ embed and the public gameplay runs are
+        # fully isolated (no shared localStorage ack, no lingering WebGL game).
+        ctx1 = browser.new_context(viewport={"width": 1280, "height": 900})
+        embed = _play_embed(ctx1, play_url, out_dir, engine_name)
+        print(f"  [{engine_name}] /play/ embed: {embed['status']} scene={embed['scene']}", flush=True)
         try:
-            raw = iframe.evaluate("(window._consoleLogs || []).slice(-200)")
-            iframe_logs = [str(x) for x in (raw or [])]
-        except Exception as e:
-            iframe_logs = [f"[harness] failed to read _consoleLogs: {e}"]
+            ctx1.close()
+        except Exception:
+            pass
 
-        # Give the engine a beat to render the scene before snapshotting
-        page.wait_for_timeout(1500)
+        ctx2 = browser.new_context(viewport={"width": 1280, "height": 900})
+        stages, pub_logs = _public_gameplay(ctx2, public_url)
+        try:
+            ctx2.close()
+        except Exception:
+            pass
+        print(
+            f"  [{engine_name}] public: boot={stages['boot']} "
+            f"new_game={stages['new_game']} movement={stages['movement']}",
+            flush=True,
+        )
 
-        screenshot_path = out_dir / f"{engine_name}.png"
-        page.screenshot(path=str(screenshot_path), full_page=False)
-
-        # Write the iframe logs to disk too — the JSON report only carries
-        # the suspect-matching subset; full log is on disk for forensic
-        # review.
-        (out_dir / f"{engine_name}.logs.txt").write_text("\n".join(iframe_logs))
-
-        # Classify logs
-        fatal_hits = [l for l in iframe_logs if any(p in l for p in FATAL_PATTERNS)]
-        suspect_hits = [
-            l for l in iframe_logs
-            if any(p in l for p in SUSPECT_PATTERNS)
-            and not any(p in l for p in FATAL_PATTERNS)
+        # Classify logs from BOTH the /play/ iframe and the public build.
+        all_logs = (embed.get("logs") or []) + (pub_logs or [])
+        (out_dir / f"{engine_name}.logs.txt").write_text("\n".join(all_logs))
+        fatal = [l for l in all_logs if any(x in l for x in FATAL_PATTERNS)]
+        suspect = [
+            l for l in all_logs
+            if any(x in l for x in SUSPECT_PATTERNS)
+            and not any(x in l for x in FATAL_PATTERNS)
         ]
+
+        stages_ok = all(v == "pass" for v in stages.values())
+        overall = "ok" if (embed["status"] == "ok" and stages_ok and not fatal) else "failed"
 
         return {
             "engine": engine_name,
-            "status": "ok",
-            "scene": scene,
-            "boot_elapsed_s": elapsed,
-            "screenshot": screenshot_path.name,
-            "iframe_log_count": len(iframe_logs),
-            "fatal_log_count": len(fatal_hits),
-            "suspect_log_count": len(suspect_hits),
-            "fatal_samples": fatal_hits[:10],
-            "suspect_samples": suspect_hits[:20],
-            "page_event_count": len(page_events),
+            "status": overall,
+            "scene": embed.get("scene"),
+            "boot_elapsed_s": embed.get("boot_elapsed_s"),
+            "stages": stages,
+            "play_embed": {"status": embed["status"], "scene": embed.get("scene")},
+            "screenshot": embed.get("screenshot"),
+            "iframe_log_count": len(all_logs),
+            "fatal_log_count": len(fatal),
+            "suspect_log_count": len(suspect),
+            "fatal_samples": fatal[:10],
+            "suspect_samples": suspect[:20],
         }
-
     finally:
         browser.close()
 
@@ -223,6 +321,9 @@ def main() -> int:
     args = ap.parse_args()
 
     target_url = TARGET_URLS.get(args.target, args.target)
+    public_url = PUBLIC_URLS.get(args.target) or target_url.replace(
+        "/play/", "/godot/public/index.html"
+    )
     engines = [e.strip() for e in args.engines.split(",") if e.strip()]
     for e in engines:
         if e not in ENGINES:
@@ -233,7 +334,8 @@ def main() -> int:
     out_dir = REPORTS_DIR / timestamp
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Target: {target_url}")
+    print(f"Target (/play/): {target_url}")
+    print(f"Public build:    {public_url}")
     print(f"Engines: {engines}")
     print(f"Output: {out_dir}")
     print()
@@ -242,7 +344,7 @@ def main() -> int:
     with sync_playwright() as p:
         for engine in engines:
             try:
-                r = test_engine(p, engine, target_url, not args.headed, out_dir)
+                r = test_engine(p, engine, target_url, public_url, not args.headed, out_dir)
             except Exception as e:
                 r = {"engine": engine, "status": "exception", "error": str(e)}
             results.append(r)
@@ -262,27 +364,25 @@ def main() -> int:
     any_boot_failed = False
     any_suspect = False
     for r in results:
+        st = r.get("stages") or {}
+        pe = (r.get("play_embed") or {}).get("status", "?")
+        stage_str = (
+            f"play={pe} boot={st.get('boot','?')} "
+            f"new_game={st.get('new_game','?')} movement={st.get('movement','?')}"
+        )
         if r["status"] != "ok":
             any_boot_failed = True
-            print(f"  [{r['engine']}] FAIL — {r['status']}: {r.get('error', '')}")
+            err = r.get("error")
+            print(f"  [{r['engine']}] FAIL — {stage_str}" + (f" ({err})" if err else ""))
         else:
             mark = "OK"
             extras = []
-            if r["fatal_log_count"] > 0:
-                mark = "FAIL"
-                any_boot_failed = True
-                extras.append(f"{r['fatal_log_count']} fatal")
-            if r["suspect_log_count"] > 0:
-                if mark == "OK":
-                    mark = "SUSPECT"
+            if r.get("suspect_log_count", 0) > 0:
+                mark = "SUSPECT"
                 any_suspect = True
                 extras.append(f"{r['suspect_log_count']} suspect")
             extras_str = f" — {', '.join(extras)}" if extras else ""
-            print(
-                f"  [{r['engine']}] {mark}: scene={r['scene']}, "
-                f"booted in {r['boot_elapsed_s']}s, logs={r['iframe_log_count']}"
-                f"{extras_str}"
-            )
+            print(f"  [{r['engine']}] {mark}: {stage_str}{extras_str}")
 
     print()
     print(f"Report: {out_dir / 'report.md'}")
@@ -305,19 +405,16 @@ def write_markdown(path: Path, target: str, timestamp: str, results: list[dict])
     lines.append("")
     lines.append("## Per-engine summary")
     lines.append("")
-    lines.append("| Engine | Status | Scene | Boot time | Logs | Fatal | Suspect |")
-    lines.append("|---|---|---|---|---|---|---|")
+    lines.append("| Engine | Status | /play/ | Boot | New Game | Movement | Fatal | Suspect |")
+    lines.append("|---|---|---|---|---|---|---|---|")
     for r in results:
-        if r["status"] == "ok":
-            lines.append(
-                f"| {r['engine']} | OK | {r['scene']} | {r['boot_elapsed_s']}s | "
-                f"{r['iframe_log_count']} | {r['fatal_log_count']} | "
-                f"{r['suspect_log_count']} |"
-            )
-        else:
-            lines.append(
-                f"| {r['engine']} | {r['status']} | — | — | — | — | — |"
-            )
+        st = r.get("stages") or {}
+        pe = (r.get("play_embed") or {}).get("status", "—")
+        lines.append(
+            f"| {r['engine']} | {r['status']} | {pe} | {st.get('boot','—')} | "
+            f"{st.get('new_game','—')} | {st.get('movement','—')} | "
+            f"{r.get('fatal_log_count', 0)} | {r.get('suspect_log_count', 0)} |"
+        )
 
     lines.append("")
     lines.append("## Screenshots")

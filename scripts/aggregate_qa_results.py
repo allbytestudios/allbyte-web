@@ -150,6 +150,10 @@ def summarize_engine(
         "status": r.get("status", "unknown"),
         "scene": r.get("scene"),
         "boot_elapsed_s": r.get("boot_elapsed_s"),
+        # Gameplay stages (public build): boot / new_game / movement, each
+        # "pass"|"fail". Plus the /play/ embed (real user path) status.
+        "stages": r.get("stages"),
+        "play_embed": r.get("play_embed"),
         "iframe_log_count": r.get("iframe_log_count", 0),
         "fatal_log_count": r.get("fatal_log_count", 0),
         "suspect_log_count": r.get("suspect_log_count", 0),
@@ -186,11 +190,24 @@ def summarize_cross_browser(engines: list[dict]) -> dict:
     ok = sum(1 for e in engines if e.get("status") == "ok")
     fatal = sum(1 for e in engines if (e.get("fatal_log_count") or 0) > 0)
     suspect = sum(1 for e in engines if (e.get("suspect_log_count") or 0) > 0)
+
+    def stage_passed(name: str) -> int:
+        return sum(1 for e in engines if (e.get("stages") or {}).get(name) == "pass")
+
+    play_ok = sum(
+        1 for e in engines if (e.get("play_embed") or {}).get("status") == "ok"
+    )
     return {
         "total": total,
         "passed": ok,
         "with_fatal": fatal,
         "with_suspect": suspect,
+        # Per-stage rollups across the matrix so the dashboard can show
+        # "movement 6/6" etc. at a glance.
+        "play_passed": play_ok,
+        "boot_passed": stage_passed("boot"),
+        "new_game_passed": stage_passed("new_game"),
+        "movement_passed": stage_passed("movement"),
     }
 
 

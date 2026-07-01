@@ -30,8 +30,18 @@
       passed: number;
       with_fatal: number;
       with_suspect: number;
+      play_passed?: number;
+      boot_passed?: number;
+      new_game_passed?: number;
+      movement_passed?: number;
     };
     controller_status: string | null;
+  }
+
+  interface Stages {
+    boot?: string;
+    new_game?: string;
+    movement?: string;
   }
 
   interface EngineResult {
@@ -40,6 +50,8 @@
     status: string;
     scene?: string;
     boot_elapsed_s?: number;
+    stages?: Stages | null;
+    play_embed?: { status?: string; scene?: string } | null;
     iframe_log_count?: number;
     fatal_log_count?: number;
     suspect_log_count?: number;
@@ -175,6 +187,18 @@
     return matrixCells.find((c) => c.os === os && c.engine === engine);
   }
 
+  // Stage pill: "pass" → green ✓, "fail" → red ✕, missing → neutral dash.
+  function stageClass(v: string | undefined): string {
+    if (v === "pass") return "qa-ok";
+    if (v === "fail") return "qa-fail";
+    return "qa-neutral";
+  }
+  function stageMark(v: string | undefined): string {
+    if (v === "pass") return "✓";
+    if (v === "fail") return "✕";
+    return "–";
+  }
+
   function statusClass(status: string | undefined): string {
     switch (status) {
       case "ok":
@@ -200,8 +224,8 @@
   <h3 class="qa-title">
     Deploy QA
     <span class="qa-subtitle">
-      cross-browser + controller smoke against {" "}
-      <code>allbyte.studio/play/</code> after each deploy
+      cross-browser boot + New Game + movement (public build) & {" "}
+      <code>/play/</code> embed smoke, per deploy
     </span>
   </h3>
 
@@ -248,6 +272,7 @@
           <div class="qa-empty">Select a run from the list.</div>
         {:else}
           {@const m = selectedManifest}
+          {@const cb = m.cross_browser_summary}
           <div class="qa-run-header">
             <div>
               <span class="qa-run-overall {statusClass(m.overall_status)}">{m.overall_status}</span>
@@ -256,12 +281,18 @@
               <span class="qa-run-trigger">via {m.trigger}</span>
             </div>
             <div class="qa-run-summary">
-              cross-browser {m.cross_browser_summary.passed}/{m.cross_browser_summary.total}
-              {#if m.cross_browser_summary.with_fatal > 0}
-                · <span class="qa-fail">{m.cross_browser_summary.with_fatal} fatal</span>
+              overall {cb.passed}/{cb.total}
+              {#if cb.movement_passed != null}
+                · /play {cb.play_passed}/{cb.total}
+                · boot {cb.boot_passed}/{cb.total}
+                · new game {cb.new_game_passed}/{cb.total}
+                · movement {cb.movement_passed}/{cb.total}
               {/if}
-              {#if m.cross_browser_summary.with_suspect > 0}
-                · <span class="qa-warn">{m.cross_browser_summary.with_suspect} suspect</span>
+              {#if cb.with_fatal > 0}
+                · <span class="qa-fail">{cb.with_fatal} fatal</span>
+              {/if}
+              {#if cb.with_suspect > 0}
+                · <span class="qa-warn">{cb.with_suspect} suspect</span>
               {/if}
               {#if m.controller}
                 · controllers {m.controller.profiles_passed}/{m.controller.profiles_total}
@@ -289,6 +320,14 @@
                       <td class={statusClass(cell?.status)}>
                         {#if cell}
                           <div class="qa-cell-status">{cell.status}</div>
+                          {#if cell.stages || cell.play_embed}
+                            <div class="qa-stages">
+                              <span class="qa-stage {statusClass(cell.play_embed?.status)}" title="/play/ embed boot">/play {stageMark(cell.play_embed?.status === 'ok' ? 'pass' : (cell.play_embed?.status ? 'fail' : undefined))}</span>
+                              <span class="qa-stage {stageClass(cell.stages?.boot)}" title="public build reaches Title">boot {stageMark(cell.stages?.boot)}</span>
+                              <span class="qa-stage {stageClass(cell.stages?.new_game)}" title="New Game starts + Laria pack loads">new {stageMark(cell.stages?.new_game)}</span>
+                              <span class="qa-stage {stageClass(cell.stages?.movement)}" title="held-direction moves the player">move {stageMark(cell.stages?.movement)}</span>
+                            </div>
+                          {/if}
                           {#if cell.boot_elapsed_s != null}
                             <div class="qa-cell-detail">{cell.boot_elapsed_s}s · {cell.iframe_log_count ?? 0} logs</div>
                           {/if}
@@ -518,10 +557,23 @@
     letter-spacing: 0.04em;
     font-size: 0.72rem;
   }
+  .qa-stages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+  }
+  .qa-stage {
+    font-size: 0.62rem;
+    padding: 0.05rem 0.3rem;
+    border-radius: 2px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
   .qa-cell-detail {
     color: #9ca3af;
     font-size: 0.68rem;
-    margin-top: 0.15rem;
+    margin-top: 0.3rem;
   }
   .qa-cell-flag {
     color: #fca5a5;

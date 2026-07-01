@@ -144,6 +144,9 @@
   function launchGame() {
     playMode = true;
     document.body.style.overflow = "hidden";
+    // The game brings its own music — pause the site player so they don't
+    // double-stack (auto-resumes on exitGame).
+    window.dispatchEvent(new CustomEvent("music-player:pause"));
     window.addEventListener("keydown", handlePlayKey);
     // First launch on this device → show the download notice and hold the
     // iframe (gameUrl stays "") until the user consents. Already acknowledged
@@ -208,6 +211,8 @@
     showGate = false;
     gameUrl = "";
     document.body.style.overflow = "";
+    // Resume the site player if launchGame paused it.
+    window.dispatchEvent(new CustomEvent("music-player:resume"));
     window.removeEventListener("keydown", handlePlayKey);
     teardownSaveBridge();
     analyticsOff?.();

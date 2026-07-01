@@ -146,9 +146,32 @@
     }
   }
 
+  // Pause the site player while the game is running — the game brings its own
+  // music, and leaving the site track playing underneath double-stacks the
+  // audio. Auto-resume on exit, but only if WE paused it (so a manual pause
+  // before launching isn't overridden). Mirrors the visibility pattern.
+  let pausedByGame = false;
+  function handleGamePause() {
+    if (!audio) return;
+    if (isPlaying) {
+      audio.pause();
+      isPlaying = false;
+      pausedByGame = true;
+    }
+  }
+  function handleGameResume() {
+    if (!audio) return;
+    if (pausedByGame) {
+      pausedByGame = false;
+      audio.play().then(() => { isPlaying = true; }).catch(() => {});
+    }
+  }
+
   $effect(() => {
     window.addEventListener("music-player:load", handleLoadTracks);
     window.addEventListener("music-player:play", handlePlayTrack);
+    window.addEventListener("music-player:pause", handleGamePause);
+    window.addEventListener("music-player:resume", handleGameResume);
     window.addEventListener("beforeunload", saveState);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     restoreState();
@@ -156,6 +179,8 @@
     return () => {
       window.removeEventListener("music-player:load", handleLoadTracks);
       window.removeEventListener("music-player:play", handlePlayTrack);
+      window.removeEventListener("music-player:pause", handleGamePause);
+      window.removeEventListener("music-player:resume", handleGameResume);
       window.removeEventListener("beforeunload", saveState);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };

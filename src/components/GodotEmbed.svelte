@@ -109,6 +109,9 @@
     ackDownload();
     showGate = false;
     allowed = true;
+    // The game brings its own music — pause the persistent site player so
+    // they don't double-stack.
+    window.dispatchEvent(new CustomEvent("music-player:pause"));
     loadStart = Date.now(); // count load time from consent, not page arrival
   }
 
@@ -340,6 +343,8 @@
     const dlState = downloadState();
     if (fixture || dlState === "ready") {
       allowed = true;
+      // Game brings its own music — pause the persistent site player.
+      window.dispatchEvent(new CustomEvent("music-player:pause"));
     } else {
       gateMode = dlState; // "fresh" (first load) or "update" (version bumped)
       showGate = true;

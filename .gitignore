@@ -78,3 +78,6 @@ tests/ai-eval/results/
 
 # Anthropic Admin API key (used by break-even-report.py)
 .claude-admin-key
+
+# Scratch/working files (never commit)
+.tmp/

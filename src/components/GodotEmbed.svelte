@@ -8,7 +8,7 @@
   import MinimapPanel from "./MinimapPanel.svelte";
   import { initPlayAnalytics } from "../lib/playAnalytics";
   import DownloadGate from "./DownloadGate.svelte";
-  import { downloadState, ackDownload } from "../lib/downloadGate";
+  import { downloadState, ackDownload, isTouchPrimary } from "../lib/downloadGate";
   import gameVersion from "../data/game-version.json";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.

@@ -1755,13 +1755,27 @@ Resources:
           # IP prefix patterns for known datacenter ranges. Most bots spoof
           # browser UAs but originate from cloud IPs — UA-only classification
           # misses them. Order/values matter: SQL LIKE prefixes against c_ip.
-          # 20., 34., 35. are large blocks dominated by Azure / GCP — small
-          # false-positive risk for legit consumer IPs in those ranges,
+          # The first-octet blocks below are dominated by AWS / Azure / GCP —
+          # small false-positive risk for legit consumer IPs in those ranges,
           # acceptable for analytics. Owner classification still wins via
           # UA pattern match for any owner traffic egressing via cloud IPs.
+          #
+          # 2026-07-02: expanded after a headless-browser swarm (identical
+          # spoofed Mac/Linux Firefox UAs from Azure 13.105.x / 13.83.x /
+          # 40.76.x / 52.159.x / 57.154.x, plus GitHub-Actions smoke tests and
+          # Reddit link-scanners) inflated the "other" (real-visitor) bucket
+          # ~50x on a marketing day. These fetch the full game asset chain, so
+          # they look like real plays to a log-based counter — only the IP
+          # origin gives them away. The anonymous play funnel already excludes
+          # them via navigator.webdriver; this brings Site Traffic into line.
           DATACENTER_IP_PREFIXES = [
-              "20.", "34.", "35.",
-              "65.52.", "104.208.", "74.249.", "4.201.",
+              # AWS (whole first-octet blocks AWS operates)
+              "3.", "13.", "15.", "18.", "52.", "54.",
+              # Azure / GCP (20./34./35. long-standing; 40./51.-not-included)
+              "20.", "34.", "35.", "40.",
+              "57.15",  # Azure 57.150.0.0/15-ish (observed 57.154.x)
+              "65.52.", "104.208.", "74.249.", "4.201.", "135.232.",
+              # misc hosting / scraping ranges seen in logs
               "45.155.42.", "185.177.72.", "77.83.39.",
           ]
 

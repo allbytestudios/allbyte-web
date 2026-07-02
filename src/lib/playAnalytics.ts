@@ -134,12 +134,12 @@ function deviceClass(): string {
  * unchanged while giving both a location funnel and a milestone funnel.
  */
 export function initPlayAnalytics(stateGetter: () => PlayState | null): () => void {
-  if (
-    typeof window === "undefined" ||
-    !WRITE_URL ||
-    window.location.hostname !== PROD_HOST ||
-    isExcludedClient()
-  ) {
+  // Accept both the apex and the www alias: www.allbyte.studio serves /play
+  // directly (no redirect to apex), so gating on the bare apex silently dropped
+  // every www play from the funnel while CloudFront still logged the serve.
+  const host = typeof window !== "undefined" ? window.location.hostname : "";
+  const onProd = host === PROD_HOST || host === `www.${PROD_HOST}`;
+  if (typeof window === "undefined" || !WRITE_URL || !onProd || isExcludedClient()) {
     return () => {};
   }
 

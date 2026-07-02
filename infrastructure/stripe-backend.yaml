@@ -1750,6 +1750,12 @@ Resources:
               "ChatGPT-User", "GPTBot", "OAI-SearchBot", "Anthropic", "Claude",
               "PerplexityBot", "ClaudeBot", "CCBot", "Amazonbot", "Bytespider",
               "MJ12bot", "AhrefsBot", "SemrushBot", "DotBot",
+              # Scripts / HTTP tools / headless automation — never a real
+              # site visitor. curl swarms + headless renderers hit /play after
+              # link posts; none of these strings appear in a real browser UA.
+              "curl/", "Wget", "python-requests", "python-httpx", "aiohttp",
+              "Go-http-client", "okhttp", "node-fetch", "libwww", "Java/",
+              "HeadlessChrome", "Headless", "PhantomJS", "Playwright", "Puppeteer",
           ]
 
           # IP prefix patterns for known datacenter ranges. Most bots spoof
@@ -1775,6 +1781,9 @@ Resources:
               "20.", "34.", "35.", "40.",
               "57.15",  # Azure 57.150.0.0/15-ish (observed 57.154.x)
               "65.52.", "104.208.", "74.249.", "4.201.", "135.232.",
+              "48.214.", "48.217.", "51.8.",  # more Azure /16s (headless pools)
+              "172.172.", "172.182.", "172.203.", "172.215.",  # Azure 172.x pubic /16s
+              "64.236.", "128.24.", "132.196.",  # Lumen / misc hosting (headless UAs)
               # misc hosting / scraping ranges seen in logs
               "45.155.42.", "185.177.72.", "77.83.39.",
           ]

@@ -524,8 +524,10 @@
        CloudFront access logs via Athena (see SiteTrafficFunction in
        infrastructure/stripe-backend.yaml):
          owner — AllByte-Internal traffic (configured in OWNER_IDENTIFIERS env)
-         bots  — known crawlers (Googlebot / GPTBot / etc., UA-pattern match)
-         other — everything else
+         bots  — known crawlers by UA (Googlebot / GPTBot / curl / headless)
+                 OR datacenter-IP origin (AWS / Azure / GCP) — the latter
+                 catches headless swarms that spoof real browser UAs
+         other — everything else (real visitors)
        Stack order bottom→top is owner / bots / other so the most
        "interesting" segment (real visitors) sits on top of the bar where
        the eye lands. Older snapshots without the breakdown fall back to

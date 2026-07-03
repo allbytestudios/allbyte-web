@@ -1782,7 +1782,15 @@ Resources:
               "57.15",  # Azure 57.150.0.0/15-ish (observed 57.154.x)
               "65.52.", "104.208.", "74.249.", "4.201.", "135.232.",
               "48.214.", "48.217.", "51.8.",  # more Azure /16s (headless pools)
-              "172.172.", "172.182.", "172.203.", "172.215.",  # Azure 172.x pubic /16s
+              # Azure 172.160.0.0/11 + 172.200.0.0/12 — public space here is
+              # essentially all Microsoft. "172.16".."172.21" also nominally
+              # match the private 172.16/12 block, but private IPs never appear
+              # as a CloudFront client IP, so these only catch public Azure.
+              "172.16", "172.17", "172.18", "172.19", "172.20", "172.21",
+              "168.61.", "168.62.", "168.63.",  # Azure
+              "135.23",   # Azure 135.224.0.0/12 (135.232/135.237 observed)
+              "68.220.",  # Azure /16 within 68.218.0.0/15 (68.x elsewhere is consumer, so scoped)
+              "4.227.",   # Azure 4.224.0.0/12 (observed)
               "64.236.", "128.24.", "132.196.",  # Lumen / misc hosting (headless UAs)
               # misc hosting / scraping ranges seen in logs
               "45.155.42.", "185.177.72.", "77.83.39.",

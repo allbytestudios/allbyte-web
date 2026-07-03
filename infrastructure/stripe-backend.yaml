@@ -1758,43 +1758,48 @@ Resources:
               "HeadlessChrome", "Headless", "PhantomJS", "Playwright", "Puppeteer",
           ]
 
-          # IP prefix patterns for known datacenter ranges. Most bots spoof
-          # browser UAs but originate from cloud IPs — UA-only classification
-          # misses them. Order/values matter: SQL LIKE prefixes against c_ip.
-          # The first-octet blocks below are dominated by AWS / Azure / GCP —
-          # small false-positive risk for legit consumer IPs in those ranges,
-          # acceptable for analytics. Owner classification still wins via
-          # UA pattern match for any owner traffic egressing via cloud IPs.
-          #
-          # 2026-07-02: expanded after a headless-browser swarm (identical
-          # spoofed Mac/Linux Firefox UAs from Azure 13.105.x / 13.83.x /
-          # 40.76.x / 52.159.x / 57.154.x, plus GitHub-Actions smoke tests and
-          # Reddit link-scanners) inflated the "other" (real-visitor) bucket
-          # ~50x on a marketing day. These fetch the full game asset chain, so
-          # they look like real plays to a log-based counter — only the IP
-          # origin gives them away. The anonymous play funnel already excludes
-          # them via navigator.webdriver; this brings Site Traffic into line.
-          DATACENTER_IP_PREFIXES = [
-              # AWS (whole first-octet blocks AWS operates)
-              "3.", "13.", "15.", "18.", "52.", "54.",
-              # Azure / GCP (20./34./35. long-standing; 40./51.-not-included)
-              "20.", "34.", "35.", "40.",
-              "57.15",  # Azure 57.150.0.0/15-ish (observed 57.154.x)
-              "65.52.", "104.208.", "74.249.", "4.201.", "135.232.",
-              "48.214.", "48.217.", "51.8.",  # more Azure /16s (headless pools)
-              # Azure 172.160.0.0/11 + 172.200.0.0/12 — public space here is
-              # essentially all Microsoft. "172.16".."172.21" also nominally
-              # match the private 172.16/12 block, but private IPs never appear
-              # as a CloudFront client IP, so these only catch public Azure.
-              "172.16", "172.17", "172.18", "172.19", "172.20", "172.21",
-              "168.61.", "168.62.", "168.63.",  # Azure
-              "135.23",   # Azure 135.224.0.0/12 (135.232/135.237 observed)
-              "68.220.",  # Azure /16 within 68.218.0.0/15 (68.x elsewhere is consumer, so scoped)
-              "4.227.",   # Azure 4.224.0.0/12 (observed)
-              "64.236.", "128.24.", "132.196.",  # Lumen / misc hosting (headless UAs)
-              # misc hosting / scraping ranges seen in logs
-              "45.155.42.", "185.177.72.", "77.83.39.",
-          ]
+          # Datacenter /16 set for bot detection. Most bots spoof browser UAs
+          # but originate from cloud IPs — UA-only classification misses them.
+          # The set is the union of AWS + GCP + Azure PUBLISHED IPv4 ranges,
+          # collapsed to distinct /16 prefixes ("A.B") by
+          # scripts/gen-datacenter-ranges.py and stored at
+          # s3://<CACHE_BUCKET>/traffic-config/datacenter-16s.json (~2900 blocks).
+          # This replaced the old hand-maintained first-octet list (2026-07-03)
+          # after a rotating Azure headless swarm kept leaking into "other" —
+          # no more adding /16s one at a time, and it's MORE precise than the
+          # old blanket "13."/"20." /8s. Refresh: re-run the generator script.
+          # _FALLBACK_DC16 is a tiny safety net used only if the S3 read fails.
+          _FALLBACK_DC16 = {
+              "13.104", "13.105", "20.106", "40.76", "52.159", "57.151",
+              "172.172", "172.182", "172.183", "172.214", "168.62",
+              "135.237", "68.220", "4.227", "48.214", "64.236", "45.155",
+          }
+          # Non-cloud hosting / scraper /16s NOT in the AWS/GCP/Azure published
+          # ranges (curated from logs). Merged into every result so switching to
+          # the cloud-range set doesn't regress these known scrapers.
+          _EXTRA_DC16 = {"45.155", "185.177", "77.83", "64.236", "128.24", "132.196"}
+          _DC16_CACHE = {}
+
+          def _load_dc16():
+              """Set of datacenter /16 prefixes ('A.B'): the AWS/GCP/Azure union
+              from S3 (or a small baked fallback) merged with the non-cloud
+              scraper supplement. Cached for the warm-Lambda lifetime."""
+              if "s" in _DC16_CACHE:
+                  return _DC16_CACHE["s"]
+              s16 = None
+              try:
+                  obj = s3.get_object(
+                      Bucket=os.environ["CACHE_BUCKET"],
+                      Key="traffic-config/datacenter-16s.json",
+                  )
+                  loaded = set(json.loads(obj["Body"].read()).get("prefixes16") or [])
+                  if len(loaded) >= 1000:
+                      s16 = loaded
+              except Exception:
+                  pass
+              base = s16 if s16 is not None else set(_FALLBACK_DC16)
+              _DC16_CACHE["s"] = base | _EXTRA_DC16
+              return _DC16_CACHE["s"]
 
           # URL filter for "webapp serves" — HTML page hits, excluding game
           # bootstrap, asset bundles, dev-console polling endpoints, and font
@@ -1901,15 +1906,21 @@ Resources:
               return "(" + " OR ".join(clauses) + ")"
 
           def _bot_filter_sql():
-              """SQL fragment matching bots: known crawler UAs OR datacenter
-              IP prefixes. UA-only matching misses bots that spoof browser
-              UAs from cloud IPs, which is most of them in our data."""
+              """SQL fragment matching bots: known crawler UAs OR an IP whose
+              /16 is in the cloud datacenter set (AWS/GCP/Azure). UA-only
+              matching misses the headless swarm that spoofs browser UAs from
+              cloud IPs — that's most of them in our data."""
               clauses = []
               for p in BOT_PATTERNS:
                   safe = p.replace("'", "''")
                   clauses.append(f"lower(cs_user_agent) LIKE '%{safe.lower()}%'")
-              for prefix in DATACENTER_IP_PREFIXES:
-                  clauses.append(f"c_ip LIKE '{prefix}%'")
+              dc16 = _load_dc16()
+              if dc16:
+                  quoted = ",".join("'" + p + "'" for p in sorted(dc16))
+                  clauses.append(
+                      "(split_part(c_ip,'.',1) || '.' || split_part(c_ip,'.',2)) IN ("
+                      + quoted + ")"
+                  )
               return "(" + " OR ".join(clauses) + ")"
 
           def _bust_cache():
@@ -1959,18 +1970,30 @@ Resources:
               # Single query returns both game and webapp aggregates per day.
               # Classification is mutually exclusive: owner > bots > other,
               # encoded in the CASE expression ordering.
+              # is_owner / is_bot computed ONCE per row in the inner select so
+              # the (large) datacenter-/16 IN list is only materialized once,
+              # not repeated per CASE column. Classification is mutually
+              # exclusive: owner > bots > other.
               query = f"""
                   SELECT
-                      date_format(log_date, '%Y-%m-%d') AS d,
-                      SUM(CASE WHEN cs_uri_stem = '{GAME_URL}' AND {owner_expr} THEN 1 ELSE 0 END) AS game_owner,
-                      SUM(CASE WHEN cs_uri_stem = '{GAME_URL}' AND NOT ({owner_expr}) AND {bot_expr} THEN 1 ELSE 0 END) AS game_bots,
-                      SUM(CASE WHEN cs_uri_stem = '{GAME_URL}' AND NOT ({owner_expr}) AND NOT ({bot_expr}) THEN 1 ELSE 0 END) AS game_other,
-                      SUM(CASE WHEN {WEBAPP_FILTER_SQL} AND {owner_expr} THEN 1 ELSE 0 END) AS webapp_owner,
-                      SUM(CASE WHEN {WEBAPP_FILTER_SQL} AND NOT ({owner_expr}) AND {bot_expr} THEN 1 ELSE 0 END) AS webapp_bots,
-                      SUM(CASE WHEN {WEBAPP_FILTER_SQL} AND NOT ({owner_expr}) AND NOT ({bot_expr}) THEN 1 ELSE 0 END) AS webapp_other
-                  FROM {table}
-                  WHERE log_date >= DATE '{start_date}'
-                  GROUP BY date_format(log_date, '%Y-%m-%d')
+                      d,
+                      SUM(CASE WHEN is_game AND is_owner THEN 1 ELSE 0 END) AS game_owner,
+                      SUM(CASE WHEN is_game AND NOT is_owner AND is_bot THEN 1 ELSE 0 END) AS game_bots,
+                      SUM(CASE WHEN is_game AND NOT is_owner AND NOT is_bot THEN 1 ELSE 0 END) AS game_other,
+                      SUM(CASE WHEN is_webapp AND is_owner THEN 1 ELSE 0 END) AS webapp_owner,
+                      SUM(CASE WHEN is_webapp AND NOT is_owner AND is_bot THEN 1 ELSE 0 END) AS webapp_bots,
+                      SUM(CASE WHEN is_webapp AND NOT is_owner AND NOT is_bot THEN 1 ELSE 0 END) AS webapp_other
+                  FROM (
+                      SELECT
+                          date_format(log_date, '%Y-%m-%d') AS d,
+                          (cs_uri_stem = '{GAME_URL}') AS is_game,
+                          ({WEBAPP_FILTER_SQL}) AS is_webapp,
+                          ({owner_expr}) AS is_owner,
+                          ({bot_expr}) AS is_bot
+                      FROM {table}
+                      WHERE log_date >= DATE '{start_date}'
+                  )
+                  GROUP BY d
                   ORDER BY d
               """
               start = athena.start_query_execution(

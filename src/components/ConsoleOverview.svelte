@@ -51,6 +51,23 @@
   type TimeRange = "week" | "month" | "year";
   let graphRange = $state<TimeRange>("month");
 
+  // Traffic-segment filter for the Site Traffic charts. Defaults to "other"
+  // (real visitors: non-owner, non-bot) since that's the number actually worth
+  // watching — the owner/bots stack mostly obscures it. "all" = stacked view.
+  type TrafficSeg = "other" | "all" | "bots" | "owner";
+  let trafficSegment = $state<TrafficSeg>("other");
+  function segValue(d: SiteTrafficDay, seg: TrafficSeg): number {
+    if (seg === "other") return d.other ?? 0;
+    if (seg === "bots") return d.bots ?? 0;
+    if (seg === "owner") return d.owner ?? 0;
+    return (d.owner ?? 0) + (d.bots ?? 0) + (d.other ?? 0);
+  }
+  function segLabel(seg: TrafficSeg): string {
+    return seg === "other" ? "Real visitors"
+      : seg === "bots" ? "Bots / crawlers"
+      : seg === "owner" ? "Owner" : "All";
+  }
+
   // Convert a range to the slice length in DAYS for daily-bucket data.
   function rangeDays(r: TimeRange): number {
     return r === "week" ? 7 : r === "month" ? 30 : 365;
@@ -464,6 +481,17 @@
           <option value="year">Year</option>
         </select>
       </label>
+      {#if viewerIsAdmin && (siteTraffic?.dailyGameServes?.length || siteTraffic?.dailyWebappServes?.length)}
+        <label class="range-control-label">
+          Traffic
+          <select bind:value={trafficSegment} class="range-select" aria-label="Traffic segment for the site-traffic charts">
+            <option value="other">Real visitors</option>
+            <option value="all">All (stacked)</option>
+            <option value="bots">Bots / crawlers</option>
+            <option value="owner">Owner</option>
+          </select>
+        </label>
+      {/if}
     </div>
   {/if}
 
@@ -534,16 +562,18 @@
        a single-color total (owner/bots/other all zero or undefined). -->
   {#snippet trafficChart(label: string, dataset: SiteTrafficDay[])}
     {@const traffic = dataset.slice(-rangeDays(graphRange))}
-    {@const totalsPerDay = traffic.map(d => (d.owner ?? 0) + (d.bots ?? 0) + (d.other ?? 0))}
-    {@const maxReq = Math.max(...totalsPerDay, 1)}
-    {@const total7d = traffic.slice(-7).reduce((s, d) => s + (d.owner ?? 0) + (d.bots ?? 0) + (d.other ?? 0), 0)}
+    {@const seg = trafficSegment}
+    {@const isolated = seg !== "all"}
     {@const COLOR_OWNER = "#a7f3d0"}
     {@const COLOR_BOTS  = "#fbbf24"}
     {@const COLOR_OTHER = "#60a5fa"}
+    {@const segColor = seg === "bots" ? COLOR_BOTS : seg === "owner" ? COLOR_OWNER : COLOR_OTHER}
+    {@const visMax = Math.max(...traffic.map(d => segValue(d, seg)), 1)}
+    {@const total7d = traffic.slice(-7).reduce((s, d) => s + segValue(d, seg), 0)}
     <div class="users-chart-section">
       <h3 class="section-title">
         {label}
-        <span class="section-subtitle">{total7d.toLocaleString()} (7 days)</span>
+        <span class="section-subtitle">{total7d.toLocaleString()} (7 days){isolated ? ` · ${segLabel(seg)} only` : ""}</span>
       </h3>
       <div class="users-chart">
         <svg viewBox="0 0 700 140" class="users-svg">
@@ -553,35 +583,41 @@
             {@const ownerC = d.owner ?? 0}
             {@const botsC  = d.bots  ?? 0}
             {@const otherC = d.other ?? 0}
-            {@const total = ownerC + botsC + otherC}
-            {@const scale = 100 / maxReq}
-            {@const ownerH = ownerC * scale}
-            {@const botsH  = botsC  * scale}
-            {@const otherH = otherC * scale}
-            {@const totalH = total * scale}
+            {@const scale = 100 / visMax}
             {@const showCount = chartShowPerPointDetails(traffic.length)}
             {@const showLabel = chartShouldShowLabel(d.date, graphRange)}
-            {@const tooltip = `${d.date}\nOwner ${ownerC} · Bots ${botsC} · Other ${otherC}\nTotal ${total}`}
-            <!-- Stacked bar: owner (bottom) → bots (mid) → other (top).
-                 Bot+other stack first so a busy crawler day doesn't dwarf
-                 the owner sliver into invisibility. -->
-            {#if ownerH > 0}
-              <rect x={x - barW / 2} y={120 - ownerH} width={barW} height={ownerH}
-                    fill={COLOR_OWNER} opacity="0.7"
-                    rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
-            {/if}
-            {#if botsH > 0}
-              <rect x={x - barW / 2} y={120 - ownerH - botsH} width={barW} height={botsH}
-                    fill={COLOR_BOTS} opacity="0.6"
-                    rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
-            {/if}
-            {#if otherH > 0}
-              <rect x={x - barW / 2} y={120 - ownerH - botsH - otherH} width={barW} height={otherH}
-                    fill={COLOR_OTHER} opacity="0.7"
-                    rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
-            {/if}
-            {#if showCount && total > 0}
-              <text x={x} y={120 - totalH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{total > 999 ? (total / 1000).toFixed(1) + "k" : total}</text>
+            {@const tooltip = `${d.date}\nOwner ${ownerC} · Bots ${botsC} · Other ${otherC}\nTotal ${ownerC + botsC + otherC}`}
+            <!-- Isolated: a single rescaled bar of the chosen segment (so real
+                 visitors aren't dwarfed by the owner/bot totals). Otherwise a
+                 stacked owner → bots → other bar. -->
+            {#if isolated}
+              {@const v = segValue(d, seg)}
+              {@const h = v * scale}
+              {#if h > 0}
+                <rect x={x - barW / 2} y={120 - h} width={barW} height={h}
+                      fill={segColor} opacity="0.8" rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+              {/if}
+              {#if showCount && v > 0}
+                <text x={x} y={120 - h - 5} fill={segColor} font-size="10" text-anchor="middle">{v > 999 ? (v / 1000).toFixed(1) + "k" : v}</text>
+              {/if}
+            {:else}
+              {@const total = ownerC + botsC + otherC}
+              {@const ownerH = ownerC * scale}
+              {@const botsH  = botsC  * scale}
+              {@const otherH = otherC * scale}
+              {@const totalH = total * scale}
+              {#if ownerH > 0}
+                <rect x={x - barW / 2} y={120 - ownerH} width={barW} height={ownerH} fill={COLOR_OWNER} opacity="0.7" rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+              {/if}
+              {#if botsH > 0}
+                <rect x={x - barW / 2} y={120 - ownerH - botsH} width={barW} height={botsH} fill={COLOR_BOTS} opacity="0.6" rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+              {/if}
+              {#if otherH > 0}
+                <rect x={x - barW / 2} y={120 - ownerH - botsH - otherH} width={barW} height={otherH} fill={COLOR_OTHER} opacity="0.7" rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
+              {/if}
+              {#if showCount && total > 0}
+                <text x={x} y={120 - totalH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{total > 999 ? (total / 1000).toFixed(1) + "k" : total}</text>
+              {/if}
             {/if}
             {#if showLabel}
               <text x={x} y={136} fill="#6b7280" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
@@ -589,9 +625,13 @@
           {/each}
         </svg>
         <div class="users-chart-legend">
-          <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OWNER}"></span> Owner</span>
-          <span class="legend-item"><span class="legend-dot" style="background: {COLOR_BOTS}"></span> Bots / crawlers</span>
-          <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OTHER}"></span> Other visitors</span>
+          {#if isolated}
+            <span class="legend-item"><span class="legend-dot" style="background: {segColor}"></span> {segLabel(seg)}</span>
+          {:else}
+            <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OWNER}"></span> Owner</span>
+            <span class="legend-item"><span class="legend-dot" style="background: {COLOR_BOTS}"></span> Bots / crawlers</span>
+            <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OTHER}"></span> Other visitors</span>
+          {/if}
         </div>
       </div>
     </div>

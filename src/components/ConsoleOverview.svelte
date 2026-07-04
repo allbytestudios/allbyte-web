@@ -794,6 +794,7 @@
             {s.label}
             <span class="series-max">max {maxVal.toLocaleString()}/hr</span>
           </div>
+          <div class="chart-bars-scroll">
           <div class="chart-bars">
             {#each usageHours as h, i}
               {@const prevWeek = i > 0 ? usageHours[i-1].weekStart : null}
@@ -822,6 +823,7 @@
                 opacity="1"
               />
             </svg>
+          </div>
           </div>
         </div>
       {/each}
@@ -1173,6 +1175,13 @@
     letter-spacing: normal;
   }
 
+  /* Scroll container: on a phone the ~258 hourly bars can't fit, so the row
+     scrolls inside its own box instead of pushing the whole page wide (which
+     used to leave a white gutter to the right on mobile). */
+  .chart-bars-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
   .chart-bars {
     position: relative;
     display: flex;
@@ -1181,6 +1190,11 @@
     height: 70px;
     padding: 0.15rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    /* Fill the container on desktop (min-width: 100%), but size to the bars'
+       intrinsic width when that's larger than the viewport so the row can
+       scroll rather than overflow the page. */
+    min-width: 100%;
+    width: max-content;
   }
   .ma-overlay {
     position: absolute;

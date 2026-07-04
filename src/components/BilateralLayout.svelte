@@ -85,10 +85,15 @@
   // is the manual pick, falling back to the richest build the user can play
   // (re-resolves once auth hydrates).
   let pickedVersionId = $state<string | null>(null);
-  const pickerList = $derived(pickerVersions());
-  const selectedVersionId = $derived(pickedVersionId ?? defaultVersion(auth.currentUser).id);
+  // Runtime-deployed channels (beta / beta-debug / develop), fetched from
+  // /godot/channels.json in onMount. Lets a deploy self-publish its own
+  // availability with no source flip / commit / rebuild. null until fetched;
+  // alpha/alpha-debug stay available via their static flag regardless.
+  let runtimeChannels = $state<Record<string, unknown> | null>(null);
+  const pickerList = $derived(pickerVersions(runtimeChannels));
+  const selectedVersionId = $derived(pickedVersionId ?? defaultVersion(auth.currentUser, runtimeChannels).id);
   function selectedGamePath(): string {
-    return (versionById(selectedVersionId) ?? defaultVersion(auth.currentUser)).path;
+    return (versionById(selectedVersionId) ?? defaultVersion(auth.currentUser, runtimeChannels)).path;
   }
   let gameIframe = $state<HTMLIFrameElement | null>(null);
 
@@ -102,6 +107,14 @@
   let isInstalled = $state(false);
 
   onMount(() => {
+    // Fetch the runtime channel manifest a deploy publishes to S3. Best-effort:
+    // on failure (not deployed yet / offline) we fall back to the static flags,
+    // so alpha/alpha-debug still work. Cache-busted so a fresh push shows up.
+    fetch("/godot/channels.json", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j && typeof j === "object") runtimeChannels = j; })
+      .catch(() => { /* fall back to static availability */ });
+
     function handleBeforeInstall(e: Event) {
       e.preventDefault();
       installPrompt = e;

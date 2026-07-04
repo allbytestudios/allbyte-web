@@ -4,8 +4,12 @@
 //   - content: Alpha (free) vs Beta+ (Initiate+, post-Alpha content)
 //   - debug:   off (everyone at their content tier) vs on (Legend+ — TestBridge
 //              hooks + debug HUD)
-// → four builds. Today only the Alpha pair exists (the game is pre-Alpha); the
-// Beta pair flips `available: true` once Arc/Port cut + deploy those exports.
+// → four builds, PLUS a fifth `develop` channel: the bleeding-edge develop-branch
+// build (debug-only, Legend/admin), distinct from the *promoted* (staging) beta.
+// Today only the Alpha pair exists (the game is pre-Alpha); the Beta pair and
+// develop flip `available: true` once Arc/Port cut + deploy those exports.
+// beta-debug + develop deploy via the fast lane (scripts/push-channel.js, driven
+// by the game-side CI pipeline); alpha/beta go through the careful full deploy.
 //
 // IMPORTANT: the debug gate is client-side (low stakes — cheat/dev chrome only;
 // server data is JWT-gated). The Beta+ gate is PAID CONTENT and must NOT rely on
@@ -18,7 +22,7 @@ import { isAdmin, isTierAtLeast, type Tier } from "./tier";
 type AuthUser = { tier?: Tier | string | null } | null | undefined;
 
 export interface GameVersion {
-  id: "alpha" | "alpha-debug" | "beta" | "beta-debug";
+  id: "alpha" | "alpha-debug" | "beta" | "beta-debug" | "develop";
   label: string;
   /** iframe path for this build */
   path: string;
@@ -34,6 +38,7 @@ export const GAME_VERSIONS: GameVersion[] = [
   { id: "alpha-debug", label: "Alpha · Debug",  path: "/godot/index.html",            minTier: "legend",   available: true },
   { id: "beta",        label: "Beta+",          path: "/godot/beta/index.html",       minTier: "initiate", available: false },
   { id: "beta-debug",  label: "Beta+ · Debug",  path: "/godot/beta-debug/index.html", minTier: "legend",   available: false },
+  { id: "develop",     label: "Develop · Debug", path: "/godot/develop/index.html",   minTier: "legend",   available: false },
 ];
 
 export function isUnlocked(v: GameVersion, user: AuthUser): boolean {
@@ -42,9 +47,20 @@ export function isUnlocked(v: GameVersion, user: AuthUser): boolean {
   return isAdmin(user) || isTierAtLeast(user, v.minTier);
 }
 
+// Runtime availability overlay. `available: true` in the static table marks a
+// build the full pipeline always deploys (alpha/alpha-debug). Everything else
+// is published at RUNTIME by the deploy script into /godot/channels.json — the
+// frontend fetches that and a channel is "available" if it's hardcoded true OR
+// listed there. This is what keeps deploys fully agent-free: a push
+// self-publishes its own availability, no source flip / commit / rebuild.
+export type RuntimeChannels = Record<string, unknown> | null | undefined;
+export function isAvailable(v: GameVersion, runtime?: RuntimeChannels): boolean {
+  return v.available || !!(runtime && runtime[v.id]);
+}
+
 /** Deployed builds, for rendering the picker (locked ones shown disabled as upsell). */
-export function pickerVersions(): GameVersion[] {
-  return GAME_VERSIONS.filter((v) => v.available);
+export function pickerVersions(runtime?: RuntimeChannels): GameVersion[] {
+  return GAME_VERSIONS.filter((v) => isAvailable(v, runtime));
 }
 
 export function versionById(id: string): GameVersion | undefined {
@@ -52,7 +68,7 @@ export function versionById(id: string): GameVersion | undefined {
 }
 
 /** The richest deployed build the user can actually play (their default selection). */
-export function defaultVersion(user: AuthUser): GameVersion {
-  const unlocked = GAME_VERSIONS.filter((v) => v.available && isUnlocked(v, user));
+export function defaultVersion(user: AuthUser, runtime?: RuntimeChannels): GameVersion {
+  const unlocked = GAME_VERSIONS.filter((v) => isAvailable(v, runtime) && isUnlocked(v, user));
   return unlocked.length ? unlocked[unlocked.length - 1] : GAME_VERSIONS[0];
 }

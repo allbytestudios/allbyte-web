@@ -67,6 +67,11 @@
       : seg === "bots" ? "Bots / crawlers"
       : seg === "owner" ? "Owner" : "All";
   }
+  // Compact axis-tick formatter (1234 -> "1.2k").
+  function fmtAxis(v: number): string {
+    const r = Math.round(v);
+    return r > 999 ? (r / 1000).toFixed(1).replace(/\.0$/, "") + "k" : String(r);
+  }
 
   // Convert a range to the slice length in DAYS for daily-bucket data.
   function rangeDays(r: TimeRange): number {
@@ -560,6 +565,17 @@
        "interesting" segment (real visitors) sits on top of the bar where
        the eye lands. Older snapshots without the breakdown fall back to
        a single-color total (owner/bots/other all zero or undefined). -->
+  <!-- Shared Y-axis: gridlines at 0 / half / max with value labels in the left
+       gutter, so bar heights are readable without hovering. baseY/topY match
+       each chart's bar geometry (baseline y and the y that maps to maxVal). -->
+  {#snippet yAxis(maxVal: number, baseY: number, topY: number)}
+    {#each [0, 0.5, 1] as frac}
+      {@const y = baseY - frac * (baseY - topY)}
+      <line x1="50" y1={y} x2="650" y2={y} stroke="#4b5563" stroke-width="0.5" opacity="0.25" />
+      <text x="46" y={y + 3} fill="#9ca3af" font-size="9" text-anchor="end">{fmtAxis(maxVal * frac)}</text>
+    {/each}
+  {/snippet}
+
   {#snippet trafficChart(label: string, dataset: SiteTrafficDay[])}
     {@const traffic = dataset.slice(-rangeDays(graphRange))}
     {@const seg = trafficSegment}
@@ -577,6 +593,7 @@
       </h3>
       <div class="users-chart">
         <svg viewBox="0 0 700 140" class="users-svg">
+          {@render yAxis(visMax, 120, 20)}
           {#each traffic as d, i}
             {@const x = 50 + i * (600 / (traffic.length - 1 || 1))}
             {@const barW = chartBarWidth(traffic.length)}
@@ -655,6 +672,7 @@
       </h3>
       <div class="users-chart">
         <svg viewBox="0 0 700 140" class="users-svg">
+          {@render yAxis(maxPosts, 120, 20)}
           {#each dates as dt, i}
             {@const x = 50 + i * (600 / (dates.length - 1 || 1))}
             {@const barW = chartBarWidth(dates.length)}

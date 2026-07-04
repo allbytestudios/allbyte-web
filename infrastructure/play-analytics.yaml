@@ -72,6 +72,9 @@ Resources:
               - Effect: Allow
                 Action: dynamodb:PutItem
                 Resource: !GetAtt PlayFunnelTable.Arn
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: "arn:aws:s3:::allbyte-studio-cfn-deploy/traffic-config/*"
 
   WriteFunction:
     Type: AWS::Lambda::Function
@@ -87,14 +90,45 @@ Resources:
           TABLE: !Ref PlayFunnelTable
           SITE_DOMAIN: !Ref SiteDomain
           RETENTION_DAYS: !Ref RetentionDays
+          CACHE_BUCKET: allbyte-studio-cfn-deploy
       Code:
         ZipFile: |
           import json, os, re, time, boto3
 
           table = boto3.resource("dynamodb").Table(os.environ["TABLE"])
+          s3 = boto3.client("s3")
           RETENTION = int(os.environ.get("RETENTION_DAYS", "90"))
+          CACHE_BUCKET = os.environ.get("CACHE_BUCKET", "")
           SAFE = re.compile(r"[^A-Za-z0-9_./:\- ]")
           EVENTS = {"open", "scene", "end"}
+          _dc16 = {}
+
+          def load_dc16():
+              """Datacenter /16 prefix set (AWS/GCP/Azure) — the SAME S3 file the
+              Site Traffic classifier uses. Cached for the warm-Lambda lifetime;
+              empty set on any failure (then no IP-based flagging happens)."""
+              if "s" in _dc16:
+                  return _dc16["s"]
+              out = set()
+              try:
+                  if CACHE_BUCKET:
+                      obj = s3.get_object(Bucket=CACHE_BUCKET, Key="traffic-config/datacenter-16s.json")
+                      out = set(json.loads(obj["Body"].read()).get("prefixes16") or [])
+              except Exception:
+                  out = set()
+              _dc16["s"] = out
+              return out
+
+          def is_datacenter_ip(ip):
+              # Uses only the /16 (first two octets) transiently to classify; the
+              # IP itself is NEVER stored, so the funnel's no-IP privacy posture
+              # holds — we persist a bot flag, not an address.
+              if not ip or "." not in ip:
+                  return False
+              parts = ip.split(".")
+              if len(parts) < 2:
+                  return False
+              return (parts[0] + "." + parts[1]) in load_dc16()
 
           def clean(s, n):
               if not isinstance(s, str):
@@ -138,20 +172,28 @@ Resources:
                   dur = 0
               dur = max(0, min(dur, 86400))
               now = int(time.time())
+              # Server-side bot flag from the connection's source IP (datacenter
+              # /16). The browser sends no IP and we store none — only a boolean.
+              # This catches headless cloud renderers that spoof a real browser UA
+              # and so slip past the client-side navigator.webdriver exclusion.
+              src_ip = event.get("requestContext", {}).get("http", {}).get("sourceIp", "")
               # sk groups by event so the reader can distinguish boot/scene/end.
               sk = f"{ev}#{now:013d}#{scene}"[:120]
+              item = {
+                  "sessionId": sid,
+                  "sk": sk,
+                  "ev": ev,
+                  "scene": scene,
+                  "ref": ref,
+                  "dev": dev,
+                  "dur": dur,
+                  "ts": now,
+                  "ttl": now + RETENTION * 86400,
+              }
+              if is_datacenter_ip(src_ip):
+                  item["bot"] = 1
               try:
-                  table.put_item(Item={
-                      "sessionId": sid,
-                      "sk": sk,
-                      "ev": ev,
-                      "scene": scene,
-                      "ref": ref,
-                      "dev": dev,
-                      "dur": dur,
-                      "ts": now,
-                      "ttl": now + RETENTION * 86400,
-                  })
+                  table.put_item(Item=item)
               except Exception:
                   return resp(500)
               return resp(204)
@@ -321,7 +363,9 @@ Resources:
                   page = table.scan(**kwargs)
                   for it in page.get("Items", []):
                       sid = it["sessionId"]
-                      s = sessions.setdefault(sid, {"scenes": set(), "dur": 0, "ref": "", "dev": "", "first_ts": None})
+                      s = sessions.setdefault(sid, {"scenes": set(), "dur": 0, "ref": "", "dev": "", "first_ts": None, "bot": False})
+                      if it.get("bot"):
+                          s["bot"] = True
                       sc = it.get("scene")
                       if sc:
                           s["scenes"].add(sc)
@@ -337,6 +381,14 @@ Resources:
                   if not lek:
                       break
                   kwargs["ExclusiveStartKey"] = lek
+
+              # Split off datacenter-bot sessions (flagged server-side by source
+              # IP at write time — catches headless cloud renderers the client's
+              # navigator.webdriver check misses). Every funnel metric below is
+              # computed over REAL sessions only; bot counts ride along separately
+              # so the dashboard can show/toggle them.
+              bot_sessions = {k: v for k, v in sessions.items() if v.get("bot")}
+              sessions = {k: v for k, v in sessions.items() if not v.get("bot")}
 
               scene_counts = {}
               ref_counts = {}
@@ -392,10 +444,16 @@ Resources:
                   if not s["first_ts"]:
                       continue
                   day = time.strftime("%Y-%m-%d", time.gmtime(s["first_ts"]))
-                  d = daily.setdefault(day, {"date": day, "sessions": 0, "booted": 0})
+                  d = daily.setdefault(day, {"date": day, "sessions": 0, "booted": 0, "bots": 0})
                   d["sessions"] += 1
                   if s["scenes"]:
                       d["booted"] += 1
+              for s in bot_sessions.values():
+                  if not s["first_ts"]:
+                      continue
+                  day = time.strftime("%Y-%m-%d", time.gmtime(s["first_ts"]))
+                  d = daily.setdefault(day, {"date": day, "sessions": 0, "booted": 0, "bots": 0})
+                  d["bots"] += 1
               daily_list = [daily[k] for k in sorted(daily.keys())]
 
               return resp(200, {
@@ -409,6 +467,7 @@ Resources:
                   "deviceEngagement": dev_engage,
                   "daily": daily_list,
                   "medianDurationSec": median,
+                  "botSessions": len(bot_sessions),
                   "generatedAt": int(time.time()),
               })
 

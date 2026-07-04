@@ -19,8 +19,11 @@
       string,
       { sessions: number; booted: number; moved: number; past: number; medianDur: number }
     >;
-    daily?: { date: string; sessions: number; booted: number }[];
+    daily?: { date: string; sessions: number; booted: number; bots?: number }[];
     medianDurationSec: number;
+    /** Datacenter/cloud bot sessions, flagged server-side by source IP and
+     *  excluded from every metric above. Surfaced so the count is visible. */
+    botSessions?: number;
     generatedAt: number;
   }
 
@@ -157,6 +160,12 @@
         <div class="lbl">Median session</div>
       </div>
     </div>
+    {#if data.botSessions}
+      <p class="bot-note">
+        🤖 {data.botSessions} datacenter bot session{data.botSessions === 1 ? "" : "s"} excluded
+        <span class="sub">flagged server-side by cloud IP (AWS/Azure/GCP) — never counted above</span>
+      </p>
+    {/if}
 
     <!-- Sessions per day — temporal signal for "when did players show up" -->
     <section class="daily">
@@ -166,7 +175,7 @@
       {:else}
         <div class="daily-chart">
           {#each daily as d (d.date)}
-            <div class="day-col" title="{d.date}: {d.sessions} session{d.sessions === 1 ? '' : 's'}, {d.booted} booted">
+            <div class="day-col" title="{d.date}: {d.sessions} session{d.sessions === 1 ? '' : 's'}, {d.booted} booted{d.bots ? ` (+${d.bots} bot excluded)` : ''}">
               <span class="day-n">{d.sessions}</span>
               <div class="day-bar-track">
                 <div class="day-bar" style="height:{maxDaily ? Math.max(3, Math.round((d.sessions / maxDaily) * 100)) : 0}%">
@@ -307,6 +316,8 @@
   }
   .btn:hover { background: rgba(167, 243, 208, 0.1); }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
+  .bot-note { margin: 0.5rem 0 0; font-size: 0.82rem; color: rgba(224, 231, 255, 0.6); }
+  .bot-note .sub { display: block; margin-top: 0.1rem; }
   .card {
     background: #131a26; border: 1px solid rgba(167, 243, 208, 0.12);
     border-radius: 6px; padding: 0.9rem 1rem;

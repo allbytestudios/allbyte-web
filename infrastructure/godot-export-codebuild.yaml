@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Cloud Godot web-export + deploy for the `develop` channel. A push to the
+  private game repo's develop branch triggers CodeBuild, which runs a headless
+  Godot export inside a pinned exporter image, then runs scripts/push-channel.js
+  to obfuscate + deploy to s3://<SiteBucket>/godot/develop/ and publish
+  channels.json. All creds are role/Secrets-Manager based; no key material or
+  source lives in this (public) template.
+  SCAFFOLD — deployable once (a) the ExporterImageUri exists in ECR and
+  (b) Arc confirms the export is hermetic from a clean clone. See
+  APP_CLAUDE_CLOUD_EXPORTER_SPEC.md.
+
+Parameters:
+  GitHubConnectionArn:
+    Type: String
+    Description: >
+      CodeConnections (CodeStar) connection ARN authorizing read of the PRIVATE
+      game repo. Created once via console OAuth — never a pasted token.
+  GameRepoId:
+    Type: String
+    Description: "owner/repo of the PRIVATE game source (e.g. AllByte/ChroniclesOfNesis)."
+  BuildBranch:
+    Type: String
+    Default: develop
+    Description: Branch whose pushes trigger a build+deploy.
+  ExporterImageUri:
+    Type: String
+    Description: >
+      ECR image URI (pinned by digest) of the exporter: Godot 4.6.2 headless +
+      web export templates + node. Built from a REVIEWED commit of the public
+      exporter repo — community PRs do not auto-flow in.
+  KeySecretArn:
+    Type: String
+    Description: >
+      Secrets Manager ARN of the Godot script-encryption key (game/content key).
+      Value provisioned out-of-band by the owner/Arc; never in this template.
+  SiteBucket:
+    Type: String
+    Default: allbyte.studio-site
+  DistributionId:
+    Type: String
+    Default: E1M9YWY7UW7130
+
+Resources:
+  # --- least-privilege build role: can ONLY ship the develop debug path -------
+  ExportBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: allbyte-studio-godot-develop-export
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codebuild.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: deploy-develop-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # write ONLY the develop debug prefix + the shared channels.json.
+              # Cannot touch /godot/public, /godot/beta, the site, anything else.
+              - Sid: WriteDevelopObjects
+                Effect: Allow
+                Action: [s3:PutObject, s3:GetObject]
+                Resource:
+                  - !Sub "arn:aws:s3:::${SiteBucket}/godot/develop/*"
+                  - !Sub "arn:aws:s3:::${SiteBucket}/godot/channels.json"
+              # aws s3 sync needs ListBucket, scoped to the develop prefix.
+              - Sid: ListDevelopPrefix
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${SiteBucket}"
+                Condition:
+                  StringLike:
+                    "s3:prefix": ["godot/develop/*", "godot/channels.json"]
+              - Sid: InvalidateOneDistribution
+                Effect: Allow
+                Action: cloudfront:CreateInvalidation
+                Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${DistributionId}"
+              # read ONLY the one key secret (also injected as masked env below).
+              - Sid: ReadKeySecret
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref KeySecretArn
+              - Sid: UseSourceConnection
+                Effect: Allow
+                Action: codestar-connections:UseConnection
+                Resource: !Ref GitHubConnectionArn
+              - Sid: PullExporterImage
+                Effect: Allow
+                Action: [ecr:GetDownloadUrlForLayer, ecr:BatchGetImage, ecr:BatchCheckLayerAvailability]
+                Resource: "*"
+              - Sid: EcrAuth
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Sid: Logs
+                Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/allbyte-godot-develop:*"
+
+  ExportProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: allbyte-godot-develop
+      Description: Headless Godot web export + push-channel deploy for the develop channel.
+      ServiceRole: !GetAtt ExportBuildRole.Arn
+      TimeoutInMinutes: 30
+      Artifacts: { Type: NO_ARTIFACTS }
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: !Ref ExporterImageUri
+        ImagePullCredentialsType: SERVICE_ROLE
+        EnvironmentVariables:
+          - { Name: SITE_BUCKET, Value: !Ref SiteBucket }
+          - { Name: DISTRIBUTION_ID, Value: !Ref DistributionId }
+          # key arrives as a MASKED env var — never printed, never in the repo.
+          - { Name: GODOT_RELEASE_SCRIPT_KEY, Type: SECRETS_MANAGER, Value: !Ref KeySecretArn }
+      Source:
+        Type: GITHUB
+        Location: !Sub "https://github.com/${GameRepoId}.git"
+        Auth: { Type: CODECONNECTIONS, Resource: !Ref GitHubConnectionArn }
+        # buildspec lives in the PRIVATE game repo (Arc owns the export command);
+        # see the spec doc for its required shape.
+        BuildSpec: buildspec.develop.yml
+      SourceVersion: !Ref BuildBranch
+      Triggers:
+        Webhook: true
+        FilterGroups:
+          - - { Type: EVENT, Pattern: PUSH }
+            - { Type: HEAD_REF, Pattern: !Sub "^refs/heads/${BuildBranch}$" }
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: /aws/codebuild/allbyte-godot-develop
+
+Outputs:
+  ProjectName: { Value: !Ref ExportProject }
+  BuildRoleArn: { Value: !GetAtt ExportBuildRole.Arn }

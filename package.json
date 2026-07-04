@@ -15,6 +15,8 @@
     "usage": "node scripts/claude-usage.js",
     "push-packs": "node scripts/push-packs.js",
     "obfuscate-godot": "node scripts/obfuscate-godot-export.js",
+    "deploy-watcher": "node scripts/deploy-watcher.js",
+    "deploy-watcher:once": "node scripts/deploy-watcher.js --once",
     "dev": "astro dev --host 0.0.0.0",
     "build": "node scripts/sync-assets.js && astro build && node scripts/inject-sw-version.js",
     "preview": "astro preview",

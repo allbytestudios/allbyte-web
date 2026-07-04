@@ -128,8 +128,26 @@ if (process.env.SKIP_GODOT_OBFUSCATION === "1") {
   console.log("[push-channel] SKIP_GODOT_OBFUSCATION=1 — shipping base verbatim.");
 } else if (!dryRun) {
   console.log("[push-channel] running Godot key obfuscator on base build...");
-  try { execSync(`node "${join(root, "scripts", "obfuscate-godot-export.js")}" "${baseDir}"`, { stdio: "inherit" }); }
-  catch { die("obfuscator refused — fix local state per its message; aborting (nothing uploaded)."); }
+  const obf = `node "${join(root, "scripts", "obfuscate-godot-export.js")}" "${baseDir}"`;
+  const runObf = () => execSync(obf, { stdio: ["ignore", "inherit", "pipe"], encoding: "utf8" });
+  try { runObf(); }
+  catch (e) {
+    // Self-heal the one recoverable refusal: the game-side pipeline obfuscated,
+    // then re-exported the WASM, orphaning the shim (stale SHA marker). This env
+    // has the key, so the obfuscator's own prescribed fix — delete the shim and
+    // re-obfuscate the fresh export — is safe and deterministic. Any OTHER
+    // refusal (missing key, etc.) still hard-aborts.
+    const msg = String((e && e.stderr) || "") + String((e && e.stdout) || "");
+    const staleShim = /re-exported after obfuscation|different WASM|Delete pck-key-shim\.js/.test(msg);
+    if (staleShim && existsSync(shimPath)) {
+      console.log("[push-channel] stale shim (re-export after obfuscation) — deleting shim + re-obfuscating once...");
+      try { unlinkSync(shimPath); } catch { /* best-effort */ }
+      try { runObf(); }
+      catch { die("obfuscator still refused after stale-shim recovery — aborting (nothing uploaded)."); }
+    } else {
+      die("obfuscator refused — fix local state per its message; aborting (nothing uploaded).");
+    }
+  }
 } else { console.log(`[dry-run] node scripts/obfuscate-godot-export.js "${baseDir}"`); }
 
 if (!dryRun && existsSync(baseJs) && !/\.wasm\?v=/.test(readFileSync(baseJs, "utf8")))

@@ -13,8 +13,10 @@
 FROM node:22-bookworm-slim
 
 # --- OS deps (Godot headless + build tooling) ---------------------------------
+# python3 + git are required by cloud_export.sh (build_manifest.py / audit scripts,
+# and the git short-sha stamp).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl unzip fontconfig libfontconfig1 \
+      ca-certificates curl unzip git python3 fontconfig libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*
 
 # --- AWS CLI v2 (push-channel.js shells out to `aws`) --------------------------
@@ -43,6 +45,10 @@ RUN set -eux; \
     cp -r /tmp/tpl/templates/* "/root/.local/share/godot/export_templates/${GODOT_TEMPLATE_DIR}/"; \
     rm -rf /tmp/godot.zip /tmp/templates.tpz /tmp/tpl; \
     godot --version
+
+# cloud_export.sh expects the IMAGE to set GODOT_BIN explicitly (its `godot` is the
+# real 4.6.2; the script's local-only fallback path doesn't exist here).
+ENV GODOT_BIN=/usr/local/bin/godot
 
 # --- Deployer scripts (baked, pinned to this repo's commit) --------------------
 # Pure Node builtins — no npm install. Rebuilt automatically by the workflow when

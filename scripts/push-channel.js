@@ -145,7 +145,8 @@ if (process.env.SKIP_GODOT_OBFUSCATION === "1") {
       try { runObf(); }
       catch { die("obfuscator still refused after stale-shim recovery — aborting (nothing uploaded)."); }
     } else {
-      die("obfuscator refused — fix local state per its message; aborting (nothing uploaded).");
+      if (msg.trim()) console.error(msg.trim());
+      die("obfuscator refused — see its message above; aborting (nothing uploaded).");
     }
   }
 } else { console.log(`[dry-run] node scripts/obfuscate-godot-export.js "${baseDir}"`); }

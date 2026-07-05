@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  OIDC role for the GitHub Actions workflow that builds the Godot exporter image
+  and pushes it to ECR. No stored keys — GitHub assumes this role via the existing
+  token.actions.githubusercontent.com OIDC provider. Scoped to push ONLY the
+  allbyte/godot-exporter ECR repo, only from allbyte-web@main.
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: allbytestudios/allbyte-web
+  GitHubRef:
+    Type: String
+    Default: refs/heads/main
+  EcrRepoName:
+    Type: String
+    Default: allbyte/godot-exporter
+
+Resources:
+  ExporterImagePushRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: allbyte-studio-github-exporter-image
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+              StringLike:
+                "token.actions.githubusercontent.com:sub": !Sub "repo:${GitHubRepo}:ref:${GitHubRef}"
+      Policies:
+        - PolicyName: push-exporter-image
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: EcrAuth
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Sid: PushToExporterRepoOnly
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: !Sub "arn:aws:ecr:us-east-1:${AWS::AccountId}:repository/${EcrRepoName}"
+
+Outputs:
+  RoleArn:
+    Value: !GetAtt ExporterImagePushRole.Arn

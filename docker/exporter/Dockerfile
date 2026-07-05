@@ -49,6 +49,10 @@ RUN set -eux; \
 # cloud_export.sh expects the IMAGE to set GODOT_BIN explicitly (its `godot` is the
 # real 4.6.2; the script's local-only fallback path doesn't exist here).
 ENV GODOT_BIN=/usr/local/bin/godot
+# Compat shim: Arc's Tier-2 gate (run-tests.sh) hardcodes the container godot path
+# instead of honoring $GODOT_BIN. Provide it so the gate finds Godot 4.6.2.
+# TODO(arc): make run-tests.sh honor GODOT_BIN, then drop this.
+RUN mkdir -p /workspace/GameDev/Godots && ln -sf /usr/local/bin/godot /workspace/GameDev/Godots/godot4
 
 # --- Deployer scripts (baked, pinned to this repo's commit) --------------------
 # Pure Node builtins — no npm install. Rebuilt automatically by the workflow when

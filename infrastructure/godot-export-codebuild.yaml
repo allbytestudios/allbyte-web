@@ -87,7 +87,11 @@ Resources:
                 Resource: !Ref KeySecretArn
               - Sid: UseSourceConnection
                 Effect: Allow
-                Action: codestar-connections:UseConnection
+                # both names — the service was renamed CodeStar Connections → CodeConnections;
+                # a connection's ARN/required action depends on when/how it was created.
+                Action:
+                  - codestar-connections:UseConnection
+                  - codeconnections:UseConnection
                 Resource: !Ref GitHubConnectionArn
               - Sid: PullExporterImage
                 Effect: Allow

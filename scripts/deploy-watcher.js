@@ -19,7 +19,7 @@
  * Env:   EXPORT_ROOT (default: Chronicles WebBootstrap/export), POLL_MS (5000).
  */
 import { spawnSync } from "child_process";
-import { existsSync, readdirSync, readFileSync, writeFileSync, unlinkSync, statSync, appendFileSync } from "fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync, unlinkSync, statSync, appendFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -89,6 +89,25 @@ function scan() {
     }
   } finally { busy = false; }
 }
+
+// Single-instance lock — this daemon mutates the shared export dir; two copies
+// racing on one build would corrupt it. Refuse to start if a live instance holds
+// the lock; take over a stale one (dead PID).
+const LOCK = join(root, ".tmp", "deploy-watcher.lock");
+try {
+  if (!existsSync(join(root, ".tmp"))) mkdirSync(join(root, ".tmp"), { recursive: true });
+  if (existsSync(LOCK)) {
+    const pid = Number(readFileSync(LOCK, "utf8").trim());
+    let alive = false;
+    try { process.kill(pid, 0); alive = true; } catch { /* dead → stale lock */ }
+    if (alive && pid !== process.pid) { log(`another instance (pid ${pid}) is running — exiting.`); process.exit(0); }
+  }
+  writeFileSync(LOCK, String(process.pid));
+  const release = () => { try { if (existsSync(LOCK) && Number(readFileSync(LOCK, "utf8").trim()) === process.pid) unlinkSync(LOCK); } catch { /* best-effort */ } };
+  process.on("exit", release);
+  process.on("SIGINT", () => process.exit(0));
+  process.on("SIGTERM", () => process.exit(0));
+} catch (e) { log(`lock error (continuing): ${e.message}`); }
 
 log(`watching ${EXPORT_ROOT} every ${POLL_MS}ms (auto dev channels: ${[...DEV_CHANNELS].join(", ")})`);
 scan();

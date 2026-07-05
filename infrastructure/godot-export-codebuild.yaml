@@ -26,9 +26,11 @@ Parameters:
   ExporterImageUri:
     Type: String
     Description: >
-      ECR image URI (pinned by digest) of the exporter: Godot 4.6.2 headless +
+      ECR image URI (pinned by tag/digest) of the exporter: Godot 4.6.2 headless +
       web export templates + node. Built from a REVIEWED commit of the public
-      exporter repo — community PRs do not auto-flow in.
+      exporter repo — community PRs do not auto-flow in. Push target (created):
+      408667082077.dkr.ecr.us-east-1.amazonaws.com/allbyte/godot-exporter — tags
+      are IMMUTABLE, so use a unique tag per build (e.g. godot-4.6.2-<date>).
   KeySecretArn:
     Type: String
     Description: >
@@ -100,8 +102,44 @@ Resources:
                 Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/allbyte-godot-develop:*"
 
+  # Declared (not auto-created) so retention is set and the metric filter attaches.
+  ExportLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/codebuild/allbyte-godot-develop
+      RetentionInDays: 30
+
+  # Turns Arc's final structured log line
+  # {stage, ok, duration_s, bytes, version, git_sha, channel} into an alarmable
+  # metric — a failed cloud develop export/deploy.
+  BuildFailureMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ExportLogGroup
+      FilterPattern: '{ $.ok IS FALSE }'
+      MetricTransformations:
+        - MetricNamespace: AllByte/GodotExport
+          MetricName: DevelopBuildFailure
+          MetricValue: "1"
+          DefaultValue: 0
+
+  BuildFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: allbyte-godot-develop-build-failure
+      AlarmDescription: A cloud develop export/deploy emitted ok:false (see CodeBuild logs).
+      Namespace: AllByte/GodotExport
+      MetricName: DevelopBuildFailure
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
   ExportProject:
     Type: AWS::CodeBuild::Project
+    DependsOn: ExportLogGroup
     Properties:
       Name: allbyte-godot-develop
       Description: Headless Godot web export + push-channel deploy for the develop channel.
@@ -134,7 +172,7 @@ Resources:
       LogsConfig:
         CloudWatchLogs:
           Status: ENABLED
-          GroupName: /aws/codebuild/allbyte-godot-develop
+          GroupName: !Ref ExportLogGroup
 
 Outputs:
   ProjectName: { Value: !Ref ExportProject }

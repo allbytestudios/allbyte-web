@@ -154,7 +154,11 @@ Resources:
         EnvironmentVariables:
           - { Name: SITE_BUCKET, Value: !Ref SiteBucket }
           - { Name: DISTRIBUTION_ID, Value: !Ref DistributionId }
-          # key arrives as a MASKED env var — never printed, never in the repo.
+          # Same key, TWO names (both MASKED, never printed/committed):
+          #   GODOT_SCRIPT_ENCRYPTION_KEY  — Godot's export step (cloud_export.sh) reads this
+          #   GODOT_RELEASE_SCRIPT_KEY     — our obfuscator (obfuscate-godot-export.js) reads this
+          # The Secrets Manager secret must be a PLAIN string (the 64-hex key), not JSON.
+          - { Name: GODOT_SCRIPT_ENCRYPTION_KEY, Type: SECRETS_MANAGER, Value: !Ref KeySecretArn }
           - { Name: GODOT_RELEASE_SCRIPT_KEY, Type: SECRETS_MANAGER, Value: !Ref KeySecretArn }
       Source:
         Type: GITHUB

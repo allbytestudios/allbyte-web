@@ -33,9 +33,10 @@ const DEV_CHANNELS = new Set(["develop", "beta-debug"]);
 const pusher = join(root, "scripts", "push-channel.js");
 const once = process.argv.includes("--once");
 
-// Set DEPLOY_WATCHER_LOG (the scheduled task does) to also append to a file —
-// a background daemon is invisible otherwise.
-const LOG_FILE = process.env.DEPLOY_WATCHER_LOG || "";
+// --log <path> (or DEPLOY_WATCHER_LOG) also appends to a file — a background
+// daemon is invisible otherwise. The scheduled task passes --log.
+const _logArg = process.argv.indexOf("--log");
+const LOG_FILE = (_logArg !== -1 && process.argv[_logArg + 1]) || process.env.DEPLOY_WATCHER_LOG || "";
 function log(...a) {
   const line = `[deploy-watcher ${new Date().toISOString()}] ${a.join(" ")}`;
   console.log(line);

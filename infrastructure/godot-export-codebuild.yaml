@@ -87,11 +87,16 @@ Resources:
                 Resource: !Ref KeySecretArn
               - Sid: UseSourceConnection
                 Effect: Allow
-                # both names — the service was renamed CodeStar Connections → CodeConnections;
-                # a connection's ARN/required action depends on when/how it was created.
+                # CodeBuild validates at project-create that the role can pull via the
+                # connection — needs Get*/Use, not just UseConnection. Both service
+                # namespaces (renamed CodeStar Connections → CodeConnections).
                 Action:
-                  - codestar-connections:UseConnection
                   - codeconnections:UseConnection
+                  - codeconnections:GetConnection
+                  - codeconnections:GetConnectionToken
+                  - codestar-connections:UseConnection
+                  - codestar-connections:GetConnection
+                  - codestar-connections:GetConnectionToken
                 Resource: !Ref GitHubConnectionArn
               - Sid: PullExporterImage
                 Effect: Allow

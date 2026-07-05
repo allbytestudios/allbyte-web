@@ -12,6 +12,7 @@ on:
       - docker/exporter/**
       - scripts/push-channel.js
       - scripts/obfuscate-godot-export.js
+      - src/lib/gameVersions.ts
       - .github/workflows/exporter-image.yml
 
 concurrency:

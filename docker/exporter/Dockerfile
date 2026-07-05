@@ -58,5 +58,8 @@ RUN mkdir -p /workspace/GameDev/Godots && ln -sf /usr/local/bin/godot /workspace
 # Pure Node builtins — no npm install. Rebuilt automatically by the workflow when
 # these change (keeps CodeBuild's copy in sync with allbyte-web).
 COPY scripts/push-channel.js scripts/obfuscate-godot-export.js /opt/exporter/
+# push-channel.js reads the channel→path map from gameVersions.ts (as text),
+# resolved relative to itself at /opt/src/lib/gameVersions.ts.
+COPY src/lib/gameVersions.ts /opt/src/lib/gameVersions.ts
 
 WORKDIR /workspace

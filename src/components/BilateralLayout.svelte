@@ -1,7 +1,6 @@
 <script lang="ts">
   import EnginePanel from "./EnginePanel.svelte";
   import HeartPanel from "./HeartPanel.svelte";
-  import MilestoneBadge from "./MilestoneBadge.svelte";
   import gameVersion from "../data/game-version.json";
   import { auth, initAuth, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
@@ -224,9 +223,6 @@
 
   <div class="demo-section">
     <div class="demo-row" style="position: relative;" onclick={launchGame} onmouseenter={onDemoEnter} onmouseleave={onDemoLeave}>
-      <div class="overlay-badges" onclick={(e) => e.stopPropagation()}>
-        <MilestoneBadge />
-      </div>
       {#if pickerList.length > 1}
         <div class="version-picker" onclick={(e) => e.stopPropagation()} role="presentation">
           <label class="version-picker-label" for="game-version-select">Version</label>
@@ -857,63 +853,6 @@
     transition: all 0.4s ease;
   }
 
-  /* Thin overlay badges in the top-right of the demo button */
-  .overlay-badges {
-    position: absolute;
-    top: 0.6rem;
-    right: 0.6rem;
-    z-index: 20;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    align-items: flex-end;
-  }
-
-  /* Mobile / narrow: drop the absolute positioning entirely. The badges
-     flow naturally at the TOP of .demo-row as a side-by-side row, pushing
-     the demo image down inside the row instead of floating above where
-     they'd collide with the header (sign-in buttons, etc). */
-  @media (max-width: 900px) {
-    .overlay-badges {
-      position: relative;
-      top: auto;
-      right: auto;
-      left: auto;
-      bottom: auto;
-      flex-direction: row;
-      align-items: stretch;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.55rem 0.55rem 0.25rem;
-      width: auto;
-    }
-    .overlay-badges > :global(*) {
-      flex: 1 1 0;
-      min-width: 0;
-      max-width: 220px;
-    }
-    :global(.overlay-badges .milestone-badge),
-    :global(.overlay-badges .test-suite-pill) {
-      width: auto;
-    }
-    :global(.overlay-badges .milestone-badge) {
-      font-size: 0.72rem;
-    }
-  }
-
-  /* Very narrow mobile: side-by-side pinches the text so hard that labels get
-     clipped. Stack the badges so each takes the full container width. */
-  @media (max-width: 640px) {
-    .overlay-badges {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 0.45rem;
-    }
-    .overlay-badges > :global(*) {
-      max-width: none;
-      width: 100%;
-    }
-  }
 
   .version-picker {
     display: flex;

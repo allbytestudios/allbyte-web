@@ -1,6 +1,159 @@
 {
-  "generatedAt": "2026-07-01T02:11:18.063Z",
+  "generatedAt": "2026-07-06T23:46:58.863Z",
   "releases": [
+    {
+      "version": "v0.7.2109",
+      "date": "2026-07-01",
+      "changes": [
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "treasure-drop system (G3→G4) — kill→drop→pickup verified",
+          "sha": "f2cd7563"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "item-drop persist + _testPickupAt test hook",
+          "sha": "1aa76afe"
+        },
+        {
+          "type": "fix",
+          "scope": "vslime",
+          "subject": "green tint in overworld + correct fadeIn + walrus parse fix",
+          "sha": "332dba40"
+        },
+        {
+          "type": "feat",
+          "scope": "controls",
+          "subject": "suppress control HUD + Controls button on web-mobile via _allbyteMobileContext",
+          "sha": "ab33c742"
+        },
+        {
+          "type": "test",
+          "scope": "controls",
+          "subject": "interactive control-remap regression suite (Tier 3)",
+          "sha": "dd7151a4"
+        },
+        {
+          "type": "fix",
+          "scope": "ControlsMenu",
+          "subject": "conflict-flow unreachable + Esc over-cancel during capture",
+          "sha": "26e21b60"
+        },
+        {
+          "type": "test",
+          "scope": "controls",
+          "subject": "flip conflict xfail (fixed) + pin Esc over-cancel; durable headless WebGL2 boot",
+          "sha": "1d601333"
+        },
+        {
+          "type": "fix",
+          "scope": "controls",
+          "subject": "guard MenuOverlay autoload against closing ControlsMenu mid-capture",
+          "sha": "b9ea08a1"
+        },
+        {
+          "type": "fix",
+          "scope": "controls",
+          "subject": "guard all 4 Esc-closers + Escape reserved/permanent on Cancel",
+          "sha": "74815592"
+        },
+        {
+          "type": "feat",
+          "scope": "title",
+          "subject": "restore cloud art — remove CloudCanvasLayer visible=false",
+          "sha": "669cd0c4"
+        },
+        {
+          "type": "feat",
+          "scope": "ControlsMenu",
+          "subject": "5-item UI refinement pass",
+          "sha": "1d4d2820"
+        },
+        {
+          "type": "feat",
+          "scope": "controls-menu",
+          "subject": "device-scoped column nav, bottom-left feather, bigger fonts, full-width buttons",
+          "sha": "e63cbefd"
+        },
+        {
+          "type": "fix",
+          "scope": "ControlsMenu",
+          "subject": "feather corner bottom-LEFT → bottom-RIGHT (2px inset)",
+          "sha": "1126d76b"
+        },
+        {
+          "type": "fix",
+          "scope": "ControlsMenu",
+          "subject": "GLYPH_ACTION popup — feather + nav as real modal submenu",
+          "sha": "2a7a0f04"
+        },
+        {
+          "type": "fix",
+          "scope": "controls",
+          "subject": "gpos := walrus broke ControlsMenu autoload load (v2091 regression)",
+          "sha": "c744630b"
+        },
+        {
+          "type": "test",
+          "scope": "controls",
+          "subject": "regression suite for popup-driven ControlsMenu remapping",
+          "sha": "ff1a0482"
+        },
+        {
+          "type": "fix",
+          "scope": "controls-menu",
+          "subject": "resolve 3 glyph-action popup bugs (Esc dismiss, click leak, feather)",
+          "sha": "6e0b1114"
+        },
+        {
+          "type": "fix",
+          "scope": "controls",
+          "subject": "popup buttons unclickable — GLYPH_ACTION _input ate mouse clicks",
+          "sha": "806ef086"
+        },
+        {
+          "type": "tools",
+          "subject": "deploy-history manifest emitter + backfill v0.7.2066–2069",
+          "sha": "936a50e8"
+        },
+        {
+          "type": "tools",
+          "subject": "promote_to_staging.sh — staging-cut ritual + auto-emit deploy manifest",
+          "sha": "190d37b5"
+        },
+        {
+          "type": "tools",
+          "subject": "backfill full deploy manifest from G4-migration anchor (v0.4.5 → v0.7.2100)",
+          "sha": "b7084cce"
+        },
+        {
+          "type": "fix",
+          "scope": "deploy-manifest",
+          "subject": "re-add squashed v0.7.2069 + dedupe bounced version keys",
+          "sha": "fd3ebbc5"
+        },
+        {
+          "type": "fix",
+          "scope": "controls",
+          "subject": "right-click dismiss fires on RELEASE, not PRESS",
+          "sha": "57caf532"
+        },
+        {
+          "type": "test",
+          "scope": "controls",
+          "subject": "correct headed-tier docstring to verified data + register realbrowser marker",
+          "sha": "65ae8fb7"
+        },
+        {
+          "type": "chore",
+          "scope": "release",
+          "subject": "bump WEB_VERSION 0.7.2108 -> 0.7.2109 (release build staged for App)",
+          "sha": "277f593b"
+        }
+      ]
+    },
     {
       "version": "v0.7.2069",
       "date": "2026-06-28",

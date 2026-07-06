@@ -42,6 +42,13 @@ Parameters:
   DistributionId:
     Type: String
     Default: E1M9YWY7UW7130
+  SecureTemplateBucket:
+    Type: String
+    Default: allbyte-studio-cfn-deploy
+    Description: >
+      Private bucket holding the key‑baked (SECRET) Godot web export template.
+      The build installs it over the stock template so encrypted PCKs decrypt at
+      runtime. Same trust tier as the Secrets Manager key — never public.
 
 Resources:
   # --- least-privilege build role: can ONLY ship the develop debug path -------
@@ -85,6 +92,11 @@ Resources:
                 Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: !Ref KeySecretArn
+              # the key-baked web export template (secret) — installed before export
+              - Sid: ReadSecureTemplate
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${SecureTemplateBucket}/godot-templates/*"
               - Sid: UseSourceConnection
                 Effect: Allow
                 # CodeBuild validates at project-create that the role can pull via the

@@ -50,8 +50,23 @@ try {
   process.exit(0);
 }
 
-const rows = Array.isArray(spine.scenarios) ? spine.scenarios : [];
-if (rows.length === 0) log("no `scenarios` array in quinn_spine.json yet — writing empty catalogue.");
+// Quinn's launcher rows live in `saves[]` (each: id, scene_id, fixtureId, packs,
+// label, persona). Fall back to a top-level `scenarios[]` if that convention changes.
+const rows = Array.isArray(spine.scenarios)
+  ? spine.scenarios
+  : Array.isArray(spine.saves)
+    ? spine.saves
+    : [];
+if (rows.length === 0) log("no launcher rows (saves[]/scenarios[]) in quinn_spine.json yet — writing empty catalogue.");
+
+// "sluice-gate" → "Sluice Gate"; "waterway1" → "Waterway 1"
+function prettify(id) {
+  if (!id) return "";
+  return String(id)
+    .replace(/[-_]+/g, " ")
+    .replace(/([a-zA-Z])(\d)/g, "$1 $2")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 // Find a save file by id anywhere under the fixture library.
 function findSave(id) {
@@ -76,9 +91,9 @@ let copied = 0;
 let missing = 0;
 
 for (const r of rows) {
-  const fixtureId = r.fixtureId || r.fixture || r.id;
+  const fixtureId = r.fixtureId || r.play_param;
   if (!fixtureId || !SAFE.test(fixtureId)) {
-    log(`skip row with bad fixtureId: ${JSON.stringify(r).slice(0, 80)}`);
+    log(`skip row with no usable fixtureId: ${JSON.stringify(r).slice(0, 80)}`);
     continue;
   }
   const src = findSave(fixtureId);
@@ -94,7 +109,7 @@ for (const r of rows) {
     log(`⚠ could not copy '${fixtureId}': ${e.message}`);
     continue;
   }
-  const section = r.section || "Scenarios";
+  const section = r.section || prettify(r.scene_id) || "Scenarios";
   if (!sections.includes(section)) sections.push(section);
   const packs = Array.isArray(r.packs)
     ? r.packs

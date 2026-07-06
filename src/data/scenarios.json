@@ -1,6 +1,40 @@
 {
   "version": 1,
-  "generated_at": "2026-07-06T03:32:06.177Z",
-  "sections": [],
-  "scenarios": []
+  "generated_at": "2026-07-06T12:51:14.633Z",
+  "sections": [
+    "Waterway 1",
+    "Sluice Gate"
+  ],
+  "scenarios": [
+    {
+      "id": "scn-waterway1",
+      "section": "Waterway 1",
+      "label": "Waterway 1 — dungeon entry (cond 11, first encounter)",
+      "fixtureId": "cond_11_waterway1_entry",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "scn-sluicegate-naked",
+      "section": "Sluice Gate",
+      "label": "Mother Slime boss — UNDERPREPARED (L1 naked, no skills)",
+      "fixtureId": "sluicegate_pre_boss",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "scn-sluicegate-leveled",
+      "section": "Sluice Gate",
+      "label": "Mother Slime boss — LEVELED+SKILLED (L5, Cleanse/Cure/Push, relics)",
+      "fixtureId": "sluicegate_boss_leveled",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    }
+  ]
 }

@@ -25,6 +25,7 @@ import { existsSync, readFileSync, writeFileSync, unlinkSync, statSync } from "f
 import { gzipSync } from "zlib";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { homedir } from "os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
@@ -422,7 +423,7 @@ for (const file of rootFiles) {
 // src/lib/testDataSource.ts). Short cache so snapshots land fast after
 // CON uploads a new one; readers can still hit revalidate on each poll.
 const chroniclesRoot =
-  process.env.CHRONICLES_DIR || "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis";
+  process.env.CHRONICLES_DIR || join(homedir(), "Desktop/GameDev/ChroniclesOfNesis");
 const chroniclesIndex = join(chroniclesRoot, "test_index.json");
 const chroniclesRoadmap = join(chroniclesRoot, "test_roadmap.json");
 const chroniclesResults = join(chroniclesRoot, "test_results");

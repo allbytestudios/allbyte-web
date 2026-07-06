@@ -113,9 +113,19 @@ function verify(path, expected, label) {
   if (got !== expected) die(`sha256 mismatch for ${label}: manifest ${expected.slice(0,12)}… vs disk ${got.slice(0,12)}…`);
   console.log(`[push-channel] sha256 OK — ${label}`);
 }
-const basePck = join(baseDir, (manifest.base && manifest.base.path) || "index.pck");
+// Pack/base names flow into shell (`aws s3 cp … packs/${name}`) and join() — a
+// crafted manifest could inject a command or traverse dirs. Validate to a bare
+// <name>.pck (same rigor the channel slug gets above); reject slashes/metachars.
+const SAFE_PCK = /^[A-Za-z0-9._-]+\.pck$/;
+const basePath = (manifest.base && manifest.base.path) || "index.pck";
+if (!SAFE_PCK.test(basePath)) die(`unsafe base path '${basePath}' — expected a bare <name>.pck`);
+const basePck = join(baseDir, basePath);
 verify(basePck, manifest.base && manifest.base.sha256, "base index.pck");
 const packEntries = (manifest.packs || []).map((p) => (typeof p === "string" ? { path: p } : p));
+for (const p of packEntries) {
+  if (typeof p.path !== "string" || !SAFE_PCK.test(p.path))
+    die(`unsafe pack path '${p && p.path}' — expected a bare <name>.pck (no slashes/metachars)`);
+}
 for (const p of packEntries) verify(join(packsDir, p.path), p.sha256, `pack ${p.path}`);
 
 // --- obfuscate the base build (idempotent) -----------------------------
@@ -158,6 +168,15 @@ if (!dryRun) {
   const htmlRefsShim = readFileSync(baseIndex, "utf8").includes("pck-key-shim.js");
   if (shimExists !== htmlRefsShim)
     die(`shim/HTML mismatch — shim ${shimExists ? "exists" : "missing"}, index.html ${htmlRefsShim ? "references" : "does not reference"} it; refusing.`);
+  // No shim → the obfuscator skipped (key not found / debug template with none).
+  // Fine for a debug/dev channel; for a LIVE channel it would ship an unmasked
+  // key to players — refuse unless explicitly overridden (guards against a future
+  // Godot changing the WASM key layout and silently defeating obfuscation).
+  if (!shimExists && process.env.SKIP_GODOT_OBFUSCATION !== "1") {
+    const m = "obfuscator produced no shim — build ships UNMASKED (key not found, or export embeds none)";
+    if (isLive) die(`${m}. Refusing a LIVE channel unobfuscated; set SKIP_GODOT_OBFUSCATION=1 to override intentionally.`);
+    console.warn(`[push-channel] ⚠ ${m} — allowed for dev channel ${channel}.`);
+  }
 }
 
 // --- sync base + wasm + packs -> /godot/<DEST>/ ------------------------

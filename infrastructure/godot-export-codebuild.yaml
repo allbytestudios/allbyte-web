@@ -101,7 +101,8 @@ Resources:
               - Sid: PullExporterImage
                 Effect: Allow
                 Action: [ecr:GetDownloadUrlForLayer, ecr:BatchGetImage, ecr:BatchCheckLayerAvailability]
-                Resource: "*"
+                # scoped to the exporter repo — build code can't pull arbitrary images
+                Resource: !Sub "arn:aws:ecr:us-east-1:${AWS::AccountId}:repository/allbyte/godot-exporter"
               - Sid: EcrAuth
                 Effect: Allow
                 Action: ecr:GetAuthorizationToken

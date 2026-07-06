@@ -39,6 +39,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash, randomBytes } from "node:crypto";
+import { homedir } from "node:os";
 
 const TARGET_DIR = process.argv[2] || "public/godot";
 const WASM_PATH = join(TARGET_DIR, "index.wasm");
@@ -95,7 +96,7 @@ function findKeyByValue(wasm, keyBuf) {
  *   1. --key=<64-hex> CLI arg
  *   2. $GODOT_RELEASE_SCRIPT_KEY env var
  *   3. GODOT_RELEASE_SCRIPT_KEY line in $GODOT_RELEASE_KEY_ENV_FILE (default:
- *      C:/Users/drew/Desktop/GameDev/docker/.env) via targeted single-line
+ *      ~/Desktop/GameDev/docker/.env) via targeted single-line
  *      regex match — never reads the whole file.
  */
 function resolveKey(argv) {
@@ -108,7 +109,7 @@ function resolveKey(argv) {
 	if (envValue && /^[0-9a-f]{64}$/i.test(envValue)) {
 		return Buffer.from(envValue, "hex");
 	}
-	const envFile = process.env.GODOT_RELEASE_KEY_ENV_FILE || "C:/Users/drew/Desktop/GameDev/docker/.env";
+	const envFile = process.env.GODOT_RELEASE_KEY_ENV_FILE || join(homedir(), "Desktop/GameDev/docker/.env");
 	if (existsSync(envFile)) {
 		try {
 			const text = readFileSync(envFile, "utf8");

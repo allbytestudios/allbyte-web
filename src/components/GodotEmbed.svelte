@@ -130,6 +130,7 @@
     // they don't double-stack.
     window.dispatchEvent(new CustomEvent("music-player:pause"));
     loadStart = Date.now(); // count load time from consent, not page arrival
+    lastProgressAt = Date.now(); // reset the boot-watchdog grace window too
   }
 
   // Tier-gated build variants — see APP_CLAUDE_TIER_GATED_BUILDS.md.
@@ -586,6 +587,18 @@
   // Hides as soon as the engine reports a scene via window.gameState
   // (set by the title scene's _ready).
   let loadStart = Date.now();
+  // Boot WATCHDOG state (the backstop scanForEngineCrash can't be): the
+  // mismatched-pair trap aborts DURING WASM instantiation — before the boot
+  // shell installs its console capture — so the fatal line never reaches
+  // window._consoleLogs and scanForEngineCrash never sees it; the page just
+  // sits on a dead engine. So don't rely on the log: if the engine never
+  // reaches a scene and NOTHING progresses (no new download bytes, no scene)
+  // for a long grace window, treat it as a fatal boot and self-heal. Download
+  // progress and a slow WASM compile both keep this timer alive (any progress
+  // resets it), so only a genuinely stuck boot trips it. Same once-per-session
+  // guard (ab_stale_reload) + same isNonDefaultBuild gate as the other heals.
+  const BOOT_STALL_MS = 45000;
+  let lastProgressAt = Date.now();
   let loadElapsed = $state(0);
   let loadStatus = $state("Starting...");
   let loadLogTail = $state<string[]>([]);
@@ -659,6 +672,7 @@
         if (totalBytes !== bytesDownloaded || count !== filesDownloaded) {
           bytesDownloaded = totalBytes;
           filesDownloaded = count;
+          lastProgressAt = Date.now(); // fresh bytes → boot is still progressing
           // Owner spec (2026-06-01): web reports transport-level progress,
           // game owns the visible loading UI. Emit the postMessage so Arc's
           // Chronicles boot shell can drive a real progress bar instead of
@@ -692,6 +706,20 @@
       loadPanelVisible = false;
       startKbNudge(scene);
       stopLoadPolling();
+      return;
+    }
+
+    // Still no scene. If nothing has progressed for the whole grace window, the
+    // engine is wedged — a mismatched cached wasm/pck pair that trapped during
+    // instantiation, which scanForEngineCrash can't see. Self-heal once. Gated
+    // to the DEFAULT build; self-versioned channels (develop/beta/scenario)
+    // legitimately differ in version and must never trigger this.
+    if (
+      !recoveryTriggered &&
+      !isNonDefaultBuild() &&
+      Date.now() - lastProgressAt > BOOT_STALL_MS
+    ) {
+      hardResetAndReload("boot watchdog: engine never reached a scene (stale cached assets?)");
       return;
     }
 

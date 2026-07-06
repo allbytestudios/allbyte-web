@@ -252,6 +252,15 @@ Two Claude instances work together on this project:
 
 Arc is the owner's primary interface for the game side. Tickets follow: `PLANNING → TECH REVIEW → READY → IN PROGRESS → TESTING → DONE`. Each lead can spawn workers within a slot budget.
 
+### Quinn — QA / marketing / balance peer seat
+**Quinn is an active peer seat, not Arc's subagent and not historical** — her own session; the owner talks to her directly. She coordinates via `QA_CLAUDE_*.md` (she writes) ↔ `CON_CLAUDE_*.md` (Arc replies), in the same `Desktop/GameDev/` coord dir.
+
+App consumes two things from Quinn:
+- **Marketing masters** — 16:9 native-res captures (croppable framing noted) in `Quinn/published/`. The clip → caption → publish pipeline is App's.
+- **`Quinn/published/quinn_spine.json`** — the scenario-launcher content source (gameplay-order rows: `label`, `packs`, `fixtureId`, optional `persona`). Quinn owns the spine *and* the referenced save fixtures; App renders + loads.
+
+**Fixture boundary:** scenario saves the launcher loads must live in `ChroniclesOfNesis/WebTests/fixtures/saves/` (Arc commits them there from Quinn's library). A save that's only in `Quinn/reports/` is invisible to the launcher — always reference the promoted library `fixtureId`, never a reports path. App mirrors the handful of launcher-referenced saves into its own origin (CORS: the launcher fetches them same-origin, then hands the bytes to the game iframe via `_testImportSave`).
+
 ### Data Files Arc Publishes
 The webapp consumes these from `ChroniclesOfNesis/tickets/` (and a couple from the repo root). The dev SSE allowlist in `astro.config.mjs` is the source of truth for which files trigger live updates:
 | File | Purpose | Schema version |

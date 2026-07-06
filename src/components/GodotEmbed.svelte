@@ -10,6 +10,7 @@
   import DownloadGate from "./DownloadGate.svelte";
   import { downloadState, ackDownload } from "../lib/downloadGate";
   import gameVersion from "../data/game-version.json";
+  import { versionById } from "../lib/gameVersions";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
   //
@@ -170,7 +171,23 @@
     }
   }
 
+  // Scenario-launcher deep-link: admin/Legend can force a specific channel/build
+  // via ?channel=<id> (e.g. the debug `develop` cloud build at /godot/develop/).
+  // Maps the id → path through gameVersions.ts. Ignored for everyone else, who
+  // get the normal tier-resolved build. This is what lets a "jump into develop"
+  // link target the cloud build without touching normal /play routing.
+  function getChannelOverride(): string | null {
+    if (typeof window === "undefined") return null;
+    const c = new URLSearchParams(window.location.search).get("channel");
+    if (!c) return null;
+    if (!(isAdmin(auth.currentUser) || isTierAtLeast(auth.currentUser, "legend"))) return null;
+    const v = versionById(c);
+    return v ? v.path : null;
+  }
+
   function resolveGameUrl(): string {
+    const channel = getChannelOverride();
+    if (channel) return channel;
     // Installed PWA → the clean public (non-debug) build (owner: "pwa only
     // install non debug"). The public export boots as of v0.7.2066+. Bonus:
     // it's a different path than the debug build, so a PWA stuck on a stale
@@ -437,6 +454,36 @@
     }
   });
 
+  // Scenario-launcher hooks: drive a debug build into a specific state via URL
+  // params — warp to a scene, set an AutoPlay persona/encounter, load packs.
+  // Admin/Legend only (the hooks only exist in debug builds; inert otherwise).
+  // Sequence is PROVISIONAL pending Arc's canonical order — see
+  // APP_CLAUDE_SCENARIO_LAUNCHER_ASK.md (persona before fixture; warp/encounter
+  // after the fixture import settles).
+  function applyScenarioHooks() {
+    if (typeof window === "undefined") return;
+    if (!(isAdmin(auth.currentUser) || isTierAtLeast(auth.currentUser, "legend"))) return;
+    const win = iframeEl?.contentWindow as any;
+    if (!win) return;
+    const q = new URLSearchParams(window.location.search);
+    const packs = q.get("packs");
+    const persona = q.get("persona");
+    const warp = q.get("warp");
+    const encounter = q.get("encounter");
+    const autoplay = q.get("autoplay") === "1";
+    if (!(packs || persona || warp || encounter || autoplay)) return;
+    try {
+      if (packs) win._testLoadPacks = packs;
+      if (persona) win._testAutoplayJPPolicy = persona;
+    } catch { /* cross-origin / iframe not ready */ }
+    setTimeout(() => {
+      try {
+        if (warp) win._testWarpToScene = warp;
+        if (autoplay || encounter) win._testAutoplayEncounterMode = encounter || "default";
+      } catch { /* ignore */ }
+    }, fixture ? 2600 : 400);
+  }
+
   function onLoad() {
     loading = false;
     // Re-assert the parent mobile-context flag in case it was cleared; the
@@ -451,6 +498,7 @@
         );
       }, 2000);
     }
+    applyScenarioHooks();
   }
 
   function onError() {

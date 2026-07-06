@@ -358,7 +358,8 @@
     // acknowledged (so cached) or an admin fixture load → straight through;
     // otherwise hold the iframe behind the consent notice.
     const dlState = downloadState();
-    if (fixture || dlState === "ready") {
+    const hasScenario = new URLSearchParams(window.location.search).has("scenario");
+    if (fixture || hasScenario || dlState === "ready") {
       allowed = true;
       // Game brings its own music — pause the persistent site player.
       window.dispatchEvent(new CustomEvent("music-player:pause"));
@@ -454,34 +455,82 @@
     }
   });
 
-  // Scenario-launcher hooks: drive a debug build into a specific state via URL
-  // params — warp to a scene, set an AutoPlay persona/encounter, load packs.
-  // Admin/Legend only (the hooks only exist in debug builds; inert otherwise).
-  // Sequence is PROVISIONAL pending Arc's canonical order — see
-  // APP_CLAUDE_SCENARIO_LAUNCHER_ASK.md (persona before fixture; warp/encounter
-  // after the fixture import settles).
-  function applyScenarioHooks() {
+  // --- Scenario launcher (admin/Legend) — Arc's canonical load sequence -------
+  // A "scenario" IS a save file. Load it via the proven test-suite path: mount
+  // packs → WAIT until their scene classes register (packsLoaded) → _testImportSave
+  // (inline data) → _testLoadGame (the real DAL "Continue" — restores the party
+  // AND warps into the saved scene). The save carries its own scene, so there is
+  // no warp param. The ~1.7 KB save is fetched SAME-ORIGIN (App mirrors the game
+  // repo's fixture library into /scenario-fixtures/), then handed to the game
+  // inline — the game never fetches a save by id (that hook is deliberately
+  // absent from the hardened build). Optional persona is an AutoPlay overlay
+  // after the load. Hooks exist only in debug builds; inert otherwise. See
+  // CON_CLAUDE_SCENARIO_SAVE_DELIVERY.md.
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  async function waitFor(pred: () => boolean, timeoutMs: number, intervalMs = 150) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      try { if (pred()) return true; } catch { /* iframe not ready */ }
+      await sleep(intervalMs);
+    }
+    return false;
+  }
+
+  async function runScenario() {
     if (typeof window === "undefined") return;
     if (!(isAdmin(auth.currentUser) || isTierAtLeast(auth.currentUser, "legend"))) return;
-    const win = iframeEl?.contentWindow as any;
-    if (!win) return;
     const q = new URLSearchParams(window.location.search);
-    const packs = q.get("packs");
+    const scenario = q.get("scenario");
+    if (!scenario || !/^[A-Za-z0-9._-]+$/.test(scenario)) return;
+    const packs = (q.get("packs") || "").split(",").map((s) => s.trim()).filter(Boolean);
     const persona = q.get("persona");
-    const warp = q.get("warp");
     const encounter = q.get("encounter");
-    const autoplay = q.get("autoplay") === "1";
-    if (!(packs || persona || warp || encounter || autoplay)) return;
+    const win = () => iframeEl?.contentWindow as any;
+
+    // 1. engine up (Title reached)
+    if (!(await waitFor(() => win()?.gameState?.ready === true, 30000))) {
+      console.warn(`[scenario] engine never reported ready — aborting '${scenario}'`);
+      return;
+    }
+    // 2. fetch the save JSON same-origin (no CORS; the game never fetches it)
+    let saveData: unknown;
     try {
-      if (packs) win._testLoadPacks = packs;
-      if (persona) win._testAutoplayJPPolicy = persona;
-    } catch { /* cross-origin / iframe not ready */ }
-    setTimeout(() => {
-      try {
-        if (warp) win._testWarpToScene = warp;
-        if (autoplay || encounter) win._testAutoplayEncounterMode = encounter || "default";
-      } catch { /* ignore */ }
-    }, fixture ? 2600 : 400);
+      const res = await fetch(`/scenario-fixtures/${scenario}.json`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      saveData = await res.json();
+    } catch (e) {
+      console.warn(`[scenario] could not fetch fixture '${scenario}': ${e}`);
+      return;
+    }
+    // 3. mount packs, WAIT until their scene classes register (else loadGameSave
+    //    warps into a null scene)
+    if (packs.length) {
+      const w = win();
+      if (w) w._testLoadPacks = packs.join(",");
+      const ok = await waitFor(() => {
+        const loaded = win()?.gameState?.packsLoaded;
+        return Array.isArray(loaded) && packs.every((p) => loaded.includes(p));
+      }, 30000);
+      if (!ok) console.warn(`[scenario] packs ${packs.join(",")} never fully registered — continuing`);
+    }
+    // 4. import save into slot 1 (writes only) → 5. load it (real DAL load)
+    let w = win();
+    if (!w) return;
+    w._testImportSave = JSON.stringify({ slot: 1, data: saveData });
+    await sleep(200);
+    w = win();
+    if (!w) return;
+    w._testLoadGame = 1;
+    // 6. optional AutoPlay persona overlay
+    if (persona || encounter) {
+      await sleep(300);
+      const wp = win();
+      if (wp) {
+        if (persona) wp._testAutoplayJPPolicy = persona;
+        wp._testAutoplayEncounterMode = encounter || "default";
+      }
+    }
+    console.log(`[scenario] loaded '${scenario}'${packs.length ? ` (packs ${packs.join(",")})` : ""}${persona ? ` persona ${persona}` : ""}`);
   }
 
   function onLoad() {
@@ -498,7 +547,7 @@
         );
       }, 2000);
     }
-    applyScenarioHooks();
+    runScenario();
   }
 
   function onError() {

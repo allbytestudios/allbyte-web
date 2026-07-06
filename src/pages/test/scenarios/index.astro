@@ -1,0 +1,33 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHeader from "../../../components/PageHeader.astro";
+import Footer from "../../../components/Footer.astro";
+import TestNav from "../../../components/TestNav.svelte";
+import ScenarioLauncher from "../../../components/ScenarioLauncher.svelte";
+---
+
+<BaseLayout
+  title="Scenarios — Dev Console — AllByte Studios"
+  description="Jump straight into the develop build at a saved scenario — Quinn's scenario launcher."
+>
+  <PageHeader
+    theme="engine"
+    title="Dev Console"
+    backHref="/"
+    backLabel="Home"
+    breadcrumbs={[{ href: "/", label: "Home" }]}
+  />
+  <main class="test-page">
+    <TestNav active="scenarios" client:load />
+    <ScenarioLauncher client:only="svelte" />
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .test-page {
+    background: #0a0e17;
+    min-height: calc(100vh - 160px);
+    padding: 0.5rem 0 2rem;
+  }
+</style>

@@ -10,7 +10,7 @@
   import DownloadGate from "./DownloadGate.svelte";
   import { downloadState, ackDownload } from "../lib/downloadGate";
   import gameVersion from "../data/game-version.json";
-  import { versionById } from "../lib/gameVersions";
+  import { versionById, isUnlocked } from "../lib/gameVersions";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
   //
@@ -56,16 +56,19 @@
     location.reload();
   }
 
-  // A channel/scenario deep-link (?channel= / ?scenario=) INTENTIONALLY loads a
-  // build whose version differs from game-version.json (e.g. the develop cloud
-  // build). The freshness + crash self-heals below assume the DEFAULT build, so
-  // they must NOT fire here — otherwise the expected version mismatch triggers an
-  // endless "loads then reloads" cache-clear loop (which also wipes the font
-  // cache, so the loading screen flashes a fallback font).
+  // Builds whose version legitimately differs from game-version.json (self-
+  // versioned channels + scenario loads). The freshness + crash self-heals below
+  // assume the DEFAULT build (alpha/alpha-debug, stamped at game-version.json),
+  // so they must NOT fire for these — otherwise the expected version mismatch
+  // triggers an endless "loads then reloads" cache-clear loop. alpha/alpha-debug
+  // still get the self-heal (their version SHOULD match).
+  const SELF_VERSIONED = new Set(["develop", "beta", "beta-debug"]);
   function isNonDefaultBuild(): boolean {
     if (typeof window === "undefined") return false;
     const q = new URLSearchParams(window.location.search);
-    return q.has("scenario") || !!q.get("channel");
+    if (q.has("scenario")) return true;
+    const id = q.get("v") || q.get("channel");
+    return !!id && SELF_VERSIONED.has(id);
   }
 
   // Case 1 — boots but STALE: the loaded build's version != what this webapp
@@ -184,23 +187,25 @@
     }
   }
 
-  // Scenario-launcher deep-link: admin/Legend can force a specific channel/build
-  // via ?channel=<id> (e.g. the debug `develop` cloud build at /godot/develop/).
-  // Maps the id → path through gameVersions.ts. Ignored for everyone else, who
-  // get the normal tier-resolved build. This is what lets a "jump into develop"
-  // link target the cloud build without touching normal /play routing.
-  function getChannelOverride(): string | null {
+  // Version selection: the landing picker navigates here with ?v=<id>; a channel
+  // deep-link (?channel=<id>, e.g. the scenario launcher) is an alias. Loads that
+  // build IF the user's tier unlocks it (isUnlocked: alpha=everyone,
+  // beta=Initiate+, develop/debug=Legend/admin) — otherwise falls through to the
+  // normal default. Since the picker already gated the choice, this just honours
+  // it; a hand-crafted URL for a locked tier safely falls back.
+  function getVersionSelection(): string | null {
     if (typeof window === "undefined") return null;
-    const c = new URLSearchParams(window.location.search).get("channel");
-    if (!c) return null;
-    if (!(isAdmin(auth.currentUser) || isTierAtLeast(auth.currentUser, "legend"))) return null;
-    const v = versionById(c);
-    return v ? v.path : null;
+    const q = new URLSearchParams(window.location.search);
+    const id = q.get("v") || q.get("channel");
+    if (!id) return null;
+    const v = versionById(id);
+    if (!v || !isUnlocked(v, auth.currentUser)) return null;
+    return v.path;
   }
 
   function resolveGameUrl(): string {
-    const channel = getChannelOverride();
-    if (channel) return channel;
+    const selected = getVersionSelection();
+    if (selected) return selected;
     // Installed PWA → the clean public (non-debug) build (owner: "pwa only
     // install non debug"). The public export boots as of v0.7.2066+. Bonus:
     // it's a different path than the debug build, so a PWA stuck on a stale

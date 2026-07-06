@@ -154,32 +154,14 @@
     installPrompt = null;
   }
 
+  // Consolidated: all play happens on /play (a single embed surface). Navigating
+  // there is a REAL page load, so the browser Back button returns home as users
+  // expect — unlike the old in-place iframe swap, which was a same-page state
+  // change with no history entry. The picker's selected build rides along as ?v;
+  // /play resolves + tier-gates it, and owns the download gate, fullscreen, save
+  // bridge, and analytics.
   function launchGame() {
-    playMode = true;
-    document.body.style.overflow = "hidden";
-    // The game brings its own music — pause the site player so they don't
-    // double-stack (auto-resumes on exitGame).
-    window.dispatchEvent(new CustomEvent("music-player:pause"));
-    window.addEventListener("keydown", handlePlayKey);
-    // First launch on this device → show the download notice and hold the
-    // iframe (gameUrl stays "") until the user consents. Already acknowledged
-    // (so cached) → load straight away.
-    const dlState = downloadState();
-    if (dlState === "ready") {
-      gameUrl = selectedGamePath();
-    } else {
-      gateMode = dlState; // "fresh" (first load) or "update" (version bumped)
-      showGate = true;
-    }
-    // Request fullscreen + lock landscape. Best-effort:
-    //   - Android Chrome: both succeed; user lands in full-screen landscape.
-    //   - Desktop: fullscreen requests OK, orientation.lock is a no-op.
-    //   - iOS Safari: fullscreen partial (16+) and orientation.lock is
-    //     unsupported in a browser tab. Both throws caught silently — iOS
-    //     users get a playable game without forced orientation. The PWA
-    //     install path (Add to Home Screen) is iOS's escape hatch — the
-    //     manifest's "orientation": "landscape" is respected there.
-    requestFullscreenLandscape();
+    window.location.href = `/play/?v=${encodeURIComponent(selectedVersionId)}`;
   }
 
   // User consented at the download notice — remember it and start the load.

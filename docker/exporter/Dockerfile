@@ -57,9 +57,11 @@ RUN mkdir -p /workspace/GameDev/Godots && ln -sf /usr/local/bin/godot /workspace
 # --- Deployer scripts (baked, pinned to this repo's commit) --------------------
 # Pure Node builtins — no npm install. Rebuilt automatically by the workflow when
 # these change (keeps CodeBuild's copy in sync with allbyte-web).
-COPY scripts/push-channel.js scripts/obfuscate-godot-export.js /opt/exporter/
-# push-channel.js reads the channel→path map from gameVersions.ts (as text),
-# resolved relative to itself at /opt/src/lib/gameVersions.ts.
+# push-channel.js resolves siblings relative to its repo root (join(__dirname,"..")):
+# the obfuscator at root/scripts/ and gameVersions.ts at root/src/lib/. With
+# push-channel at /opt/exporter/, root=/opt — so mirror that layout.
+COPY scripts/push-channel.js /opt/exporter/push-channel.js
+COPY scripts/obfuscate-godot-export.js /opt/scripts/obfuscate-godot-export.js
 COPY src/lib/gameVersions.ts /opt/src/lib/gameVersions.ts
 
 WORKDIR /workspace

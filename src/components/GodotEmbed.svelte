@@ -56,11 +56,24 @@
     location.reload();
   }
 
+  // A channel/scenario deep-link (?channel= / ?scenario=) INTENTIONALLY loads a
+  // build whose version differs from game-version.json (e.g. the develop cloud
+  // build). The freshness + crash self-heals below assume the DEFAULT build, so
+  // they must NOT fire here — otherwise the expected version mismatch triggers an
+  // endless "loads then reloads" cache-clear loop (which also wipes the font
+  // cache, so the loading screen flashes a fallback font).
+  function isNonDefaultBuild(): boolean {
+    if (typeof window === "undefined") return false;
+    const q = new URLSearchParams(window.location.search);
+    return q.has("scenario") || !!q.get("channel");
+  }
+
   // Case 1 — boots but STALE: the loaded build's version != what this webapp
   // expects, so the SW served an old (but self-consistent) cached build.
   function checkBuildFreshness(loadedVersion: unknown) {
     if (freshnessChecked) return;
     freshnessChecked = true;
+    if (isNonDefaultBuild()) return;
     const loaded = String(loadedVersion ?? "").replace(/^v/, "");
     if (!loaded || !EXPECTED_BUILD || loaded === EXPECTED_BUILD) return;
     hardResetAndReload(`loaded build ${loaded} != expected ${EXPECTED_BUILD}`);
@@ -77,7 +90,7 @@
     "Aborted(",
   ];
   function scanForEngineCrash(logs: unknown) {
-    if (recoveryTriggered || !Array.isArray(logs)) return;
+    if (recoveryTriggered || !Array.isArray(logs) || isNonDefaultBuild()) return;
     for (const line of logs) {
       const s = String(line);
       if (CRASH_SIGNATURES.some((sig) => s.includes(sig))) {

@@ -13,6 +13,8 @@
     "sync:marketing": "node scripts/sync-marketing-posts.mjs",
     "sync:scenarios": "node scripts/sync-scenario-fixtures.js",
     "changelog": "node scripts/deploy-history.js",
+    "promote": "node scripts/promote.js",
+    "finalize": "node scripts/finalize-web-deploy.js",
     "usage": "node scripts/claude-usage.js",
     "push-packs": "node scripts/push-packs.js",
     "obfuscate-godot": "node scripts/obfuscate-godot-export.js",

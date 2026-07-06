@@ -1,18 +1,12 @@
 <script lang="ts">
   import EnginePanel from "./EnginePanel.svelte";
   import HeartPanel from "./HeartPanel.svelte";
-  import VirtualGamepad from "./VirtualGamepad.svelte";
   import MilestoneBadge from "./MilestoneBadge.svelte";
   import gameVersion from "../data/game-version.json";
   import { auth, initAuth, logout, oauthLogin, saveNotificationPrefs } from "../lib/auth.svelte.ts";
-  import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
-  import { initPlayAnalytics } from "../lib/playAnalytics";
-  import DownloadGate from "./DownloadGate.svelte";
-  import { downloadState, ackDownload } from "../lib/downloadGate";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import { pickerVersions, defaultVersion, versionById, isUnlocked } from "../lib/gameVersions";
-  import { subscribeToFile } from "../lib/testEvents";
-  import { onMount, onDestroy } from "svelte";
+  import { onMount } from "svelte";
 
   let isMobile = $state(false);
   let loginError = $state("");
@@ -28,58 +22,6 @@
   // Patreon-only auth: the header CTA goes straight to OAuth (startOAuth), so
   // there's no provider-picker modal to focus-trap anymore.
   let demoHovered = $state(false);
-  let playMode = $state(false);
-  let gameUrl = $state("");
-  // Download gate: when launching for the first time on this device, hold the
-  // ~100 MB download behind a consent notice. `playMode` goes true (the play
-  // overlay opens) but `gameUrl` stays empty — so the iframe isn't rendered and
-  // nothing is fetched — until the user consents.
-  let showGate = $state(false);
-  let gateMode = $state<"fresh" | "update">("fresh");
-  // Teardown handle for the play-funnel beacon (homepage launches were
-  // previously uncounted — the beacon only lived in GodotEmbed on /play).
-  let analyticsOff: (() => void) | null = null;
-
-  // Download-progress poster for the homepage launch — parity with GodotEmbed
-  // so the game's boot shell can drive a real progress bar on the first (long,
-  // ~59 MB) load instead of a frozen-looking dot animation. Reads the iframe's
-  // resource timings and posts allbyte:download-progress; stops once booted.
-  let dlPoller: ReturnType<typeof setInterval> | null = null;
-  let dlBytes = 0;
-  // To-Title download (index.wasm + index.pck), so the boot shell's first-load
-  // bar reads 100% exactly when the player reaches Title — see the matching
-  // note in GodotEmbed.svelte. Laria.pck is excluded (preloads after Title).
-  const EXPECTED_DL_BYTES = 36879516 + 24929996; // WASM + index.pck (~59MB)
-
-  function postDownloadProgress() {
-    const w = gameIframe?.contentWindow as any;
-    if (!w) return;
-    try {
-      if (w.gameState?.scene) {
-        if (dlPoller) { clearInterval(dlPoller); dlPoller = null; }
-        return;
-      }
-      const perf = w.performance;
-      if (!perf?.getEntriesByType) return;
-      let total = 0, count = 0, recent: string | null = null;
-      for (const e of perf.getEntriesByType("resource")) {
-        if (typeof e.name !== "string" || !e.name.includes("/godot/")) continue;
-        const sz = (e as any).transferSize || (e as any).encodedBodySize || 0;
-        if (sz > 0) { total += sz; count++; recent = e.name; }
-      }
-      if (total !== dlBytes) {
-        dlBytes = total;
-        try {
-          w.postMessage(
-            { type: "allbyte:download-progress", bytesDownloaded: total,
-              expectedBytes: EXPECTED_DL_BYTES, filesDownloaded: count, currentFile: recent },
-            "*",
-          );
-        } catch { /* iframe not ready to receive */ }
-      }
-    } catch { /* iframe still booting */ }
-  }
-
   // Tier-gated game-version picker (above the Play-Now gif). pickerList is the
   // deployed builds; locked ones render disabled as an upsell. selectedVersionId
   // is the manual pick, falling back to the richest build the user can play
@@ -92,10 +34,6 @@
   let runtimeChannels = $state<Record<string, unknown> | null>(null);
   const pickerList = $derived(pickerVersions(runtimeChannels));
   const selectedVersionId = $derived(pickedVersionId ?? defaultVersion(auth.currentUser, runtimeChannels).id);
-  function selectedGamePath(): string {
-    return (versionById(selectedVersionId) ?? defaultVersion(auth.currentUser, runtimeChannels)).path;
-  }
-  let gameIframe = $state<HTMLIFrameElement | null>(null);
 
   // PWA install prompt: Chrome/Edge fires `beforeinstallprompt` on
   // browsers/devices that meet the PWA install criteria (manifest valid,
@@ -164,145 +102,6 @@
     window.location.href = `/play/?v=${encodeURIComponent(selectedVersionId)}`;
   }
 
-  // User consented at the download notice — remember it and start the load.
-  function consentToDownload() {
-    ackDownload();
-    showGate = false;
-    gameUrl = selectedGamePath();
-  }
-
-  /** True for touch devices on phone/small-tablet screens. Same gate the
-   *  VirtualGamepad uses, so fullscreen + virtual controls turn on
-   *  together. Owner spec: "Fullscreen should be default on mobile
-   *  browser and mobile PWA, but not assumed on desktop browser or
-   *  desktop PWA." Desktop users can still F11 if they want it. */
-  function isMobileViewport(): boolean {
-    if (typeof window === "undefined" || !window.matchMedia) return false;
-    return window.matchMedia("(pointer: coarse) and (max-width: 1100px)").matches;
-  }
-
-  async function requestFullscreenLandscape() {
-    if (!isMobileViewport()) return;
-    try {
-      const el = document.documentElement;
-      if (el.requestFullscreen) {
-        await el.requestFullscreen();
-      }
-    } catch {
-      /* user denied or unsupported — game still works windowed */
-    }
-    try {
-      const orientation = (screen as any).orientation;
-      if (orientation && typeof orientation.lock === "function") {
-        await orientation.lock("landscape");
-      }
-    } catch {
-      /* not supported (iOS Safari) or denied — game still works in current orientation */
-    }
-  }
-
-  function exitGame() {
-    playMode = false;
-    showGate = false;
-    gameUrl = "";
-    document.body.style.overflow = "";
-    // Resume the site player if launchGame paused it.
-    window.dispatchEvent(new CustomEvent("music-player:resume"));
-    window.removeEventListener("keydown", handlePlayKey);
-    teardownSaveBridge();
-    analyticsOff?.();
-    analyticsOff = null;
-    if (dlPoller) { clearInterval(dlPoller); dlPoller = null; }
-    gameIframe = null;
-    // Reverse the fullscreen/orientation lock from launchGame so the rest
-    // of the site renders in its normal viewport. Both unlock/exit are
-    // no-ops if we never entered the locked/fullscreen state.
-    try {
-      const orientation = (screen as any).orientation;
-      if (orientation && typeof orientation.unlock === "function") {
-        orientation.unlock();
-      }
-    } catch {}
-    try {
-      if (document.fullscreenElement && document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      }
-    } catch {}
-  }
-
-  // Wire up the save bridge once the iframe is mounted
-  $effect(() => {
-    if (playMode && gameIframe) {
-      initSaveBridge(gameIframe, { onExit: exitGame });
-      if (!dlPoller) dlPoller = setInterval(postDownloadProgress, 500);
-      // Count homepage launches in the play-funnel too. The beacon only lived
-      // in GodotEmbed (/play), so plays started from "/" were invisible. On "/"
-      // document.referrer is still the real external source, so attribution is
-      // actually better here. Guard so a reload-remount of the iframe doesn't
-      // spin up a second beacon. No-op off the prod host (see playAnalytics).
-      if (!analyticsOff) {
-        analyticsOff = initPlayAnalytics(() => {
-          try {
-            const g = (gameIframe?.contentWindow as any)?.gameState;
-            if (!g) return null;
-            return {
-              scene: g.scene ?? null,
-              inBattle: !!g.inBattle,
-              event: g.lastTriggeredEventId ?? null,
-              moving: !!g.isMoving,
-            };
-          } catch {
-            return null;
-          }
-        });
-      }
-    }
-  });
-
-  onDestroy(() => {
-    analyticsOff?.();
-    analyticsOff = null;
-    if (dlPoller) { clearInterval(dlPoller); dlPoller = null; }
-  });
-
-  function handlePlayKey(e: KeyboardEvent) {
-    if (e.key === "Escape") exitGame();
-  }
-
-  // Dev-only: live-reload the game iframe when Arc redeploys via SSE signal.
-  let reloadUnsub: (() => void) | null = null;
-  let reloadReadyResolve: (() => void) | null = null;
-
-  function doGameReload() {
-    if (!playMode || !gameIframe) return;
-    console.log("[godot-reload] SSE event received, reloading game iframe");
-    gameIframe.contentWindow?.postMessage({ type: "allbyte:prepare-reload" }, "*");
-    const timeout = setTimeout(finishReload, 2000);
-    reloadReadyResolve = () => { clearTimeout(timeout); finishReload(); };
-  }
-
-  function finishReload() {
-    reloadReadyResolve = null;
-    if (!gameIframe) return;
-    gameUrl = `${selectedGamePath()}?t=${Date.now()}`;
-  }
-
-  function onGameMessage(ev: MessageEvent) {
-    if (!gameIframe || ev.source !== gameIframe.contentWindow) return;
-    if (ev.data?.type === "allbyte:reload-ready" && reloadReadyResolve) {
-      reloadReadyResolve();
-    }
-  }
-
-  onMount(() => {
-    if (!import.meta.env.DEV) return;
-    reloadUnsub = subscribeToFile("godot/reload", doGameReload);
-    window.addEventListener("message", onGameMessage);
-    return () => {
-      reloadUnsub?.();
-      window.removeEventListener("message", onGameMessage);
-    };
-  });
   let artworkHovered = $state(false);
   let musicHovered = $state(false);
   let fontHovered = $state(false);
@@ -423,32 +222,7 @@
   </header>
 
 
-  <!-- Hidden SSR mount of play-mode components so Astro's Vite build extracts
-       their scoped CSS into a linked stylesheet. Without this, they're only
-       rendered inside {#if playMode} which is false at build time, so their
-       CSS never ships — the client-side mount has the hashed class but no
-       matching rules. Mount uses display:none to stay invisible at runtime. -->
-  <div style="display:none" aria-hidden="true">
-    <VirtualGamepad iframe={null} />
-  </div>
-
-  <div class="demo-section" class:play-active={playMode}>
-  {#if playMode}
-    <div class="play-container">
-      {#if showGate}
-        <DownloadGate mode={gateMode} oncontinue={consentToDownload} oncancel={exitGame} />
-      {:else}
-        <iframe
-          src={gameUrl}
-          title="The Chronicles of Nesis"
-          class="game-frame"
-          allow="cross-origin-isolated"
-          bind:this={gameIframe}
-        ></iframe>
-        <VirtualGamepad iframe={gameIframe} />
-      {/if}
-    </div>
-  {:else}
+  <div class="demo-section">
     <div class="demo-row" style="position: relative;" onclick={launchGame} onmouseenter={onDemoEnter} onmouseleave={onDemoLeave}>
       <div class="overlay-badges" onclick={(e) => e.stopPropagation()}>
         <MilestoneBadge />
@@ -497,7 +271,6 @@
         </div>
       </div>
     </div>
-  {/if}
   </div>
 
   {#if isMobile}
@@ -1082,46 +855,6 @@
     background: #1e2a3a;
     padding: 0 0 0.5rem;
     transition: all 0.4s ease;
-  }
-
-  .demo-section.play-active {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    background: #0a0e17;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: expand-in 0.8s ease;
-  }
-
-  @keyframes expand-in {
-    from {
-      opacity: 0;
-      transform: scale(0.7);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  .play-container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    /* Positioning context for VirtualGamepad (absolute, inset:0 overlay). */
-    position: relative;
-  }
-
-  .game-frame {
-    width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
-    border: none;
-    display: block;
   }
 
   /* Thin overlay badges in the top-right of the demo button */

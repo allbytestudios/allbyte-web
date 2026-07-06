@@ -33,12 +33,14 @@ export interface GameVersion {
 }
 
 // Ordered least → richest, so "last unlocked" = the natural default.
+// Labels are DISPLAY text (dropdown); the ids/paths/deploy channels stay "alpha"
+// etc. so the deploy pipeline + channels.json + ?v= links are unaffected.
 export const GAME_VERSIONS: GameVersion[] = [
-  { id: "alpha",       label: "Alpha",          path: "/godot/public/index.html",     minTier: "default",  available: true },
-  { id: "alpha-debug", label: "Alpha · Debug",  path: "/godot/index.html",            minTier: "legend",   available: true },
-  { id: "beta",        label: "Beta+",          path: "/godot/beta/index.html",       minTier: "initiate", available: false },
-  { id: "beta-debug",  label: "Beta+ · Debug",  path: "/godot/beta-debug/index.html", minTier: "legend",   available: false },
-  { id: "develop",     label: "Develop · Debug", path: "/godot/develop/index.html",   minTier: "legend",   available: false },
+  { id: "alpha",       label: "Demo",            path: "/godot/public/index.html",     minTier: "default",  available: true },
+  { id: "alpha-debug", label: "Demo (Debug)",    path: "/godot/index.html",            minTier: "legend",   available: true },
+  { id: "beta",        label: "Beta",            path: "/godot/beta/index.html",       minTier: "initiate", available: false },
+  { id: "beta-debug",  label: "Beta (Debug)",    path: "/godot/beta-debug/index.html", minTier: "legend",   available: false },
+  { id: "develop",     label: "Develop (Debug)", path: "/godot/develop/index.html",    minTier: "legend",   available: false },
 ];
 
 export function isUnlocked(v: GameVersion, user: AuthUser): boolean {

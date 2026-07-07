@@ -131,6 +131,9 @@
     window.dispatchEvent(new CustomEvent("music-player:pause"));
     loadStart = Date.now(); // count load time from consent, not page arrival
     lastProgressAt = Date.now(); // reset the boot-watchdog grace window too
+    // The consent tap is a user gesture — enter mobile fullscreen right here
+    // instead of waiting to catch a later pointerdown (new users' guaranteed gesture).
+    tryEnterFullscreen();
   }
 
   // Tier-gated build variants — see APP_CLAUDE_TIER_GATED_BUILDS.md.
@@ -557,6 +560,19 @@
     // Re-assert the parent mobile-context flag in case it was cleared; the
     // engine re-reads it at Title startup on every (re)load.
     pushMobileContext();
+    // First-gesture fullscreen ALSO from inside the game. A returning mobile
+    // player's first tap usually lands in the iframe — which the parent window
+    // never sees — so the page-level pointerdown listener alone misses it (this
+    // regressed when "Play now" changed from an in-place button to a navigation
+    // to /play). The game is same-origin, so listen on its own window too;
+    // tryEnterFullscreen requests fullscreen on the PARENT documentElement so the
+    // VirtualGamepad overlay stays in-frame. once:true + the fullscreenAttempted
+    // guard keep it to a single attempt.
+    try {
+      iframeEl?.contentWindow?.addEventListener("pointerdown", tryEnterFullscreen, { once: true });
+    } catch {
+      /* cross-origin (shouldn't happen for same-origin /godot/) */
+    }
     if (fixture && iframeEl?.contentWindow) {
       // Give the game engine a moment to initialize TestBridge
       setTimeout(() => {
@@ -930,7 +946,7 @@
       class="game-frame"
       onload={onLoad}
       onerror={onError}
-      allow="cross-origin-isolated"
+      allow="cross-origin-isolated; fullscreen"
     ></iframe>
     <VirtualGamepad iframe={iframeEl} />
     <MinimapPanel />

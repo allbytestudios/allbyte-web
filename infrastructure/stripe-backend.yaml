@@ -42,6 +42,21 @@ Parameters:
     Type: String
     Default: Z01925952NW3G7UBHQ76M
     Description: Route 53 hosted zone ID for allbyte.studio. Used for cert DNS validation and the API alias record.
+  CfBetaKeyPairId:
+    Type: String
+    Default: ""
+    Description: >
+      CloudFront public-key ID (K...) from the beta signing key group. While
+      empty, GET /game/beta-cookies returns 503 "not configured" — the stack
+      stays deployable before the owner's key ceremony runs.
+  CfBetaSigningKeySecretId:
+    Type: String
+    Default: allbyte-studio/cf-beta-signing-key
+    Description: Secrets Manager secret holding the RSA private-key PEM that signs beta CloudFront cookies.
+  BetaCookieTtlSeconds:
+    Type: Number
+    Default: 43200
+    Description: Lifetime (seconds) of issued beta signed cookies. 12h default — long enough for a session, short enough that a lapsed subscriber loses access within half a day.
 
 Resources:
   # --- DynamoDB Tables ---
@@ -2617,6 +2632,138 @@ Resources:
                   "body": json.dumps({"url": signed_url, "ttl": TTL}),
               }
 
+  # GET /game/beta-cookies
+  # The server-side gate for the beta base build (/godot/beta/* on CloudFront).
+  # Verifies the caller's JWT, re-reads their tier from the users table (a JWT
+  # tier claim can be up to 7 days stale — this is the revocation story), and
+  # for Initiate+ issues CloudFront signed cookies (custom policy scoped to
+  # /godot/beta/*). CloudFront's TrustedKeyGroups behavior on that path then
+  # enforces them at the edge — the client-side picker in gameVersions.ts is
+  # UI only, never the boundary.
+  #
+  # Node.js (not Python like its siblings): CloudFront cookie signing is
+  # RSA-SHA1, which Node's built-in `crypto` does inline; Python would need a
+  # packaged dependency and this stack is deliberately all-inline.
+  #
+  # Patreon-migration note: depends ONLY on the JWT secret + users-table tier,
+  # both of which survive the planned auth rework.
+  BetaCookieFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: allbyte-studio-beta-cookies
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+          SITE_DOMAIN: !Ref SiteDomain
+          KEY_PAIR_ID: !Ref CfBetaKeyPairId
+          SIGNING_KEY_SECRET_ID: !Ref CfBetaSigningKeySecretId
+          COOKIE_TTL: !Ref BetaCookieTtlSeconds
+      Code:
+        ZipFile: |
+          const crypto = require("crypto");
+          const { DynamoDBClient, GetItemCommand } = require("@aws-sdk/client-dynamodb");
+          const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
+
+          const ddb = new DynamoDBClient({});
+          const sm = new SecretsManagerClient({});
+          const USERS_TABLE = process.env.USERS_TABLE;
+          const SITE_DOMAIN = process.env.SITE_DOMAIN;
+          const KEY_PAIR_ID = process.env.KEY_PAIR_ID || "";
+          const SECRET_ID = process.env.SIGNING_KEY_SECRET_ID;
+          const TTL = parseInt(process.env.COOKIE_TTL || "43200", 10);
+
+          // Must match the /pck-url ordering — one entitlement ladder everywhere.
+          const TIER_RANK = { default: 0, initiate: 1, hero: 2, legend: 3, admin: 4 };
+          const REQUIRED = "initiate";
+
+          const cache = {};
+          async function signingKey() {
+            if (!cache.pem) {
+              const r = await sm.send(new GetSecretValueCommand({ SecretId: SECRET_ID }));
+              cache.pem = r.SecretString;
+            }
+            return cache.pem;
+          }
+
+          // CloudFront's cookie-safe base64 variant (different from base64url!).
+          function b64cf(buf) {
+            return buf.toString("base64")
+              .replace(/\+/g, "-").replace(/=/g, "_").replace(/\//g, "~");
+          }
+
+          function verifyJwt(token, secret) {
+            try {
+              const parts = token.split(".");
+              if (parts.length !== 3) return null;
+              const expected = crypto.createHmac("sha256", secret)
+                .update(`${parts[0]}.${parts[1]}`).digest();
+              const got = Buffer.from(parts[2].replace(/-/g, "+").replace(/_/g, "/"), "base64");
+              if (got.length !== expected.length || !crypto.timingSafeEqual(got, expected)) return null;
+              const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
+              if ((payload.exp || 0) < Date.now() / 1000) return null;
+              return payload;
+            } catch { return null; }
+          }
+
+          async function jwtSecret() {
+            if (!cache.jwt) {
+              const r = await sm.send(new GetSecretValueCommand({ SecretId: "allbyte-studio/jwt-secret" }));
+              cache.jwt = r.SecretString;
+            }
+            return cache.jwt;
+          }
+
+          const err = (code, msg) => ({ statusCode: code, body: JSON.stringify({ error: msg }) });
+
+          exports.handler = async (event) => {
+            const method = event.requestContext && event.requestContext.http && event.requestContext.http.method;
+            if (method === "OPTIONS") return { statusCode: 200 };
+            if (!KEY_PAIR_ID) return err(503, "beta gating not configured");
+
+            const auth = (event.headers && (event.headers.authorization || event.headers.Authorization)) || "";
+            if (!auth.startsWith("Bearer ")) return err(401, "no token provided");
+            const payload = verifyJwt(auth.slice(7).trim(), await jwtSecret());
+            if (!payload || !payload.sub) return err(401, "invalid or expired token");
+
+            // Fresh tier from the users table — a cancelled subscriber's JWT can
+            // outlive their entitlement by days; the table is source of truth.
+            const r = await ddb.send(new GetItemCommand({
+              TableName: USERS_TABLE, Key: { userId: { S: payload.sub } },
+            }));
+            const tier = (r.Item && r.Item.tier && r.Item.tier.S) || "default";
+            if ((TIER_RANK[tier] || 0) < TIER_RANK[REQUIRED]) {
+              console.log(`AUDIT: user=${payload.sub} tier=${tier} denied beta cookies (needs ${REQUIRED}+)`);
+              return err(403, "tier insufficient");
+            }
+
+            const exp = Math.floor(Date.now() / 1000) + TTL;
+            const policy = JSON.stringify({
+              Statement: [{
+                Resource: `${SITE_DOMAIN}/godot/beta/*`,
+                Condition: { DateLessThan: { "AWS:EpochTime": exp } },
+              }],
+            });
+            const signature = crypto.createSign("RSA-SHA1").update(policy).sign(await signingKey());
+            const domain = new URL(SITE_DOMAIN).hostname;
+            const attrs = `Domain=${domain}; Path=/godot/beta; Secure; HttpOnly; SameSite=Lax; Max-Age=${TTL}`;
+
+            console.log(`AUDIT: user=${payload.sub} tier=${tier} granted beta cookies (exp=${exp})`);
+            return {
+              statusCode: 200,
+              cookies: [
+                `CloudFront-Policy=${b64cf(Buffer.from(policy))}; ${attrs}`,
+                `CloudFront-Signature=${b64cf(signature)}; ${attrs}`,
+                `CloudFront-Key-Pair-Id=${KEY_PAIR_ID}; ${attrs}`,
+              ],
+              headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+              body: JSON.stringify({ ok: true, expiresAt: exp }),
+            };
+          };
+
   # --- API Gateway ---
   HttpApi:
     Type: AWS::ApiGatewayV2::Api
@@ -2636,6 +2783,10 @@ Resources:
         AllowHeaders:
           - Content-Type
           - Authorization
+        # Required for /game/beta-cookies: the browser only honors its
+        # Set-Cookie on a credentialed CORS fetch. Origins above are already
+        # explicit (credentialed CORS forbids wildcards), so this is safe.
+        AllowCredentials: true
 
   ApiStage:
     Type: AWS::ApiGatewayV2::Stage
@@ -3072,6 +3223,30 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
 
+  # Beta cookie route
+  BetaCookieIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt BetaCookieFunction.Arn
+      PayloadFormatVersion: "2.0"
+
+  BetaCookieRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "GET /game/beta-cookies"
+      Target: !Sub "integrations/${BetaCookieIntegration}"
+
+  BetaCookiePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BetaCookieFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*"
+
   # --- DynamoDB: Legend's Square posts ---
   PostsTable:
     Type: AWS::DynamoDB::Table
@@ -3494,3 +3669,6 @@ Outputs:
   ApiCustomDomainUrl:
     Description: "Custom domain URL for the API. Use this in src/lib/auth.svelte.ts and as the OAuth redirect URI base."
     Value: !Sub "https://${ApiCustomDomain}"
+  BetaCookieEndpoint:
+    Description: "Issues CloudFront signed cookies for /godot/beta/* to Initiate+ users. 503 until CfBetaKeyPairId is set."
+    Value: !Sub "https://${ApiCustomDomain}/game/beta-cookies"

@@ -11,6 +11,7 @@
   import { downloadState, ackDownload } from "../lib/downloadGate";
   import gameVersion from "../data/game-version.json";
   import { versionById, isUnlocked } from "../lib/gameVersions";
+  import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
   //
@@ -395,18 +396,36 @@
     // Decide the download gate now that localStorage is available. Already
     // acknowledged (so cached) or an admin fixture load → straight through;
     // otherwise hold the iframe behind the consent notice.
-    const dlState = downloadState();
-    const hasScenario = new URLSearchParams(window.location.search).has("scenario");
-    if (fixture || hasScenario || dlState === "ready") {
-      allowed = true;
-      // Game brings its own music — pause the persistent site player.
-      window.dispatchEvent(new CustomEvent("music-player:pause"));
-      // No gate = no guaranteed parent gesture for fullscreen. Give mobile
-      // players a one-tap start layer to provide it (the game preloads behind).
-      if (!fixture && !hasScenario && isMobileViewport()) showStartTap = true;
+    const proceedToGame = () => {
+      const dlState = downloadState();
+      const hasScenario = new URLSearchParams(window.location.search).has("scenario");
+      if (fixture || hasScenario || dlState === "ready") {
+        allowed = true;
+        // Game brings its own music — pause the persistent site player.
+        window.dispatchEvent(new CustomEvent("music-player:pause"));
+        // No gate = no guaranteed parent gesture for fullscreen. Give mobile
+        // players a one-tap start layer to provide it (the game preloads behind).
+        if (!fixture && !hasScenario && isMobileViewport()) showStartTap = true;
+      } else {
+        gateMode = dlState; // "fresh" (first load) or "update" (version bumped)
+        showGate = true;
+      }
+    };
+    // Beta is edge-gated (CloudFront signed cookies): obtain the grant BEFORE
+    // the iframe mounts, or an entitled user's first load 403s at the edge.
+    // Not the security boundary (the edge check is) — just correct sequencing
+    // plus a friendly message instead of a raw CloudFront error page.
+    if (isBetaPath(gameUrl)) {
+      void ensureBetaCookies().then((r) => {
+        if (r === "granted") proceedToGame();
+        else if (r === "denied")
+          error =
+            "The Beta build is for Initiate-tier patrons and up. The free Demo is available to everyone.";
+        else
+          error = "The Beta build isn't available right now — please try again later.";
+      });
     } else {
-      gateMode = dlState; // "fresh" (first load) or "update" (version bumped)
-      showGate = true;
+      proceedToGame();
     }
 
     // Listen anywhere on the page for the first user gesture and try the
@@ -478,6 +497,7 @@
     teardownSaveBridge();
     stopLoadPolling();
     teardownKbNudge();
+    stopBetaRefresh();
     if (typeof window !== "undefined") {
       window.removeEventListener("pointerdown", tryEnterFullscreen);
       window.removeEventListener("keydown", handleEscape);

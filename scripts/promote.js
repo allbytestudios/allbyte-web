@@ -93,6 +93,17 @@ const pc = spawnSync("node", pcArgs, { cwd: root, stdio: "inherit" });
 if (pc.status !== 0) die(`push-channel failed (exit ${pc.status}) — NOT finalizing.`);
 
 // --- 2. finalize-web-deploy --------------------------------------------------
+// ONLY for the player-facing alpha pair. finalize stamps game-version.json —
+// the GLOBAL service-worker cache key, download-gate key, and /changelog/
+// input. Finalizing a beta promote would rekey every player's cache on the
+// beta version (forcing a full ~75MB re-download against unchanged public
+// assets) and publish beta releases to the public changelog. Beta stays
+// self-versioned via its ?v= URLs, exactly like the dev channels.
+const FINALIZE_CHANNELS = new Set(["alpha", "alpha-debug"]);
+if (!FINALIZE_CHANNELS.has(manifest.channel)) {
+  console.log(`[promote] ✅ ${manifest.channel} ${manifest.version || ""} promoted. (finalize skipped — only ${[...FINALIZE_CHANNELS].join("/")} stamp game-version.json + changelog.)`);
+  process.exit(0);
+}
 const fArgs = ["scripts/finalize-web-deploy.js", "--manifest", manifestPath];
 if (dryRun) fArgs.push("--dry-run");
 if (noPush) fArgs.push("--no-push");

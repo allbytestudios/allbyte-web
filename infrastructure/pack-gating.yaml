@@ -1,5 +1,16 @@
+# ─── SUPERSEDED — DO NOT DEPLOY (2026-07-07) ────────────────────────────────
+# The canonical pack gate is `GET /pck-url` in stripe-backend.yaml (deployed on
+# api.allbyte.studio: public packs presign without auth, tiered packs verify the
+# JWT + tier; stage-throttled Burst 20 / Rate 10). PackLoader.gd's endpoint URL
+# is injected by the hosting page (window.PACK_AUTH_ENDPOINT), so it points at
+# /pck-url. Deploying THIS stack too would stand up a second token mint and a
+# second per-pack tier map that drift from the real one. Kept for reference
+# only (the /pack-token anonymous-mint design may be revisited if per-user
+# throttling is ever needed beyond the API-stage limits + 15-min URL TTL).
+# ─────────────────────────────────────────────────────────────────────────────
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
+  SUPERSEDED by the /pck-url route in stripe-backend.yaml — see header comment.
   Server-side pack gating (v1). An HTTP API that hands out short-lived presigned
   S3 GET URLs for zone .pck files in the PRIVATE allbyte-studio-packs bucket, so
   the pack bytes never reach an unauthenticated client. Matches PackLoader.gd's

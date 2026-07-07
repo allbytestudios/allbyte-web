@@ -598,6 +598,12 @@
   // resets it), so only a genuinely stuck boot trips it. Same once-per-session
   // guard (ab_stale_reload) + same isNonDefaultBuild gate as the other heals.
   const BOOT_STALL_MS = 45000;
+  // Absolute ceiling (generous — a slow mobile download + WASM compile still
+  // fits): a hard backstop for wedges the stall check can't see, e.g. the iframe
+  // going unreadable (contentWindow null → the stall check's early-return skips
+  // it) or something incidental keeping the stall timer alive. Checked BEFORE
+  // the contentWindow guard so it fires regardless of iframe state.
+  const BOOT_ABSOLUTE_MS = 120000;
   let lastProgressAt = Date.now();
   let loadElapsed = $state(0);
   let loadStatus = $state("Starting...");
@@ -626,6 +632,19 @@
 
   function pollLoadStatus() {
     loadElapsed = Math.floor((Date.now() - loadStart) / 1000);
+
+    // Absolute boot backstop. This poller stops the instant a scene appears, so
+    // reaching here always means "no scene yet" — if we're past the hard ceiling
+    // the engine is wedged. Checked before the contentWindow guard so a hard
+    // crash (unreadable iframe) still heals. Default build + once-per-session.
+    if (
+      !recoveryTriggered &&
+      !isNonDefaultBuild() &&
+      Date.now() - loadStart > BOOT_ABSOLUTE_MS
+    ) {
+      hardResetAndReload("boot watchdog: no scene within the hard ceiling (stale cached assets?)");
+      return;
+    }
 
     if (!iframeEl?.contentWindow) {
       loadStatus = "Waiting for iframe...";

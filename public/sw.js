@@ -7,20 +7,22 @@
  * 4G/throttled connection — caching wins on both.
  *
  * Cache strategy:
- *   /godot/**​/index.html (and bare dir form) → network-first (deploys must
- *                        land; falls back to cache when offline so the PWA
- *                        can still launch). This covers BOTH the root debug
- *                        build (/godot/index.html) and variant subdirs like
- *                        the public build (/godot/public/index.html).
- *   /godot/*           → cache-first. Godot's engine fetches index.wasm and
- *                        index.pck with `?v=<game-version>` query strings
- *                        (see GODOT_CONFIG.fileSizes in index.html), so a
- *                        game version bump changes the URL and naturally
- *                        evicts the old cache entry on next request. NOTE:
- *                        this self-eviction only works for exports that
- *                        actually carry the `?v=` query — the public build
- *                        must too, or its bare-named assets pin stale (the
- *                        export-side half of the 2026-06-24 /play/ loop fix).
+ *   /godot/* with `v=` in the query, or ending .wasm/.pck
+ *                      → cache-first. Self-versioned URLs evict naturally on
+ *                        a version bump; the wasm/pck are huge, immutable
+ *                        per-build artifacts (the whole reason this SW
+ *                        exists). NOTE: self-eviction only works for exports
+ *                        that actually carry the `?v=` query — push-channel
+ *                        warns when an export's pck fetch is unversioned.
+ *   everything else under /godot/ (index.html, engine index.js, audio
+ *   worklets, splash, fonts…)
+ *                      → network-first (falls back to cache when offline so
+ *                        the PWA can still launch). Deploys must land: with
+ *                        five channels sharing ONE cache name keyed on the
+ *                        LIVE game version, a bare-named file on a dev/beta
+ *                        channel would otherwise pin stale until the next
+ *                        alpha promote bumps CACHE_NAME. Small files — the
+ *                        revalidate cost is noise next to the wasm/pck wins.
  *   everything else    → pass through.
  *
  * Cache versioning: the CACHE_NAME constant below is bumped when this
@@ -88,20 +90,25 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (!url.pathname.startsWith("/godot/")) return;
 
-  // Any build entry point under /godot/ must revalidate on every deploy so a
-  // separately-redeployed Godot export is picked up: the root debug build
-  // (/godot/index.html) AND variant subdirs like the public build
-  // (/godot/public/index.html), plus their bare-slash forms. The original
-  // rule only matched /godot/index.html exactly, which left
-  // /godot/public/index.html cache-first and pinned stale — the root of the
-  // 2026-06-24 /play/ reload loop (direct loads resolve to the public build).
-  if (url.pathname.endsWith("/index.html") || url.pathname.endsWith("/")) {
-    event.respondWith(networkFirst(event.request));
+  // Cache-first ONLY for what's safe to pin: self-versioned URLs (`?v=` —
+  // a version bump changes the URL and evicts naturally) and the huge
+  // immutable per-build artifacts (.wasm/.pck). Everything else under
+  // /godot/ — entry-point index.html, engine index.js, audio worklets,
+  // splash, fonts — revalidates on every load (network-first, cache
+  // fallback offline). Five channels share ONE cache name keyed on the
+  // LIVE version, so a bare-named small file on a dev/beta channel would
+  // otherwise pin stale until the next alpha promote bumps CACHE_NAME —
+  // the generalization of the 2026-06-24 /play/ reload loop, where the
+  // old index.html-only network-first rule left /godot/public/index.html
+  // pinned. (NOT a CACHE_SCHEMA bump: entries moved to network-first are
+  // simply revalidated instead of served, so no wipe is needed.)
+  const versioned = url.searchParams.has("v");
+  const immutableArtifact = url.pathname.endsWith(".wasm") || url.pathname.endsWith(".pck");
+  if (versioned || immutableArtifact) {
+    event.respondWith(cacheFirst(event.request));
     return;
   }
-  // Everything else under /godot/ — the big WASM, PCK, audio worklets,
-  // engine JS, splash images, font subset — is cache-first.
-  event.respondWith(cacheFirst(event.request));
+  event.respondWith(networkFirst(event.request));
 });
 
 // Re-wrap a response so it's safe to cache. A response that arrived from the

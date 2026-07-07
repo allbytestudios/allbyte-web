@@ -174,8 +174,51 @@ jobs:
               --content-type "text/markdown" || true
           fi
 
+  # Smoke every runtime-published channel (from the live channels.json):
+  # open channels get a boot-only smoke, the gated beta channel gets an
+  # anonymous-403 lock check (CI holds no user JWTs — the entitled cookie
+  # boot runs in the owner's promote smoke instead).
+  channel-smoke:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright + chromium
+        run: |
+          pip install playwright
+          python -m playwright install chromium --with-deps
+
+      - name: Smoke published channels
+        id: smoke
+        continue-on-error: true
+        run: python scripts/qa_channel_smoke.py
+        env:
+          PYTHONUNBUFFERED: "1"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload to S3
+        run: |
+          RUN_ID="${{ needs.preflight.outputs.run_id }}"
+          if [ -f channel-smoke/results.json ]; then
+            aws s3 cp channel-smoke/results.json \
+              s3://${{ secrets.AWS_S3_BUCKET }}/test-snapshot/qa-runs/${RUN_ID}/channel-smoke.json \
+              --content-type "application/json" || true
+          fi
+
   aggregate:
-    needs: [preflight, cross-browser, controllers]
+    needs: [preflight, cross-browser, controllers, channel-smoke]
     # Run even if some matrix jobs failed — we still want a manifest
     # showing what happened, including the failures.
     if: always() && needs.preflight.result == 'success'

@@ -24,7 +24,9 @@
  * which only admin/Legend can select.
  *
  * Live deploys (--promote) additionally stamp sw.js (stale-cache-hang guard) and
- * run the post-deploy smoke; dev channels carry their own ?v= and skip both.
+ * run the full post-deploy smoke; dev channels carry their own ?v=, skip the
+ * sw.js stamp, and get a light `--boot-only` smoke of the deployed bytes
+ * (failure exits 1 so the watcher records DEPLOY_FAILED).
  *
  * Defense in depth (the game-side pipeline already enforces these): refuse if
  * test_gate != "pass" or mixed_build == true, and verify sha256 of the base pck
@@ -163,6 +165,12 @@ if (process.env.SKIP_GODOT_OBFUSCATION === "1") {
 
 if (!dryRun && existsSync(baseJs) && !/\.wasm\?v=/.test(readFileSync(baseJs, "utf8")))
   die("base index.js is MISSING the .wasm?v= cache-bust — refusing (stale-cache mismatch risk).");
+// The SW caches *.pck cache-first even without ?v= (they're huge and normally
+// immutable). On LIVE channels the version bump evicts them; dev channels keep
+// one cache name across builds, so an unversioned pck pins stale until the next
+// live promote. Warn so we know whether the export needs ?v= on the pck too.
+if (!dryRun && existsSync(baseJs) && !/\.pck\?v=/.test(readFileSync(baseJs, "utf8")))
+  console.warn(`[push-channel] ⚠ base index.js fetches the .pck WITHOUT ?v= — dev-channel repeat visitors may serve a stale cached pck (escalate to Arc if dev-channel staleness bites).`);
 if (!dryRun) {
   const shimExists = existsSync(shimPath);
   const htmlRefsShim = readFileSync(baseIndex, "utf8").includes("pck-key-shim.js");
@@ -276,11 +284,29 @@ const dist = distributionId();
 if (!dist) console.warn(`[push-channel] ⚠ distribution ID not resolved — invalidate manually: ${paths.join(" ")}`);
 else run(`aws cloudfront create-invalidation --distribution-id ${dist} --paths ${paths.map((p) => `"${p}"`).join(" ")}`);
 
-// --- post-deploy smoke — LIVE channels only ----------------------------
-if (isLive && !dryRun && process.env.SKIP_SMOKE !== "1" && existsSync(join(root, "scripts", "smoke_prod.py"))) {
-  console.log("\n[push-channel] waiting 5s for CloudFront, then running post-deploy smoke...");
-  try { execSync("node -e \"setTimeout(()=>{},5000)\"", { stdio: "ignore" }); execSync(`python "${join(root, "scripts", "smoke_prod.py")}"`, { stdio: "inherit" }); }
-  catch { console.error("\n[push-channel] SMOKE FAILED — deploy is live but the engine isn't booting cleanly. Investigate."); process.exitCode = 1; }
+// --- post-deploy smoke -------------------------------------------------
+// Live alpha pair: the full no-args smoke (sw.js version + /play embed +
+// public build). Live beta: channel-targeted smoke (anonymous-403 lock check
+// + signed-cookie boot; needs SMOKE_JWT in the promoting shell). Dev channels:
+// a light --boot-only smoke of just-deployed bytes — a failure exits 1 so the
+// watcher records DEPLOY_FAILED (artifacts are already live on the dev path;
+// the marker is what tells Arc the build is bad).
+if (process.env.SKIP_SMOKE !== "1" && existsSync(join(root, "scripts", "smoke_prod.py"))) {
+  const smokeArgs = !isLive
+    ? `--channel ${channel} --boot-only`
+    : channel === "beta" ? `--channel beta` : "";
+  if (dryRun) {
+    console.log(`[dry-run] python scripts/smoke_prod.py ${smokeArgs}`.trim());
+  } else {
+    console.log("\n[push-channel] waiting 5s for CloudFront, then running post-deploy smoke...");
+    try {
+      execSync("node -e \"setTimeout(()=>{},5000)\"", { stdio: "ignore" });
+      execSync(`python "${join(root, "scripts", "smoke_prod.py")}" ${smokeArgs}`.trim(), { stdio: "inherit" });
+    } catch {
+      console.error(`\n[push-channel] SMOKE FAILED — ${channel} is deployed but isn't booting cleanly. Investigate.`);
+      process.exitCode = 1;
+    }
+  }
 }
 
 console.log(`\n[push-channel] ✅ deployed ${channel} ${version} to /${DEST}/${dryRun ? " (dry run — nothing uploaded)" : ""}.`);

@@ -1,5 +1,5 @@
 """
-Post-deploy smoke test for /play/ on production.
+Post-deploy smoke test for the game on production.
 
 What it catches that the existing smoke (`gameState.version`) does NOT:
 the engine actually booting against the PCK. The 2026-06-01 black screen
@@ -10,17 +10,42 @@ Godot engine to actually boot, then scrapes `window._consoleLogs` (the
 ARC-DEV-CONSOLE interceptor in index.html) for the canonical Godot
 failure signatures.
 
-Run automatically by `npm run push-assets` after the CloudFront
-invalidation step. Skip with `SKIP_SMOKE=1` (e.g., for routine asset-only
-deploys where you're confident nothing about the game changed).
+Modes:
+  (no args)                   Full live smoke: sw.js version match + /play/
+                              embed boot + public-build boot. This is the
+                              legacy behavior, run by push-assets and live
+                              promotes after CloudFront invalidation.
+  --channel <id>              Boot the named channel (from gameVersions.ts)
+                              top-level on a cold context and assert it
+                              reaches a scene. For a GATED channel (beta),
+                              also asserts anonymous access is refused, and
+                              boots through the signed-cookie flow (needs
+                              SMOKE_JWT).
+  --channel <id> --boot-only  Just the boot check — the dev-lane light smoke
+                              push-channel runs after develop/beta-debug
+                              deploys.
+  --channel <id> --locked-only  Only assert the channel is NOT anonymously
+                              reachable. Used by CI, which holds no secrets.
+  --url <origin>              Override the site origin
+                              (default https://allbyte.studio).
 
-Override target via SMOKE_URL env var (default https://allbyte.studio/play/).
+Env:
+  SMOKE_URL             legacy full-URL override for the /play/ page
+                        (no-args mode; default https://allbyte.studio/play/)
+  SMOKE_JWT             a valid Initiate+ JWT, used to mint beta cookies
+  BETA_COOKIE_ENDPOINT  cookie-issuing endpoint override
+                        (default https://api.allbyte.studio/game/beta-cookies)
+  SKIP_SMOKE=1          honored by the callers, not here
 
 Exit codes:
   0  no errors detected
-  1  one or more suspect log lines found, or the game never became ready
+  1  one or more suspect log lines found, the game never became ready, or a
+     gated channel was anonymously reachable
 """
 
+from __future__ import annotations
+
+import argparse
 import json
 import os
 import re
@@ -39,10 +64,26 @@ URL = os.environ.get("SMOKE_URL", "https://allbyte.studio/play/")
 BOOT_TIMEOUT_S = 45  # generous; first-load with cold cache is slow
 READY_POLL_S = 1
 
-VERSION_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "src", "data", "game-version.json",
-)
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+VERSION_FILE = os.path.join(REPO, "src", "data", "game-version.json")
+GAME_VERSIONS_TS = os.path.join(REPO, "src", "lib", "gameVersions.ts")
+
+# Channels whose base build sits behind the CloudFront signed-cookie gate.
+# beta-debug + develop deliberately stay open (Legend/debug-only, low stakes —
+# see docs/security-review-game-pipeline.md for the revisit trigger).
+GATED_CHANNELS = {"beta"}
+
+
+def channel_paths() -> dict:
+    """Channel id -> iframe path, parsed from gameVersions.ts — the same
+    single-source-of-truth regex push-channel.js uses, so the smoke and the
+    deployer can never disagree about where a channel lives."""
+    with open(GAME_VERSIONS_TS, encoding="utf-8") as f:
+        src = f.read()
+    return {
+        m.group(1): m.group(2)
+        for m in re.finditer(r'\{\s*id:\s*"([^"]+)"[^}]*?path:\s*"([^"]+)"', src)
+    }
 
 
 def game_version():
@@ -113,25 +154,34 @@ SUSPECT_PATTERNS = [
 ]
 
 
-def check_public_build() -> int:
-    """Boot the PUBLIC build (/godot/public/) directly and assert it reaches a
-    scene. This build is the anonymous homepage default (defaultVersion(null) ==
-    "alpha" → /godot/public/index.html), yet check_boot() only exercises /play
-    (the debug build). The public export has a history of shipping broken
-    (2026-06-24 loop), so smoke it independently. Loaded top-level (not iframed)
-    on a cold context — proves the deployed bytes boot; an iframe/cache hang is
-    a separate, SW-version concern covered by check_sw_version().
-    """
-    origin = "{0.scheme}://{0.netloc}".format(urlparse(URL))
-    url = f"{origin}/godot/public/index.html"
+def check_channel_boot(url: str, label: str = "channel", cookies: list | None = None) -> int:
+    """Boot a build directly (top-level, not iframed) on a cold context and
+    assert it reaches a scene with no suspect log lines. Proves the deployed
+    bytes boot; an iframe/cache hang is a separate, SW-version concern covered
+    by check_sw_version(). `cookies` (playwright cookie dicts) lets a gated
+    channel boot through its signed-cookie grant."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_context(viewport={"width": 1280, "height": 800}).new_page()
-        print(f"[smoke] public build: {url}")
+        context = browser.new_context(viewport={"width": 1280, "height": 800})
+        if cookies:
+            context.add_cookies(cookies)
+        page = context.new_page()
+        print(f"[smoke] {label}: {url}")
         try:
             page.goto(url, wait_until="domcontentloaded", timeout=20_000)
         except Exception as e:
-            print(f"[smoke] FAIL — public build navigation failed: {e}")
+            print(f"[smoke] FAIL — {label} navigation failed: {e}")
+            browser.close()
+            return 1
+        # Fail fast if this isn't a Godot export at all — CloudFront's custom
+        # error rewrite serves the site fallback HTML with a 200 for missing
+        # paths, which would otherwise burn the whole boot timeout.
+        try:
+            html = page.content()
+        except Exception:
+            html = ""
+        if not any(m in html for m in GODOT_MARKERS):
+            print(f"[smoke] FAIL — {label} served the site fallback page, not a Godot build (channel not deployed?)")
             browser.close()
             return 1
         scene = None
@@ -150,13 +200,107 @@ def check_public_build() -> int:
         browser.close()
         bad = [ln for ln in logs if any(pat in ln for pat in SUSPECT_PATTERNS)]
         if bad:
-            print(f"[smoke] FAIL — public build has {len(bad)} suspect line(s): {bad[0][:160]}")
+            print(f"[smoke] FAIL — {label} has {len(bad)} suspect line(s): {bad[0][:160]}")
             return 1
         if not scene:
-            print("[smoke] FAIL — public build never reported a scene (sat on loading)")
+            print(f"[smoke] FAIL — {label} never reported a scene (sat on loading)")
             return 1
-        print(f"[smoke] public build booted, scene={scene}")
+        print(f"[smoke] {label} booted, scene={scene}")
         return 0
+
+
+def check_public_build() -> int:
+    """Boot the PUBLIC build (/godot/public/) directly and assert it reaches a
+    scene. This build is the anonymous homepage default (defaultVersion(null) ==
+    "alpha" → /godot/public/index.html), yet check_boot() only exercises /play
+    (the debug build). The public export has a history of shipping broken
+    (2026-06-24 loop), so smoke it independently."""
+    origin = "{0.scheme}://{0.netloc}".format(urlparse(URL))
+    return check_channel_boot(f"{origin}/godot/public/index.html", label="public build")
+
+
+# Markers that identify a real Godot web-export index.html (vs the site's
+# Astro-generated fallback page). CloudFront's custom-error rewrite serves the
+# site fallback with HTTP 200 for missing/denied paths (X-Cache: "Error from
+# cloudfront"), so a status code alone can NEVER prove the gate — only the
+# absence of actual game content can.
+GODOT_MARKERS = ("GODOT_CONFIG", "pck-key-shim", 'id="canvas"')
+
+
+def check_channel_locked(url: str) -> int:
+    """Assert a gated channel's CONTENT is not anonymously retrievable.
+
+    401/403 = correctly locked. 200 needs a body sniff: CloudFront's custom
+    error responses rewrite denied/missing paths to the site's fallback HTML
+    with a 200, which is fine (no game bytes leaked) — but a 200 whose body is
+    a real Godot export index.html means the gate is open to the world (the
+    alarm case: the CloudFront behavior lost its TrustedKeyGroups, or the path
+    pattern regressed)."""
+    req = urllib.request.Request(url, headers={"Cache-Control": "no-cache"})
+    try:
+        resp = urllib.request.urlopen(req, timeout=15)
+        status, body = resp.status, resp.read(65536).decode("utf-8", "replace")
+    except urllib.error.HTTPError as e:
+        status, body = e.code, ""
+    except Exception as e:
+        print(f"[smoke] WARN — lock check request failed outright ({e}); treating as locked")
+        return 0
+    if status in (401, 403):
+        print(f"[smoke] gated channel correctly locked (HTTP {status})")
+        return 0
+    if status == 200 and any(m in body for m in GODOT_MARKERS):
+        print(f"[smoke] FAIL — {url} served REAL GAME CONTENT anonymously (HTTP 200).")
+        print("[smoke]   The signed-cookie gate is not enforcing. Check the CloudFront")
+        print("[smoke]   behavior for this path still has TrustedKeyGroups enabled.")
+        return 1
+    if status == 200:
+        print("[smoke] gated channel returned the site fallback page (error rewrite), not game content — locked")
+        return 0
+    print(f"[smoke] gated channel returned HTTP {status} without game content — treating as locked")
+    return 0
+
+
+def get_beta_cookies(origin: str) -> list | None:
+    """Exchange SMOKE_JWT for CloudFront signed cookies via the cookie endpoint.
+    Returns playwright cookie dicts, or None (with a message) on failure."""
+    jwt = os.environ.get("SMOKE_JWT")
+    if not jwt:
+        print("[smoke] SMOKE_JWT not set — cannot run the entitled beta boot.")
+        print("[smoke]   Set SMOKE_JWT to a valid Initiate+ token, or use --locked-only.")
+        return None
+    endpoint = os.environ.get(
+        "BETA_COOKIE_ENDPOINT", "https://api.allbyte.studio/game/beta-cookies"
+    )
+    req = urllib.request.Request(endpoint, headers={"Authorization": f"Bearer {jwt}"})
+    try:
+        resp = urllib.request.urlopen(req, timeout=15)
+    except urllib.error.HTTPError as e:
+        print(f"[smoke] cookie endpoint refused (HTTP {e.code}) — is the JWT Initiate+ and unexpired?")
+        return None
+    except Exception as e:
+        print(f"[smoke] cookie endpoint unreachable: {e}")
+        return None
+    raw = resp.headers.get_all("Set-Cookie") or []
+    host = urlparse(origin).netloc.split(":")[0]
+    cookies = []
+    for line in raw:
+        first = line.split(";", 1)[0]
+        if "=" not in first:
+            continue
+        name, value = first.split("=", 1)
+        m = re.search(r"[Pp]ath=([^;]+)", line)
+        cookies.append({
+            "name": name.strip(),
+            "value": value.strip(),
+            "domain": host,
+            "path": (m.group(1).strip() if m else "/godot/beta"),
+            "secure": True,
+        })
+    if not cookies:
+        print("[smoke] cookie endpoint returned no Set-Cookie headers")
+        return None
+    print(f"[smoke] obtained {len(cookies)} signed cookie(s) from {endpoint}")
+    return cookies
 
 
 def check_boot() -> int:
@@ -261,8 +405,49 @@ def check_boot() -> int:
         return 0
 
 
+def run_channel_smoke(channel: str, origin: str, boot_only: bool, locked_only: bool) -> int:
+    paths = channel_paths()
+    if channel not in paths:
+        print(f"[smoke] unknown channel '{channel}' — known: {', '.join(paths)}")
+        return 1
+    url = origin.rstrip("/") + paths[channel]
+    gated = channel in GATED_CHANNELS
+
+    if locked_only:
+        if not gated:
+            print(f"[smoke] --locked-only makes no sense for open channel '{channel}'")
+            return 1
+        return check_channel_locked(url)
+
+    codes = []
+    if gated and not boot_only:
+        codes.append(check_channel_locked(url))
+    if gated:
+        cookies = get_beta_cookies(origin)
+        if cookies is None:
+            return 1
+        codes.append(check_channel_boot(url, label=channel, cookies=cookies))
+    else:
+        codes.append(check_channel_boot(url, label=channel))
+    return 1 if any(codes) else 0
+
+
 def main() -> int:
-    # Run all checks for full diagnostics; fail if any fails.
+    ap = argparse.ArgumentParser(description="Post-deploy smoke for the game")
+    ap.add_argument("--channel", help="channel id from gameVersions.ts to smoke directly")
+    ap.add_argument("--url", help="site origin override (default https://allbyte.studio)")
+    ap.add_argument("--boot-only", action="store_true",
+                    help="only the boot check (dev-lane light smoke)")
+    ap.add_argument("--locked-only", action="store_true",
+                    help="only assert the gated channel refuses anonymous access")
+    args = ap.parse_args()
+
+    if args.channel:
+        origin = args.url or "{0.scheme}://{0.netloc}".format(urlparse(URL))
+        return run_channel_smoke(args.channel, origin, args.boot_only, args.locked_only)
+
+    # Legacy no-args mode: the full live smoke. Run all checks for full
+    # diagnostics; fail if any fails.
     sw_code = check_sw_version()
     boot_code = check_boot()
     public_code = check_public_build()

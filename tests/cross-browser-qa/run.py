@@ -24,6 +24,11 @@ Usage:
   python tests/cross-browser-qa/run.py --target local        # against localhost:4321
   python tests/cross-browser-qa/run.py --engines chromium,firefox
   python tests/cross-browser-qa/run.py --headed              # default is headless
+  python tests/cross-browser-qa/run.py --channel develop     # drive a specific
+                                       # channel's build instead of /godot/public/
+                                       # (open channels only — the gated beta
+                                       # channel needs signed cookies; use
+                                       # scripts/smoke_prod.py --channel beta)
 
 Reports: tests/cross-browser-qa/reports/<timestamp>/
   - <engine>.png       — /play/ screenshot per engine
@@ -67,6 +72,22 @@ PUBLIC_URLS = {
     "prod": "https://allbyte.studio/godot/public/index.html",
     "local": "http://localhost:4321/godot/public/index.html",
 }
+
+# Channels whose base build sits behind the CloudFront signed-cookie gate —
+# this anonymous harness can't drive them (use scripts/smoke_prod.py, which
+# knows the cookie flow).
+GATED_CHANNELS = {"beta"}
+
+
+def channel_paths() -> dict:
+    """Channel id -> build path, parsed from src/lib/gameVersions.ts — the same
+    single-source-of-truth regex push-channel.js and smoke_prod.py use."""
+    import re
+    gv = (BASE.parent.parent / "src" / "lib" / "gameVersions.ts").read_text(encoding="utf-8")
+    return {
+        m.group(1): m.group(2)
+        for m in re.finditer(r'\{\s*id:\s*"([^"]+)"[^}]*?path:\s*"([^"]+)"', gv)
+    }
 
 ENGINES = ["chromium", "firefox", "webkit"]
 
@@ -334,12 +355,30 @@ def main() -> int:
         help="Comma-separated subset of chromium,firefox,webkit",
     )
     ap.add_argument("--headed", action="store_true", help="Run headed (default: headless)")
+    ap.add_argument(
+        "--channel",
+        help="Drive this channel's build (id from gameVersions.ts) instead of the public build",
+    )
     args = ap.parse_args()
 
     target_url = TARGET_URLS.get(args.target, args.target)
     public_url = PUBLIC_URLS.get(args.target) or target_url.replace(
         "/play/", "/godot/public/index.html"
     )
+    if args.channel:
+        paths = channel_paths()
+        if args.channel not in paths:
+            print(f"ERROR: unknown channel '{args.channel}' (valid: {sorted(paths)})", file=sys.stderr)
+            return 2
+        if args.channel in GATED_CHANNELS:
+            print(
+                f"ERROR: channel '{args.channel}' is signed-cookie gated; this anonymous "
+                "harness can't drive it. Use scripts/smoke_prod.py --channel beta.",
+                file=sys.stderr,
+            )
+            return 2
+        origin = target_url.split("/play/")[0]
+        public_url = origin + paths[args.channel]
     engines = [e.strip() for e in args.engines.split(",") if e.strip()]
     for e in engines:
         if e not in ENGINES:

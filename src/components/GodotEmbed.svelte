@@ -120,6 +120,12 @@
   // gate state. Admin fixture deep-loads skip the gate entirely.
   let allowed = $state(false);
   let showGate = $state(false);
+  // Returning mobile users skip the download gate, so /play never gets a
+  // guaranteed PARENT-page gesture to enter fullscreen (Android rejects a
+  // fullscreen request driven by a tap INSIDE the game iframe). This one-tap
+  // start layer supplies that gesture. Desktop + new users (who tap the gate)
+  // never see it.
+  let showStartTap = $state(false);
   let gateMode = $state<"fresh" | "update">("fresh");
 
   function consentToDownload() {
@@ -133,6 +139,12 @@
     lastProgressAt = Date.now(); // reset the boot-watchdog grace window too
     // The consent tap is a user gesture — enter mobile fullscreen right here
     // instead of waiting to catch a later pointerdown (new users' guaranteed gesture).
+    tryEnterFullscreen();
+  }
+
+  // Returning mobile user's start-layer tap — the guaranteed parent gesture.
+  function startTapPlay() {
+    showStartTap = false;
     tryEnterFullscreen();
   }
 
@@ -385,6 +397,9 @@
       allowed = true;
       // Game brings its own music — pause the persistent site player.
       window.dispatchEvent(new CustomEvent("music-player:pause"));
+      // No gate = no guaranteed parent gesture for fullscreen. Give mobile
+      // players a one-tap start layer to provide it (the game preloads behind).
+      if (!fixture && !hasScenario && isMobileViewport()) showStartTap = true;
     } else {
       gateMode = dlState; // "fresh" (first load) or "update" (version bumped)
       showGate = true;
@@ -939,6 +954,12 @@
         </div>
       </div>
     {/if}
+    {#if showStartTap}
+      <button class="start-tap" onclick={startTapPlay} aria-label="Tap to play fullscreen">
+        <span class="start-tap-title">The Chronicles of Nesis</span>
+        <span class="start-tap-cta">Tap to play</span>
+      </button>
+    {/if}
     <iframe
       bind:this={iframeEl}
       src={gameUrl}
@@ -1022,6 +1043,45 @@
     background: #0a0e17;
     color: #e0e7ff;
     font-family: "Courier New", monospace;
+  }
+
+  /* Mobile start layer — a guaranteed parent-page tap so fullscreen can enter
+     (Android rejects fullscreen driven from inside the game iframe). Sits above
+     the iframe + VirtualGamepad (z-index 5) while the game preloads behind it. */
+  .start-tap {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    border: none;
+    background: rgba(10, 14, 23, 0.72);
+    color: #e0e7ff;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .start-tap-title {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: clamp(1.4rem, 6vw, 2.4rem);
+    letter-spacing: 0.02em;
+    text-align: center;
+    padding: 0 1rem;
+  }
+  .start-tap-cta {
+    font-family: "Courier New", monospace;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--engine-accent, #a7f3d0);
+    animation: startPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes startPulse {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 1; }
   }
 
   .loading-title {

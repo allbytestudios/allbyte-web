@@ -286,12 +286,16 @@
   // allbyte:request-exit) and as an Escape-key handler on the parent
   // window for desktop fallback before Arc ships the in-game quit.
   function handleExit() {
+    // A TRUE installed PWA only — NOT browser fullscreen. `display-mode:
+    // fullscreen` also matches when we've merely requestFullscreen'd the page,
+    // so including it made an in-fullscreen exit request drop out of fullscreen
+    // instead of leaving the game. Installed = standalone display mode or iOS
+    // navigator.standalone.
     const standalone =
       typeof window !== "undefined" &&
       ((window.matchMedia &&
         window.matchMedia("(display-mode: standalone)").matches) ||
-        (window.matchMedia &&
-          window.matchMedia("(display-mode: fullscreen)").matches));
+        (navigator as any).standalone === true);
 
     if (standalone) {
       // Installed PWA — close the window. window.close() works for
@@ -575,19 +579,11 @@
     // Re-assert the parent mobile-context flag in case it was cleared; the
     // engine re-reads it at Title startup on every (re)load.
     pushMobileContext();
-    // First-gesture fullscreen ALSO from inside the game. A returning mobile
-    // player's first tap usually lands in the iframe — which the parent window
-    // never sees — so the page-level pointerdown listener alone misses it (this
-    // regressed when "Play now" changed from an in-place button to a navigation
-    // to /play). The game is same-origin, so listen on its own window too;
-    // tryEnterFullscreen requests fullscreen on the PARENT documentElement so the
-    // VirtualGamepad overlay stays in-frame. once:true + the fullscreenAttempted
-    // guard keep it to a single attempt.
-    try {
-      iframeEl?.contentWindow?.addEventListener("pointerdown", tryEnterFullscreen, { once: true });
-    } catch {
-      /* cross-origin (shouldn't happen for same-origin /godot/) */
-    }
+    // NOTE: we deliberately do NOT request fullscreen from a tap INSIDE the game
+    // iframe — Android rejects a fullscreen request driven by a child-frame
+    // gesture (it must originate on the parent page), and firing it there also
+    // disrupts the engine's own canvas fullscreen. The parent-page start layer
+    // (showStartTap) + the window pointerdown listener own fullscreen instead.
     if (fixture && iframeEl?.contentWindow) {
       // Give the game engine a moment to initialize TestBridge
       setTimeout(() => {

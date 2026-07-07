@@ -159,15 +159,17 @@
   // by tier. Add a re-resolve in onMount at the same time so SSR'd "public"
   // upgrades to "debug" for admin/legend users after auth hydrates.
   //
-  // TEMPORARILY FORCED OFF (2026-06-24): the public export at
-  // `/godot/public/` was looping on load (stale/threads-enabled cached build
-  // + missing files incl. Laria pack) and direct loads of /play/ resolve to
-  // it before auth hydrates, so anonymous/social visitors got an infinite
-  // "Loading" loop. Routing everyone to the single network-first `/godot/`
-  // path (the proven-working build) until Arc/Port fix the public export —
-  // see APP_CLAUDE_PUBLIC_BUILD_DEPLOY_GAPS.md. Flip back to true once the
-  // public build is verified clean on S3.
-  const VARIANT_PATHS_AVAILABLE = false;
+  // RE-ENABLED (2026-07-07): was forced off 2026-06-24 when the public export
+  // looped on load (stale/threads-enabled cached build + missing Laria pack —
+  // APP_CLAUDE_PUBLIC_BUILD_DEPLOY_GAPS.md). Evidence it's fixed: the
+  // 2026-07-07 CI Deploy QA run (qa-runs/2026-07-07T14-09-07Z_8a6bf03) passes
+  // BOOT + NEW GAME (Laria pack) + MOVEMENT on /godot/public/ across
+  // Chromium + WebKit, and `smoke_prod.py` boots it to Title; PWA users have
+  // been routed to it since v0.7.2066+ without incident. The auth-hydration
+  // race that stranded anonymous visitors is handled by the one-shot
+  // re-resolve $effect below. If this regresses: flip to false (isolated
+  // commit, safe revert) and everyone routes to /godot/ again.
+  const VARIANT_PATHS_AVAILABLE = true;
 
   type Variant = "public" | "debug";
 
@@ -238,6 +240,31 @@
   }
 
   let gameUrl = $state(resolveGameUrl());
+
+  // Re-resolve ONCE when auth hydrates (the /auth/me fetch resolves after
+  // mount): an admin/Legend's early "public" resolution upgrades to the debug
+  // build, and a tier-gated ?v=/?channel= deep-link that fell back pre-auth
+  // gets honoured. One-shot — never switch builds under a running session.
+  let authResolved = false;
+  $effect(() => {
+    if (!authResolved && auth.authReady) {
+      authResolved = true;
+      const next = resolveGameUrl();
+      if (next === gameUrl) return;
+      // An upgrade INTO the beta channel (e.g. a ?v=beta deep-link that could
+      // only unlock post-auth) must get its cookie grant before the iframe
+      // fetches, same as the mount path. Denied/unavailable → stay on the
+      // build we already resolved rather than mounting a build the edge will
+      // refuse.
+      if (isBetaPath(next)) {
+        void ensureBetaCookies().then((r) => {
+          if (r === "granted") gameUrl = next;
+        });
+      } else {
+        gameUrl = next;
+      }
+    }
+  });
 
   // Dev-only: listen for SSE file-change event from the godot-reload plugin
   // and reload just the iframe when Arc redeploys.

@@ -28,8 +28,8 @@ Parameters:
     Description: >
       ECR image URI (pinned by tag/digest) of the exporter: Godot 4.6.2 headless +
       web export templates + node. Built from a REVIEWED commit of the public
-      exporter repo — community PRs do not auto-flow in. Push target (created):
-      408667082077.dkr.ecr.us-east-1.amazonaws.com/allbyte/godot-exporter — tags
+      exporter repo — community PRs do not auto-flow in. Push target, e.g.
+      <account-id>.dkr.ecr.<region>.amazonaws.com/<your-exporter-repo> — tags
       are IMMUTABLE, so use a unique tag per build (e.g. godot-4.6.2-<date>).
   KeySecretArn:
     Type: String
@@ -38,13 +38,12 @@ Parameters:
       Value provisioned out-of-band by the owner/Arc; never in this template.
   SiteBucket:
     Type: String
-    Default: allbyte.studio-site
+    Description: S3 bucket that serves the site / game (pass on deploy).
   DistributionId:
     Type: String
-    Default: E1M9YWY7UW7130
+    Description: CloudFront distribution to invalidate (pass on deploy).
   SecureTemplateBucket:
     Type: String
-    Default: allbyte-studio-cfn-deploy
     Description: >
       Private bucket holding the key‑baked (SECRET) Godot web export template.
       The build installs it over the stock template so encrypted PCKs decrypt at

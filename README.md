@@ -12,7 +12,8 @@ engineering** (code, infrastructure, QA, automation) paired with **100 %
 handcrafted** art, music, and typography. That contrast runs through the whole
 product — including the landing page, which is literally split down the middle.
 
-> **Game developers:** the most reusable part of this repo is the
+> **Game developers:** this repo doubles as a small set of open-source Godot
+> tools — [see the index](#-open-source-tools-for-godot-developers). The flagship is the
 > [browser game build & deploy pipeline](#-the-web-game-pipeline-for-game-devs).
 > It takes a Godot game from source to a cross‑origin‑isolated, key‑obfuscated,
 > browser‑playable build on a CDN — fully hands‑off. Jump to that section.
@@ -22,6 +23,7 @@ product — including the landing page, which is literally split down the middle
 ## Table of contents
 
 - [Feature tour](#feature-tour) — every page, linked
+- [🧰 Open-source tools](#-open-source-tools-for-godot-developers) — reusable Godot dev tooling
 - [Tech stack](#tech-stack)
 - [Architecture](#architecture)
 - [🎮 The web game pipeline (for game devs)](#-the-web-game-pipeline-for-game-devs)
@@ -30,6 +32,22 @@ product — including the landing page, which is literally split down the middle
 - [Deployment & CI/CD](#deployment--cicd)
 - [Repository layout](#repository-layout)
 - [License](#license)
+
+---
+
+## 🧰 Open-source tools for Godot developers
+
+This repo is also where AllByte open-sources the reusable tooling built while
+shipping a Godot game to the browser — grab any piece on its own (all
+[MIT](#license)):
+
+| Tool | What it does |
+|------|--------------|
+| **[Web game build & deploy pipeline](#-the-web-game-pipeline-for-game-devs)** | Godot source → a cross-origin-isolated, key-obfuscated, browser-playable build on a CDN, hands-off: runtime-published channels, edge-gating for paid content, and deploys that boot-test themselves. Porting guide: [`docs/BRING_YOUR_OWN_GAME.md`](./docs/BRING_YOUR_OWN_GAME.md); runbook: [`DEPLOY.md`](./DEPLOY.md). |
+| **[Godot web-export key obfuscator](./scripts/obfuscate-godot-export.js)** | Godot ships the PCK script-encryption key as 32 bytes inside `index.wasm`, where static scanners can lift it. This XORs those bytes with a per-release mask and injects a fetch-time shim that un-masks them in memory — the WASM on disk yields nothing. Idempotent; drops into any Godot 4 web export. |
+| **[Godot 3 → 4 `.tscn` / `.tres` migrator](./scripts/migrate_g3_to_g4_tscn.py)** | Mechanizes the *silent-failure* class of G3→G4 breakage — the renames that parse cleanly in Godot 4 but quietly do nothing (`Sprite`→`Sprite2D`, `custom_*`→`theme_override_*`, `shader_param`→`shader_parameter`, StyleBoxTexture margins, missing font-size overrides, …). `--check` dry-runs, `--apply` rewrites. The story: [Godot 3.6 → 4.6: A Migration Built on Silent Failures](https://allbyte.studio/devlog/godot-3-to-4-retrospective/). |
+
+The pipeline's own supporting scripts (deploy, analytics, smoke tests) live under [the pipeline section](#-the-web-game-pipeline-for-game-devs) and in [`DEPLOY.md`](./DEPLOY.md).
 
 ---
 
@@ -215,8 +233,8 @@ Design choices a game dev might care about:
   locally‑built channel the same way, for iteration.
 
 Infrastructure for the above:
-- [`infrastructure/godot-export-codebuild.yaml`](./infrastructure/godot-export-codebuild.yaml) — CodeBuild project, least‑privilege IAM, webhook, Secrets wiring, log metric + alarm
-- [`infrastructure/exporter-image-ci.yaml`](./infrastructure/exporter-image-ci.yaml) — the OIDC role that lets CI push the exporter image
+- [`deploy/godot-export-codebuild.yaml`](./deploy/godot-export-codebuild.yaml) — CodeBuild project, least‑privilege IAM, webhook, Secrets wiring, log metric + alarm
+- [`deploy/exporter-image-ci.yaml`](./deploy/exporter-image-ci.yaml) — the OIDC role that lets CI push the exporter image
 - [`docker/exporter/Dockerfile`](./docker/exporter/Dockerfile) — the Godot exporter image
 - [`.github/workflows/exporter-image.yml`](./.github/workflows/exporter-image.yml) — build + push the image via OIDC
 - [`scripts/push-channel.js`](./scripts/push-channel.js) — the one channel‑driven deployer
@@ -233,7 +251,7 @@ the whole pipeline (threat model, controls, residual risk) is written up in
 ## Backend & API
 
 All backend infra is a single CloudFormation template
-(`infrastructure/stripe-backend.yaml`) of inline Python Lambdas behind an HTTP
+(kept private — not in this repo) of inline Python Lambdas behind an HTTP
 API at `https://api.allbyte.studio`.
 
 - **Auth** — email/password (PBKDF2‑HMAC‑SHA256, 600k iterations) + **OAuth**
@@ -242,7 +260,7 @@ API at `https://api.allbyte.studio`.
   subscription status in DynamoDB. *(Patreon migration planned.)*
 - **DynamoDB** — `allbyte-studio-users` (email GSI) and
   `allbyte-studio-subscriptions`.
-- **Analytics** — a play‑funnel beacon pipeline (`infrastructure/play-analytics.yaml`,
+- **Analytics** — a play‑funnel beacon pipeline (a private standalone stack,
   no IP stored) plus CloudFront‑log site traffic, both with datacenter/bot filtering.
 
 | Route | Purpose |
@@ -300,9 +318,10 @@ src/
   lib/          reactive stores (auth, saves), data layer, gameVersions, tiers
   content/      devlog Markdown collections
   data/         generated game/version/asset metadata (committed)
-scripts/        asset sync, obfuscation, the deploy pipeline
-infrastructure/ CloudFormation: frontend, backend, play-analytics, godot-export
+scripts/        asset sync, obfuscation, deploy pipeline, Godot 3→4 migrator
+deploy/         reusable game-deploy IaC (CodeBuild exporter + image-CI role)
 docker/exporter Godot exporter image
+                (private site/business infra lives in an untracked infrastructure/)
 .github/        deploy + exporter-image + QA workflows
 DEPLOY.md       game-build deploy runbook
 ```

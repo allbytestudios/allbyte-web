@@ -39,15 +39,14 @@ public/godot/*
 # Controller QA harness reports (generated per run, not source)
 tests/controller-qa/reports/
 
-# Marketing infra secrets — never commit Postiz JWT or any real
-# platform tokens. The .env.example template stays in the repo.
-infrastructure/marketing/.env
-
-# Marketing compose override — holds per-platform OAuth env var
-# passthroughs (Discord, Bluesky, etc.). Names + structure are private
-# infra; values come from .env. Docker Compose auto-merges this with
-# docker-compose.yml on `up`.
-infrastructure/marketing/docker-compose.override.yml
+# ── PUBLIC / PRIVATE BOUNDARY (read docs/PUBLIC_PRIVATE_BOUNDARY.md) ──────────
+# infrastructure/ is PRIVATE — it is NEVER committed to this public repo.
+# It holds business/site infra (auth+payments backend, CloudFront/S3, analytics,
+# pack gating) and marketing strategy (Postiz, posting playbooks, reddit ladders,
+# trailer treatments). None of it is reusable Godot tooling; all of it is either
+# sensitive attack surface or private strategy. The REUSABLE, public deploy
+# templates were moved OUT to deploy/ precisely so this blanket ignore is safe.
+infrastructure/
 
 # Cross-browser QA harness reports (generated per run, not source)
 tests/cross-browser-qa/reports/

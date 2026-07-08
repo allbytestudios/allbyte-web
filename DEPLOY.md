@@ -124,37 +124,61 @@ job in `.github/workflows/qa.yml` reads the live `channels.json` and boots
 every published channel (gated channels get the anonymous lock check only — CI
 holds no user tokens). Results land in `test-snapshot/qa-runs/<run-id>/`.
 
-## `scripts/deploy-watcher.js` — the host daemon
+## How `develop` deploys — git push → CodeBuild (LIVE, hands-off)
 
-Arc's game container has no aws creds; this host does. The watcher bridges them.
+`develop` builds and deploys itself **from source** on a git push. There is **no
+host daemon** and nothing to run on the laptop.
 
-- Polls `<Chronicles>/WebBootstrap/export/*/DEPLOY_READY` every 5s (Arc drops it after
-  a gated build).
-- For **dev** channels (develop/beta-debug): runs `push-channel.js`. On success deletes
-  `DEPLOY_READY` (Arc's ack). On failure writes `DEPLOY_FAILED` + leaves `DEPLOY_READY`.
-- For **live** channels: writes `DEPLOY_NEEDS_PROMOTE` and leaves it — never auto-promotes.
-- Single-instance **lock** (`.tmp/deploy-watcher.lock`); won't retry a build whose
-  `DEPLOY_FAILED` is newer than its `DEPLOY_READY`.
-- `--once` = single scan; `--log <path>` = also append to a file.
+- **Trigger:** a push to the `develop` branch of the private game repo fires a
+  GitHub webhook on the CodeBuild project `allbyte-godot-develop`. That's the
+  entire deploy ritual.
+- **Build (isolated in AWS):** CodeBuild clones the repo via CodeConnections
+  (OAuth — no token in the pipeline), installs the custom **key-baked** web export
+  template from private S3, then runs `tools/ci/cloud_export.sh` (headless import →
+  bootstrap + pack export → Tier-2 gate → `build_manifest.json`).
+- **Deploy:** `node /opt/exporter/push-channel.js --manifest <p>` (the same deployer
+  described above, baked into the exporter image) → obfuscate → gzip WASM → `s3 sync`
+  → merge `channels.json` → invalidate. The build's IAM role can write **only**
+  `godot/develop/*` + `channels.json` — it cannot touch live channels or other buckets.
+- **Result:** `/godot/develop/` updated, laptop-independent, no creds off AWS. Proven
+  to boot + decrypt packs (boot_check).
 
-**Runs as a daemon** via `Startup\AllByteDeployWatcher.vbs` (launches hidden at logon).
-- Check alive: `Get-Process node` + `.tmp/deploy-watcher.lock` (holds the PID) + tail
-  `.tmp/deploy-watcher.log`.
-- Stop: kill that PID (lock auto-releases). Disable autostart: delete the Startup `.vbs`.
-- Start manually: `npm run deploy-watcher` (or run the Startup `.vbs`).
+Infra: `deploy/godot-export-codebuild.yaml` (CodeBuild project + scoped IAM +
+webhook + `DevelopBuildFailure` alarm) and `deploy/exporter-image-ci.yaml` +
+`.github/workflows/exporter-image.yml` (builds the Godot exporter Docker image → ECR
+on Dockerfile/deployer-script change). Encryption key: Secrets Manager
+(`allbyte-studio/godot-script-key-*`). Key-baked template: private S3
+(`allbyte-studio-cfn-deploy/godot-templates/`). Spec:
+`Desktop/GameDev/APP_CLAUDE_CLOUD_EXPORTER_SPEC.md`.
+
+**To ship develop:** Arc commits to `develop` and pushes. Do **not** use the old local
+`develop_pipeline.sh` + `DEPLOY_READY` marker lane (see Retired).
+
+### Retired: the host deploy-watcher daemon
+`scripts/deploy-watcher.js` + `Startup\AllByteDeployWatcher.vbs` were the **interim
+bridge** before the cloud path — they polled Arc's `DEPLOY_READY` markers and ran
+`push-channel.js` host-side. **Retired 2026-07-04; do not run it.** The code stays
+committed but dormant. If the cloud path is ever down and you must ship develop by
+hand, use the break-glass manual push in *Manual ops* — never the daemon.
+
+### Live channels (alpha / alpha-debug / beta) — still manual, by design
+The cloud path covers **develop only** so far. Live releases are still the deliberate
+host-side `npm run promote -- --channel <ch>` (a conscious manual act — see the promote
+command in `CLAUDE.md`). Wiring alpha/beta to CodeBuild (`buildspec.alpha/beta` +
+`--promote`) is the planned next step.
 
 ## Runbook
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `sha256 mismatch for pack X` | torn/in-flux build — a pack changed after the manifest | not ours; wait for a clean rebuild + fresh `DEPLOY_READY`. Watcher retries automatically. |
+| `sha256 mismatch for pack X` | torn/in-flux build — a pack changed after the manifest | not ours; wait for a clean rebuild, then re-push `develop` (no auto-retry — a push re-triggers the build). |
 | `mixed_build:true` refusal | build flagged inconsistent upstream | wait for a clean build. |
 | obfuscator `stale shim` and it did NOT self-heal | key unavailable | check `GODOT_RELEASE_SCRIPT_KEY` in `docker/.env` (game key). |
 | `test_gate != pass` refusal | gate failed on Arc's side | fix the game/tests; not a deploy issue. |
-| `DEPLOY_NEEDS_PROMOTE` appeared | a live channel build was staged | promote deliberately: `node scripts/push-channel.js --manifest <p> --promote`. |
-| prod `develop` behind local build | daemon down, or last build failed | check daemon (above); if `DEPLOY_FAILED` present, it's a bad build — wait for the next, or delete `DEPLOY_FAILED` to retry. |
-| nothing deploying | no `DEPLOY_READY`, or daemon not running | confirm Arc drops `DEPLOY_READY`; confirm the daemon PID/log. |
-| dev deploy shows `DEPLOY_FAILED` but the channel updated | the light post-deploy smoke failed AFTER upload — artifacts are live on the dev path, marker tells Arc the build is bad | read the smoke output in the watcher log; bad build → wait for Arc's next; false alarm → `python scripts/smoke_prod.py --channel <ch> --boot-only` to re-check, then delete the marker. |
+| prod `develop` behind a `develop`-branch commit | CodeBuild build failed or the webhook didn't fire | check the `allbyte-godot-develop` build history + the `DevelopBuildFailure` alarm; fix game/gate and re-push, or retry the build in the CodeBuild console. |
+| nothing deploying after a `develop` push | webhook/build didn't fire, or the push didn't land on `develop` | confirm the commit is on the `develop` branch; check `allbyte-godot-develop` build history for a triggered run. |
+| a live channel needs shipping | live channels aren't on the cloud path yet | promote deliberately host-side: `npm run promote -- --channel <alpha\|alpha-debug\|beta>`. |
+| `develop` deploy step green but the game is broken | the light post-deploy boot smoke failed after upload — artifacts are live on the dev path | read the CodeBuild logs for the smoke output; bad build → fix + re-push; false alarm → `python scripts/smoke_prod.py --channel develop --boot-only` to re-check. |
 | entitled user gets 403 / fallback page on beta | expired cookies (12h TTL), key-pair-id mismatch, or the Lambda can't read the signing secret | re-login → `betaGate` refetches; check `allbyte-studio-beta-cookies` CloudWatch AUDIT lines; confirm `CfBetaKeyPairId` matches the public key in the key group. |
 | beta serves REAL game content anonymously | the `/godot/beta/*` behavior lost `TrustedKeyGroups` (or was reordered behind `/godot/*`) | `python scripts/smoke_prod.py --channel beta --locked-only` confirms; re-apply `node scripts/gate-beta-behavior.js --key-group <id> --apply`. This is the alarm case — treat as an incident. |
 | `channels.json` lists a dead/retired channel | file is merge-only (each deploy adds; nothing removes) | GET the file, delete the key, PUT it back, invalidate `/godot/channels.json` (the picker drops it live). |
@@ -162,19 +186,25 @@ Arc's game container has no aws creds; this host does. The watcher bridges them.
 
 ## Manual ops
 
+Normal develop deploys need none of this — Arc pushes `develop` and CodeBuild does it.
+These are **break-glass**, for when the cloud path is down and a build must ship by hand
+against a host-mounted manifest:
+
 ```bash
 # dry-run any channel (plans everything, uploads nothing)
 node scripts/push-channel.js --manifest <path> --dry-run
+# push a dev channel by hand (break-glass; normally the cloud path does this)
+node scripts/push-channel.js --manifest <path>
 # deliberately promote a live channel
 node scripts/push-channel.js --manifest <path> --promote
 # what's live right now
 curl -s https://allbyte.studio/godot/channels.json
 ```
 
-## Cloud path (planned — supersedes the watcher for `develop`)
+## Roadmap
 
-`infrastructure/godot-export-codebuild.yaml` moves the `develop` build+deploy to AWS
-CodeBuild (build from source, IAM role, key from Secrets Manager) — no host daemon, no
-creds off the laptop. Held until Arc confirms a hermetic build (bead `yp5`). Spec:
-`Desktop/GameDev/APP_CLAUDE_CLOUD_EXPORTER_SPEC.md`. When it lands, the watcher stays as
-the `beta-debug` fast lane / fallback.
+- **Live channels on the cloud path** — extend CodeBuild to `alpha`/`beta`
+  (`buildspec.alpha/beta` in the game repo + `--promote`) so live releases are also
+  git-push-triggered. Until then live promotes are the manual `npm run promote`.
+- **Generalized exporter** — the CodeBuild image + `cloud_export.sh` are ~80%
+  game-agnostic; the seed of a "point at any Godot source → build → serve PWA" tool.

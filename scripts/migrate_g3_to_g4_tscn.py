@@ -51,7 +51,8 @@ Transforms applied:
                 Whole-document rewrite is safe because the prefix `shader_param/`
                 only appears in ShaderMaterial property assignments and animation-
                 track NodePaths — both need the same rename.
-                See G3_TO_G4_MIGRATION_GUIDE.md §3.4.
+                See the "Shaders: SCREEN_TEXTURE and the silent param rename"
+                section of the migration devlog linked in the header above.
 
 NOT touched (out of scope, separate tickets):
   - Inline shader code (SCREEN_TEXTURE): owned by ticket TITLE-SHADER-G4.

@@ -269,6 +269,28 @@ if (isLive) {
   }
 }
 
+// --- AutoReload version marker (test_results/current_version.txt) -------------
+// The Godot export shell polls this every 3s and reloads an open tab when it
+// changes (picks up a new build without a manual refresh). If the file is ABSENT,
+// CloudFront's 403/404 -> /index.html rewrite serves the SITE's HTML with HTTP
+// 200, and the shell treats that HTML as an ever-changing "version" -> boot loop
+// (develop/beta-debug shipped without it; alpha had one, which is why only develop
+// looped). So every deploy writes a real text/plain marker: stable within a build,
+// changes per build. The /${DEST}/* invalidation below already covers it.
+{
+  const cvKey = `${DEST}/test_results/current_version.txt`;
+  const cvBody = `version: ${version}\ngitSha: ${manifest.git_sha || ""}\ndeployedAt: ${manifest.created || ""}\nchannel: ${channel}\n`;
+  if (dryRun) {
+    console.log(`[dry-run] write ${cvKey} (AutoReload marker = ${version})`);
+  } else {
+    const tmp = join(baseDir, "_current_version.txt");
+    writeFileSync(tmp, cvBody);
+    try { run(`aws s3 cp "${tmp}" s3://${bucket}/${cvKey} --region ${region} --cache-control "no-cache, max-age=0, must-revalidate" --content-type "text/plain"`); }
+    finally { try { unlinkSync(tmp); } catch { /* best-effort */ } }
+    console.log(`[push-channel] wrote AutoReload version marker (${version}).`);
+  }
+}
+
 // --- invalidate this channel's path + channels.json (+ /play,/sw.js live) --
 function distributionId() {
   if (process.env.AWS_CLOUDFRONT_DISTRIBUTION_ID) return process.env.AWS_CLOUDFRONT_DISTRIBUTION_ID;

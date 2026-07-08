@@ -78,7 +78,7 @@ A three‑stream devlog; every post gets an auto‑generated table of contents.
 ### Membership & community
 | Page | What it is |
 |------|-----------|
-| [`/subscribe`](https://allbyte.studio/subscribe/) | Membership tiers — Initiate / Hero / Legend + one‑time support (Stripe Checkout today; Patreon migration planned). |
+| [`/subscribe`](https://allbyte.studio/subscribe/) | Membership tiers — Initiate / Hero / Legend + one‑time support hosted on Patreon. |
 | [`/legends_square`](https://allbyte.studio/legends_square/) | Legend‑tier private post board (auth‑gated). |
 
 ### Dev Console (`/test/*`) — subscriber/admin‑gated
@@ -254,20 +254,22 @@ All backend infra is a single CloudFormation template
 (kept private — not in this repo) of inline Python Lambdas behind an HTTP
 API at `https://api.allbyte.studio`.
 
-- **Auth** — email/password (PBKDF2‑HMAC‑SHA256, 600k iterations) + **OAuth**
-  (Google, Discord). JWT (HS256, 7‑day) in `localStorage`, sent as `Bearer`.
-- **Membership** — Stripe Checkout for tiers + one‑time support; a webhook keeps
-  subscription status in DynamoDB. *(Patreon migration planned.)*
-- **DynamoDB** — `allbyte-studio-users` (email GSI) and
-  `allbyte-studio-subscriptions`.
+- **Auth** — **Patreon OAuth only** (no passwords). JWT (HS256, 7‑day) in
+  `localStorage`, sent as `Bearer`.
+- **Membership** — tiers live on **Patreon**; a Patreon webhook syncs each patron's
+  tier into DynamoDB, read on login. No payment code runs here.
+- **DynamoDB** — `allbyte-studio-users` (email GSI) + `allbyte-studio-posts`
+  (Legend's Square); a legacy `allbyte-studio-subscriptions` table is retained.
 - **Analytics** — a play‑funnel beacon pipeline (a private standalone stack,
   no IP stored) plus CloudFront‑log site traffic, both with datacenter/bot filtering.
 
 | Route | Purpose |
 |-------|---------|
-| `POST /auth/signup` · `POST /auth/login` · `GET /auth/me` | Email/password auth + profile |
-| `GET /auth/oauth/{provider}` · `.../callback` | Google / Discord OAuth |
-| `POST /checkout` · `POST /webhook` | Stripe checkout + webhook |
+| `GET /auth/oauth/patreon` · `.../callback` | Patreon OAuth login |
+| `GET /auth/me` | Validate Bearer JWT → profile + tier |
+| `POST /webhook/patreon` | Patreon webhook → tier sync |
+| `GET/PUT/DELETE /saves` | Cloud save sync (Hero/Legend) |
+| `GET /pck-url` · `GET /game/beta-cookies` | Server-side content gates |
 | `GET /counts` | Public subscriber tier counts |
 
 ---

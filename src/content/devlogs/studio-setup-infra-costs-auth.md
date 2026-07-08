@@ -9,6 +9,8 @@ tags: ["aws", "infrastructure", "auth", "stripe", "self-hosting"]
 
 How I deployed a static site to AWS for under $5/month (minus Claude expense) — using Claude as the AI pair-programmer. You can reference my setup on [GitHub](https://github.com/allbytestudios/allbyte-web).
 
+> **Update (July 2026):** I've since moved payments to **Patreon**. The self-hosted Stripe Checkout + custom auth stack described below is a record of what I built, not what runs today — the reasoning behind the switch is its own post, [Pay the Platforms, or Own the Stack](/devlog/pay-the-platforms-or-own-the-stack/). The backend CloudFormation template referenced below is also no longer in the public repo.
+
 ## The Setup
 
 This site runs on a fully automated pipeline: I push code to GitHub, and it's live on **allbyte.studio** within 30 seconds. No servers to manage, no containers to orchestrate. Just static files on a CDN.

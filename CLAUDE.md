@@ -92,7 +92,7 @@ The `Footer.astro` component accepts a `theme` prop (`"engine"` | `"heart"`) to 
 - `/fonts` — ModernGoth typeface showcase
 - `/walkthrough/` — Scene-graph walkthrough (magazine-scroll scene map)
 - `/changelog/` — Public "what's new" feed rendered from `src/data/changelog.json`
-- `/subscribe` — Subscription tiers + Stripe Checkout (Patreon migration planned — tiers + login move to Patreon; Stripe/email/OAuth auth to be ripped out once the Patreon campaign exists)
+- `/subscribe` — Membership tiers hosted on Patreon (pledge on Patreon; log in with Patreon to unlock — tier syncs on login)
 - `/legends_square/` — Legend-tier private post board (auth-gated)
 - `/devlog/` — Devlog hub with three sub-blogs:
   - `/devlog/chronicles/` — Chronicles of Nesis game development
@@ -154,59 +154,45 @@ All generated files committed to git (CI has no Godot access). Sync gracefully s
 
 ## Backend (Lambda + DynamoDB + API Gateway)
 
-All backend infrastructure is defined in `infrastructure/stripe-backend.yaml` as inline Python 3.12 Lambda functions within a CloudFormation template. The API Gateway V2 (HTTP API) is at `https://api.allbyte.studio`.
+All backend infrastructure is inline Python 3.12 Lambda functions in one CloudFormation template, `infrastructure/stripe-backend.yaml` (legacy filename; stack `allbyte-studio-stripe`). **That template is private — not in the public repo** (it carries all the Lambda source; deploys via CLI from the local copy). API Gateway V2 (HTTP API) at `https://api.allbyte.studio`.
 
-**Migration planned:** subscriptions + login move to Patreon (Patreon-only auth); Stripe and email/Google/Discord auth get removed once AllByte's Patreon campaign + secrets exist. Until then, the below is what's live — don't invest in new Stripe/OAuth features.
+**Auth is Patreon-only.** The 2026-06 migration removed Stripe, email/password, and Google/Discord auth. Patreon OAuth is the sole login; non-patrons are free tier; each patron's membership tier is derived from their Patreon pledge. Don't reintroduce Stripe/email/Google/Discord.
 
 ### DynamoDB Tables
-- **`allbyte-studio-users`**: userId (PK), email (GSI `email-index`), username, passwordHash (email/password users only), oauthProvider, oauthId (OAuth users), stripeCustomerId, createdAt
-- **`allbyte-studio-subscriptions`**: customerId (PK), subscriptionId, status, priceId, email
+- **`allbyte-studio-users`**: userId (PK), email (GSI `email-index`), username, `patreonId`, `tier`, oauthProvider (`patreon`), notificationPreferences, createdAt
+- **`allbyte-studio-posts`**: Legend's Square post board
+- **`allbyte-studio-subscriptions`**: retained from the Stripe era (no new writes)
 
-### API Endpoints
-| Route | Lambda | Purpose |
-|-------|--------|---------|
-| `POST /auth/signup` | SignupFunction | Email/password registration → JWT |
-| `POST /auth/login` | LoginFunction | Email/password login → JWT |
-| `GET /auth/me` | MeFunction | Validate Bearer token, return user profile + tier |
-| `GET /auth/oauth/{provider}` | OAuthStartFunction | Redirect to Google/Discord authorization |
-| `GET /auth/oauth/{provider}/callback` | OAuthCallbackFunction | Exchange code, create/link user, redirect with JWT |
-| `POST /checkout` | CreateCheckoutFunction | Create Stripe Checkout session (subscriptions require auth) |
-| `POST /webhook` | WebhookFunction | Stripe webhook handler |
-| `GET /counts` | GetCountsFunction | Public subscriber tier counts |
+### API Endpoints (grouped; ~25 routes total)
+| Route | Purpose |
+|-------|---------|
+| `GET /auth/oauth/{provider}` + `/callback` | **Patreon** OAuth start + callback (only `patreon` wired) |
+| `GET /auth/me` | Validate Bearer JWT, return profile + tier |
+| `POST /webhook/patreon` | Patreon webhook — sync tier on pledge create/update/delete |
+| `GET /counts` | Public subscriber tier counts |
+| `GET /auth/unsubscribe` · `PUT /auth/notification-prefs` | Email prefs |
+| `GET/PUT/DELETE /saves` | Cloud save sync (Hero/Legend) |
+| `GET /pck-url` · `GET /game/beta-cookies` | Server-side content gates (packs / beta) |
+| `GET/POST /legend/posts` · `PUT /legend/posts/{postId}/reply` | Legend's Square |
+| `GET /admin/users` · `PUT /admin/users/{userId}/tier` · `GET /admin/stats/*` · `GET /analytics/*` | Admin + analytics (admin-gated) |
 
 ### Authentication Flow
 - **JWT tokens**: HS256 signed with `allbyte-studio/jwt-secret` (Secrets Manager), 7-day expiry
-- **Password hashing**: PBKDF2-HMAC-SHA256 (600k iterations), stored as `base64(salt):base64(hash)`
-- **Client-side**: Token stored in `localStorage` key `"allbyte_token"`, sent as `Authorization: Bearer` header
-- **Auth store**: `src/lib/auth.svelte.ts` — reactive Svelte 5 state with `initAuth()`, `login()`, `signup()`, `logout()`, `oauthLogin()`
+- **Client-side**: token in `localStorage` key `"allbyte_token"`, sent as `Authorization: Bearer`
+- **Auth store**: `src/lib/auth.svelte.ts` — `initAuth()`, `oauthLogin("patreon")`, `logout()`
+- No passwords (Patreon-only login)
 
-### OAuth Flow (Google + Discord)
-1. Frontend calls `oauthLogin("google"|"discord")` → redirects to `GET /auth/oauth/{provider}`
-2. OAuthStartFunction reads client_id from Secrets Manager, generates HMAC-signed `state` param, returns 302 to provider
-3. Provider redirects to `GET /auth/oauth/{provider}/callback` with auth code
-4. OAuthCallbackFunction verifies state, exchanges code for access token, fetches user profile
-5. Finds user by email (email-index) → links OAuth if existing, or creates new user
-6. Signs JWT, redirects to `{SITE_DOMAIN}/#token={jwt}`
-7. `initAuth()` reads token from URL hash, stores in localStorage, clears hash
+### Patreon OAuth + membership
+1. `oauthLogin("patreon")` -> `GET /auth/oauth/patreon` -> 302 to patreon.com (client_id from `allbyte-studio/patreon-oauth`, HMAC-signed `state`)
+2. Callback exchanges the code, fetches `identity?include=memberships`, maps the entitled tier (`PATREON_TIER_IDS`, campaign `16252801`: Initiate `28882017` / Hero `28882292` / Legend `28882311`; amount-cents fallback), persists `patreonId` + `tier`, signs a JWT, redirects to `{SITE_DOMAIN}/#token={jwt}`; `initAuth()` reads the hash
+3. **Webhook** `POST /webhook/patreon` verifies `X-Patreon-Signature` (HMAC-MD5, `allbyte-studio/patreon-webhook-secret`), updates tier on `members:pledge:create|update|delete`
 
-**OAuth Secrets** (Secrets Manager):
-- `allbyte-studio/google-oauth` — `{"client_id": "...", "client_secret": "..."}`
-- `allbyte-studio/discord-oauth` — `{"client_id": "...", "client_secret": "..."}`
-- `allbyte-studio/stripe-webhook-secret` — Stripe webhook signing secret (`whsec_...`)
+**Redirect URI** (must match the Patreon app): `https://api.allbyte.studio/auth/oauth/patreon/callback`
 
-**OAuth redirect URIs** (must match provider app config):
-- Google: `https://api.allbyte.studio/auth/oauth/google/callback`
-- Discord: `https://api.allbyte.studio/auth/oauth/discord/callback`
-
-### Stripe Integration
-- Subscription tiers: Initiate ($3), Hero ($7), Legend ($15) + donation amounts ($5/$10/$25)
-- Stripe prices configured as CloudFormation parameters with defaults
-- Checkout creates/links Stripe customer to user record
-- Webhook updates subscription status in SubscriptionsTable
-- Stripe secret key in Secrets Manager: `allbyte-studio/stripe-secret-key`
+**Orphaned legacy secrets** (safe to delete): `allbyte-studio/google-oauth`, `discord-oauth`, `stripe-secret-key`, `stripe-webhook-secret`.
 
 ### CORS
-API Gateway allows origins: `https://allbyte.studio`, `http://localhost:4321`. Methods: POST, GET, OPTIONS. Headers: Content-Type, Authorization.
+API Gateway allows origins: `https://allbyte.studio`, `http://localhost:4321`. Methods: GET, POST, PUT, DELETE, OPTIONS. Headers: Content-Type, Authorization.
 
 ## CI/CD
 GitHub Actions:
@@ -231,7 +217,8 @@ GitHub Actions:
 aws cloudformation deploy \
   --template-file infrastructure/stripe-backend.yaml \
   --stack-name allbyte-studio-stripe \
-  --capabilities CAPABILITY_NAMED_IAM
+  --capabilities CAPABILITY_NAMED_IAM \
+  --s3-bucket allbyte-studio-cfn-deploy --s3-prefix stripe-backend   # template >50KB, needs staging
 ```
 
 ## Deployment Notes

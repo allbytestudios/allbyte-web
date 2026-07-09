@@ -152,31 +152,38 @@ function generateShim(offset, mask, wasmSha) {
 \tfor (var i = 0; i < KEY_LEN; i++) {
 \t\tmask[i] = parseInt(MASK_HEX.substr(i * 2, 2), 16);
 \t}
-\tvar originalFetch = window.fetch.bind(window);
-\twindow.fetch = function (input, init) {
-\t\tvar url = typeof input === "string" ? input : (input && input.url) || "";
-\t\tif (/index\\.wasm/.test(url)) {
-\t\t\treturn originalFetch(input, init).then(function (resp) {
-\t\t\t\treturn resp.arrayBuffer().then(function (buf) {
-\t\t\t\t\tvar view = new Uint8Array(buf);
-\t\t\t\t\tfor (var j = 0; j < KEY_LEN; j++) view[KEY_OFFSET + j] ^= mask[j];
-\t\t\t\t\t// Clean headers: keep the wasm content-type but DROP content-encoding
-\t\t\t\t\t// and content-length. buf is the already-decoded body; index.wasm is
-\t\t\t\t\t// served gzip-encoded for transport, so copying those headers onto this
-\t\t\t\t\t// synthetic plaintext Response would make instantiateStreaming try to
-\t\t\t\t\t// re-decode plain bytes / mismatch the length on some engines.
-\t\t\t\t\tvar cleanHeaders = new Headers();
-\t\t\t\t\tcleanHeaders.set("content-type", resp.headers.get("content-type") || "application/wasm");
-\t\t\t\t\treturn new Response(buf, {
-\t\t\t\t\t\tstatus: resp.status,
-\t\t\t\t\t\tstatusText: resp.statusText,
-\t\t\t\t\t\theaders: cleanHeaders,
-\t\t\t\t\t});
-\t\t\t\t});
-\t\t\t});
-\t\t}
-\t\treturn originalFetch(input, init);
-\t};
+	// Un-mask the script key at COMPILE time, not fetch time. The Godot loader
+	// compiles via WebAssembly.instantiateStreaming(); a window.fetch override that
+	// edits the fetched buffer never reaches the streaming compiler (the engine runs
+	// the still-masked key -> pck decryption fails with an MD5/key error -> crash).
+	// Patching the buffer in the streaming-compile path is what lands in the module.
+	function unmask(buf) {
+		try {
+			var v = new Uint8Array(buf);
+			// Only the (large) engine wasm reaches the key offset; smaller worklet
+			// buffers are shorter and are left untouched.
+			if (v.length > KEY_OFFSET + KEY_LEN) {
+				for (var j = 0; j < KEY_LEN; j++) v[KEY_OFFSET + j] ^= mask[j];
+			}
+		} catch (e) {}
+		return buf;
+	}
+	if (WebAssembly.instantiateStreaming) {
+		WebAssembly.instantiateStreaming = function (src, imports) {
+			return Promise.resolve(src).then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+				unmask(buf);
+				return WebAssembly.instantiate(buf, imports);
+			});
+		};
+	}
+	if (WebAssembly.compileStreaming) {
+		WebAssembly.compileStreaming = function (src) {
+			return Promise.resolve(src).then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+				unmask(buf);
+				return WebAssembly.compile(buf);
+			});
+		};
+	}
 })();
 `;
 }

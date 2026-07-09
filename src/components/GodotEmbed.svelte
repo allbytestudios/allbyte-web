@@ -112,6 +112,10 @@
   let loading = $state(true);
   let error = $state("");
   let iframeEl = $state<HTMLIFrameElement | null>(null);
+  let containerEl = $state<HTMLDivElement | null>(null);
+  // Surfaced ONLY with ?fsdebug=1 — Chrome's actual fullscreen rejection reason,
+  // so an on-device failure is diagnosable without remote debugging.
+  let fsDebug = $state("");
 
   // Download gate — hold the ~100 MB first load until the user consents.
   // The iframe's `src` is the trigger: as long as we don't render the iframe,
@@ -390,23 +394,68 @@
   // Registered in onMount, torn down in onDestroy.
   let mobileCtxMqlOff: (() => void) | null = null;
 
-  let fullscreenAttempted = false;
-  function tryEnterFullscreen() {
-    if (fullscreenAttempted) return;
-    fullscreenAttempted = true;
-    if (!isMobileViewport()) return;
-    try {
-      const el = document.documentElement;
-      if (!document.fullscreenElement && el.requestFullscreen) {
-        el.requestFullscreen().catch(() => {});
-      }
-    } catch {}
+  // Landscape lock only succeeds while ALREADY in fullscreen (browsers reject a
+  // bare lock), so it's chained off the requestFullscreen() resolution below.
+  function lockLandscape() {
     try {
       const orientation = (screen as any).orientation;
       if (orientation && typeof orientation.lock === "function") {
         orientation.lock("landscape").catch(() => {});
       }
     } catch {}
+  }
+
+  function reportFsError(err: any) {
+    try {
+      console.warn("[fullscreen] request rejected:", err?.name, err?.message || err);
+    } catch {}
+    if (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("fsdebug")
+    ) {
+      fsDebug = `fullscreen rejected: ${err?.name || ""} ${err?.message || String(err)}`.slice(0, 200);
+    }
+  }
+
+  // First-gesture fullscreen. Two hard-won rules:
+  //  1. Latch ONLY on success. Chrome Android rejects fullscreen from some
+  //     activation contexts (notably `pointerdown`); if we latched on attempt,
+  //     that first silent rejection would block the retry from the stronger
+  //     `click`/`pointerup` context — the 2026-07-09 "nothing happens" bug.
+  //  2. Request on the CONTAINER (holds the iframe + touch gamepad), so the
+  //     gamepad stays visible in fullscreen; documentElement is the fallback.
+  let fullscreenDone = false; // succeeded (or already fullscreen) — stop trying
+  let fsPending = false; // a request is in flight — don't fire a second
+  function tryEnterFullscreen() {
+    if (fullscreenDone || fsPending) return;
+    if (!isMobileViewport()) return;
+    if (document.fullscreenElement) {
+      fullscreenDone = true;
+      return;
+    }
+    const target: any = containerEl ?? document.documentElement;
+    if (!target || typeof target.requestFullscreen !== "function") {
+      reportFsError(new Error("requestFullscreen unsupported on this browser"));
+      return;
+    }
+    fsPending = true;
+    try {
+      target.requestFullscreen()
+        .then(() => {
+          fullscreenDone = true;
+          fsPending = false;
+          if (typeof window !== "undefined")
+            window.removeEventListener("pointerup", tryEnterFullscreen);
+          lockLandscape();
+        })
+        .catch((err: any) => {
+          fsPending = false; // stay unlatched → the next gesture retries
+          reportFsError(err);
+        });
+    } catch (err) {
+      fsPending = false;
+      reportFsError(err);
+    }
   }
 
   onMount(() => {
@@ -455,11 +504,14 @@
       proceedToGame();
     }
 
-    // Listen anywhere on the page for the first user gesture and try the
-    // fullscreen request once. Use pointerdown so it covers mouse + touch
-    // with a single handler. { once: true } auto-removes after firing.
+    // Listen anywhere on the page for a user gesture and try to enter
+    // fullscreen. Use `pointerup` (not `pointerdown`) — Chrome Android grants
+    // fullscreen more reliably from the completed tap. NOT `{ once: true }`:
+    // tryEnterFullscreen self-removes this listener on the first SUCCESS, so a
+    // silently-rejected attempt is retried on the next tap instead of being
+    // permanently latched out.
     if (typeof window !== "undefined") {
-      window.addEventListener("pointerdown", tryEnterFullscreen, { once: true });
+      window.addEventListener("pointerup", tryEnterFullscreen);
       window.addEventListener("keydown", handleEscape);
       if (window.matchMedia) {
         const mql = window.matchMedia("(pointer: coarse) and (max-width: 1100px)");
@@ -526,7 +578,7 @@
     teardownKbNudge();
     stopBetaRefresh();
     if (typeof window !== "undefined") {
-      window.removeEventListener("pointerdown", tryEnterFullscreen);
+      window.removeEventListener("pointerup", tryEnterFullscreen);
       window.removeEventListener("keydown", handleEscape);
     }
     mobileCtxMqlOff?.();
@@ -975,7 +1027,14 @@
   }
 </script>
 
-<div class="godot-container">
+<div class="godot-container" bind:this={containerEl}>
+  {#if fsDebug}
+    <div
+      style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fff;font:12px/1.4 monospace;padding:6px 8px;word-break:break-word;"
+    >
+      {fsDebug}
+    </div>
+  {/if}
   {#if error}
     <div class="loading-screen">
       <div class="loading-title">AllByte Studios</div>

@@ -293,6 +293,14 @@ if (isLive) {
 
 // --- invalidate this channel's path + channels.json (+ /play,/sw.js live) --
 function distributionId() {
+  // The CodeBuild cloud path injects the id as DISTRIBUTION_ID (see
+  // deploy/godot-export-codebuild.yaml); the local promote path may set
+  // AWS_CLOUDFRONT_DISTRIBUTION_ID. Prefer EITHER env var over the DescribeStacks
+  // lookup — the least-privilege cloud build role can't call
+  // cloudformation:DescribeStacks, so that path throws AccessDenied and the deploy
+  // silently skips CloudFront invalidation, leaving the edge serving stale
+  // immutable-cached bytes (the 2026-07-09 develop stale-shim incident).
+  if (process.env.DISTRIBUTION_ID) return process.env.DISTRIBUTION_ID;
   if (process.env.AWS_CLOUDFRONT_DISTRIBUTION_ID) return process.env.AWS_CLOUDFRONT_DISTRIBUTION_ID;
   try {
     const id = capture(`aws cloudformation describe-stacks --stack-name ${stackName} --region ${region} --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" --output text`);

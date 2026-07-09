@@ -53,6 +53,18 @@ Resources:
                   - ecr:BatchGetImage
                   - ecr:GetDownloadUrlForLayer
                 Resource: !Sub "arn:aws:ecr:us-east-1:${AWS::AccountId}:repository/${EcrRepoName}"
+              # After building+pushing a new image, the workflow repoints the
+              # game-export CodeBuild projects at it (env-preserving update-project)
+              # so a fix in a deployer script actually reaches builds instead of
+              # stranding on a stale pin (the 2026-07-09 4-day-stale-pin incident).
+              # Scoped to the allbyte-godot-* export projects; no PassRole (the
+              # update touches only environment.image, never the service role).
+              - Sid: AdvanceGodotExportImagePin
+                Effect: Allow
+                Action:
+                  - codebuild:BatchGetProjects
+                  - codebuild:UpdateProject
+                Resource: !Sub "arn:aws:codebuild:us-east-1:${AWS::AccountId}:project/allbyte-godot-*"
 
 Outputs:
   RoleArn:

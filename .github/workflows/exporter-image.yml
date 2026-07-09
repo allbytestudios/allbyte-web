@@ -59,6 +59,29 @@ jobs:
       - name: Push
         run: docker push "$ECR_REPO:${{ steps.tag.outputs.tag }}"
 
+      # Repoint every deployed allbyte-godot-* CodeBuild project at the image just
+      # built, PRESERVING its environmentVariables (secret refs included). Closes
+      # the "image rebuilt but the CodeBuild pin never advanced" gap that stranded
+      # a fix for 4 days (2026-07-09). Safe to auto-advance because the boot smoke
+      # baked into the image fails the CodeBuild run if a bad image is pinned.
+      - name: Advance CodeBuild image pin(s)
+        env:
+          IMG: ${{ env.ECR_REPO }}:${{ steps.tag.outputs.tag }}
+        run: |
+          for project in allbyte-godot-develop; do
+            if ! aws codebuild batch-get-projects --names "$project" \
+                   --query 'projects[0].environment' --output json > /tmp/env.json 2>/dev/null \
+               || [ "$(cat /tmp/env.json)" = "null" ]; then
+              echo "::notice::project $project not found — skipping pin advance"
+              continue
+            fi
+            jq --arg img "$IMG" '.image = $img' /tmp/env.json > /tmp/env.new.json
+            aws codebuild update-project --name "$project" \
+              --environment "file:///tmp/env.new.json" \
+              --query 'project.environment.image' --output text
+            echo "repointed $project -> $IMG"
+          done
+
       - name: Summary
         run: |
           echo "### Exporter image pushed" >> "$GITHUB_STEP_SUMMARY"

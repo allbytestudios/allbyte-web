@@ -16,7 +16,7 @@ FROM node:22-bookworm-slim
 # python3 + git are required by cloud_export.sh (build_manifest.py / audit scripts,
 # and the git short-sha stamp).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl unzip git python3 fontconfig libfontconfig1 \
+      ca-certificates curl unzip git python3 python3-pip python-is-python3 fontconfig libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*
 
 # --- AWS CLI v2 (push-channel.js shells out to `aws`) --------------------------
@@ -63,5 +63,20 @@ RUN mkdir -p /workspace/GameDev/Godots && ln -sf /usr/local/bin/godot /workspace
 COPY scripts/push-channel.js /opt/exporter/push-channel.js
 COPY scripts/obfuscate-godot-export.js /opt/scripts/obfuscate-godot-export.js
 COPY src/lib/gameVersions.ts /opt/src/lib/gameVersions.ts
+
+# --- Post-deploy boot smoke (the "green = actually boots" gate) ----------------
+# push-channel runs `python /opt/scripts/smoke_prod.py --channel <ch> --boot-only`
+# after a dev-channel deploy and exits non-zero on failure — but the smoke only
+# runs if the file AND a real headless Chromium are present. Baking both here is
+# what makes a runtime-broken build fail the CodeBuild run instead of shipping
+# green (the 2026-07-09 develop OOB shipped green precisely because neither was
+# in the image, so the smoke silently no-op'd). smoke_prod.py's SUSPECT_PATTERNS
+# already catch the Godot MD5/decrypt signatures behind that crash.
+COPY scripts/smoke_prod.py /opt/scripts/smoke_prod.py
+RUN pip3 install --no-cache-dir --break-system-packages playwright \
+    && playwright install --with-deps chromium
+# CodeBuild runs as root, where Chromium's sandbox can't initialize — smoke_prod
+# reads this flag and launches headless with --no-sandbox.
+ENV SMOKE_CHROMIUM_NO_SANDBOX=1
 
 WORKDIR /workspace

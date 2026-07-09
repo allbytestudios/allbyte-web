@@ -64,6 +64,11 @@ URL = os.environ.get("SMOKE_URL", "https://allbyte.studio/play/")
 BOOT_TIMEOUT_S = 45  # generous; first-load with cold cache is slow
 READY_POLL_S = 1
 
+# Root containers (CodeBuild) can't run Chromium's sandbox — the exporter image
+# sets SMOKE_CHROMIUM_NO_SANDBOX=1 so the in-build boot gate can launch headless.
+# Empty (the default) everywhere else, so local/CI-runner behavior is unchanged.
+CHROMIUM_LAUNCH_ARGS = ["--no-sandbox"] if os.environ.get("SMOKE_CHROMIUM_NO_SANDBOX") else []
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSION_FILE = os.path.join(REPO, "src", "data", "game-version.json")
 GAME_VERSIONS_TS = os.path.join(REPO, "src", "lib", "gameVersions.ts")

@@ -12,6 +12,7 @@
   import gameVersion from "../data/game-version.json";
   import { versionById, isUnlocked } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
+  import { submitBugReport } from "../lib/bugReport";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
   //
@@ -280,6 +281,7 @@
   //    auto-loads the reserved reload slot if fresh (<60s).
   let sseUnsub: (() => void) | null = null;
   let messageOff: (() => void) | null = null;
+  let bugReportOff: (() => void) | null = null;
   let reloadReadyResolve: (() => void) | null = null;
   let analyticsOff: (() => void) | null = null;
 
@@ -555,6 +557,42 @@
       }
     });
 
+    // Bug-report relay (PROD + dev — registered BEFORE the dev-only block below).
+    // The in-game "Report a bug" UI posts `allbyte:bug_report`; we enrich it with
+    // parent-side context (channel, game version, viewport, tier via the JWT) and
+    // forward to the bug-reports endpoint, then ack back so the game can show
+    // sent/failed. Contract: APP_CLAUDE_BUG_REPORT_CONTRACT.md.
+    const onBugReport = (ev: MessageEvent) => {
+      if (!iframeEl || ev.source !== iframeEl.contentWindow) return;
+      const d = ev.data;
+      if (!d || d.type !== "allbyte:bug_report" || typeof d.text !== "string") return;
+      let gameVer: string | undefined;
+      try {
+        gameVer = (iframeEl.contentWindow as any)?.gameState?.version;
+      } catch {
+        /* cross-origin/unavailable — the report is still filed */
+      }
+      void submitBugReport(
+        { text: d.text, category: d.category, context: d.context },
+        {
+          channel: getVersionSelection() || resolveVariant(),
+          gameVersion: gameVer ?? null,
+          tier: (auth.currentUser as any)?.tier ?? null,
+        },
+      ).then((r) => {
+        try {
+          iframeEl?.contentWindow?.postMessage(
+            { type: "allbyte:bug_report_ack", ok: r.ok, reportId: r.reportId, error: r.error },
+            window.location.origin,
+          );
+        } catch {
+          /* iframe navigated away before the ack — nothing to do */
+        }
+      });
+    };
+    window.addEventListener("message", onBugReport);
+    bugReportOff = () => window.removeEventListener("message", onBugReport);
+
     if (!import.meta.env.DEV) return;
 
     sseUnsub = subscribeToFile("godot/reload", doReload);
@@ -572,6 +610,7 @@
   onDestroy(() => {
     sseUnsub?.();
     messageOff?.();
+    bugReportOff?.();
     analyticsOff?.();
     teardownSaveBridge();
     stopLoadPolling();

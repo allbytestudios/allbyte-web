@@ -1,73 +1,81 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >
-  Channel-parameterized cloud Godot web-export + deploy — one stack PER build
-  channel. A push to the game repo's BuildBranch triggers CodeBuild, which exports
-  headless inside the pinned exporter image then runs scripts/push-channel.js to
-  obfuscate + boot-smoke + deploy to s3://<SiteBucket>/godot/<Channel>/ and publish
-  channels.json. Role/Secrets-Manager creds only; no key/source in this template.
-  Generalized from deploy/godot-export-codebuild.yaml (the develop stack). SCAFFOLD
-  for P2 — see APP_CLAUDE_CLOUD_DEPLOY_P2_P3.md and the deploy example below.
+  Channel-parameterized cloud Godot web-export + deploy — ONE stack per channel,
+  ONE shared buildspec (buildspec.web.yml), the channel selected by the DEBUG/ALPHA
+  booleans this stack injects (owner's model, per CON_CLAUDE_CLOUD_DEPLOY_P2_P3_REPLY).
+  Deploy with just Channel=<id>; the DEBUG/ALPHA env, S3 prefix, promote flag, and
+  webhook trigger ref are all looked up from the ChannelMatrix mapping below.
+  One project + one least-priv role PER channel (scoped to that channel's prefix) —
+  so a single shared buildspec keeps per-channel blast-radius isolation. Role/
+  Secrets-Manager creds only; no key/source in this template.
 
-# Deploy a NEW stack per channel, e.g. beta-debug:
+# Deploy per channel, e.g.:
 #   aws cloudformation deploy --template-file deploy/godot-export-codebuild-channel.yaml \
 #     --stack-name allbyte-studio-godot-beta-debug --capabilities CAPABILITY_NAMED_IAM \
-#     --parameter-overrides Channel=beta-debug BuildBranch=<branch> \
+#     --parameter-overrides Channel=beta-debug \
 #       GitHubConnectionArn=... GameRepoId=... ExporterImageUri=... KeySecretArn=... \
 #       SiteBucket=... DistributionId=... SecureTemplateBucket=...
-# Deployable once (a) ExporterImageUri exists in ECR, (b) Arc lands
-# buildspec.<Channel>.yml on the trigger branch, (c) the export is hermetic.
-# The develop stack can migrate to this later (Channel=develop) — resource names
-# match except the CloudWatch metric name (cosmetic recreate).
+# Deployable once Arc lands the shared buildspec.web.yml (DEBUG/ALPHA -> preset) on
+# develop and confirms the hermetic release export. develop is branch-triggered;
+# alpha/beta/beta-debug are TAG-triggered (release/<channel>/vX.Y.Z). alpha-debug
+# (/godot/ root, legacy) is intentionally NOT a cloud channel here.
 
 Parameters:
   Channel:
     Type: String
-    AllowedValues: [develop, beta-debug, alpha-debug, alpha, beta]
+    AllowedValues: [develop, alpha, beta, beta-debug]
     Description: >
-      Build channel id (from gameVersions.ts). Drives the S3 prefix
-      (godot/<Channel>/), the buildspec name (buildspec.<Channel>.yml), and all
-      resource names. Live channels (alpha/alpha-debug/beta) additionally require
-      push-channel's --promote in their buildspec — this template only scopes the
-      infra; it does not itself gate live vs dev.
+      Build channel id. Everything else (S3 prefix, DEBUG/ALPHA env, promote flag,
+      trigger ref) is derived from the ChannelMatrix mapping — matching Arc's
+      export-preset 2x2. develop = the branch-triggered dev channel; the rest are
+      tag-triggered.
   GitHubConnectionArn:
     Type: String
-    Description: >
-      CodeConnections (CodeStar) connection ARN authorizing read of the PRIVATE
-      game repo. Created once via console OAuth — never a pasted token.
+    Description: CodeConnections ARN authorizing read of the PRIVATE game repo (console OAuth).
   GameRepoId:
     Type: String
-    Description: "owner/repo of the PRIVATE game source (e.g. AllByte/ChroniclesOfNesis)."
-  BuildBranch:
+    Description: "owner/repo of the PRIVATE game source."
+  SourceVersion:
     Type: String
     Default: develop
-    Description: Branch whose pushes trigger a build+deploy for this channel.
+    Description: >
+      Default source ref for manual builds (owner works off the develop branch;
+      release builds are triggered by tags via the webhook filter, which overrides
+      this per-trigger).
   ExporterImageUri:
     Type: String
-    Description: >
-      ECR image URI (pinned by tag) of the exporter: Godot headless + web export
-      templates + node + the boot-smoke browser. Built from a REVIEWED commit of
-      the public exporter repo. Auto-advanced by .github/workflows/exporter-image.yml
-      after each image build (this project matches allbyte-godot-*).
+    Description: ECR image URI of the exporter (auto-advanced by exporter-image.yml for allbyte-godot-*).
   KeySecretArn:
     Type: String
-    Description: >
-      Secrets Manager ARN of the Godot script-encryption key (game/content key).
-      Value provisioned out-of-band by the owner/Arc; never in this template.
+    Description: Secrets Manager ARN of the Godot script-encryption key (game/content key).
   SiteBucket:
     Type: String
-    Description: S3 bucket that serves the site / game (pass on deploy).
+    Description: S3 bucket that serves the site / game.
   DistributionId:
     Type: String
-    Description: CloudFront distribution to invalidate (pass on deploy).
+    Description: CloudFront distribution to invalidate.
   SecureTemplateBucket:
     Type: String
-    Description: >
-      Private bucket holding the key-baked (SECRET) Godot web export template.
-      The build installs it over the stock template so encrypted PCKs decrypt at
-      runtime. Same trust tier as the Secrets Manager key — never public.
+    Description: Private bucket holding the key-baked (SECRET) Godot web export template.
+
+# The channel matrix — one row per cloud channel. Prefix = S3 segment under godot/
+# (alpha ships to /godot/public/, not /godot/alpha/). Debug/Alpha = the two booleans
+# the shared buildspec reads to pick the export preset. Promote = live channels
+# (push-channel --promote: stamps sw.js + full smoke). TriggerRef = webhook HEAD_REF.
+Mappings:
+  ChannelMatrix:
+    develop:    { Prefix: develop,    Debug: "true",  Alpha: "true",  Promote: "false", TriggerRef: "^refs/heads/develop$" }
+    alpha:      { Prefix: public,     Debug: "false", Alpha: "true",  Promote: "true",  TriggerRef: "^refs/tags/release/alpha/.*$" }
+    beta:       { Prefix: beta,       Debug: "false", Alpha: "false", Promote: "true",  TriggerRef: "^refs/tags/release/beta/.*$" }
+    beta-debug: { Prefix: beta-debug, Debug: "true",  Alpha: "false", Promote: "false", TriggerRef: "^refs/tags/release/beta-debug/.*$" }
+
+Conditions:
+  # Live/player-facing channels: push-channel --promote also stamps sw.js at the
+  # site root (stale-cache guard), so their role needs that one extra write.
+  IsPromote: !Equals [!FindInMap [ChannelMatrix, !Ref Channel, Promote], "true"]
 
 Resources:
-  # --- least-privilege build role: can ONLY ship this channel's path ----------
+  # --- least-privilege build role: can ONLY ship this channel's prefix ---------
   ExportBuildRole:
     Type: AWS::IAM::Role
     Properties:
@@ -84,31 +92,41 @@ Resources:
             Version: "2012-10-17"
             Statement:
               # write ONLY this channel's prefix + the shared channels.json.
-              # Cannot touch any other channel, the site, or anything else.
               - Sid: WriteChannelObjects
                 Effect: Allow
                 Action: [s3:PutObject, s3:GetObject]
                 Resource:
-                  - !Sub "arn:aws:s3:::${SiteBucket}/godot/${Channel}/*"
+                  - !Sub
+                    - "arn:aws:s3:::${SiteBucket}/godot/${Prefix}/*"
+                    - Prefix: !FindInMap [ChannelMatrix, !Ref Channel, Prefix]
                   - !Sub "arn:aws:s3:::${SiteBucket}/godot/channels.json"
-              # aws s3 sync needs ListBucket, scoped to this channel's prefix.
+              # live channels only: stamp sw.js at the site root (stale-cache guard).
+              - !If
+                - IsPromote
+                - Sid: StampServiceWorker
+                  Effect: Allow
+                  Action: s3:PutObject
+                  Resource: !Sub "arn:aws:s3:::${SiteBucket}/sw.js"
+                - !Ref "AWS::NoValue"
               - Sid: ListChannelPrefix
                 Effect: Allow
                 Action: s3:ListBucket
                 Resource: !Sub "arn:aws:s3:::${SiteBucket}"
                 Condition:
                   StringLike:
-                    "s3:prefix": [!Sub "godot/${Channel}/*", "godot/channels.json"]
+                    "s3:prefix":
+                      - !Sub
+                        - "godot/${Prefix}/*"
+                        - Prefix: !FindInMap [ChannelMatrix, !Ref Channel, Prefix]
+                      - "godot/channels.json"
               - Sid: InvalidateOneDistribution
                 Effect: Allow
                 Action: cloudfront:CreateInvalidation
                 Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${DistributionId}"
-              # read ONLY the one key secret (also injected as masked env below).
               - Sid: ReadKeySecret
                 Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: !Ref KeySecretArn
-              # the key-baked web export template (secret) — installed before export
               - Sid: ReadSecureTemplate
                 Effect: Allow
                 Action: s3:GetObject
@@ -136,16 +154,12 @@ Resources:
                 Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/allbyte-godot-${Channel}:*"
 
-  # Declared (not auto-created) so retention is set and the metric filter attaches.
   ExportLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/codebuild/allbyte-godot-${Channel}"
       RetentionInDays: 30
 
-  # Turns push-channel's final structured log line
-  # {stage, ok, duration_s, bytes, version, git_sha, channel} into an alarmable
-  # metric — a failed cloud export/deploy for this channel.
   BuildFailureMetric:
     Type: AWS::Logs::MetricFilter
     Properties:
@@ -187,26 +201,30 @@ Resources:
         ImagePullCredentialsType: SERVICE_ROLE
         EnvironmentVariables:
           - { Name: SITE_BUCKET, Value: !Ref SiteBucket }
-          # push-channel reads DISTRIBUTION_ID to invalidate CloudFront in-role
-          # (the least-priv role can't DescribeStacks). See push-channel.js.
           - { Name: DISTRIBUTION_ID, Value: !Ref DistributionId }
-          # Same key, TWO names (both MASKED): Godot's export step reads
-          # GODOT_SCRIPT_ENCRYPTION_KEY; our obfuscator reads GODOT_RELEASE_SCRIPT_KEY.
-          # The secret must be a PLAIN string (64-hex), not JSON.
+          # The two booleans the shared buildspec reads to pick the export preset
+          # (DEBUG/ALPHA -> Web {Alpha|Beta} {Debug|Public}). push-channel derives
+          # --promote from the channel (DEBUG=false = live). Fixed per project, so
+          # one project = one channel = one least-priv role (no tag-keyed scoping).
+          - { Name: DEBUG, Value: !FindInMap [ChannelMatrix, !Ref Channel, Debug] }
+          - { Name: ALPHA, Value: !FindInMap [ChannelMatrix, !Ref Channel, Alpha] }
           - { Name: GODOT_SCRIPT_ENCRYPTION_KEY, Type: SECRETS_MANAGER, Value: !Ref KeySecretArn }
           - { Name: GODOT_RELEASE_SCRIPT_KEY, Type: SECRETS_MANAGER, Value: !Ref KeySecretArn }
       Source:
         Type: GITHUB
         Location: !Sub "https://github.com/${GameRepoId}.git"
         Auth: { Type: CODECONNECTIONS, Resource: !Ref GitHubConnectionArn }
-        # buildspec lives in the PRIVATE game repo (Arc owns the export command).
-        BuildSpec: !Sub "buildspec.${Channel}.yml"
-      SourceVersion: !Ref BuildBranch
+        # ONE shared buildspec for every channel — it reads DEBUG/ALPHA to select
+        # the preset and adds --promote for live channels (Arc owns it in the game repo).
+        BuildSpec: buildspec.web.yml
+      SourceVersion: !Ref SourceVersion
       Triggers:
         Webhook: true
+        # develop = branch push; alpha/beta/beta-debug = release/<channel>/* tags.
         FilterGroups:
           - - { Type: EVENT, Pattern: PUSH }
-            - { Type: HEAD_REF, Pattern: !Sub "^refs/heads/${BuildBranch}$" }
+            - Type: HEAD_REF
+              Pattern: !FindInMap [ChannelMatrix, !Ref Channel, TriggerRef]
       LogsConfig:
         CloudWatchLogs:
           Status: ENABLED
@@ -215,3 +233,6 @@ Resources:
 Outputs:
   ProjectName: { Value: !Ref ExportProject }
   BuildRoleArn: { Value: !GetAtt ExportBuildRole.Arn }
+  Prefix: { Value: !FindInMap [ChannelMatrix, !Ref Channel, Prefix] }
+  Promote: { Value: !FindInMap [ChannelMatrix, !Ref Channel, Promote] }
+  TriggerRef: { Value: !FindInMap [ChannelMatrix, !Ref Channel, TriggerRef] }

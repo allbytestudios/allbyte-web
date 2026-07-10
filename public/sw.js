@@ -102,6 +102,23 @@ self.addEventListener("fetch", (event) => {
   // old index.html-only network-first rule left /godot/public/index.html
   // pinned. (NOT a CACHE_SCHEMA bump: entries moved to network-first are
   // simply revalidated instead of served, so no wipe is needed.)
+  // Dev channels (develop, beta-debug) redeploy fresh wasm/pck under a STABLE
+  // BUILD_VERSION (no finalize/version bump) — and the pck is fetched WITHOUT a
+  // ?v= bust — so cache-first would pin a stale pck against a fresh wasm/shim
+  // across rebuilds: MD5/mask mismatch -> "memory access out of bounds" until the
+  // user manually clears site data (the 2026-07-10 develop stale-cache report).
+  // Route ALL dev-channel requests through a REVALIDATING network fetch: `cache:
+  // "no-cache"` forces a conditional request even against immutable browser-cache
+  // entries, so returning admins always get the current, self-consistent build
+  // (304 when unchanged, offline still falls back to cache). Live channels keep
+  // cache-first — their version bump rotates the ?v= URL and evicts naturally.
+  const devChannel =
+    url.pathname.startsWith("/godot/develop/") ||
+    url.pathname.startsWith("/godot/beta-debug/");
+  if (devChannel) {
+    event.respondWith(networkFirst(event.request, { cache: "no-cache" }));
+    return;
+  }
   const versioned = url.searchParams.has("v");
   const immutableArtifact = url.pathname.endsWith(".wasm") || url.pathname.endsWith(".pck");
   if (versioned || immutableArtifact) {
@@ -154,10 +171,10 @@ async function cacheFirst(request) {
   return response;
 }
 
-async function networkFirst(request) {
+async function networkFirst(request, init) {
   const cache = await caches.open(CACHE_NAME);
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, init);
     if (response.ok) {
       toCacheable(response.clone())
         .then((cacheable) => cache.put(request, cacheable))

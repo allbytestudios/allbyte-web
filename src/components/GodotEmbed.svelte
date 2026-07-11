@@ -7,6 +7,7 @@
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import MinimapPanel from "./MinimapPanel.svelte";
   import { initPlayAnalytics } from "../lib/playAnalytics";
+  import { initConsoleLogShipper } from "../lib/consoleLogShipper";
   import DownloadGate from "./DownloadGate.svelte";
   import { downloadState, ackDownload } from "../lib/downloadGate";
   import gameVersion from "../data/game-version.json";
@@ -347,6 +348,7 @@
   }
   let reloadReadyResolve: (() => void) | null = null;
   let analyticsOff: (() => void) | null = null;
+  let logShipOff: (() => void) | null = null;
 
   function awaitReloadReady(timeoutMs = 2000): Promise<void> {
     return new Promise((resolve) => {
@@ -649,6 +651,35 @@
       }
     });
 
+    // Remote console-log shipper — DEVELOP channel only (debug build), so Arc can
+    // read a real device's console without USB debugging. Never ships public logs.
+    if (typeof gameUrl === "string" && gameUrl.includes("/godot/develop/")) {
+      logShipOff = initConsoleLogShipper(
+        () => {
+          try {
+            return (iframeEl?.contentWindow as any)?._consoleLogs ?? null;
+          } catch {
+            return null;
+          }
+        },
+        () => {
+          let version: string | null = null;
+          try {
+            version = (iframeEl?.contentWindow as any)?.gameState?.version ?? null;
+          } catch {
+            /* not booted yet */
+          }
+          return {
+            version,
+            channel: "develop",
+            url: window.location.href,
+            userAgent: navigator.userAgent,
+            viewport: `${window.innerWidth}x${window.innerHeight}`,
+          };
+        },
+      );
+    }
+
     // Bug-report relay (PROD + dev — registered BEFORE the dev-only block below).
     // Two messages from the game:
     //   allbyte:bug_report_open {context}  → open the DOM text-entry overlay (the
@@ -695,6 +726,7 @@
     messageOff?.();
     bugReportOff?.();
     analyticsOff?.();
+    logShipOff?.();
     teardownSaveBridge();
     stopLoadPolling();
     teardownKbNudge();

@@ -83,6 +83,10 @@
 </div>
 
 <style>
+  /* NOTE: this component's scoped <style> is DROPPED from the client:load island
+     bundle (Astro/Svelte quirk — scope class ships but rules don't). The EFFECTIVE
+     overlay styles live in GodotEmbed.svelte as a :global block. Kept here as the
+     design reference; editing these alone will NOT change the rendered overlay. */
   .br-backdrop {
     position: fixed;
     inset: 0;

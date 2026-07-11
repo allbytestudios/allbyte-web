@@ -1243,6 +1243,53 @@
 </div>
 
 <style>
+  /* Bug-report overlay styles (markup in BugReportOverlay.svelte). They live HERE
+     because that child component's own scoped <style> was being dropped from the
+     client:load island bundle (scope class shipped, rules didn't → unstyled,
+     black-on-dark, pushed the page down). GodotEmbed's own <style> reliably ships,
+     so we style the overlay by class via :global. Element selectors are qualified
+     under .br-modal so they can't leak to other inputs on the page. */
+  :global {
+    .br-backdrop {
+      position: fixed; inset: 0; z-index: 100000;
+      background: rgba(3, 6, 12, 0.72);
+      display: flex; justify-content: center; align-items: flex-start;
+      padding: 8vh 1rem 1rem; overflow-y: auto;
+    }
+    .br-modal {
+      width: 100%; max-width: 460px; background: #131a26; color: #e7ecf5;
+      border: 1px solid rgba(167, 243, 208, 0.25); border-radius: 10px;
+      padding: 1rem 1.1rem 1.15rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .br-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+    .br-head h2 { margin: 0; font-size: 1.15rem; color: #a7f3d0; }
+    .br-x { background: none; border: none; color: rgba(231, 236, 245, 0.6); font-size: 1.6rem; line-height: 1; cursor: pointer; padding: 0 0.2rem; }
+    .br-x:hover { color: #e7ecf5; }
+    .br-lbl { display: block; font-size: 0.82rem; color: rgba(231, 236, 245, 0.7); margin: 0.4rem 0 0.25rem; }
+    .br-modal textarea, .br-modal select {
+      width: 100%; font-size: 16px; font-family: inherit; color: #e7ecf5;
+      background: #0a0e17; border: 1px solid rgba(167, 243, 208, 0.25);
+      border-radius: 6px; padding: 0.55rem 0.6rem; box-sizing: border-box;
+    }
+    .br-modal textarea { resize: vertical; min-height: 5.5rem; line-height: 1.45; }
+    .br-modal textarea:focus, .br-modal select:focus { outline: none; border-color: #a7f3d0; }
+    .br-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.5rem; }
+    .br-row .br-lbl { margin: 0; flex-shrink: 0; }
+    .br-row select { width: auto; flex: 1; }
+    .br-ctx { font-size: 0.74rem; color: rgba(231, 236, 245, 0.5); margin: 0.55rem 0 0; }
+    .br-ctx b { color: #a7f3d0; }
+    .br-err { font-size: 0.82rem; color: #fca5a5; margin: 0.55rem 0 0; }
+    .br-ok { font-size: 1rem; color: #a7f3d0; text-align: center; padding: 1.2rem 0; margin: 0; }
+    .br-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.9rem; }
+    .br-btn { font-family: inherit; font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
+    .br-btn:disabled { opacity: 0.5; cursor: default; }
+    .br-btn.ghost { background: transparent; color: rgba(231, 236, 245, 0.75); border-color: rgba(231, 236, 245, 0.25); }
+    .br-btn.ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
+    .br-btn.primary { background: #a7f3d0; color: #0a0e17; font-weight: 700; }
+    .br-btn.primary:hover:not(:disabled) { background: #bef7de; }
+  }
+
   .godot-container {
     width: 100%;
     /* Fill the available height — the parent (.play-page in play.astro)

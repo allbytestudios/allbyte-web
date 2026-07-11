@@ -34,6 +34,31 @@
   const pickerList = $derived(pickerVersions(runtimeChannels));
   const selectedVersionId = $derived(pickedVersionId ?? defaultVersion(auth.currentUser, runtimeChannels).id);
 
+  // Show each build's deployed version + freshness in the picker, so it's obvious
+  // when develop (or beta-debug) has a NEW build live. Runtime channels come from
+  // channels.json (version + deployedAt, epoch seconds); alpha/alpha-debug use the
+  // committed site version. Read at render — refreshes on the next channels.json fetch.
+  function relTime(sec?: number): string {
+    if (!sec || typeof sec !== "number") return "";
+    const diff = Date.now() / 1000 - sec;
+    if (diff < 90) return "just now";
+    if (diff < 3600) return `${Math.round(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.round(diff / 3600)}h ago`;
+    return `${Math.round(diff / 86400)}d ago`;
+  }
+  function channelTag(id: string): string {
+    const c = runtimeChannels?.[id] as { version?: string; deployedAt?: number } | undefined;
+    if (c && typeof c === "object" && c.version) {
+      const rel = relTime(c.deployedAt);
+      return ` · ${c.version}${rel ? ` · ${rel}` : ""}`;
+    }
+    if (id === "alpha" || id === "alpha-debug") {
+      const v = gameVersion.version?.replace(/^v/, "");
+      return v ? ` · v${v}` : "";
+    }
+    return "";
+  }
+
   // PWA install prompt: Chrome/Edge fires `beforeinstallprompt` on
   // browsers/devices that meet the PWA install criteria (manifest valid,
   // SW active, served over HTTPS, not already installed). We capture and
@@ -235,7 +260,7 @@
             {#each pickerList as v (v.id)}
               <option value={v.id} disabled={!isUnlocked(v, auth.currentUser)}>
                 {isUnlocked(v, auth.currentUser)
-                  ? v.label
+                  ? `${v.label}${channelTag(v.id)}`
                   : `${v.label} — ${v.minTier === "legend" ? "Legend" : "Initiate+"}`}
               </option>
             {/each}

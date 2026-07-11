@@ -1,0 +1,32 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHeader from "../../../components/PageHeader.astro";
+import Footer from "../../../components/Footer.astro";
+import BugReportsApp from "../../../components/BugReportsApp.svelte";
+import TestNav from "../../../components/TestNav.svelte";
+---
+
+<BaseLayout
+  title="Bug reports — Dev Console — AllByte Studios"
+  description="Player-submitted in-game bug reports: description, context, logs, and save snapshot."
+>
+  <PageHeader
+    theme="engine"
+    title="Dev Console"
+    backHref="/"
+    backLabel="Home"
+    breadcrumbs={[{ href: "/", label: "Home" }]}
+  />
+  <main class="bugs-shell">
+    <TestNav active="bugs" client:load />
+    <BugReportsApp client:only="svelte" />
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .bugs-shell {
+    background: #0a0e17;
+    min-height: calc(100vh - 160px);
+  }
+</style>

@@ -12,7 +12,8 @@
   import gameVersion from "../data/game-version.json";
   import { versionById, isUnlocked } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
-  import { submitBugReport } from "../lib/bugReport";
+  import { submitBugReport, type BugReportContext } from "../lib/bugReport";
+  import BugReportOverlay from "./BugReportOverlay.svelte";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
   //
@@ -282,6 +283,65 @@
   let sseUnsub: (() => void) | null = null;
   let messageOff: (() => void) | null = null;
   let bugReportOff: (() => void) | null = null;
+
+  // --- In-game bug report → DOM text-entry overlay (native mobile keyboard) ---
+  // The game canvas can't raise the mobile soft keyboard, so text entry happens in
+  // a real <textarea> on THIS parent page. The game posts `allbyte:bug_report_open`
+  // with context; we collect the text here and submit via bugReport.ts.
+  let brOpen = $state(false);
+  let brCtx = $state<BugReportContext | null>(null);
+  let brStatus = $state<"idle" | "sending" | "sent" | "error">("idle");
+  let brError = $state<string | null>(null);
+
+  function bugReportMeta() {
+    let gameVer: string | undefined;
+    try {
+      gameVer = (iframeEl?.contentWindow as any)?.gameState?.version;
+    } catch {
+      /* cross-origin/unavailable — the report is still filed */
+    }
+    return {
+      channel: getVersionSelection() || resolveVariant(),
+      gameVersion: gameVer ?? null,
+      tier: (auth.currentUser as any)?.tier ?? null,
+    };
+  }
+  function ackGame(r: { ok: boolean; reportId?: string; error?: string }) {
+    try {
+      iframeEl?.contentWindow?.postMessage(
+        { type: "allbyte:bug_report_ack", ok: r.ok, reportId: r.reportId, error: r.error },
+        window.location.origin,
+      );
+    } catch {
+      /* iframe navigated away before the ack — nothing to do */
+    }
+  }
+  async function brSubmit(payload: { text: string; category: string }) {
+    brStatus = "sending";
+    brError = null;
+    const r = await submitBugReport(
+      { text: payload.text, category: payload.category, context: brCtx ?? undefined },
+      bugReportMeta(),
+    );
+    ackGame(r);
+    if (r.ok) {
+      brStatus = "sent";
+      setTimeout(() => {
+        brOpen = false;
+        brStatus = "idle";
+        brCtx = null;
+      }, 1600);
+    } else {
+      brStatus = "error";
+      brError = r.error ?? null;
+    }
+  }
+  function brClose() {
+    brOpen = false;
+    brStatus = "idle";
+    brError = null;
+    brCtx = null;
+  }
   let reloadReadyResolve: (() => void) | null = null;
   let analyticsOff: (() => void) | null = null;
 
@@ -558,37 +618,27 @@
     });
 
     // Bug-report relay (PROD + dev — registered BEFORE the dev-only block below).
-    // The in-game "Report a bug" UI posts `allbyte:bug_report`; we enrich it with
-    // parent-side context (channel, game version, viewport, tier via the JWT) and
-    // forward to the bug-reports endpoint, then ack back so the game can show
-    // sent/failed. Contract: APP_CLAUDE_BUG_REPORT_CONTRACT.md.
+    // Two messages from the game:
+    //   allbyte:bug_report_open {context}  → open the DOM text-entry overlay (the
+    //     game canvas can't raise the mobile keyboard; a real <textarea> can).
+    //   allbyte:bug_report {text, context} → legacy direct submit (kept for compat).
+    // Both enrich parent-side + ack allbyte:bug_report_ack. See
+    // APP_CLAUDE_BUG_REPORT_MOBILE_ADDENDUM.md.
     const onBugReport = (ev: MessageEvent) => {
       if (!iframeEl || ev.source !== iframeEl.contentWindow) return;
       const d = ev.data;
-      if (!d || d.type !== "allbyte:bug_report" || typeof d.text !== "string") return;
-      let gameVer: string | undefined;
-      try {
-        gameVer = (iframeEl.contentWindow as any)?.gameState?.version;
-      } catch {
-        /* cross-origin/unavailable — the report is still filed */
+      if (!d) return;
+      if (d.type === "allbyte:bug_report_open") {
+        brCtx = (d.context ?? {}) as BugReportContext;
+        brStatus = "idle";
+        brError = null;
+        brOpen = true;
+      } else if (d.type === "allbyte:bug_report" && typeof d.text === "string") {
+        void submitBugReport(
+          { text: d.text, category: d.category, context: d.context },
+          bugReportMeta(),
+        ).then(ackGame);
       }
-      void submitBugReport(
-        { text: d.text, category: d.category, context: d.context },
-        {
-          channel: getVersionSelection() || resolveVariant(),
-          gameVersion: gameVer ?? null,
-          tier: (auth.currentUser as any)?.tier ?? null,
-        },
-      ).then((r) => {
-        try {
-          iframeEl?.contentWindow?.postMessage(
-            { type: "allbyte:bug_report_ack", ok: r.ok, reportId: r.reportId, error: r.error },
-            window.location.origin,
-          );
-        } catch {
-          /* iframe navigated away before the ack — nothing to do */
-        }
-      });
     };
     window.addEventListener("message", onBugReport);
     bugReportOff = () => window.removeEventListener("message", onBugReport);
@@ -1073,6 +1123,15 @@
     >
       {fsDebug}
     </div>
+  {/if}
+  {#if brOpen}
+    <BugReportOverlay
+      context={brCtx}
+      status={brStatus}
+      error={brError}
+      onSend={brSubmit}
+      onCancel={brClose}
+    />
   {/if}
   {#if error}
     <div class="loading-screen">

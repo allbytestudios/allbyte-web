@@ -331,6 +331,7 @@
         brOpen = false;
         brStatus = "idle";
         brCtx = null;
+        lockLandscape(); // restore the game's landscape after the portrait form
       }, 1600);
     } else {
       brStatus = "error";
@@ -342,6 +343,7 @@
     brStatus = "idle";
     brError = null;
     brCtx = null;
+    lockLandscape(); // restore the game's landscape after the portrait form
   }
   let reloadReadyResolve: (() => void) | null = null;
   let analyticsOff: (() => void) | null = null;
@@ -457,15 +459,22 @@
   // Registered in onMount, torn down in onDestroy.
   let mobileCtxMqlOff: (() => void) | null = null;
 
-  // Landscape lock only succeeds while ALREADY in fullscreen (browsers reject a
-  // bare lock), so it's chained off the requestFullscreen() resolution below.
-  function lockLandscape() {
+  // Orientation lock only succeeds while ALREADY in fullscreen (browsers reject a
+  // bare lock) and on Android (iOS Safari has no screen.orientation.lock). Mobile-
+  // only, best-effort. The bug-report overlay locks PORTRAIT while open (the game's
+  // forced landscape is too cramped to read/type the form) and restores landscape
+  // on close.
+  function lockOrientation(mode: "landscape" | "portrait") {
+    if (!isMobileViewport()) return;
     try {
       const orientation = (screen as any).orientation;
       if (orientation && typeof orientation.lock === "function") {
-        orientation.lock("landscape").catch(() => {});
+        orientation.lock(mode).catch(() => {});
       }
     } catch {}
+  }
+  function lockLandscape() {
+    lockOrientation("landscape");
   }
 
   function reportFsError(err: any) {
@@ -656,6 +665,7 @@
         brStatus = "idle";
         brError = null;
         brOpen = true;
+        lockOrientation("portrait"); // the game's landscape is too cramped to type in
       } else if (d.type === "allbyte:bug_report" && typeof d.text === "string") {
         void submitBugReport(
           { text: d.text, category: d.category, context: d.context },
@@ -1288,6 +1298,15 @@
     .br-btn.ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }
     .br-btn.primary { background: #a7f3d0; color: #0a0e17; font-weight: 700; }
     .br-btn.primary:hover:not(:disabled) { background: #bef7de; }
+
+    /* Landscape fallback — the overlay tries to rotate the device to portrait, but
+       iOS Safari has no screen.orientation.lock (and there's a beat before Android
+       rotates). Tighten the modal so it still fits a short landscape height. */
+    @media (orientation: landscape) and (max-height: 520px) {
+      .br-backdrop { padding: 2vh 1rem 1rem; }
+      .br-modal { max-width: 640px; }
+      .br-modal textarea { min-height: 3rem; }
+    }
   }
 
   .godot-container {

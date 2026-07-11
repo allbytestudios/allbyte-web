@@ -283,6 +283,7 @@
   let sseUnsub: (() => void) | null = null;
   let messageOff: (() => void) | null = null;
   let bugReportOff: (() => void) | null = null;
+  let visibilityOff: (() => void) | null = null;
 
   // --- In-game bug report → DOM text-entry overlay (native mobile keyboard) ---
   // The game canvas can't raise the mobile soft keyboard, so text entry happens in
@@ -520,6 +521,21 @@
     }
   }
 
+  // Mobile browsers DROP fullscreen when you switch away (app switcher / tab
+  // background), and returning isn't a user gesture — so we can't re-enter
+  // programmatically. RE-ARM instead: reset the latch + re-attach the pointerup
+  // listener so the player's next tap (usually the touch controls) re-enters
+  // fullscreen. Owner spec is "mobile = fullscreen", so this is on by default —
+  // no toggle (a toggle couldn't bypass the required gesture anyway).
+  function reArmFullscreen() {
+    if (typeof window === "undefined" || !isMobileViewport()) return;
+    if (document.fullscreenElement) return; // still fullscreen — nothing to do
+    fullscreenDone = false;
+    fsPending = false;
+    window.removeEventListener("pointerup", tryEnterFullscreen); // avoid a dupe
+    window.addEventListener("pointerup", tryEnterFullscreen);
+  }
+
   onMount(() => {
     // Set the mobile-context flag FIRST — before the iframe/WASM boots — so the
     // engine sees it at Title startup (Arc's contract). The download gate often
@@ -575,6 +591,13 @@
     if (typeof window !== "undefined") {
       window.addEventListener("pointerup", tryEnterFullscreen);
       window.addEventListener("keydown", handleEscape);
+      // Returning from the app switcher drops fullscreen — re-arm so the next tap
+      // re-enters it (see reArmFullscreen). visibilitychange→visible is the signal.
+      const onVisible = () => {
+        if (document.visibilityState === "visible") reArmFullscreen();
+      };
+      document.addEventListener("visibilitychange", onVisible);
+      visibilityOff = () => document.removeEventListener("visibilitychange", onVisible);
       if (window.matchMedia) {
         const mql = window.matchMedia("(pointer: coarse) and (max-width: 1100px)");
         const onChange = () => pushMobileContext();
@@ -670,6 +693,7 @@
       window.removeEventListener("pointerup", tryEnterFullscreen);
       window.removeEventListener("keydown", handleEscape);
     }
+    visibilityOff?.();
     mobileCtxMqlOff?.();
   });
 

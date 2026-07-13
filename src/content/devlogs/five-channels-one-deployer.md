@@ -23,7 +23,7 @@ Under the vocabulary I use for it here — "the machine," "refusals,"
 deployment comes out, and nobody sits in the middle. What earns it a post is
 everything a *game engine* drags into that pipeline that a web service never has
 to think about — a ~75 MB WebAssembly payload, a service worker that will
-happily serve a corpse, an encryption key baked into the binary, the
+happily serve a corpse, a decryption key the client can't avoid carrying, the
 cross-origin-isolation headers the browser demands before it will even run the
 thing. The shape is industry-standard. The problems are not.
 
@@ -86,10 +86,11 @@ the ways it says no:
   gate, mixed-build timestamp skew, or a SHA-256 mismatch between the manifest
   and the bytes on disk (which usually just means the build was mid-rewrite —
   wait for the next one).
-- **A live build with an unmasked script-encryption key is a refusal.** The
-  key gets XOR-masked inside the WASM with a tiny un-masking shim injected at
-  the loader — if that step didn't happen, the deployer assumes something
-  changed underneath it and stops.
+- **A live build whose script-encryption key hasn't been obfuscated is a
+  refusal.** Godot carries that key inside the WASM (as every web export does);
+  a build step scrambles it on disk to deter casual static extraction, and if
+  that step didn't run, the deployer assumes something changed underneath it
+  and stops.
 
 Refusal-by-default sounds slow and is the opposite. Because every gate is
 mechanical, the happy path needs no judgment, which means it needs no *me*.
@@ -209,7 +210,7 @@ the encryption key — are configuration and inputs, never hardcoded, precisely 
 a fork leaks nothing and swaps cleanly.
 
 So if you're a Godot dev who wants a real web build — not a jam-game iframe, but
-something cache-correct, closed-source-safe, and self-verifying — you wouldn't
+something cache-correct, resistant to casual ripping, and self-verifying — you wouldn't
 copy my AWS account. You'd point the config at your own private game repo, wire
 the build to plain GitHub Actions instead of the CodeBuild project I happen to
 use, and keep the rest. It's the reference implementation; my game is just

@@ -1,7 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Footer from "../../components/Footer.astro";
-import AiDisclaimer from "../../components/AiDisclaimer.astro";
 import PageHeader from "../../components/PageHeader.astro";
 import { getCollection, render } from "astro:content";
 
@@ -35,9 +34,7 @@ const breadcrumbs = [
     backHref={backHref}
     backLabel={categoryLabel}
     breadcrumbs={breadcrumbs}
-  >
-    <AiDisclaimer />
-  </PageHeader>
+  />
   <main class="article">
     {post.data.draft && (
       <div class="draft-banner">

@@ -23,7 +23,7 @@ Description: >
 Parameters:
   Channel:
     Type: String
-    AllowedValues: [develop, alpha, beta, beta-debug]
+    AllowedValues: [develop, alpha, alpha-debug, beta, beta-debug]
     Description: >
       Build channel id. Everything else (S3 prefix, DEBUG/ALPHA env, promote flag,
       trigger ref) is derived from the ChannelMatrix mapping — matching Arc's
@@ -57,6 +57,15 @@ Parameters:
   SecureTemplateBucket:
     Type: String
     Description: Private bucket holding the key-baked (SECRET) Godot web export template.
+  EnableWebhook:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+    Description: >
+      Whether this project auto-triggers on its webhook (develop=branch push,
+      alpha/beta=release tags). Deploy the BUTTON-driven channels (alpha, alpha-debug)
+      with "false" so StartBuild from the demo-promote orchestrator is the ONLY path —
+      no tag auto-promote to the public demo.
 
 # The channel matrix — one row per cloud channel. Prefix = S3 segment under godot/
 # (alpha ships to /godot/public/, not /godot/alpha/). Debug/Alpha = the two booleans
@@ -66,6 +75,7 @@ Mappings:
   ChannelMatrix:
     develop:    { Prefix: develop,    Debug: "true",  Alpha: "true",  Promote: "false", TriggerRef: "^refs/heads/develop$" }
     alpha:      { Prefix: public,     Debug: "false", Alpha: "true",  Promote: "true",  TriggerRef: "^refs/tags/release/alpha/.*$" }
+    alpha-debug: { Prefix: alpha-debug, Debug: "true", Alpha: "true", Promote: "false", TriggerRef: "^refs/tags/never/.*$" }
     beta:       { Prefix: beta,       Debug: "false", Alpha: "false", Promote: "true",  TriggerRef: "^refs/tags/release/beta/.*$" }
     beta-debug: { Prefix: beta-debug, Debug: "true",  Alpha: "false", Promote: "false", TriggerRef: "^refs/tags/release/beta-debug/.*$" }
 
@@ -73,6 +83,7 @@ Conditions:
   # Live/player-facing channels: push-channel --promote also stamps sw.js at the
   # site root (stale-cache guard), so their role needs that one extra write.
   IsPromote: !Equals [!FindInMap [ChannelMatrix, !Ref Channel, Promote], "true"]
+  WebhookOn: !Equals [!Ref EnableWebhook, "true"]
 
 Resources:
   # --- least-privilege build role: can ONLY ship this channel's prefix ---------
@@ -218,13 +229,17 @@ Resources:
         # the preset and adds --promote for live channels (Arc owns it in the game repo).
         BuildSpec: buildspec.web.yml
       SourceVersion: !Ref SourceVersion
-      Triggers:
-        Webhook: true
-        # develop = branch push; alpha/beta/beta-debug = release/<channel>/* tags.
-        FilterGroups:
-          - - { Type: EVENT, Pattern: PUSH }
-            - Type: HEAD_REF
-              Pattern: !FindInMap [ChannelMatrix, !Ref Channel, TriggerRef]
+      # Webhook only for auto-triggered channels (develop=branch, beta=tags).
+      # Button-driven channels (alpha, alpha-debug) deploy with EnableWebhook=false
+      # → no Triggers → StartBuild (the demo-promote orchestrator) is the sole path.
+      Triggers: !If
+        - WebhookOn
+        - Webhook: true
+          FilterGroups:
+            - - { Type: EVENT, Pattern: PUSH }
+              - Type: HEAD_REF
+                Pattern: !FindInMap [ChannelMatrix, !Ref Channel, TriggerRef]
+        - !Ref "AWS::NoValue"
       LogsConfig:
         CloudWatchLogs:
           Status: ENABLED

@@ -213,6 +213,13 @@ Resources:
         EnvironmentVariables:
           - { Name: SITE_BUCKET, Value: !Ref SiteBucket }
           - { Name: DISTRIBUTION_ID, Value: !Ref DistributionId }
+          # Deploy channel id (matches gameVersions.ts / push-channel --channel):
+          # push-channel resolves the S3 prefix from it (alpha -> public,
+          # alpha-debug -> alpha-debug). cloud_export derives the PRESET from DEBUG/ALPHA.
+          - { Name: CHANNEL, Value: !Ref Channel }
+          # Boot gate: cloud_export runs boot_check.py behind this → a release
+          # artifact that doesn't reach gameState.ready FAILS the build (never ships).
+          - { Name: BOOT_SMOKE, Value: "1" }
           # The two booleans the shared buildspec reads to pick the export preset
           # (DEBUG/ALPHA -> Web {Alpha|Beta} {Debug|Public}). push-channel derives
           # --promote from the channel (DEBUG=false = live). Fixed per project, so

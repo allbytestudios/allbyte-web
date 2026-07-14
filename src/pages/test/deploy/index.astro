@@ -1,0 +1,32 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHeader from "../../../components/PageHeader.astro";
+import Footer from "../../../components/Footer.astro";
+import DemoPromoteButton from "../../../components/DemoPromoteButton.svelte";
+import TestNav from "../../../components/TestNav.svelte";
+---
+
+<BaseLayout
+  title="Deploy — Dev Console — AllByte Studios"
+  description="One-click promote develop to the live demo (admin only)."
+>
+  <PageHeader
+    theme="engine"
+    title="Dev Console"
+    backHref="/"
+    backLabel="Home"
+    breadcrumbs={[{ href: "/", label: "Home" }]}
+  />
+  <main class="deploy-shell">
+    <TestNav active="deploy" client:load />
+    <DemoPromoteButton client:only="svelte" />
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .deploy-shell {
+    background: #0a0e17;
+    min-height: calc(100vh - 160px);
+  }
+</style>

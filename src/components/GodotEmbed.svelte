@@ -120,6 +120,22 @@
   // so an on-device failure is diagnosable without remote debugging.
   let fsDebug = $state("");
 
+  // Letterbox cursor: when the game reports MOUSE input mode, show its feather
+  // cursor over App's black bars too (the game only sets the custom cursor INSIDE
+  // the iframe), so the pointer stays continuous across the letterbox edge.
+  // Driven by the game's `allbyte:input-mode` postMessage — inert (default
+  // cursor, current behavior) until that signal arrives. Feather is bundled from
+  // the game (Assets/featherCursor.png, 32x32, hotspot 0,0 = Godot's
+  // set_custom_mouse_cursor default). Bead ChroniclesOfNesis-98qs.
+  let inputMode = $state<string | null>(null);
+  let letterboxCursor = $derived(
+    inputMode === "mouse"
+      ? "url(/featherCursor.png) 0 0, auto"
+      : inputMode === "controller"
+        ? "none"
+        : null,
+  );
+
   // Download gate — hold the ~100 MB first load until the user consents.
   // The iframe's `src` is the trigger: as long as we don't render the iframe,
   // nothing is fetched. `allowed` gates that render; `showGate` shows the
@@ -702,6 +718,10 @@
           { text: d.text, category: d.category, context: d.context },
           bugReportMeta(),
         ).then(ackGame);
+      } else if (d.type === "allbyte:input-mode" && typeof d.mode === "string") {
+        // Game reports its active input mode (mouse/controller/keyboard) so the
+        // letterbox cursor can mirror it (bead ChroniclesOfNesis-98qs).
+        inputMode = d.mode;
       }
     };
     window.addEventListener("message", onBugReport);
@@ -1182,7 +1202,7 @@
   }
 </script>
 
-<div class="godot-container" bind:this={containerEl}>
+<div class="godot-container" bind:this={containerEl} style:cursor={letterboxCursor}>
   {#if fsDebug}
     <div
       style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fff;font:12px/1.4 monospace;padding:6px 8px;word-break:break-word;"

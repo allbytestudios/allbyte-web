@@ -189,8 +189,21 @@ function generateShim(offset, mask, wasmSha) {
 }
 
 function patchHtml(html) {
-	const shimTag = `<script src="${SHIM_REL}"></script>`;
-	if (html.includes(shimTag)) return html;
+	// Version-stamp the shim URL with the shim's embedded WASM sha (unique per
+	// release — the XOR mask is random each obfuscation). The shim un-XORs the
+	// WASM's script-encryption key; a STALE cached shim (old mask) against a
+	// FRESH WASM = wrong key = pck garbage = "memory access out of bounds" on
+	// returning devices. A BARE-url shim survives caches.delete() in the browser
+	// HTTP cache (only Clear-Site-Data evicts it) — the recurring stale-cache
+	// crash. A per-release ?v= makes a stale shim impossible to serve. The SW
+	// treats a ?v= URL as cache-first + version-keyed, so it's fast AND correct.
+	const shimSha = (existsSync(SHIM_PATH) ? extractShimWasmSha(readFileSync(SHIM_PATH, "utf8")) : "") || "";
+	const shimTag = `<script src="${SHIM_REL}${shimSha ? `?v=${shimSha.slice(0, 16)}` : ""}"></script>`;
+	// Replace whatever shim tag is present (bare, or an older ?v=) with the
+	// current one — idempotent (returns identical html) when it already matches;
+	// upgrades a bare/old-version tag left by a prior obfuscation or re-export.
+	const existing = /<script src="pck-key-shim\.js[^"]*"><\/script>/;
+	if (existing.test(html)) return html.replace(existing, shimTag);
 	const enginePattern = /<script src="index\.js[^"]*"><\/script>/;
 	const match = html.match(enginePattern);
 	if (!match) {

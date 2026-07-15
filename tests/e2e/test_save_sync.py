@@ -233,7 +233,9 @@ def test_export_downloads_current_saves(page, base_url):
     })
     page.wait_for_function("() => window.__saves_test.getCurrent().saves.slot_1 !== undefined")
 
-    # downloadSavesFile() fires the anchor download (after a ~300ms debounce).
+    # downloadSavesFile() requests a fresh snapshot, then fires the anchor
+    # download once allbyte:all-saves lands (or after a 1500ms fallback — no
+    # responder in this test, so the cached snapshot is what gets written).
     with page.expect_download(timeout=5000) as dl_info:
         page.evaluate("() => window.allbyteRequestExport()")
     download = dl_info.value

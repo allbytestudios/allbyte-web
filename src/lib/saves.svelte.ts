@@ -234,6 +234,8 @@ function handleGameMessage(e: MessageEvent) {
           keymapping: typeof data.keymapping === "string" ? data.keymapping : "",
         };
       }
+      // Wake any export that's waiting on a fresh snapshot.
+      resolveAllSavesWaiters();
       break;
 
     case "allbyte:load-complete":
@@ -298,30 +300,57 @@ export function loadSavesIntoGame(snapshot: Partial<SavesSnapshot>) {
   if (snapshot.keymapping !== undefined) saves.current.keymapping = snapshot.keymapping;
 }
 
+/** Resolvers waiting for the next `allbyte:all-saves` from the game. */
+const allSavesWaiters: Array<() => void> = [];
+
+function resolveAllSavesWaiters() {
+  while (allSavesWaiters.length > 0) {
+    const r = allSavesWaiters.shift();
+    if (r) r();
+  }
+}
+
+/** Resolve on the next `allbyte:all-saves`, or after `timeoutMs` — whichever
+ *  comes first. Lets export download as soon as the game answers instead of
+ *  after a fixed wait, while still degrading gracefully on a build whose
+ *  WebBridge doesn't (yet) respond to `request-saves`. */
+function waitForAllSaves(timeoutMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    allSavesWaiters.push(finish);
+    setTimeout(finish, timeoutMs);
+  });
+}
+
 /**
  * Trigger a download of the current saves as a JSON file.
- * Requests the current state from the game first, waits briefly, then downloads.
+ * Asks the game for a fresh snapshot and waits for its `allbyte:all-saves`
+ * reply (resolving early the moment it lands), then downloads. Falls back to
+ * the cached snapshot if the game doesn't answer in time — e.g. an older build
+ * whose WebBridge has no `request-saves` responder yet.
  */
-export function downloadSavesFile() {
-  // Request fresh snapshot from the game
+export async function downloadSavesFile() {
   requestSavesFromGame();
-  // Give it a beat for the response, then build the file
-  setTimeout(() => {
-    const payload = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      ...saves.current,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `chronicles-of-nesis-saves-${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 300);
+  await waitForAllSaves(1500);
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    ...saves.current,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `chronicles-of-nesis-saves-${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /**

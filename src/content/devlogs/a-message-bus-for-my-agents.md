@@ -1,16 +1,31 @@
 ---
 title: "A Message Bus for My Multi-Claude Team"
-description: "A live channel between AI agents is only worth building if the agents earn their separateness first. Here's the scorecard I use to decide when a task becomes a standing seat, why I didn't reach for Gastown, and the small HTTP bus that finally lets my three Claude seats talk in real time."
+description: "A live channel between AI agents is only worth building if the agents earn their separateness first. Here's the scorecard for when a task becomes a standing seat, the harness I built on Claude Code's experimental Channels feature to wire three Claude sessions across a host/container boundary, and an afternoon of them actually debugging together."
 pubDate: 2026-07-14T16:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
-tags: ["agents", "workflow", "architecture", "claude", "ai-pair-programming"]
+tags: ["agents", "workflow", "architecture", "claude", "mcp", "ai-pair-programming"]
 draft: true
 ---
 
 Two of my earlier posts about running a [multi-Claude team](/devlog/two-claudes-talking/) end on the same quiet admission: the agents coordinate through **markdown files and a shared tmux session**. When I [scaled from two Claudes to five](/devlog/two-claudes-to-five/), I wrote that this setup "buckled the moment either side had a queue longer than three items." I left that as a footnote and moved on.
 
-This post pays off that footnote — my agents now talk over a real channel, in real time. But the channel is the easy part, and the second half of the post. The first half is the harder question it depends on: *why are they separate agents at all?* A live channel between agents is only worth building if the agents deserve to be separate. If one Claude could do the whole job, the right fix isn't a better bus. It's fewer agents.
+This post pays off that footnote — my agents now talk over a real channel, in real time. Two things up front, because they frame everything below. First: **the channel itself is not mine.** It's [Claude Code Channels](https://docs.claude.com/en/docs/claude-code), an *experimental* Anthropic feature I've been testing early — the thing that actually injects one Claude session's message into another session's live context. What I built is the harness around it. Second: the channel is the *easy* part. The hard question it depends on is *why are these separate agents at all?* — because a live channel is only worth building if the agents deserve to be separate. If one Claude could do the whole job, the right fix isn't a better bus. It's fewer agents.
+
+## The feature underneath: Claude Code Channels
+
+I want to be exact about what I built and what I didn't, because the interesting engineering is in the seam.
+
+**Anthropic's part (experimental).** Channels is a new, experimental Claude Code capability. It's what lets one running Claude Code session hand a message to another and get a reply — it gives each session a small message **bridge** and a `reply` tool, and it injects an inbound message straight into the recipient's live context as an event it sees immediately. That injection — a running agent hearing something mid-session without being restarted — is the hard part, and it's theirs. Being experimental, it has rough edges and will change; treat the specifics here as "what worked for me this month," not a stable API.
+
+**My part (the harness).** Channels gives you the pipe. Turning one pipe into a governed three-seat mesh took a small amount of setup script:
+
+- **A config per agent.** Each seat gets its own MCP config (`agent-bus/<name>.mcp.json`) that joins its session to the bus under a fixed identity — `app`, `arc`, `quinn` — on a fixed port, carrying a shared secret. That's what makes "send to Arc" resolve to *Arc's* session instead of a broadcast, and it's where each seat's name and secret live.
+- **A three-bridge topology** spanning a host/container boundary (below).
+- **A provenance protocol** — the message shape every handoff must carry, so an unattended agent can't be told to do just anything (below).
+- **A host-side coordinator script** that brings the mesh up, checks all three bridges answer, and announces one authoritative "mesh green (3/3)" — instead of three agents independently guessing at network health and narrating it to me.
+
+None of that is exotic. But it's the difference between a demo of an experimental feature and a thing my team actually runs on. The rest of this post is the *why* underneath the harness, then the harness itself, then an afternoon of it working.
 
 ## Why three, not one
 
@@ -20,7 +35,7 @@ There are three reasons a task graduates into its own standing seat. Two are **h
 
 **Hard: incompatible permission postures.** App keeps its permission prompts, because it touches production, AWS, and secrets — it's the one agent I *want* stopping to ask before it acts. The game side runs `--dangerously-skip-permissions` in a sandbox, deliberately, so it can iterate on GDScript without me clicking "allow" a thousand times a day. A single process — parent and subagents included — holds *one* permission posture. The moment you need two, you need two top-level agents. No workload argument can collapse them.
 
-**Hard: host and container topology.** App lives on the Windows host; Arc and Quinn live inside a Docker container. Subagents run in their parent's environment — there's no "spawn a worker that lives on the host with a TTY while I'm in the container." Straddling that boundary is a networking problem, not a prompting one.
+**Hard: host and container topology.** App lives on the host; Arc and Quinn live inside a Docker container. Subagents run in their parent's environment — there's no "spawn a worker that lives on the host with a TTY while I'm in the container." Straddling that boundary is a networking problem, not a prompting one.
 
 **Soft: context divided by the frequency of parallel work.** This is the interesting one, and it's what separates Arc from Quinn — who, note, share the *same container and the same codebase*, so neither hard constraint distinguishes them. What does is this: a surface large enough to break into genuinely separate working sets, worked in parallel *often enough* that one context would spend its day thrashing between them. Shipping game systems and judging game quality are different mental models, different open files. If they were rarely active at once, one agent could time-slice fine — or spin up a subagent for the occasional pass. It's because they're *constantly* live together that a single context switches instead of thinks. Separable **times** frequently-parallel is the rule. Separable-but-rarely-parallel doesn't clear the bar.
 
@@ -48,7 +63,7 @@ Subagents are **ephemeral** and run **in the parent's posture and environment**.
 
 If you've followed AI-agent tooling lately you're thinking of the obvious off-the-shelf answer: Steve Yegge's [Gastown](https://steve-yegge.medium.com/welcome-to-gas-town-4f25ee16dd04), a mature multi-agent workspace manager built to run *20–30* coding agents in parallel. A **Mayor** coordinator slings work — as **beads**, a git-backed issue tracker — to a fleet of **Polecats**, while a **Witness** watches for stuck agents and recovers them. It's genuinely good, and I looked hard at it before building anything.
 
-It's the wrong shape for me, and the reasons are the same scorecard. Gastown orchestrates a fairly *homogeneous fleet under one Mayor*. My seats are **heterogeneous** — one of them (App) can't be a worker under a coordinator at all, because it has to keep its permission prompts and it lives on a different host. Gastown is also tmux-native (Windows wants WSL for it), and tmux is the exact substrate I was trying to leave. Its headline capability, scaling to 20–30 agents, solves a problem I don't have: I run three seats. Installing a city government to run a three-person shop is its own kind of overhead.
+It's the wrong shape for me, and the reasons are the same scorecard. Gastown orchestrates a fairly *homogeneous fleet under one Mayor*. My seats are **heterogeneous** — one of them (App) can't be a worker under a coordinator at all, because it has to keep its permission prompts and it lives on a different host. Gastown is also tmux-native, and tmux is the exact substrate I was trying to leave. Its headline capability, scaling to 20–30 agents, solves a problem I don't have: I run three seats. Installing a city government to run a three-person shop is its own kind of overhead.
 
 But here's the thing — I *did* adopt its best idea, because Gastown and I stand on the same foundation: **beads.** The game side already tracks its work in beads; that's the durable, inspectable record that survives an agent forgetting. What I didn't want was the orchestration shell *over* it. So the honest summary is: Gastown exists for many homogeneous agents under a Mayor, coordinating through durable state; I have a few heterogeneous seats with a hard permission split and a host/container seam, and I wanted a live channel *across* that seam, not a fleet manager *over* it. We agree on the data plane and diverge on everything above it. (I've read Gastown's docs closely, not run it in anger — so take this as "why my constraints pointed elsewhere," not a hands-on bake-off. And if my in-container game fleet ever grows past a handful of agents, Gastown managing *that* fleet, with App still outside it and the bus bridging the seam, is a genuinely sensible future.)
 
@@ -61,19 +76,19 @@ So: three seats, earned. The cost of that separation is coordination, and here's
 
 The file relay is a **dead drop**. App leaves a note; Arc reads it whenever it next looks. Fine for a leisurely design memo, useless for "are you actually up?" There's no acknowledgement — App can't tell the message was received, let alone acted on. With a real queue, "did that land?" becomes the dominant cost.
 
-The tmux poke is a **footgun**. `send-keys` writes into a shared pane's input buffer; if that pane is mid-prompt, the keystrokes can wedge the whole pane's input. I've hung a session that way more than once, and eventually wrote myself a standing rule: *don't tmux-ping Arc; leave a markdown file instead.* I'd disarmed my only real-time channel because it was more dangerous than useful. State of the art was reliable-but-blind, or real-time-but-hazardous. I wanted both.
+The tmux poke is a **footgun**. `send-keys` writes into a shared pane's input buffer; if that pane is mid-prompt, the keystrokes can wedge the whole pane's input. I've hung a session that way more than once, and eventually wrote myself a standing rule: *don't tmux-ping Arc; leave a markdown file instead.* I'd disarmed my only real-time channel because it was more dangerous than useful. State of the art was reliable-but-blind, or real-time-but-hazardous. I wanted both. Channels gave me the pipe; the rest of this section is how I wired it.
 
 ## The bus
 
-The shape is deliberately boring: every seat runs a tiny HTTP **bridge** on its own port. To hand work to another seat, you `POST` to its bridge. To hear back, you read its `/replies`.
+The runtime shape is deliberately boring. Channels gives each seat a small HTTP **bridge** on its own port; my config pins which seat sits on which. To hand work to another seat, you `POST` to its bridge. To hear back, you read its `/replies`.
 
 | Seat | Where it runs | Bridge |
 |-------|---------------|--------|
-| **App** | Windows host | `0.0.0.0:8790` |
+| **App** | host | `0.0.0.0:8790` |
 | **Arc** | Docker container | `127.0.0.1:8791` |
 | **Quinn** | Docker container | `127.0.0.1:8792` |
 
-The one asymmetry is the host/container seam again: App binds `0.0.0.0` so the container agents can reach it at `host.docker.internal:8790`, while those two only need to see each other over container-localhost; App reaches back in with a `docker exec`. It's the ordinary host/container NAT dance — the agents just happen to be the services.
+The one asymmetry is the host/container seam: App binds `0.0.0.0` so the container agents can reach it at `host.docker.internal:8790`, while those two only need to see each other over container-localhost; App reaches back in with a `docker exec`. It's the ordinary host/container NAT dance — the agents just happen to be the services.
 
 Sending a handoff is one line:
 
@@ -98,24 +113,30 @@ Here's the part that took actual thought. The game-side agents run with `--dange
 
 The first version had every agent ping the whole mesh on startup to check health. Mistake — whoever boots first sees a "partial mesh" that's really just boot ordering, and now three agents are independently guessing at network health and narrating it to me. So I named a single **coordinator**: App owns mesh verify-sync-announce, because it's the host-side agent that can `docker exec` into the container to reach both others, and the one that keeps its permission prompts, so orchestration runs from the low-risk seat. Arc and Quinn do a **self-check only** — "is *my own* bridge up?" — and defer whole-mesh health to App. One authoritative "mesh green (3/3)" instead of three overlapping status reports.
 
-## Does it actually work? Early yes.
+## Does it actually work? Here's an afternoon of it.
 
-Design is cheap — I've shipped [orchestration layers that sat cold for two months](/devlog/why-build-mcp-and-why-three/) — so I hold the bar at a live round-trip, not a diagram. This morning App posted a real handoff to Arc, a pointer to a design reply it had left. Arc's session received it live and answered through the bus:
+Design is cheap — I've shipped [orchestration layers that sat cold for two months](/devlog/why-build-mcp-and-why-three/) — so the bar isn't a diagram, it's real use. I got some the day after wiring the bus up, and it's a better story than any synthetic "ping/ack" I could stage.
 
-> **ACK from Arc:** (1) bus round-trip works — your message landed live in-session. (2) Noted the reply… I'll read it after I finish the current task. No action needed from you now.
+I was validating a one-click deploy button — a thing that promotes the game's `develop` build to the public demo. It kept failing in CI, and nearly every failure lived on **Arc's** side of the host/container boundary: his export scripts, his headless boot-check harness. So the debugging ran as a loop, over the bus, in real time:
 
-Same to Quinn:
+1. App runs the build, it fails, App reads the logs and hands Arc a precise diagnosis — file, line, cause.
+2. Arc's session picks it up live, fixes his script, pushes the fix, and replies.
+3. App re-runs. Repeat.
 
-> **ACK from Quinn:** (1) bus round-trip works — received your handoff, replying live. (2) App↔Quinn leg confirmed green.
+One real reply, from the round where App handed Arc an `UnboundLocalError` in his boot-check script:
 
-Both container agents took a provenance-shaped handoff and replied *in-session* — genuine send-and-hear on both legs, not a port that happened to be open. That's the thing the markdown-and-tmux era never gave me: an acknowledgement I didn't have to go looking for.
+> **Arc:** patched + pushed to develop @ `f1e3b090`. `boot_check.py` — root cause was slightly deeper than framed: there was *no* module-level `import os` at all; the only import was local inside `main()`, making `os` function-local for the whole function → the `UnboundLocalError`. Fix: added `import os` at module level, removed the local shadow. Re-run the dry-build whenever.
 
-I'll be honest about how far that goes. What's proven is narrow: the channel carries a live handoff and the guardrails hold. What *isn't* proven yet is that live handoffs measurably change my throughput versus the file dead-drop, rather than just *feeling* better — that's a claim I want a few weeks of real use behind before I make it. The win is real and it's small. I'd rather ship this honest than oversell it.
+We went through about half a dozen of those in an afternoon — a script crash, then a set of mystery 404s, then a headless-WebGL2 abort, then a redesign of the whole boot gate. Each one was a hand-off, a fix-in-session, and a re-run. Over the old dead-drop, *every single round* is "leave a markdown file, hope Arc notices before his next pause, wait." Over the bus it was a conversation running at compile-and-push latency. And the provenance guardrail held the entire time — every handoff I sent carried the owner's request, so Arc's session acted on work it could trace straight back to me.
+
+That's a stronger claim than "the ports are open." It's the thing the markdown-and-tmux era never gave me: a debugging loop that runs at the speed of the fix, not the speed of *noticing*.
+
+I'll still be honest about the ceiling. One good afternoon isn't a throughput study, and the deeper question — whether this reliably changes how much I ship, not just how it *feels* — wants a few weeks behind it. But it's real evidence for the case the whole setup rests on: separate the seats where they earn it, then reconnect them cheaply.
 
 ## What it doesn't solve
 
 I'm keeping the beads and the markdown files. This is where Gastown had it right: coordination needs a durable substrate, and a live message is the wrong place to keep anything you'll want next week. Beads holds the units of work; the files hold the design memos; the bus carries only the *live* half — "are you up," "did that land," "go." Notification and record, doing different jobs.
 
-One leg I still can't watch directly: Arc↔Quinn, both inside the container, out of the host's line of sight. Today I confirm it by having one ping the other as part of its check; a cleaner in-container observer is on the list.
+One leg I still can't watch directly: Arc↔Quinn, both inside the container, out of the host's line of sight. Today I confirm it by having one ping the other as part of its check; a cleaner in-container observer is on the list. And Channels being experimental, some of this will shift under me — the harness is built to be cheap to re-wire, not permanent.
 
 And the honest framing: none of this touches the *art*. The sprites, the music, the typeface stay handcrafted — the bus is plumbing for the engineering team, and the engineering team happens to be three Claude seats and me. But it's the difference between agents that leave each other notes and agents that actually talk. Once each seat had earned its place, that gap was most of what was left. Closing it felt like the team finally getting a phone line.

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { BdIssue } from "../lib/beadsTypes";
-  import { epicsOnly, isOpen, isClosed } from "../lib/beadsTypes";
+  import { epicsOnly, isOpen, isClosed, partitionLanes } from "../lib/beadsTypes";
   import { fetchBeadsIssues } from "../lib/beadsSource";
   import { milestonesOrdered, milestoneIdFromLabels, milestoneMeta } from "../lib/milestones";
   import { subscribeToFile } from "../lib/testEvents";
@@ -35,6 +35,8 @@
     try {
       const raw = sessionStorage.getItem(FOLD_KEY);
       if (raw) openFolds = new Set(JSON.parse(raw) as string[]);
+      const v = sessionStorage.getItem(VIEW_KEY);
+      if (v === "epics" || v === "lanes") view = v;
     } catch {}
     load();
     pollTimer = setInterval(load, 30000);
@@ -49,6 +51,24 @@
   // ---- Derived state ----
 
   let epics = $derived(epicsOnly(issues));
+
+  // 3-lane owner view (CON_CLAUDE_BEADS_WEBAPP_3LANE.md): Backlog / Needing
+  // Verified / Completed, partitioned from the live beads issues.
+  let lanes = $derived(partitionLanes(issues));
+  const VIEW_KEY = "tickets-view";
+  let view = $state<"lanes" | "epics">("lanes");
+  function setView(v: "lanes" | "epics") {
+    view = v;
+    try { sessionStorage.setItem(VIEW_KEY, v); } catch {}
+  }
+  const LANE_DEFS = [
+    { key: "backlog", label: "Backlog", cap: 200 },
+    { key: "needs-verify", label: "Needing Verified", cap: 200 },
+    { key: "completed", label: "Completed", cap: 60 },
+  ] as const;
+  function shortId(id: string): string {
+    return id.replace(/^ChroniclesOfNesis-/, "");
+  }
 
   // Milestone filter — defaults to "current" milestone.
   const DEFAULT_MS = milestonesOrdered().find((m) => m.status === "current")?.id ?? "all";
@@ -125,6 +145,45 @@
     <div class="error-banner">Failed to load: {loadError}</div>
   {/if}
 
+  <div class="view-toggle">
+    <button class="vt-btn" class:vt-active={view === "lanes"} onclick={() => setView("lanes")}>Lanes</button>
+    <button class="vt-btn" class:vt-active={view === "epics"} onclick={() => setView("epics")}>Epics</button>
+  </div>
+
+  {#if view === "lanes"}
+    <div class="lanes">
+      {#each LANE_DEFS as ld (ld.key)}
+        {@const items = lanes[ld.key]}
+        <section class="lane lane-{ld.key}">
+          <h2 class="lane-title">
+            <span class="lane-dot"></span>{ld.label}
+            <span class="lane-count">{items.length}</span>
+          </h2>
+          <div class="lane-scroll">
+            {#if items.length === 0}
+              <p class="lane-empty">Nothing here.</p>
+            {:else}
+              {#each items.slice(0, ld.cap) as it (it.id)}
+                <div class="bead">
+                  <div class="bead-top">
+                    <span class="bead-pri" style="color: {priorityColor(it.priority)}">{priorityLabel(it.priority)}</span>
+                    <span class="bead-type">{it.issue_type}</span>
+                    <span class="bead-meta">{shortId(it.id)} · {fmtDate(it.updated_at)}</span>
+                  </div>
+                  <div class="bead-title">{it.title}</div>
+                </div>
+              {/each}
+              {#if items.length > ld.cap}
+                <p class="lane-more">+ {items.length - ld.cap} more</p>
+              {/if}
+            {/if}
+          </div>
+        </section>
+      {/each}
+    </div>
+  {/if}
+
+  {#if view === "epics"}
   <!-- Milestone filter buttons -->
   <div class="ms-filters">
     {#each msButtons as b (b.id)}
@@ -208,9 +267,56 @@
       </ul>
     {/if}
   </section>
+  {/if}
 </div>
 
 <style>
+  .view-toggle { display: flex; gap: 0.4rem; margin: 0 0 0.9rem; }
+  .vt-btn {
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    color: rgba(226, 232, 240, 0.7);
+    font-family: inherit; font-size: 0.8rem;
+    padding: 0.32rem 0.9rem; border-radius: 6px; cursor: pointer;
+  }
+  .vt-btn:hover { color: #e2e8f0; border-color: rgba(148, 163, 184, 0.45); }
+  .vt-active { background: rgba(167, 243, 208, 0.12); border-color: rgba(167, 243, 208, 0.5); color: #a7f3d0; }
+
+  .lanes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; align-items: start; }
+  @media (max-width: 820px) { .lanes { grid-template-columns: 1fr; } }
+  .lane {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 8px; padding: 0.6rem 0.6rem 0.4rem;
+  }
+  .lane-title { display: flex; align-items: center; gap: 0.45rem; font-size: 0.9rem; margin: 0 0 0.55rem; color: #e5e7eb; }
+  .lane-dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
+  .lane-backlog .lane-dot { background: #60a5fa; }
+  .lane-needs-verify .lane-dot { background: #fbbf24; }
+  .lane-completed .lane-dot { background: #34d399; }
+  .lane-count {
+    margin-left: auto; font-size: 0.75rem; color: rgba(226, 232, 240, 0.55);
+    background: rgba(148, 163, 184, 0.12); padding: 0.05rem 0.45rem; border-radius: 10px;
+  }
+  .lane-scroll { max-height: 72vh; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; }
+  .lane-empty { font-size: 0.78rem; color: rgba(226, 232, 240, 0.4); padding: 0.3rem; }
+  .lane-more { font-size: 0.74rem; color: rgba(226, 232, 240, 0.45); text-align: center; padding: 0.3rem; }
+  .bead {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 6px; padding: 0.4rem 0.5rem;
+  }
+  .lane-completed .bead { opacity: 0.72; }
+  .bead-top { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.2rem; }
+  .bead-pri { font-size: 0.72rem; font-weight: 700; }
+  .bead-type {
+    font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.03em;
+    color: rgba(226, 232, 240, 0.6); background: rgba(148, 163, 184, 0.12);
+    padding: 0.02rem 0.35rem; border-radius: 3px;
+  }
+  .bead-meta { margin-left: auto; font-size: 0.68rem; color: rgba(226, 232, 240, 0.4); }
+  .bead-title { font-size: 0.8rem; line-height: 1.35; color: #e5e7eb; word-break: break-word; }
+
   .tickets {
     max-width: 1200px;
     margin: 0 auto;

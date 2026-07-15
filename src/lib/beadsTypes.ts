@@ -40,3 +40,35 @@ export function isOpen(i: BdIssue): boolean {
 export function isClosed(i: BdIssue): boolean {
   return i.status === "closed";
 }
+
+export function isNeedsVerify(i: BdIssue): boolean {
+  return (i.labels ?? []).includes("needs-verify");
+}
+
+export type BeadLane = "completed" | "needs-verify" | "backlog";
+
+// Which owner-facing lane an issue belongs to. needs-verify is checked BEFORE
+// the backlog fallback, so an in_progress + needs-verify issue (e.g. k5g6) lands
+// in "needs-verify", not "backlog" (per CON_CLAUDE_BEADS_WEBAPP_3LANE.md).
+export function laneOf(i: BdIssue): BeadLane {
+  if (i.status === "closed") return "completed";
+  if (isNeedsVerify(i)) return "needs-verify";
+  return "backlog";
+}
+
+// Partition live beads ISSUES into the 3 lanes, sorted priority asc then
+// updated_at desc within each. `_type !== "issue"` drops the bundled historical
+// epics (epic-view only) and is defensive against non-issue records (memory).
+export function partitionLanes(issues: BdIssue[]): Record<BeadLane, BdIssue[]> {
+  const lanes: Record<BeadLane, BdIssue[]> = { completed: [], "needs-verify": [], backlog: [] };
+  for (const i of issues) {
+    if (i._type !== "issue") continue;
+    lanes[laneOf(i)].push(i);
+  }
+  const bySort = (a: BdIssue, b: BdIssue) =>
+    (a.priority ?? 99) - (b.priority ?? 99) || (b.updated_at ?? "").localeCompare(a.updated_at ?? "");
+  lanes.completed.sort(bySort);
+  lanes["needs-verify"].sort(bySort);
+  lanes.backlog.sort(bySort);
+  return lanes;
+}

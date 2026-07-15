@@ -1,0 +1,50 @@
+name: Finalize Demo (sw.js reconcile)
+
+# Keeps src/data/game-version.json in sync with the DEPLOYED public Demo (the
+# `alpha` channel) so sw.js stays cache-correct after a demo-promote-button
+# deploy. The button ships via CodeBuild, which can't commit back to this repo,
+# so this Action closes the loop: it reads the live channels.json, and if the
+# deployed alpha version differs from committed game-version.json it runs
+# finalize-channel (stamp game-version.json + regenerate changelog + commit +
+# push). The push triggers the normal site deploy, which re-stamps sw.js and,
+# via qa.yml, runs the real-browser boot smoke on prod.
+#
+# Idempotent: a no-op when already in sync, and a no-op (green) before the Demo
+# has ever been promoted (--skip-if-absent). No secrets beyond the built-in
+# GITHUB_TOKEN. LATENCY: up to ~10 min (cron cadence, and GitHub may delay
+# scheduled runs under load) — this is a deliberate trade for zero manual steps
+# and zero extra infra; push-channel already stamps the deployed sw.js correctly
+# at promote time, so the reconcile only advances the committed version. Use the
+# manual "Run workflow" (workflow_dispatch) to reconcile instantly.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every ~10 min
+  workflow_dispatch: {} # manual instant reconcile
+
+permissions:
+  contents: write
+
+concurrency:
+  group: finalize-demo
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # deploy-history.js reads game-version.json git history
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Configure git identity
+        run: |
+          git config user.name "allbytestudios"
+          git config user.email "allbytestudios@gmail.com"
+
+      - name: Reconcile game-version.json to the deployed Demo
+        run: npm run finalize:channel -- --channel alpha --skip-if-absent

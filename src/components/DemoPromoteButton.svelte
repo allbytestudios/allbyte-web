@@ -131,9 +131,9 @@
             {/each}
           </ul>
           <p class="finalize-note">
-            ⚠ After the <b>Demo</b> build finishes, run <code>npm&nbsp;run&nbsp;finalize:channel</code>
-            on the host — it stamps <code>game-version.json</code> to the deployed version so
-            <code>sw.js</code> matches (skipping this drifts the SW cache → returning-device boot hang).
+            ✓ Nothing to run — once the <b>Demo</b> deploys, the <b>Finalize&nbsp;Demo</b> Action
+            reconciles <code>game-version.json</code> + <code>sw.js</code> automatically
+            (within&nbsp;~10&nbsp;min). Need it instant? Run the <b>Finalize&nbsp;Demo</b> workflow.
           </p>
           <button class="btn" onclick={() => { result = null; error = null; }}>Done</button>
         </div>

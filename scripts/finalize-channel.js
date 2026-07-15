@@ -54,6 +54,9 @@ function die(msg) {
 const channel = arg("--channel", "alpha");
 const origin = arg("--origin", "https://allbyte.studio").replace(/\/+$/, "");
 const passthrough = ["--dry-run", "--no-push"].filter((f) => process.argv.includes(f));
+// For the scheduled reconcile Action: exit 0 (no-op) instead of failing when the
+// channel hasn't been promoted yet, so a pre-first-promote cron run stays green.
+const skipIfAbsent = process.argv.includes("--skip-if-absent");
 
 const url = `${origin}/godot/channels.json?cb=${Date.now()}`;
 console.log(`[finalize-channel] reading ${url}`);
@@ -69,10 +72,12 @@ try {
 
 const entry = channels[channel];
 if (!entry || !entry.version) {
-  die(
-    `channel '${channel}' not present in channels.json (have: ${Object.keys(channels).join(", ") || "none"}). ` +
-      `Has the button promoted it yet?`
-  );
+  const msg = `channel '${channel}' not present in channels.json (have: ${Object.keys(channels).join(", ") || "none"}).`;
+  if (skipIfAbsent) {
+    console.log(`[finalize-channel] ${msg} Not promoted yet — nothing to reconcile.`);
+    process.exit(0);
+  }
+  die(`${msg} Has the button promoted it yet?`);
 }
 
 // channels.json version is "<semver>-<shortsha>" (e.g. 0.7.2201-b7b2e032).

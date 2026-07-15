@@ -15,6 +15,7 @@
     "changelog": "node scripts/deploy-history.js",
     "promote": "node scripts/promote.js",
     "finalize": "node scripts/finalize-web-deploy.js",
+    "finalize:channel": "node scripts/finalize-channel.js",
     "usage": "node scripts/claude-usage.js",
     "push-packs": "node scripts/push-packs.js",
     "obfuscate-godot": "node scripts/obfuscate-godot-export.js",

@@ -130,6 +130,11 @@
               </li>
             {/each}
           </ul>
+          <p class="finalize-note">
+            ⚠ After the <b>Demo</b> build finishes, run <code>npm&nbsp;run&nbsp;finalize:channel</code>
+            on the host — it stamps <code>game-version.json</code> to the deployed version so
+            <code>sw.js</code> matches (skipping this drifts the SW cache → returning-device boot hang).
+          </p>
           <button class="btn" onclick={() => { result = null; error = null; }}>Done</button>
         </div>
       {/if}
@@ -178,6 +183,22 @@
   .st.err { color: #f87171; background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.4); }
   .st.wait { color: rgba(224, 231, 255, 0.6); background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); }
   .berr { color: rgba(248, 113, 113, 0.8); font-size: 0.74rem; }
+  .finalize-note {
+    margin: 0.7rem 0 0;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: rgba(253, 224, 71, 0.9);
+    background: rgba(253, 224, 71, 0.08);
+    border: 1px solid rgba(253, 224, 71, 0.3);
+    border-radius: 6px;
+  }
+  .finalize-note code {
+    color: #fde047;
+    background: rgba(253, 224, 71, 0.12);
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+  }
   .err { color: #f87171; font-size: 0.85rem; margin-top: 0.6rem; }
   .note { color: rgba(224, 231, 255, 0.45); font-size: 0.74rem; line-height: 1.55; margin-top: 1.1rem; }
 </style>

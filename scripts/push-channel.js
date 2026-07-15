@@ -7,19 +7,22 @@
  * The target PATH for each channel is read from src/lib/gameVersions.ts (the
  * single source of truth), so this script never hardcodes paths:
  *
- *   alpha        -> /godot/public/    (on-demand, live)      --promote
- *   alpha-debug  -> /godot/           (on-demand, live)      --promote
- *   beta         -> /godot/beta/      (on-demand, live)      --promote
- *   beta-debug   -> /godot/beta-debug/(on-demand, dev)
- *   develop      -> /godot/develop/   (AUTO, every build)
+ *   alpha        -> /godot/public/      (on-demand, live)      --promote
+ *   alpha-debug  -> /godot/alpha-debug/ (on-demand, dev)
+ *   beta         -> /godot/beta/        (on-demand, live)      --promote
+ *   beta-debug   -> /godot/beta-debug/  (on-demand, dev)
+ *   develop      -> /godot/develop/     (AUTO, every build)
  *
  * Invocation:  node push-channel.js --manifest <build_manifest.json> [--promote]
  * Contract: CON_CLAUDE_BETA_DEBUG_PIPELINE_CONTRACT.md (retargeted to develop).
  *
  * SAFETY — the auto lane can't clobber the live game. `develop` fires on every
- * Arc build, unattended. Deploying a LIVE/player-facing channel (alpha,
- * alpha-debug, beta) therefore REQUIRES an explicit `--promote`; the dev
- * channels (develop, beta-debug) deploy freely. The auto pipeline never passes
+ * Arc build, unattended. Deploying a LIVE/player-facing channel (alpha, beta)
+ * therefore REQUIRES an explicit `--promote`; the dev channels (develop,
+ * beta-debug, alpha-debug) deploy freely. alpha-debug is the Legend-gated,
+ * available:false Demo-Debug lane (twin of beta-debug), cache-busted via ?v=;
+ * the public Demo (alpha -> /godot/public/) stays --promote-gated. The auto
+ * pipeline never passes
  * --promote, so the worst a bad develop build can do is break /godot/develop/,
  * which only admin/Legend can select.
  *
@@ -55,7 +58,7 @@ const dryRun = process.argv.includes("--dry-run");
 const promote = process.argv.includes("--promote");
 
 // Dev channels deploy freely; every other (live/player-facing) channel needs --promote.
-const DEV_CHANNELS = new Set(["develop", "beta-debug"]);
+const DEV_CHANNELS = new Set(["develop", "beta-debug", "alpha-debug"]);
 
 function die(msg) { console.error(`[push-channel] ERROR: ${msg}`); process.exit(1); }
 function run(cmd) {

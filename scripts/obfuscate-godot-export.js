@@ -46,6 +46,7 @@ const WASM_PATH = join(TARGET_DIR, "index.wasm");
 const HTML_PATH = join(TARGET_DIR, "index.html");
 const SHIM_PATH = join(TARGET_DIR, "pck-key-shim.js");
 const SHIM_REL = "pck-key-shim.js";
+const JS_PATH = join(TARGET_DIR, "index.js");
 
 // KeyDot marker bytes (KeyDot v1, Godot 3.5.x / 4.1.x layout) — see
 // github.com/Titoot/KeyDot/blob/main/src/wasm/wasm_scanner.cpp. Godot 4.6.2
@@ -214,6 +215,30 @@ function patchHtml(html) {
 	return html.replace(enginePattern, `${shimTag}\n\t\t${match[0]}`);
 }
 
+// Overwrite the ?v= cache-bust token on the versioned asset URLs (index.wasm,
+// the index.pck FETCH url, index.js, the shim) in index.html + index.js with the
+// post-obfuscation content sha `tok`. Why: patch_index_js stamps the game-VERSION
+// ?v= on every build and is the SOLE stamper on develop (which the obfuscator
+// never runs on) — correct there, since each develop push is a new commit so the
+// version rotates. But a same-commit RE-PROMOTE keeps the version while the wasm
+// CONTENT changes (new random XOR mask) -> same URL, different bytes -> SW
+// cache-first stale-serves it against the fresh shim -> "memory access out of
+// bounds" on returning devices. Re-stamping with a content hash rotates the URL
+// on every obfuscation, so a stale asset can never be served (Arc's design, chat
+// 2026-07-15: obfuscator runs LAST on promote and overwrites patch_index_js's
+// version stamp). Idempotent — matches any existing ?v=. Leaves the pck cache KEY
+// (the bare 2nd preloadFile arg, which carries no ?v=) untouched — it's the SW
+// cache key and must stay stable.
+const ASSET_V_RE = /\?v=[^"'`\s,)&]+/g;
+function stampAssetUrls(tok) {
+	for (const p of [HTML_PATH, JS_PATH]) {
+		if (!existsSync(p)) continue;
+		const orig = readFileSync(p, "utf8");
+		const next = orig.replace(ASSET_V_RE, `?v=${tok}`);
+		if (next !== orig) writeFileSync(p, next);
+	}
+}
+
 // ---- main ----
 
 if (!existsSync(WASM_PATH)) {
@@ -263,6 +288,9 @@ if (existsSync(SHIM_PATH)) {
 		console.log(`[obfuscate]   wasm:   unchanged (SHA matches existing shim)`);
 		console.log(`[obfuscate]   html:   added <script src="${SHIM_REL}"> before index.js`);
 	}
+	// Content-address the wasm/pck/js ?v= (wasm unchanged here, but a re-export
+	// may have re-stamped patch_index_js's version ?v= — normalize it).
+	stampAssetUrls(currentSha.slice(0, 16));
 	process.exit(0);
 }
 
@@ -315,6 +343,9 @@ const html = readFileSync(HTML_PATH, "utf8");
 const patched = patchHtml(html);
 const htmlChanged = patched !== html;
 if (htmlChanged) writeFileSync(HTML_PATH, patched);
+
+// Content-address the wasm/pck/js ?v= (overwrites patch_index_js's version stamp).
+stampAssetUrls(wasmSha.slice(0, 16));
 
 console.log(`[obfuscate] OK`);
 console.log(`[obfuscate]   detect: ${detection}`);

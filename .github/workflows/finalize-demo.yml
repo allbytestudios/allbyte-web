@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: write
+  actions: write # dispatch deploy.yml — a GITHUB_TOKEN push does NOT cascade to it
 
 concurrency:
   group: finalize-demo
@@ -47,4 +48,23 @@ jobs:
           git config user.email "allbytestudios@gmail.com"
 
       - name: Reconcile game-version.json to the deployed Demo
-        run: npm run finalize:channel -- --channel alpha --skip-if-absent
+        id: reconcile
+        run: |
+          before=$(git rev-parse HEAD)
+          npm run finalize:channel -- --channel alpha --skip-if-absent
+          after=$(git rev-parse HEAD)
+          if [ "$before" != "$after" ]; then
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+            echo "Finalize committed $after — triggering site deploy."
+          else
+            echo "No drift — nothing committed; no deploy needed."
+          fi
+
+      # A push made with GITHUB_TOKEN does NOT trigger deploy.yml (GitHub's
+      # no-recursion rule), so the finalize commit would never re-stamp sw.js.
+      # Dispatch the deploy explicitly when we actually committed a version bump.
+      - name: Trigger site deploy (re-stamp sw.js)
+        if: steps.reconcile.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml

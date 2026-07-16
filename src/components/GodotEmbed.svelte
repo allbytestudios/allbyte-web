@@ -847,6 +847,7 @@
     // 1. engine up (Title reached)
     if (!(await waitFor(() => win()?.gameState?.ready === true, 30000))) {
       console.warn(`[scenario] engine never reported ready — aborting '${scenario}'`);
+      loading = false; // reveal the game (Title) so the overlay doesn't stick
       return;
     }
     // 2. fetch the save JSON same-origin (no CORS; the game never fetches it)
@@ -857,6 +858,7 @@
       saveData = await res.json();
     } catch (e) {
       console.warn(`[scenario] could not fetch fixture '${scenario}': ${e}`);
+      loading = false;
       return;
     }
     // 3. mount packs, WAIT until their scene classes register (else loadGameSave
@@ -872,12 +874,19 @@
     }
     // 4. import save into slot 1 (writes only) → 5. load it (real DAL load)
     let w = win();
-    if (!w) return;
+    if (!w) { loading = false; return; }
     w._testImportSave = JSON.stringify({ slot: 1, data: saveData });
     await sleep(200);
     w = win();
-    if (!w) return;
+    if (!w) { loading = false; return; }
     w._testLoadGame = 1;
+    // Hold the overlay until the scenario scene has replaced Title, then reveal —
+    // the user sees "loading" → the scenario, never the Title flash.
+    await waitFor(() => {
+      const s = win()?.gameState?.scene;
+      return typeof s === "string" && !!s && s !== TITLE_SCENE;
+    }, 8000);
+    loading = false;
     // 6. optional AutoPlay persona overlay
     if (persona || encounter) {
       await sleep(300);
@@ -891,7 +900,14 @@
   }
 
   function onLoad() {
-    loading = false;
+    // A scenario load holds the loading overlay UP through boot → Title →
+    // save-load so the Title screen never flashes (owner 2026-07-15: "go
+    // straight to load"); runScenario drops it once the scenario scene is in,
+    // or on abort. Normal loads dismiss immediately.
+    const scenarioLoad =
+      new URLSearchParams(window.location.search).has("scenario") &&
+      (isAdmin(auth.currentUser) || isTierAtLeast(auth.currentUser, "legend"));
+    if (!scenarioLoad) loading = false;
     // Re-assert the parent mobile-context flag in case it was cleared; the
     // engine re-reads it at Title startup on every (re)load.
     pushMobileContext();

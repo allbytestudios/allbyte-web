@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1",
-  "generated_at": "2026-07-16T16:55:41.357Z",
+  "generated_at": "2026-07-16T17:05:11.648Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -12,7 +12,9 @@
       "label": "Hard — New Game (Elias' House)",
       "scene": "EliasHouse",
       "chain_legal": true,
-      "packs": [],
+      "packs": [
+        "Laria"
+      ],
       "tags": [
         "hard",
         "root",

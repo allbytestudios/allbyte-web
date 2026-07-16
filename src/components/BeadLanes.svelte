@@ -93,13 +93,12 @@
 {#snippet row(i: BdIssue, lane: string)}
   <div class="bl-row">
     <span class="bl-pri p{i.priority}">P{i.priority}</span>
-    <div class="bl-main">
-      <span class="bl-title">{i.title}</span>
-      <span class="bl-meta"
-        >{slug(i.id)} · {i.issue_type} · {i.updated_at.slice(0, 10)}{#if lane === "verify" && i.status === "in_progress"}
-          · in progress{/if}</span
-      >
-    </div>
+    <span class="bl-title"
+      >{i.title}
+      <span class="bl-meta" title="{i.issue_type} · updated {i.updated_at.slice(0, 10)}"
+        >{slug(i.id)}</span
+      ></span
+    >
     {#if lane === "verify" && admin}
       {@const rec = verified.get(i.id)}
       {#if rec?.processed}
@@ -211,26 +210,23 @@
     border-radius: 3px;
     flex-shrink: 0;
   }
+  .bl-pri.p0 { color: #f87171; background: rgba(248, 113, 113, 0.18); }
   .bl-pri.p1 { color: #fca5a5; background: rgba(252, 165, 165, 0.12); }
   .bl-pri.p2 { color: #fbbf24; background: rgba(251, 191, 36, 0.12); }
   .bl-pri.p3 { color: #9ca3af; background: rgba(156, 163, 175, 0.12); }
-  .bl-main {
-    display: flex;
-    flex-direction: column;
-    gap: 0.05rem;
-    min-width: 0;
-    flex: 1;
-  }
   .bl-title {
     font-size: 0.8rem;
     color: #e5e7eb;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.35;
+    /* full title always readable — wrap, never ellipsize */
+    overflow-wrap: break-word;
   }
   .bl-meta {
     font-size: 0.66rem;
     color: #6b7280;
+    white-space: nowrap;
   }
   .bl-verify {
     font-size: 0.72rem;

@@ -597,6 +597,13 @@
     // holds the iframe behind a click anyway, but set it up-front regardless.
     pushMobileContext();
 
+    // Scenario loads: flag it BEFORE Title inits so the game can mute the audio
+    // bus across the load window and avoid the transient pop (Arc bead ansl —
+    // he gates on the truthy read, unmutes once the scenario scene settles).
+    if (new URLSearchParams(window.location.search).has("scenario")) {
+      (window as any)._allbyteScenarioPending = true;
+    }
+
     // Re-resolve client-side — PWA (standalone) detection needs `window`, which
     // isn't available during SSR, so the installed app routes to the public
     // build here rather than the SSR default.

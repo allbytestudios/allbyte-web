@@ -1338,27 +1338,31 @@
     {#if showKbHint}
       <div class="kb-hint-layer kb-hint-{kbHintPos}">
         <div class="kb-hint" role="status" aria-live="polite">
-          <span class="kb-hint-text">Keyboard&nbsp;(</span>
           <span
             class="kb-keys"
-            aria-label="W A S D, K O L semicolon, plus mouse left and right click"
+            aria-label="W A S D plus mouse left and right click, or W A S D plus K O L semicolon"
           >
             <img src="/keys/keyboard_w.png" alt="" />
             <img src="/keys/keyboard_a.png" alt="" />
             <img src="/keys/keyboard_s.png" alt="" />
             <img src="/keys/keyboard_d.png" alt="" />
-            <span class="kb-keys-gap"></span>
+            <span class="kb-hint-text">+</span>
+            <img src="/keys/mouse_left.png" alt="" />
+            <img src="/keys/mouse_right.png" alt="" />
+          </span>
+          <span class="kb-hint-text">&nbsp;or&nbsp;</span>
+          <span class="kb-keys">
+            <img src="/keys/keyboard_w.png" alt="" />
+            <img src="/keys/keyboard_a.png" alt="" />
+            <img src="/keys/keyboard_s.png" alt="" />
+            <img src="/keys/keyboard_d.png" alt="" />
+            <span class="kb-hint-text">+</span>
             <img src="/keys/keyboard_k.png" alt="" />
             <img src="/keys/keyboard_o.png" alt="" />
             <img src="/keys/keyboard_l.png" alt="" />
             <img src="/keys/keyboard_semicolon.png" alt="" />
           </span>
-          <span class="kb-hint-text">)&nbsp;+&nbsp;mouse&nbsp;(</span>
-          <span class="kb-keys">
-            <img src="/keys/mouse_left.png" alt="" />
-            <img src="/keys/mouse_right.png" alt="" />
-          </span>
-          <span class="kb-hint-text">)&nbsp;suggested</span>
+          <span class="kb-hint-text">&nbsp;suggested</span>
         </div>
       </div>
     {/if}

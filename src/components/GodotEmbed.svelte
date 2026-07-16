@@ -1337,32 +1337,40 @@
     <MinimapPanel />
     {#if showKbHint}
       <div class="kb-hint-layer kb-hint-{kbHintPos}">
-        <div class="kb-hint" role="status" aria-live="polite">
-          <span
-            class="kb-keys"
-            aria-label="W A S D plus mouse left and right click, or W A S D plus K O L semicolon"
-          >
-            <img src="/keys/keyboard_w.png" alt="" />
-            <img src="/keys/keyboard_a.png" alt="" />
-            <img src="/keys/keyboard_s.png" alt="" />
-            <img src="/keys/keyboard_d.png" alt="" />
-            <span class="kb-hint-text">+</span>
-            <img src="/keys/mouse_left.png" alt="" />
-            <img src="/keys/mouse_right.png" alt="" />
-          </span>
-          <span class="kb-hint-text">&nbsp;or&nbsp;</span>
-          <span class="kb-keys">
-            <img src="/keys/keyboard_w.png" alt="" />
-            <img src="/keys/keyboard_a.png" alt="" />
-            <img src="/keys/keyboard_s.png" alt="" />
-            <img src="/keys/keyboard_d.png" alt="" />
-            <span class="kb-hint-text">+</span>
-            <img src="/keys/keyboard_k.png" alt="" />
-            <img src="/keys/keyboard_o.png" alt="" />
-            <img src="/keys/keyboard_l.png" alt="" />
-            <img src="/keys/keyboard_semicolon.png" alt="" />
-          </span>
-          <span class="kb-hint-text">&nbsp;suggested</span>
+        <div
+          class="kb-hint"
+          role="status"
+          aria-live="polite"
+          aria-label="Suggested: W A S D plus mouse left and right click, or W A S D plus K O L semicolon"
+        >
+          <div class="kb-hint-row">
+            <span class="kb-hint-text">Suggested:&nbsp;</span>
+            <span class="kb-keys">
+              <img src="/keys/keyboard_w.png" alt="" />
+              <img src="/keys/keyboard_a.png" alt="" />
+              <img src="/keys/keyboard_s.png" alt="" />
+              <img src="/keys/keyboard_d.png" alt="" />
+              <span class="kb-hint-text">+</span>
+              <img src="/keys/mouse_left.png" alt="" />
+              <img src="/keys/mouse_right.png" alt="" />
+            </span>
+          </div>
+          <div class="kb-hint-row">
+            <span class="kb-hint-text">or</span>
+          </div>
+          <div class="kb-hint-row">
+            <span class="kb-keys">
+              <img src="/keys/keyboard_w.png" alt="" />
+              <img src="/keys/keyboard_a.png" alt="" />
+              <img src="/keys/keyboard_s.png" alt="" />
+              <img src="/keys/keyboard_d.png" alt="" />
+              <span class="kb-hint-text">+</span>
+              <img src="/keys/keyboard_k.png" alt="" />
+              <img src="/keys/keyboard_o.png" alt="" />
+              <img src="/keys/keyboard_l.png" alt="" />
+              <img src="/keys/keyboard_semicolon.png" alt="" />
+            </span>
+          </div>
         </div>
       </div>
     {/if}
@@ -1601,9 +1609,12 @@
   }
 
   .kb-hint {
+    /* Three stacked rows (combo / "or" / combo) — a single-line pill grew
+       wide enough to cover the Title menu's Quit button. */
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.15rem;
     padding: 0.45rem 0.95rem;
     background: rgba(10, 14, 23, 0.92);
     border: 1.5px solid #a7f3d0;
@@ -1612,6 +1623,11 @@
     white-space: nowrap;
     animation: kbHintBounceY 1.15s ease-in-out infinite,
       kbHintFadeIn 0.3s ease-out;
+  }
+  .kb-hint-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
   }
   .kb-hint-text {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;

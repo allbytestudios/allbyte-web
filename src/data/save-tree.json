@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1",
-  "generated_at": "2026-07-16T17:30:53.770Z",
+  "generated_at": "2026-07-16T18:21:56.682Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -37,6 +37,42 @@
         "hard",
         "maximal",
         "100-sen room chest grabbed"
+      ]
+    },
+    {
+      "id": "hard_shop_maximal",
+      "difficulty": "hard",
+      "parent": "hard_root_looted",
+      "decision": "",
+      "is_leaf": false,
+      "label": "Hard — General Store (maximal: Leather Boots + Mugwort)",
+      "scene": "GeneralStore",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "hard",
+        "maximal",
+        "0 sen — spent on Leather Boots + Mugwort"
+      ]
+    },
+    {
+      "id": "hard_town_maximal_items",
+      "difficulty": "hard",
+      "parent": "hard_shop_maximal",
+      "decision": "",
+      "is_leaf": false,
+      "label": "Hard — Mayor's House Upstairs (maximal, stocked items)",
+      "scene": "MayorsHouseUpstairs",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "hard",
+        "maximal",
+        "Leather Boots x1 + Mugwort x2 + Valerian Powder x3"
       ]
     },
     {

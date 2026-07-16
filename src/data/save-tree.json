@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1",
-  "generated_at": "2026-07-16T17:05:11.648Z",
+  "generated_at": "2026-07-16T17:11:27.558Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -19,6 +19,42 @@
         "hard",
         "root",
         "intro"
+      ]
+    },
+    {
+      "id": "hard_town",
+      "difficulty": "hard",
+      "parent": "hard_root",
+      "decision": "",
+      "is_leaf": false,
+      "label": "Hard — Main Square (pauper branch)",
+      "scene": "MainSquare",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "hard",
+        "pauper",
+        "0-sen — skipped 100-sen room chest"
+      ]
+    },
+    {
+      "id": "hard_windmill1",
+      "difficulty": "hard",
+      "parent": "hard_town",
+      "decision": "",
+      "is_leaf": false,
+      "label": "Hard — Windmill 1 (pauper spine)",
+      "scene": "Windmill1",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "hard",
+        "pauper",
+        "decision-free spine — overlaps frontier chain"
       ]
     }
   ]

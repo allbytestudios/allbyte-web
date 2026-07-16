@@ -1339,7 +1339,10 @@
       <div class="kb-hint-layer kb-hint-{kbHintPos}">
         <div class="kb-hint" role="status" aria-live="polite">
           <span class="kb-hint-text">Keyboard&nbsp;(</span>
-          <span class="kb-keys" aria-label="W A S D K O L semicolon">
+          <span
+            class="kb-keys"
+            aria-label="W A S D, K O L semicolon, plus mouse left and right click"
+          >
             <img src="/keys/keyboard_w.png" alt="" />
             <img src="/keys/keyboard_a.png" alt="" />
             <img src="/keys/keyboard_s.png" alt="" />
@@ -1350,7 +1353,12 @@
             <img src="/keys/keyboard_l.png" alt="" />
             <img src="/keys/keyboard_semicolon.png" alt="" />
           </span>
-          <span class="kb-hint-text">)&nbsp;input suggested</span>
+          <span class="kb-hint-text">)&nbsp;+&nbsp;mouse&nbsp;(</span>
+          <span class="kb-keys">
+            <img src="/keys/mouse_left.png" alt="" />
+            <img src="/keys/mouse_right.png" alt="" />
+          </span>
+          <span class="kb-hint-text">)&nbsp;suggested</span>
         </div>
       </div>
     {/if}

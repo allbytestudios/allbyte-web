@@ -12,6 +12,7 @@
     "sync:test": "node scripts/sync-test-data-watcher.js --self-test",
     "sync:marketing": "node scripts/sync-marketing-posts.mjs",
     "sync:scenarios": "node scripts/sync-scenario-fixtures.js",
+    "sync:tree": "node scripts/sync-save-tree.js",
     "changelog": "node scripts/deploy-history.js",
     "promote": "node scripts/promote.js",
     "finalize": "node scripts/finalize-web-deploy.js",

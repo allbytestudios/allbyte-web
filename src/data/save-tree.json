@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "schema": "save-state-tree v1",
+  "generated_at": "2026-07-16T16:55:41.357Z",
+  "nodes": [
+    {
+      "id": "hard_root",
+      "difficulty": "hard",
+      "parent": null,
+      "decision": "",
+      "is_leaf": false,
+      "label": "Hard — New Game (Elias' House)",
+      "scene": "EliasHouse",
+      "chain_legal": true,
+      "packs": [],
+      "tags": [
+        "hard",
+        "root",
+        "intro"
+      ]
+    }
+  ]
+}

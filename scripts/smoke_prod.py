@@ -392,7 +392,20 @@ def check_boot() -> int:
                     bad.append((pat, f"[{src}/{ev_type}] {text[:240]}"))
                     break
 
+        # The stale-cache self-heal must NEVER fire on this cold context — a
+        # fresh profile can't hold a stale SW cache, so any [recover] line here
+        # means every first-time visitor is being forced through a cache-clear
+        # double load (2026-07-16: strict version compare false-positived on
+        # cloud builds' "<version>-<commit>" stamp). The game still boots after
+        # the reload, so no other check catches this.
+        recover = [text for _src, _t, text in events if "[recover]" in text]
+
         browser.close()
+
+        if recover:
+            print(f"\n[smoke] FAIL — self-heal fired on a COLD context (fresh visitors double-load):")
+            print(f"      {recover[0][:240]}")
+            return 1
 
         if bad:
             print(f"\n[smoke] FAIL — {len(bad)} suspect log line(s):")

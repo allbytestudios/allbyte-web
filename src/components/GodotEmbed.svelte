@@ -77,13 +77,20 @@
 
   // Case 1 — boots but STALE: the loaded build's version != what this webapp
   // expects, so the SW served an old (but self-consistent) cached build.
+  // Cloud-exported builds stamp themselves "<version>-<commit>" while
+  // game-version.json carries the bare "<version>", so compare the semantic
+  // version only — a strict compare false-positives on the suffix and forces
+  // every fresh visitor through a pointless cache-clear double load
+  // (2026-07-16 incognito double-load bug).
   function checkBuildFreshness(loadedVersion: unknown) {
     if (freshnessChecked) return;
     freshnessChecked = true;
     if (isNonDefaultBuild()) return;
-    const loaded = String(loadedVersion ?? "").replace(/^v/, "");
-    if (!loaded || !EXPECTED_BUILD || loaded === EXPECTED_BUILD) return;
-    hardResetAndReload(`loaded build ${loaded} != expected ${EXPECTED_BUILD}`);
+    const norm = (v: unknown) => String(v ?? "").replace(/^v/, "").split("-")[0];
+    const loaded = norm(loadedVersion);
+    const expected = norm(EXPECTED_BUILD);
+    if (!loaded || !expected || loaded === expected) return;
+    hardResetAndReload(`loaded build ${loaded} != expected ${expected}`);
   }
 
   // Case 2 — MISMATCHED PAIR crash (Arc 2026-06-28): a cached old index.wasm

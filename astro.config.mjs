@@ -95,6 +95,22 @@ function chroniclesProxy() {
     name: "allbyte-chronicles-proxy",
     configureServer(server) {
       server.middlewares.use("/test-data", makeProxy("/test-data", "", false));
+      // Local exports keep ONE shared packs/ dir (WebBootstrap/export/packs/)
+      // for all channels, but deployed channels each carry their own packs/
+      // subdir (push-channel syncs them per-channel). Rewrite
+      // /godot/<channel>/packs/* → /godot/packs/* when the channel-local copy
+      // doesn't exist, so ?channel= pack mounts behave in dev like prod.
+      server.middlewares.use("/godot", (req, _res, next) => {
+        const m = /^\/([A-Za-z0-9-]+)\/(packs\/[^/?#]+)(\?.*)?$/.exec(req.url || "");
+        if (m) {
+          const channelLocal = normalize(join(chroniclesRoot, godotExportRel, m[1], m[2]));
+          const shared = normalize(join(chroniclesRoot, godotExportRel, m[2]));
+          if (!existsSync(channelLocal) && existsSync(shared)) {
+            req.url = "/" + m[2] + (m[3] || "");
+          }
+        }
+        next();
+      });
       server.middlewares.use("/godot", makeProxy("/godot", godotExportRel, true));
     },
   };

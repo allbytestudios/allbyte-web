@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1",
-  "generated_at": "2026-07-16T17:11:27.558Z",
+  "generated_at": "2026-07-16T17:30:53.770Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -19,6 +19,24 @@
         "hard",
         "root",
         "intro"
+      ]
+    },
+    {
+      "id": "hard_root_looted",
+      "difficulty": "hard",
+      "parent": "hard_root",
+      "decision": "",
+      "is_leaf": false,
+      "label": "Hard — Elias' House (maximal start, chest looted)",
+      "scene": "EliasHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "hard",
+        "maximal",
+        "100-sen room chest grabbed"
       ]
     },
     {

@@ -301,6 +301,7 @@
   let messageOff: (() => void) | null = null;
   let bugReportOff: (() => void) | null = null;
   let visibilityOff: (() => void) | null = null;
+  let fsChangeOff: (() => void) | null = null;
 
   // --- In-game bug report → DOM text-entry overlay (native mobile keyboard) ---
   // The game canvas can't raise the mobile soft keyboard, so text entry happens in
@@ -348,7 +349,7 @@
         brOpen = false;
         brStatus = "idle";
         brCtx = null;
-        lockLandscape(); // restore the game's landscape after the portrait form
+        unlockOrientation(); // free orientation after the portrait form
       }, 1600);
     } else {
       brStatus = "error";
@@ -360,7 +361,7 @@
     brStatus = "idle";
     brError = null;
     brCtx = null;
-    lockLandscape(); // restore the game's landscape after the portrait form
+    unlockOrientation(); // free orientation after the portrait form
   }
   let reloadReadyResolve: (() => void) | null = null;
   let analyticsOff: (() => void) | null = null;
@@ -491,8 +492,15 @@
       }
     } catch {}
   }
-  function lockLandscape() {
-    lockOrientation("landscape");
+  // Release any orientation lock → all 4 orientations follow the device (owner
+  // spec 2026-07-15: the game renders fine in portrait, so we no longer force
+  // the game's landscape; applies fullscreen OR windowed).
+  function unlockOrientation() {
+    if (!isMobileViewport()) return;
+    try {
+      const o = (screen as any).orientation;
+      if (o && typeof o.unlock === "function") o.unlock();
+    } catch {}
   }
 
   function reportFsError(err: any) {
@@ -516,8 +524,17 @@
   //     gamepad stays visible in fullscreen; documentElement is the fallback.
   let fullscreenDone = false; // succeeded (or already fullscreen) — stop trying
   let fsPending = false; // a request is in flight — don't fire a second
+  // Reactive fullscreen state (owner 2026-07-15): default fullscreen on mobile,
+  // but let the user leave it and STAY windowed. A deliberate exit (fullscreen
+  // dropped while the page is still visible — not an app-switcher background)
+  // sets userOptedOut, which stops reArm from yanking them back; a parent-side
+  // button re-enters from a real gesture.
+  let isFullscreen = $state(false);
+  let userOptedOutFullscreen = $state(false);
+  let mobileFs = $state(false); // mobile viewport (set on mount) — gates the button
   function tryEnterFullscreen() {
     if (fullscreenDone || fsPending) return;
+    if (userOptedOutFullscreen) return; // user chose windowed — reenter via the button
     if (!isMobileViewport()) return;
     if (document.fullscreenElement) {
       fullscreenDone = true;
@@ -536,7 +553,7 @@
           fsPending = false;
           if (typeof window !== "undefined")
             window.removeEventListener("pointerup", tryEnterFullscreen);
-          lockLandscape();
+          unlockOrientation(); // all 4 orientations follow the device
         })
         .catch((err: any) => {
           fsPending = false; // stay unlatched → the next gesture retries
@@ -557,10 +574,21 @@
   function reArmFullscreen() {
     if (typeof window === "undefined" || !isMobileViewport()) return;
     if (document.fullscreenElement) return; // still fullscreen — nothing to do
+    if (userOptedOutFullscreen) return; // user chose windowed — don't yank them back
     fullscreenDone = false;
     fsPending = false;
     window.removeEventListener("pointerup", tryEnterFullscreen); // avoid a dupe
     window.addEventListener("pointerup", tryEnterFullscreen);
+  }
+
+  // Parent-side re-enter — the /play "fullscreen" button. The tap IS a parent
+  // gesture (an in-iframe/postMessage tap gets rejected by Android), so this
+  // reliably enters. Clears the opt-out + resets the latches first.
+  function reenterFullscreen() {
+    userOptedOutFullscreen = false;
+    fullscreenDone = false;
+    fsPending = false;
+    tryEnterFullscreen();
   }
 
   onMount(() => {
@@ -618,6 +646,19 @@
     if (typeof window !== "undefined") {
       window.addEventListener("pointerup", tryEnterFullscreen);
       window.addEventListener("keydown", handleEscape);
+      mobileFs = isMobileViewport();
+      // Track fullscreen state (drives the re-enter button) and detect a
+      // DELIBERATE exit: fullscreen dropped while the page is still VISIBLE — an
+      // app-switcher background goes hidden instead, so that path re-arms. A
+      // deliberate exit sets userOptedOut → the user stays windowed.
+      const onFsChange = () => {
+        isFullscreen = !!document.fullscreenElement;
+        if (!isFullscreen && fullscreenDone && document.visibilityState === "visible") {
+          userOptedOutFullscreen = true;
+        }
+      };
+      document.addEventListener("fullscreenchange", onFsChange);
+      fsChangeOff = () => document.removeEventListener("fullscreenchange", onFsChange);
       // Returning from the app switcher drops fullscreen — re-arm so the next tap
       // re-enters it (see reArmFullscreen). visibilitychange→visible is the signal.
       const onVisible = () => {
@@ -756,6 +797,7 @@
       window.removeEventListener("keydown", handleEscape);
     }
     visibilityOff?.();
+    fsChangeOff?.();
     mobileCtxMqlOff?.();
   });
 
@@ -1203,6 +1245,12 @@
 </script>
 
 <div class="godot-container" bind:this={containerEl} style:cursor={letterboxCursor}>
+  {#if mobileFs && allowed && !isFullscreen}
+    <!-- Mobile fullscreen is parent-owned (the touch gamepad lives out here, not
+         in the iframe). Default is auto-on; this button re-enters after the user
+         has left it (a real parent-gesture tap — Android rejects in-iframe ones). -->
+    <button class="fs-reenter" onclick={reenterFullscreen} aria-label="Enter fullscreen" title="Fullscreen">⛶</button>
+  {/if}
   {#if fsDebug}
     <div
       style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fff;font:12px/1.4 monospace;padding:6px 8px;word-break:break-word;"
@@ -1373,6 +1421,26 @@
     position: relative;
     margin: 0 auto;
   }
+  .fs-reenter {
+    position: absolute;
+    top: max(8px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    z-index: 40;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: #e5e7eb;
+    background: rgba(15, 23, 42, 0.62);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 8px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fs-reenter:active { background: rgba(15, 23, 42, 0.9); }
 
   .loading-screen {
     position: absolute;

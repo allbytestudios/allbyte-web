@@ -885,7 +885,7 @@
     await waitFor(() => {
       const s = win()?.gameState?.scene;
       return typeof s === "string" && !!s && s !== TITLE_SCENE;
-    }, 8000);
+    }, 25000); // slow saves can take a while to leave Title
     loading = false;
     // 6. optional AutoPlay persona overlay
     if (persona || encounter) {

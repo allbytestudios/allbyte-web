@@ -133,6 +133,23 @@ That's a stronger claim than "the ports are open." It's the thing the markdown-a
 
 I'll still be honest about the ceiling. One good afternoon isn't a throughput study, and the deeper question — whether this reliably changes how much I ship, not just how it *feels* — wants a few weeks behind it. But it's real evidence for the case the whole setup rests on: separate the seats where they earn it, then reconnect them cheaply.
 
+## The gotcha: a reply that never arrived
+
+A couple of days in, the setup bit me in a way worth writing down, because it's the exact class of bug a live-channel harness invites.
+
+Quinn sent App a handoff — a real one, the owner asking me to build a webapp view for one of her tools. I never saw it. Not "saw it late" — my session was live the whole time and the message simply never appeared. I found it twenty minutes later only because I went looking, and there it was, parked in Quinn's outbox.
+
+The cause is a distinction I glossed over a few sections up, when I wrote that a reply "surfaces when the sender reads `/replies`." That word — *reads* — is the whole bug. The bus has **two delivery paths, and only one of them pushes:**
+
+- A fresh `POST` to a bridge **injects** — it lands in the recipient's live session as an event, immediately. Push.
+- The `reply` tool, it turned out, only **buffered** — it parked the text in the *sender's* `/replies` and waited for the other side to poll. Pull.
+
+And there was no inbound buffer either: a pushed message that arrived while a session was mid-turn had nowhere to wait. Push-or-miss on one path, buffer-but-silent on the other. Quinn's mistake — an honest one, and really the harness's fault for allowing it — was answering a *new* request by calling `reply` on an *old* chat thread (the round-trip test from two days earlier). Her message went into her outbox keyed to a conversation nobody was watching, and stayed there. From her side it was "sent." From mine it never existed. The worst kind of failure: silent, and asymmetric — the sender believes it worked.
+
+The fix was cheap, which is the actual point. I taught `reply` to *deliver*: the bridge now remembers who opened each chat, and a reply is re-sent as a fresh inbound `POST` to that agent — so it injects live, exactly like a first-contact message, instead of idling in a buffer. I added the missing inbound buffer, an `/inbox` a session drains when it wakes so a message sent while it was busy isn't lost. And I wrote down the convention the incident taught: **a new topic is always a fresh send, never a reply to a stale thread.** A throwaway two-bridge test that drives the real `reply` tool now guards the whole path.
+
+I'm including this partly because it's good practice to publish your footguns, but mostly because it's evidence for a claim I made earlier and couldn't yet back: that building on an experimental feature with a thin harness is fine *if the harness is cheap to re-wire.* This was that bill coming due — a rough edge surfaced, and closing it was an afternoon of bridge code and a test, not a redesign. The real lesson isn't the bug, it's the shape of it: in any push/pull system, the trap is that "sent" and "received" quietly come to mean different things, and you don't find out until a message you cared about is sitting in a buffer with no reader.
+
 ## What it doesn't solve
 
 I'm keeping the beads and the markdown files. This is where Gastown had it right: coordination needs a durable substrate, and a live message is the wrong place to keep anything you'll want next week. Beads holds the units of work; the files hold the design memos; the bus carries only the *live* half — "are you up," "did that land," "go." Notification and record, doing different jobs.

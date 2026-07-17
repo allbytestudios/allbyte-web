@@ -451,11 +451,25 @@ async function fetchServerSaves(): Promise<{ saves: string; updatedAt: string } 
   }
 }
 
+/** Only player slots (1..maxSaveSlots) may ever reach the cloud. Scenario
+ *  jumps import through a scratch slot (99) that DAL's snapshot already
+ *  excludes — this filter is the defensive second layer (owner ruling
+ *  2026-07-16: fixture loads must never overwrite cloud saves). */
+function playerSlotsOnly(all: Record<string, string>): Record<string, string> {
+  const max = saves.maxSaveSlots ?? 12;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(all)) {
+    const m = /^slot_(\d+)$/.exec(k);
+    if (m && Number(m[1]) >= 1 && Number(m[1]) <= max) out[k] = v;
+  }
+  return out;
+}
+
 async function pushServerSaves(): Promise<boolean> {
   if (!isSyncTier()) return false;
   setSyncStatus("syncing");
   try {
-    const blob = JSON.stringify(saves.current);
+    const blob = JSON.stringify({ ...saves.current, saves: playerSlotsOnly(saves.current.saves) });
     const resp = await fetch(`${API}/saves`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },

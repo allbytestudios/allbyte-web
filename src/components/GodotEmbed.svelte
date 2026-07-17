@@ -858,6 +858,11 @@
         : "Not signed in — saves stay in this browser only.",
   );
 
+  // Scenario/tree jumps import + load through this scratch slot — outside the
+  // player range (1..12; AUTO=0, QUICK=13 reserved game-side), excluded from
+  // the save-bridge snapshot and therefore from cloud sync.
+  const SCENARIO_SLOT = 99;
+
   // --- Pre-jump slot-1 backup (scenario/save-tree imports overwrite it) ----
   const SLOT1_KEY = "con_nesis_save_1";
   const PREJUMP_BAK_KEY = "ab_prejump_save_1";
@@ -953,24 +958,24 @@
       }, 30000);
       if (!ok) console.warn(`[scenario] packs ${packs.join(",")} never fully registered — continuing`);
     }
-    // 4. import save into slot 1 (writes only) → 5. load it (real DAL load)
+    // 4. import save into the SCENARIO SCRATCH SLOT → 5. load it (real DAL load)
     //
-    // The import CLOBBERS the player's own slot-1 save (game + /play share an
-    // origin, so it's the same localStorage the real game saves into). Back it
-    // up first — but only when slot 1 doesn't still hold a previous jump's
-    // fixture (hash check), so repeated jumps can't overwrite the one real
-    // backup with fixture data. Restore via window.allbyteRestoreSave().
+    // Owner ruling 2026-07-16: jump loads must never touch the player's real
+    // slots or cloud saves. Slot 99 sits outside the player range (1..12):
+    // DAL's web snapshot enumerates only 1..MAX_SAVE_SLOTS, so the scratch
+    // slot is structurally invisible to the save bridge → can't cloud-sync.
+    // An in-game manual Save from the jumped state still writes a normal
+    // slot (and syncs), which is exactly the intended flow. The slot-1
+    // backup guard stays as insurance for older deployed builds.
     backupSlot1BeforeImport();
     let w = win();
     if (!w) { loading = false; return; }
-    w._testImportSave = JSON.stringify({ slot: 1, data: saveData });
+    w._testImportSave = JSON.stringify({ slot: SCENARIO_SLOT, data: saveData });
     await sleep(200);
-    // Stamp the imported content's hash once the game has written the slot, so
-    // the next jump knows slot 1 holds a fixture, not player progress.
     setTimeout(stampImportedSlotHash, 2500);
     w = win();
     if (!w) { loading = false; return; }
-    w._testLoadGame = 1;
+    w._testLoadGame = SCENARIO_SLOT;
     // Hold the overlay until the scenario scene has replaced Title, then reveal —
     // the user sees "loading" → the scenario, never the Title flash.
     await waitFor(() => {

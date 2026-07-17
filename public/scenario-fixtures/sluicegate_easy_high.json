@@ -35,7 +35,7 @@
   "battleCount": 0,
   "currency": 0,
   "dataID": 1,
-  "difficulty": 2,
+  "difficulty": 1,
   "positionX": 142,
   "positionY": 646,
   "scene": "res://World/ScenesAndScripts/Laria/Waterways/SluiceGate.tscn",

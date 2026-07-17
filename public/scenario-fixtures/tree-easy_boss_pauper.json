@@ -1,0 +1,105 @@
+{
+ "combatStatusEffects": {},
+ "discoveredDungeonScenes": [
+  "SluiceGate"
+ ],
+ "gameName": "ChroniclesOfNesis",
+ "mapMemory": {
+  "SluiceGate": {
+   "exits": [],
+   "visited": true
+  }
+ },
+ "options": {},
+ "overworldLocations": [],
+ "partyConditions": [
+  {
+   "conditionID": 1,
+   "value": 11
+  },
+  {
+   "conditionID": 2,
+   "value": 0
+  },
+  {
+   "conditionID": 3,
+   "value": 0
+  },
+  {
+   "conditionID": 4,
+   "value": 0
+  }
+ ],
+ "partyData": {
+  "activeParty": "Elias",
+  "battleCount": 0,
+  "currency": 0,
+  "dataID": 1,
+  "difficulty": 1,
+  "positionX": 142,
+  "positionY": 646,
+  "scene": "res://World/ScenesAndScripts/Laria/Waterways/SluiceGate.tscn",
+  "stepCount": 2,
+  "systemTime": 856
+ },
+ "partyItems": [
+  {
+   "equippedBy": "",
+   "expertise": 0,
+   "isEquipped": false,
+   "itemID": 9,
+   "proficiency": 0,
+   "quantity": 1,
+   "relicSlotIndex": 0
+  },
+  {
+   "equippedBy": "",
+   "expertise": 0,
+   "isEquipped": false,
+   "itemID": 10,
+   "proficiency": 0,
+   "quantity": 1,
+   "relicSlotIndex": 0
+  },
+  {
+   "equippedBy": "",
+   "expertise": 0,
+   "isEquipped": false,
+   "itemID": 16,
+   "proficiency": 0,
+   "quantity": 1,
+   "relicSlotIndex": 0
+  }
+ ],
+ "partySkillMenuRelics": [],
+ "partySkills": [],
+ "partyStats": [
+  {
+   "agility": 2,
+   "attackRange": 1,
+   "constitution": 5,
+   "currentHealth": 11,
+   "currentMana": 6,
+   "dataID": 1,
+   "dexterity": 3,
+   "experience": 0,
+   "intelligence": 2,
+   "knowledge": 4,
+   "level": 1,
+   "luck": 1,
+   "name": "Elias",
+   "speed": 3,
+   "stamina": 6,
+   "statusEffect": "",
+   "strength": 7,
+   "unspentAP": 0,
+   "unspentJP": 0,
+   "unspentSP": 0,
+   "wisdom": 6
+  }
+ ],
+ "saveSlotId": 1.0,
+ "timestamp": 1783114814.968,
+ "treasureConditions": [],
+ "version": 1.0
+}

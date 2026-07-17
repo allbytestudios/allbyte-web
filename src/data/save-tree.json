@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1",
-  "generated_at": "2026-07-17T19:46:39.894Z",
+  "generated_at": "2026-07-17T22:45:01.155Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -377,6 +377,82 @@
       ],
       "tags": [
         "hard",
+        "key",
+        "before-boss",
+        "max"
+      ]
+    },
+    {
+      "id": "easy_root",
+      "difficulty": "easy",
+      "parent": null,
+      "decision": "new game + intro (Easy)",
+      "is_leaf": false,
+      "label": "Easy · Intro done (New Game start)",
+      "scene": "EliasHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "easy",
+        "key",
+        "intro"
+      ]
+    },
+    {
+      "id": "easy_before_churchsquare_fight",
+      "difficulty": "easy",
+      "parent": "easy_root",
+      "decision": "events 1-9 (town→church)",
+      "is_leaf": false,
+      "label": "Easy · BEFORE ChurchSquare forced fight (L1)",
+      "scene": "ChurchSquare",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "easy",
+        "key",
+        "before-churchsquare-fight"
+      ]
+    },
+    {
+      "id": "easy_boss_pauper",
+      "difficulty": "easy",
+      "parent": "easy_before_churchsquare_fight",
+      "decision": "big-jump: win ChurchSquare fight + rush dungeon (before-dungeon node TBD — QB-023 blocked)",
+      "is_leaf": true,
+      "label": "Easy · BEFORE BOSS · underprepared (L1 naked)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "easy",
+        "key",
+        "before-boss",
+        "pauper"
+      ]
+    },
+    {
+      "id": "easy_boss_max",
+      "difficulty": "easy",
+      "parent": "easy_before_churchsquare_fight",
+      "decision": "big-jump: win fight + loot dungeon, fully prepared",
+      "is_leaf": true,
+      "label": "Easy · BEFORE BOSS · leveled+skilled (L5)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "easy",
         "key",
         "before-boss",
         "max"

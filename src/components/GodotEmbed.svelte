@@ -837,6 +837,52 @@
   // absent from the hardened build). Optional persona is an AutoPlay overlay
   // after the load. Hooks exist only in debug builds; inert otherwise. See
   // CON_CLAUDE_SCENARIO_SAVE_DELIVERY.md.
+  // --- Pre-jump slot-1 backup (scenario/save-tree imports overwrite it) ----
+  const SLOT1_KEY = "con_nesis_save_1";
+  const PREJUMP_BAK_KEY = "ab_prejump_save_1";
+  const IMPORT_HASH_KEY = "ab_last_import_hash";
+  function slotHash(s: string): string {
+    let x = 5381;
+    for (let i = 0; i < s.length; i++) x = ((x << 5) + x + s.charCodeAt(i)) | 0;
+    return `${x}:${s.length}`;
+  }
+  function backupSlot1BeforeImport(): void {
+    try {
+      const cur = localStorage.getItem(SLOT1_KEY);
+      if (!cur) return; // nothing to protect
+      if (localStorage.getItem(IMPORT_HASH_KEY) === slotHash(cur)) return; // still a fixture
+      localStorage.setItem(
+        PREJUMP_BAK_KEY,
+        JSON.stringify({ savedAt: Date.now(), save: cur }),
+      );
+      console.info(
+        "[scenario] backed up your slot-1 save — window.allbyteRestoreSave() to undo the jump import",
+      );
+    } catch { /* private mode — proceed */ }
+  }
+  function stampImportedSlotHash(): void {
+    try {
+      const now = localStorage.getItem(SLOT1_KEY);
+      if (now) localStorage.setItem(IMPORT_HASH_KEY, slotHash(now));
+    } catch { /* ignore */ }
+  }
+  if (typeof window !== "undefined") {
+    // Always registered (not just on jump loads) so a clobbered save can be
+    // restored from any later /play visit.
+    (window as any).allbyteRestoreSave = () => {
+      const bak = localStorage.getItem(PREJUMP_BAK_KEY);
+      if (!bak) return "no pre-jump backup stored";
+      try {
+        const { savedAt, save } = JSON.parse(bak);
+        localStorage.setItem(SLOT1_KEY, save);
+        localStorage.removeItem(IMPORT_HASH_KEY);
+        return `slot 1 restored from backup taken ${new Date(savedAt).toLocaleString()} — reload and Continue`;
+      } catch {
+        return "backup unreadable";
+      }
+    };
+  }
+
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   async function waitFor(pred: () => boolean, timeoutMs: number, intervalMs = 150) {
     const start = Date.now();
@@ -887,10 +933,20 @@
       if (!ok) console.warn(`[scenario] packs ${packs.join(",")} never fully registered — continuing`);
     }
     // 4. import save into slot 1 (writes only) → 5. load it (real DAL load)
+    //
+    // The import CLOBBERS the player's own slot-1 save (game + /play share an
+    // origin, so it's the same localStorage the real game saves into). Back it
+    // up first — but only when slot 1 doesn't still hold a previous jump's
+    // fixture (hash check), so repeated jumps can't overwrite the one real
+    // backup with fixture data. Restore via window.allbyteRestoreSave().
+    backupSlot1BeforeImport();
     let w = win();
     if (!w) { loading = false; return; }
     w._testImportSave = JSON.stringify({ slot: 1, data: saveData });
     await sleep(200);
+    // Stamp the imported content's hash once the game has written the slot, so
+    // the next jump knows slot 1 holds a fixture, not player progress.
+    setTimeout(stampImportedSlotHash, 2500);
     w = win();
     if (!w) { loading = false; return; }
     w._testLoadGame = 1;

@@ -208,6 +208,7 @@ function handleGameMessage(e: MessageEvent) {
       // render the correct state immediately rather than wait for the next
       // sync event.
       broadcastSyncStatus();
+      broadcastAccount();
       // On ready, request the current snapshot to populate our cache
       requestSavesFromGame();
       // For Hero/Legend, also pull from server and merge
@@ -285,12 +286,20 @@ export function requestSavesFromGame() {
   postToGameWhenReady({ type: "allbyte:request-saves" });
 }
 
-export function loadSavesIntoGame(snapshot: Partial<SavesSnapshot>) {
+export function loadSavesIntoGame(
+  snapshot: Partial<SavesSnapshot>,
+  opts: { source?: "local" | "cloud" | "import"; cloudSlots?: string[] } = {},
+) {
   postToGameWhenReady({
     type: "allbyte:load-saves",
     saves: snapshot.saves || {},
     options: snapshot.options,
     keymapping: snapshot.keymapping,
+    // Additive (2026-07-16): where this payload came from, and which slot
+    // keys specifically carry cloud-synced data — the game badges those in
+    // its Load menu so the player can tell a cloud save from a local one.
+    source: opts.source ?? "local",
+    cloudSlots: opts.cloudSlots ?? [],
   });
   // Update local cache
   if (snapshot.saves) {
@@ -406,6 +415,20 @@ function setSyncStatus(s: SyncStatus, errorMessage: string | null = null) {
   broadcastSyncStatus();
 }
 
+/** Additive (2026-07-16): who's signed in, their tier, and whether cloud
+ *  saves are active — the game renders this in its pause menu (owner ask).
+ *  Guests get username:null / tier:"default" / cloudSaves:false. */
+function broadcastAccount() {
+  if (!saves.gameReady) return;
+  const u = auth.currentUser;
+  postToGame({
+    type: "allbyte:account",
+    username: u?.username ?? null,
+    tier: u?.tier ?? "default",
+    cloudSaves: isSyncTier(),
+  });
+}
+
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem("allbyte_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -489,12 +512,14 @@ export async function syncFromServer() {
   // Per-slot merge using embedded timestamps
   const merged: Record<string, string> = { ...saves.current.saves };
   let serverHasNewer = false;
+  const cloudSlots: string[] = []; // slots whose winning copy came from the server
   for (const [slotKey, serverSlotJson] of Object.entries(serverSnapshot.saves || {})) {
     if (typeof serverSlotJson !== "string" || !serverSlotJson) continue;
     const localSlotJson = merged[slotKey];
     if (!localSlotJson) {
       merged[slotKey] = serverSlotJson;
       serverHasNewer = true;
+      cloudSlots.push(slotKey);
       continue;
     }
     try {
@@ -503,6 +528,7 @@ export async function syncFromServer() {
       if (serverTs > localTs) {
         merged[slotKey] = serverSlotJson;
         serverHasNewer = true;
+        cloudSlots.push(slotKey);
       }
     } catch {
       // If we can't parse, keep the local one
@@ -510,12 +536,16 @@ export async function syncFromServer() {
   }
 
   if (serverHasNewer) {
-    // Inject merged state into the game
-    loadSavesIntoGame({
-      saves: merged,
-      options: serverSnapshot.options,
-      keymapping: serverSnapshot.keymapping,
-    });
+    // Inject merged state into the game, naming the cloud-sourced slots so
+    // the Load menu can badge them.
+    loadSavesIntoGame(
+      {
+        saves: merged,
+        options: serverSnapshot.options,
+        keymapping: serverSnapshot.keymapping,
+      },
+      { source: "cloud", cloudSlots },
+    );
   }
 
   saves.lastSyncedAt = server.updatedAt ? Date.parse(server.updatedAt) : Date.now();

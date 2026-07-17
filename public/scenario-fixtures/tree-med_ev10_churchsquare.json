@@ -1,0 +1,75 @@
+{
+  "combatStatusEffects": {},
+  "gameName": "ChroniclesOfNesis",
+  "options": {},
+  "overworldLocations": [],
+  "partyConditions": [
+    {
+      "conditionID": 1,
+      "value": 8
+    },
+    {
+      "conditionID": 2,
+      "value": 0
+    },
+    {
+      "conditionID": 3,
+      "value": 1
+    },
+    {
+      "conditionID": 4,
+      "value": 0
+    }
+  ],
+  "partyData": {
+    "activeParty": "Elias",
+    "battleCount": 0,
+    "currency": 0,
+    "dataID": 1,
+    "difficulty": 2,
+    "positionX": 22,
+    "positionY": 247,
+    "scene": "res://World/ScenesAndScripts/Laria/ChurchSquare/ChurchSquare.tscn",
+    "stepCount": 67,
+    "systemTime": 682
+  },
+  "partyItems": [
+    {
+      "equippedBy": "",
+      "isEquipped": false,
+      "itemID": 9,
+      "proficiency": 0,
+      "quantity": 1,
+      "relicSlotIndex": 0
+    }
+  ],
+  "partySkills": [],
+  "partyStats": [
+    {
+      "agility": 2,
+      "attackRange": 1,
+      "constitution": 7,
+      "currentHealth": 13,
+      "currentMana": 8,
+      "dataID": 1,
+      "dexterity": 2,
+      "experience": 0,
+      "intelligence": 5,
+      "knowledge": 4,
+      "level": 1,
+      "luck": 7,
+      "name": "Elias",
+      "speed": 4,
+      "stamina": 4,
+      "statusEffect": "{}",
+      "strength": 7,
+      "unspentAP": 0,
+      "unspentSP": 0,
+      "wisdom": 6
+    }
+  ],
+  "saveSlotId": 1.0,
+  "timestamp": 1779578809.137,
+  "treasureConditions": [],
+  "version": 1.0
+}

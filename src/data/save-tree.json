@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1",
-  "generated_at": "2026-07-17T17:54:35.129Z",
+  "generated_at": "2026-07-17T19:46:39.894Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -301,6 +301,82 @@
       ],
       "tags": [
         "medium",
+        "key",
+        "before-boss",
+        "max"
+      ]
+    },
+    {
+      "id": "hard_before_churchsquare_fight",
+      "difficulty": "hard",
+      "parent": "hard_windmill1",
+      "decision": "events 3-9 (windmill basement→mayor→church)",
+      "is_leaf": false,
+      "label": "Hard · BEFORE ChurchSquare forced fight (L1)",
+      "scene": "ChurchSquare",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "hard",
+        "key",
+        "before-churchsquare-fight"
+      ]
+    },
+    {
+      "id": "hard_before_dungeon",
+      "difficulty": "hard",
+      "parent": "hard_before_churchsquare_fight",
+      "decision": "win ChurchSquare fight (→L2) + events 11-13",
+      "is_leaf": false,
+      "label": "Hard · BEFORE DUNGEON (L2, skip town)",
+      "scene": "MayorsHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "hard",
+        "key",
+        "before-dungeon"
+      ]
+    },
+    {
+      "id": "hard_boss_pauper",
+      "difficulty": "hard",
+      "parent": "hard_before_dungeon",
+      "decision": "big-jump: dungeon rushed, underprepared",
+      "is_leaf": true,
+      "label": "Hard · BEFORE BOSS · underprepared (L1 naked)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "hard",
+        "key",
+        "before-boss",
+        "pauper"
+      ]
+    },
+    {
+      "id": "hard_boss_max",
+      "difficulty": "hard",
+      "parent": "hard_before_dungeon",
+      "decision": "big-jump: dungeon looted, fully prepared",
+      "is_leaf": true,
+      "label": "Hard · BEFORE BOSS · leveled+skilled (L5)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "hard",
         "key",
         "before-boss",
         "max"

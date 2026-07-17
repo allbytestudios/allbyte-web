@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-17T17:54:36.561Z",
+  "generated_at": "2026-07-17T19:46:40.929Z",
   "sections": [
     "Waterway 1",
     "Sluice Gate"
@@ -31,26 +31,6 @@
       "section": "Sluice Gate",
       "label": "Mother Slime boss — EASY / leveled+skilled (L5, HP21/MP14)",
       "fixtureId": "sluicegate_easy_high",
-      "packs": [
-        "Laria",
-        "Combat"
-      ]
-    },
-    {
-      "id": "scn-sluicegate-hard-low",
-      "section": "Sluice Gate",
-      "label": "Mother Slime boss — HARD / underprepared (L1 naked)",
-      "fixtureId": "sluicegate_hard_low",
-      "packs": [
-        "Laria",
-        "Combat"
-      ]
-    },
-    {
-      "id": "scn-sluicegate-hard-high",
-      "section": "Sluice Gate",
-      "label": "Mother Slime boss — HARD / leveled+skilled (L5, HP21/MP14)",
-      "fixtureId": "sluicegate_hard_high",
       "packs": [
         "Laria",
         "Combat"

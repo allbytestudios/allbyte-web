@@ -1,5 +1,5 @@
 ---
-title: "Never Give One AI Agent Both Autonomy and Privilege"
+title: "How to Get the Best of Both Autonomy and Privilege"
 description: "Running coding agents forces a bad choice: prompt for every action (safe but slow) or skip permissions entirely (fast but dangerous). I stopped choosing. Here's the privilege-separation design that lets a leashed, credentialed Claude on my host delegate to fully-autonomous, sandboxed Claudes in a container — why it dissolves the tradeoff, what actually keeps it secure, and where the honest holes are."
 pubDate: 2026-07-18T16:00:00Z
 category: "engineering"

@@ -307,12 +307,25 @@ const breadcrumbs = [
     color: #e0e7ff;
   }
 
+  /* Prose has no break opportunity inside long identifiers, paths, or URLs;
+     break them on narrow screens rather than widening the page. */
+  .post-content p,
+  .post-content li {
+    overflow-wrap: break-word;
+  }
+
   .post-content code {
     background: rgba(167, 243, 208, 0.08);
     color: #a7f3d0;
     padding: 0.15rem 0.4rem;
     font-size: 0.85em;
     border-radius: 2px;
+    overflow-wrap: anywhere;
+  }
+
+  /* …but never break inside fenced blocks — those scroll instead. */
+  .post-content pre code {
+    overflow-wrap: normal;
   }
 
   .post-content pre {
@@ -347,8 +360,14 @@ const breadcrumbs = [
     color: rgba(224, 231, 255, 0.7);
   }
 
+  /* Scroll wide tables inside their own box instead of pushing the page
+     sideways — auto table layout ignores width:100% when cells can't fit. */
   .post-content table {
-    width: 100%;
+    display: block;
+    width: max-content;
+    min-width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
     border-collapse: collapse;
     margin: 1rem 0 1.5rem;
     font-size: 0.9rem;

@@ -160,7 +160,13 @@ const fmtDate = (d: string) =>
     font-size: 0.72rem;
     align-self: center;
   }
-  .subject { color: rgba(224, 231, 255, 0.9); }
+  /* min-width:0 lets the flex item shrink; long test names / paths have no
+     break opportunity, so break them rather than overflow the page. */
+  .subject {
+    color: rgba(224, 231, 255, 0.9);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
 
   @media (max-width: 600px) {
     .release-count { display: none; }

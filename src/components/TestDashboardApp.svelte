@@ -756,8 +756,13 @@
     gap: 0.4rem;
     margin-bottom: 0.6rem;
     border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+    /* Tab row scrolls itself on narrow phones rather than widening the page. */
+    overflow-x: auto;
+    scrollbar-width: none;
   }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab {
+    flex: none;
     background: transparent;
     border: none;
     color: #9ca3af;
@@ -838,6 +843,11 @@
   /* Narrow: collapse to tabs */
   @media (max-width: 1199px) {
     .tabs { display: flex; }
+    .column.hidden { display: none; }
+  }
+  /* Phone: tighten tabs so all tiers fit without scrolling. */
+  @media (max-width: 440px) {
+    .tab { padding: 0.5rem 0.55rem; font-size: 0.8rem; gap: 0.3rem; }
     .columns {
       grid-template-columns: 1fr;
     }

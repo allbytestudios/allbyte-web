@@ -4,6 +4,7 @@ description: "The swarm bet — compensate for weak agents with many of them plu
 pubDate: 2026-07-18T17:00:00Z
 category: "workflow"
 devlog: "godot-and-claude"
+audience: "ai-dev"
 tags: ["agents", "multi-agent", "architecture", "claude", "workflow", "ai-pair-programming"]
 draft: true
 ---

@@ -4,6 +4,7 @@ description: "How do I know what five concurrent agents are doing, when half of 
 pubDate: 2026-04-27T21:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
+audience: "ai-dev"
 tags: ["mcp", "observability", "agents", "opentelemetry", "dashboard", "architecture"]
 draft: true
 unlisted: true

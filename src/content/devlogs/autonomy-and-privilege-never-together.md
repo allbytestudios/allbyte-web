@@ -4,6 +4,7 @@ description: "Running coding agents forces a bad choice: prompt for every action
 pubDate: 2026-07-18T16:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
+audience: "ai-dev"
 tags: ["agents", "security", "architecture", "claude", "privilege-separation", "ai-pair-programming"]
 draft: true
 ---

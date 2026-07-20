@@ -4,6 +4,7 @@ description: "How I code with two Claude Code \"team leads\" on this project —
 pubDate: 2026-04-10T22:00:00Z
 category: "workflow"
 devlog: "godot-and-claude"
+audience: "ai-dev"
 tags: ["claude", "workflow", "docker", "tmux", "ai-pair-programming"]
 ---
 

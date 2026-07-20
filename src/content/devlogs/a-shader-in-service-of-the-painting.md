@@ -4,6 +4,7 @@ description: "I hand-painted the clouds for the title screen and liked how they 
 pubDate: 2026-06-22T12:00:00Z
 category: "craft"
 devlog: "chronicles"
+audience: "gamedev"
 tags: ["godot", "shaders", "art", "craft", "graphics"]
 heroImage: "/og-image.jpg"
 draft: false

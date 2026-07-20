@@ -4,6 +4,7 @@ description: "My QA lead designed a branching tree of loadable save states, my o
 pubDate: 2026-07-16T18:00:00Z
 category: "workflow"
 devlog: "godot-and-claude"
+audience: "ai-dev"
 tags: ["agents", "qa", "testing", "workflow", "claude", "godot", "save-states"]
 draft: true
 ---

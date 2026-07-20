@@ -30,7 +30,8 @@
     "test:e2e": "pytest tests/e2e/ -v",
     "smoke:prod": "python scripts/smoke_prod.py",
     "qa:controllers": "python tests/controller-qa/run_qa.py",
-    "qa:browsers": "python tests/cross-browser-qa/run.py"
+    "qa:browsers": "python tests/cross-browser-qa/run.py",
+    "push-marketing-strategy": "node scripts/push-marketing-strategy.js"
   },
   "repository": {
     "type": "git",

@@ -4,6 +4,7 @@ description: "The test framework is the real leverage behind building a game wit
 pubDate: 2026-06-23T18:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
+audience: "gamedev"
 tags: ["testing", "mcp", "playwright", "godot", "quality-gates", "ai-pair-programming"]
 draft: false
 ---

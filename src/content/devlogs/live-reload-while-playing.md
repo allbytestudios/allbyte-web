@@ -4,6 +4,7 @@ description: "Fixes were landing faster than I could restart the game. So I buil
 pubDate: 2026-04-16T18:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
+audience: "ai-dev"
 tags: ["godot", "live-reload", "agents", "workflow", "web-export", "testing"]
 draft: true
 ---

@@ -4,6 +4,7 @@ description: "The CI/CD pipeline that takes The Chronicles of Nesis from a git p
 pubDate: 2026-07-11
 category: "engineering"
 devlog: "studio"
+audience: "gamedev"
 tags: ["deploy", "godot", "wasm", "cloudfront", "cicd", "infrastructure"]
 draft: false
 ---

@@ -4,6 +4,7 @@ description: "When Arc claimed the drain pattern was a 5x efficiency win, I beli
 pubDate: 2026-04-14T14:00:00Z
 category: "engineering"
 devlog: "studio"
+audience: "ai-dev"
 tags: ["claude", "efficiency", "tokens", "workflow", "ai-pair-programming"]
 draft: true
 unlisted: true

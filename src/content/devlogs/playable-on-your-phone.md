@@ -4,6 +4,7 @@ description: "How I turned The Chronicles of Nesis — a desktop-shaped tactical
 pubDate: 2026-06-02T00:00:00Z
 category: "engineering"
 devlog: "studio"
+audience: "gamedev"
 tags: ["pwa", "mobile", "godot", "service-worker", "architecture"]
 ---
 

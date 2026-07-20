@@ -4,6 +4,7 @@ description: "My agents have been building bash heredocs to update tickets, pars
 pubDate: 2026-04-26T22:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
+audience: "ai-dev"
 tags: ["mcp", "agents", "godot", "tooling", "process"]
 draft: true
 ---

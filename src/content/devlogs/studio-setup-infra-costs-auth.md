@@ -4,6 +4,7 @@ description: "How allbyte.studio runs on AWS for under $5/month — the infrastr
 pubDate: 2026-04-08T00:02:00Z
 category: "engineering"
 devlog: "studio"
+audience: "general"
 tags: ["aws", "infrastructure", "auth", "stripe", "self-hosting"]
 ---
 

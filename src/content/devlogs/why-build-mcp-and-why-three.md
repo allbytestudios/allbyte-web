@@ -4,6 +4,7 @@ description: "MCP isn't a wrapper around your bash scripts — it's a contract f
 pubDate: 2026-06-23T17:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
+audience: "ai-dev"
 tags: ["mcp", "agents", "architecture", "tooling", "process"]
 draft: true
 ---

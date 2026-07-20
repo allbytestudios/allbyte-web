@@ -848,11 +848,50 @@ function godotReload() {
   };
 }
 
+// Dev-only: serves the private marketing strategy to the distribution panel.
+// The strategy lives in a gitignored file and must never reach the public repo
+// or the public CDN, so the panel fetches it at RUNTIME rather than baking it
+// into the build. This endpoint is the dev half of that contract; in prod the
+// same shape comes from the admin-gated Lambda (GET /admin/marketing/distribution),
+// which is why the panel needs no dev/prod branching beyond the URL.
+//
+// Read-only by design. If the strategy ever becomes writable from the console,
+// this is NOT the place to add the write — it would need the same admin gate
+// the prod route has, and this middleware has no auth at all (dev-only, bound
+// to the local dev server).
+function marketingDistribution() {
+  const distPath = resolve("./private/marketing/devlog-distribution.json");
+  return {
+    name: "allbyte-marketing-distribution",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.replace(/\/$/, "") ?? "";
+        if (req.method !== "GET" || url !== "/api/marketing-distribution") return next();
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Cache-Control", "no-store");
+        if (!existsSync(distPath)) {
+          // Absent private file is expected on a fresh clone — report it as a
+          // typed payload so the panel can render a real hint instead of a
+          // silent blank (the old .astro version swallowed this case).
+          res.statusCode = 404;
+          return res.end(JSON.stringify({ error: "no-private-strategy", path: "private/marketing/devlog-distribution.json" }));
+        }
+        try {
+          res.end(readFileSync(distPath, "utf8"));
+        } catch (e) {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: "read-failed", detail: e.message }));
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
   vite: {
-    plugins: [tailwindcss(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
+    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

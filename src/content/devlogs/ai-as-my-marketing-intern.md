@@ -4,6 +4,7 @@ description: "I'm a solo developer building a tactical RPG. I can't do social me
 pubDate: 2026-06-22T12:00:00Z
 category: "engineering"
 devlog: "studio"
+audience: "ai-dev"
 tags: ["marketing", "automation", "ai", "postiz", "self-hosting"]
 draft: true
 ---

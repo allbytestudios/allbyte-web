@@ -4,6 +4,7 @@ description: "Every indie dev has to choose what platforms to support for distri
 pubDate: 2026-06-02T00:00:00Z
 category: "strategy"
 devlog: "studio"
+audience: "general"
 tags: ["business", "self-hosting", "indie", "ai", "platforms"]
 ---
 

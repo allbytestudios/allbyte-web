@@ -4,6 +4,7 @@ description: "Migrating The Chronicles of Nesis from Godot 3.6.2 to 4.6.2. What 
 pubDate: 2026-06-23T15:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
+audience: "gamedev"
 tags: ["godot", "migration", "gdscript", "tooling", "tscn"]
 draft: false
 ---

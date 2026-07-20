@@ -4,6 +4,7 @@ description: "A reference of the hard-won gotchas from shipping The Chronicles o
 pubDate: 2026-06-23T16:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
+audience: "gamedev"
 tags: ["godot", "wasm", "web-export", "browser", "debugging", "performance"]
 draft: false
 ---

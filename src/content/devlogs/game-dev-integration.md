@@ -4,6 +4,7 @@ description: "How game assets flow from the Godot project to the web — asset s
 pubDate: 2026-04-08T00:01:00Z
 category: "engineering"
 devlog: "studio"
+audience: "gamedev"
 tags: ["godot", "assets", "pipeline", "aws", "self-hosting"]
 ---
 

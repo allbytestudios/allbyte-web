@@ -3,7 +3,34 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import PageHeader from "../../../components/PageHeader.astro";
 import Footer from "../../../components/Footer.astro";
 import MarketingQueueApp from "../../../components/MarketingQueueApp.svelte";
+import DevlogDistributionPanel from "../../../components/DevlogDistributionPanel.svelte";
 import TestNav from "../../../components/TestNav.svelte";
+import { getCollection } from "astro:content";
+
+// PUBLIC half of the distribution panel. Everything here is already committed
+// to the public repo (post titles, draft flags, audience tags), so serializing
+// it into the page leaks nothing new. The private strategy it joins against is
+// fetched at runtime from the admin-gated endpoint — see
+// src/lib/marketingDistribution.ts for the invariant.
+//
+// aiLeak is computed HERE on purpose: it needs the post body, and the body is
+// exactly what we don't want to ship to the client. Only the boolean crosses.
+const AI_TERMS = /\b(AI|Claude|Anthropic|LLM|agent|agentic|MCP)\b/;
+const AI_FREE = ["gamedev", "players"];
+
+const distributionPosts = (await getCollection("devlogs"))
+  .map((p) => {
+    const audience = p.data.audience ?? "general";
+    return {
+      slug: p.id,
+      title: p.data.title,
+      audience,
+      draft: !!p.data.draft,
+      pubDate: p.data.pubDate.toISOString(),
+      aiLeak: AI_FREE.includes(audience) && AI_TERMS.test(p.body ?? ""),
+    };
+  })
+  .sort((a, b) => b.pubDate.localeCompare(a.pubDate));
 ---
 
 <BaseLayout
@@ -19,6 +46,7 @@ import TestNav from "../../../components/TestNav.svelte";
   />
   <main class="marketing-shell">
     <TestNav active="marketing" client:load />
+    <DevlogDistributionPanel posts={distributionPosts} client:only="svelte" />
     <MarketingQueueApp client:only="svelte" />
   </main>
   <Footer theme="engine" />

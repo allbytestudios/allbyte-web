@@ -4,6 +4,7 @@ description: "My engineering team went from two Claudes to five. How I split my 
 pubDate: 2026-04-14T12:00:00Z
 category: "workflow"
 devlog: "studio"
+audience: "ai-dev"
 tags: ["claude", "agents", "subagents", "ai-pair-programming", "workflow"]
 draft: false
 ---

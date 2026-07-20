@@ -4,6 +4,7 @@ description: "Pre-rendered backgrounds nearly died with the PS1 — bringing the
 pubDate: 2026-06-24T15:00:00Z
 category: "craft"
 devlog: "chronicles"
+audience: "gamedev"
 tags: ["art", "tactical-rpg", "pre-rendered", "level-design", "godot"]
 draft: false
 ---

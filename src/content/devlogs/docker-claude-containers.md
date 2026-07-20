@@ -4,6 +4,7 @@ description: "How I set up Docker containers to safely run Claude Code with --da
 pubDate: 2026-04-09T00:01:00Z
 category: "engineering"
 devlog: "godot-and-claude"
+audience: "ai-dev"
 tags: ["docker", "claude", "devops", "security", "containers"]
 ---
 

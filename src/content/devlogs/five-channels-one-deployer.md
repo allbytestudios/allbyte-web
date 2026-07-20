@@ -5,7 +5,7 @@ pubDate: 2026-07-11
 category: "engineering"
 devlog: "studio"
 tags: ["deploy", "godot", "wasm", "cloudfront", "cicd", "infrastructure"]
-draft: true
+draft: false
 ---
 
 I ship The Chronicles of Nesis to the browser several times a day, and most of
@@ -60,9 +60,7 @@ clean, free **Demo**. Patrons at the Initiate tier get **Beta** content —
 zones beyond what the Demo carries. I need **debug** variants of both (test
 hooks, a debug HUD, save import — things players should never see). And the
 bleeding edge needs somewhere to live: **develop**, rebuilt from every gated
-build of the develop branch, so I can play what the team* built an hour ago.
-
-(*"team" being AI agents, but that's [other posts](/devlog/two-claudes-to-five/).)
+build of the develop branch, so I can play whatever landed an hour ago.
 
 So: a content axis (Demo vs Beta) times a debug axis, plus develop. Each
 channel is just a path on the CDN — `/godot/public/`, `/godot/beta/`,
@@ -203,8 +201,8 @@ a diagram of the machine. The machine.
 
 And almost none of it is specific to *my* game. The five-channel model, the
 refusal gates, the version-locked service worker, the self-proving boot check,
-the hermetic cloud export — those are Godot-web problems, not Chronicles
-problems, and the code that solves them doesn't know or care what game it's
+the hermetic cloud export — those are Godot-web problems, not Chronicles of
+Nesis problems, and the code that solves them doesn't know or care what game it's
 shipping. The bits that *are* mine — bucket names, the CloudFront distribution,
 the encryption key — are configuration and inputs, never hardcoded, precisely so
 a fork leaks nothing and swaps cleanly.

@@ -5,10 +5,11 @@ pubDate: 2026-07-14T16:00:00Z
 category: "engineering"
 devlog: "godot-and-claude"
 tags: ["agents", "workflow", "architecture", "claude", "mcp", "ai-pair-programming"]
-draft: true
+audience: "ai-dev"
+draft: false
 ---
 
-**Anthropic shipped an experimental Claude Code feature called [Channels](https://docs.claude.com/en/docs/claude-code)** — a way for one running Claude session to pass a message straight into another running session's *live context*, mid-work, without either being restarted. It landed **{{RELEASE DATE — confirm}}**, and I wanted to try it the moment I saw it, because it sounded like a big win for the exact setup I'd been fighting.
+**Anthropic shipped an experimental Claude Code feature called [Channels](https://docs.claude.com/en/docs/claude-code)** — a way for one running Claude session to pass a message straight into another running session's *live context*, mid-work, without either being restarted. It's brand new — still experimental, still shifting under me as I write this — and I wanted to try it the moment I saw it, because it sounded like a big win for the exact setup I'd been fighting.
 
 Credit where it's due: someone at Anthropic looked at everyone lashing agents together with file-watchers and shared terminals, named the primitive that was actually missing — live session-to-session messaging — and shipped it as something you can build on. This post is the other half of that. An experimental feature earns its keep when someone runs it in anger and shows the result, so take this as one real data point: the need was real, and the thing holds up under weight. What follows is my proof it works — a real three-seat team spanning two machines — and a walk through exactly how I use it.
 

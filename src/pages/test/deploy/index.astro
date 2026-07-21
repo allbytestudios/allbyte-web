@@ -3,6 +3,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import PageHeader from "../../../components/PageHeader.astro";
 import Footer from "../../../components/Footer.astro";
 import DemoPromoteButton from "../../../components/DemoPromoteButton.svelte";
+import DeployQaPanel from "../../../components/DeployQaPanel.svelte";
 import TestNav from "../../../components/TestNav.svelte";
 ---
 
@@ -19,6 +20,10 @@ import TestNav from "../../../components/TestNav.svelte";
   />
   <main class="deploy-shell">
     <TestNav active="deploy" client:load />
+    {/* Deploy QA: cross-browser + controller smoke against /play/ on prod
+        after each deploy (.github/workflows/qa.yml). Lives here rather than
+        on the console overview so it sits beside the promote it reports on. */}
+    <DeployQaPanel client:only="svelte" />
     <DemoPromoteButton client:only="svelte" />
   </main>
   <Footer theme="engine" />

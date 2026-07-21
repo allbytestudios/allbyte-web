@@ -18,9 +18,7 @@
   import usageHistory from "../data/claude-usage-history.json";
   import marketingPosts from "../data/marketing-posts.json";
   import MilestoneStrip from "./MilestoneStrip.svelte";
-  import TestStatusCard from "./TestStatusCard.svelte";
   import FixturePicker from "./FixturePicker.svelte";
-  import DeployQaPanel from "./DeployQaPanel.svelte";
   import { auth } from "../lib/auth.svelte.ts";
   import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
@@ -404,16 +402,10 @@
     {/each}
   </div>
 
-  <!-- Live run status -->
-  <TestStatusCard {status} />
-
-  <!-- Deploy QA — cross-browser + controller smoke against /play/ on
-       prod after each deploy. Admin-only because the underlying data
-       (per-deploy screenshots, log excerpts) is operational signal,
-       not player-facing. Driven by .github/workflows/qa.yml. -->
-  {#if viewerIsAdmin}
-    <DeployQaPanel />
-  {/if}
+  <!-- Live run status and Deploy QA moved off the overview 2026-07-21:
+       the test panel already renders in the Tests tab (TestDashboardApp) and
+       Deploy QA now lives in the Deploy tab, next to the promote button it
+       actually relates to. The overview keeps the at-a-glance cards only. -->
 
   <!-- Three overview cards -->
   <div class="cards">

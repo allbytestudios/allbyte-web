@@ -28,6 +28,12 @@
       "source": "postiz"
     },
     {
+      "date": "2026-06-22",
+      "platform": "x",
+      "source": "manual",
+      "note": "manual X (assumed - posted by hand with every Postiz drop)"
+    },
+    {
       "date": "2026-06-23",
       "platform": "mastodon",
       "source": "postiz"
@@ -53,6 +59,12 @@
       "source": "postiz"
     },
     {
+      "date": "2026-06-23",
+      "platform": "x",
+      "source": "manual",
+      "note": "manual X (assumed - posted by hand with every Postiz drop)"
+    },
+    {
       "date": "2026-06-24",
       "platform": "threads",
       "source": "postiz"
@@ -76,6 +88,19 @@
       "date": "2026-06-24",
       "platform": "threads",
       "source": "postiz"
+    },
+    {
+      "date": "2026-06-24",
+      "platform": "x",
+      "source": "manual",
+      "note": "manual X (assumed - posted by hand with every Postiz drop)"
+    },
+    {
+      "date": "2026-06-24",
+      "platform": "reddit",
+      "source": "manual",
+      "subreddit": "SoloDev",
+      "note": "hand-posted to r/SoloDev"
     },
     {
       "date": "2026-06-30",
@@ -97,12 +122,32 @@
       "platform": "discord",
       "source": "postiz"
     },
-    { "date": "2026-06-22", "platform": "x", "source": "manual", "note": "manual X (assumed - posted by hand with every Postiz drop)" },
-    { "date": "2026-06-23", "platform": "x", "source": "manual", "note": "manual X (assumed - posted by hand with every Postiz drop)" },
-    { "date": "2026-06-24", "platform": "x", "source": "manual", "note": "manual X (assumed - posted by hand with every Postiz drop)" },
-    { "date": "2026-06-30", "platform": "x", "source": "manual", "note": "manual X (assumed - posted by hand with every Postiz drop)" },
-    { "date": "2026-06-24", "platform": "reddit", "source": "manual", "subreddit": "SoloDev", "note": "hand-posted to r/SoloDev" },
-    { "date": "2026-07-01", "platform": "reddit", "source": "manual", "subreddit": "IndieDev", "note": "hand-posted to r/IndieDev" },
-    { "date": "2026-07-02", "platform": "reddit", "source": "manual", "subreddit": "godot", "note": "hand-posted to r/godot — dev-persona 'what I did': Godot 3.6->4.6 migration writeup + open-source migrator" }
+    {
+      "date": "2026-06-30",
+      "platform": "x",
+      "source": "manual",
+      "note": "manual X (assumed - posted by hand with every Postiz drop)"
+    },
+    {
+      "date": "2026-07-01",
+      "platform": "reddit",
+      "source": "manual",
+      "subreddit": "IndieDev",
+      "note": "hand-posted to r/IndieDev"
+    },
+    {
+      "date": "2026-07-02",
+      "platform": "reddit",
+      "source": "manual",
+      "subreddit": "godot",
+      "note": "hand-posted to r/godot — dev-persona 'what I did': Godot 3.6->4.6 migration writeup + open-source migrator"
+    },
+    {
+      "date": "2026-07-17",
+      "platform": "reddit",
+      "source": "manual",
+      "subreddit": "playmygame",
+      "note": "hand-posted to r/playmygame — player-persona drop (play-my-game focus group)"
+    }
   ]
 }

@@ -4,7 +4,7 @@ description: "How a tactical RPG went from a turn queue on a blank grid to a pla
 pubDate: 2025-04-11
 category: "narrative"
 devlog: "chronicles"
-audience: "players"
+audience: "manifesto"
 tags: ["godot", "gamedev", "steam", "tactical-rpg", "indie"]
 ---
 

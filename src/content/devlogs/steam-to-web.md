@@ -4,7 +4,7 @@ description: "Why I'm spending my evenings building enterprise-grade infrastruct
 pubDate: 2026-04-10T23:00:00Z
 category: "narrative"
 devlog: "chronicles"
-audience: "players"
+audience: "manifesto"
 tags: ["chronicles-of-nesis", "ai", "claude", "playwright", "indie", "infrastructure"]
 heroImage: "/steam-to-web-hero.jpg"
 ---

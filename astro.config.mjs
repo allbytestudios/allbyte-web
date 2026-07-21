@@ -5,6 +5,8 @@ import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, w
 import { join, normalize, resolve, sep, relative } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import chokidar from "chokidar";
+import remarkDirective from "remark-directive";
+import remarkWalkthroughDirectives from "./scripts/remark-walkthrough-directives.mjs";
 
 const chroniclesRoot = resolve(
   process.env.CHRONICLES_DIR ||
@@ -890,6 +892,11 @@ function marketingDistribution() {
 export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
+  markdown: {
+    // Order matters: remarkDirective parses the `::name[...]{...}` syntax into
+    // directive nodes, and our transform must run AFTER it to see them.
+    remarkPlugins: [remarkDirective, remarkWalkthroughDirectives],
+  },
   vite: {
     plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
     server: {

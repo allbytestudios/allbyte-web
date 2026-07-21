@@ -31,7 +31,9 @@
     "smoke:prod": "python scripts/smoke_prod.py",
     "qa:controllers": "python tests/controller-qa/run_qa.py",
     "qa:browsers": "python tests/cross-browser-qa/run.py",
-    "push-marketing-strategy": "node scripts/push-marketing-strategy.js"
+    "push-marketing-strategy": "node scripts/push-marketing-strategy.js",
+    "sync:walkthrough": "node scripts/sync-walkthrough.js",
+    "sync:walkthrough:dry": "node scripts/sync-walkthrough.js --dry-run"
   },
   "repository": {
     "type": "git",
@@ -48,7 +50,11 @@
     "@astrojs/svelte": "^8.0.4",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^6.1.4",
+    "remark-directive": "^4.0.0",
     "svelte": "^5.55.1",
     "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "js-yaml": "^5.2.1"
   }
 }

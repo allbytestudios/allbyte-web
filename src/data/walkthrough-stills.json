@@ -1,0 +1,106 @@
+{
+  "EliasHouse": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "MayorsHouse": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "MayorsHouseUpstairs": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "Windmill2SecondFloor": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "GeneralStore": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "Waterway1": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "SluiceGate": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "ChurchSquare": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "MainSquare": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "FrontRoad": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "Windmill1": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "Windmill1SecondFloor": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  },
+  "Windmill1Basement": {
+    "w": 1270,
+    "h": 920,
+    "widths": [
+      480,
+      800
+    ]
+  }
+}

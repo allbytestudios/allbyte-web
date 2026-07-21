@@ -17,7 +17,7 @@
 
 const API_BASE = "https://api.allbyte.studio";
 
-export type Audience = "ai-dev" | "gamedev" | "players" | "general";
+export type Audience = "ai-dev" | "gamedev" | "players" | "manifesto" | "general";
 
 export interface Venue {
   id: string;

@@ -36,11 +36,13 @@
 
   let state = $state<DistributionState | null>(null);
 
-  const CHANNEL_ORDER: Audience[] = ["players", "gamedev", "ai-dev"];
+  // manifesto last — it is a held bucket, not part of the active rotation.
+  const CHANNEL_ORDER: Audience[] = ["players", "gamedev", "ai-dev", "manifesto"];
   const AUD_LABEL: Record<Audience, string> = {
     players: "Play My Game",
     gamedev: "Game Dev",
     "ai-dev": "AI Dev",
+    manifesto: "Manifesto (held)",
     general: "General",
   };
   const TIMING_ORDER: Record<string, number> = { shipped: 0, "this-week": 1, soon: 2 };
@@ -248,6 +250,8 @@
   .ddp-timeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 1rem 0 1.4rem; }
   .tl { background: #111a2b; border: 1px solid rgba(255,255,255,0.06); border-top-width: 2px; border-radius: 6px; padding: 0.75rem 0.85rem; }
   .tl-players { border-top-color: #f0abfc; } .tl-gamedev { border-top-color: #7dd3fc; } .tl-ai-dev { border-top-color: #a7f3d0; }
+  /* held bucket — muted on purpose so it does not read as active work */
+  .tl-manifesto { border-top-color: #94a3b8; opacity: 0.72; }
   .tl h3 { margin: 0 0 0.3rem; font-size: 0.9rem; color: #e7ecf5; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
   .posture { font-size: 0.6rem; color: #93a0b1; font-weight: normal; }
   .tl-blurb { margin: 0 0 0.55rem; font-size: 0.74rem; line-height: 1.45; color: #93a0b1; }
@@ -262,6 +266,7 @@
   .cal-note { color: #8b97a8; font-style: italic; }
   .t-badge, .aud-badge, .cap { font-size: 0.6rem; padding: 0.08rem 0.4rem; border-radius: 999px; flex: none; white-space: nowrap; }
   .t-shipped { background: rgba(110,231,183,0.15); color: #6ee7b7; } .t-this-week { background: rgba(251,191,36,0.15); color: #fbbf24; } .t-soon { background: rgba(148,163,184,0.15); color: #94a3b8; }
+  .aud-manifesto { background: rgba(148,163,184,0.13); color: #94a3b8; }
   .aud-players { background: rgba(240,171,252,0.13); color: #f0abfc; } .aud-gamedev { background: rgba(125,211,252,0.13); color: #7dd3fc; } .aud-ai-dev { background: rgba(167,243,208,0.13); color: #a7f3d0; }
   .cap { color: #8b97a8; } .cap-ready { color: #6ee7b7; } .cap-free { color: #7dd3fc; } .cap-needed { color: #fbbf24; }
 

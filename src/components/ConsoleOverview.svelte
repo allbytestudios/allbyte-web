@@ -16,7 +16,6 @@
   import { subscribeToFile } from "../lib/testEvents";
   import usageData from "../data/claude-usage.json";
   import usageHistory from "../data/claude-usage-history.json";
-  import marketingPosts from "../data/marketing-posts.json";
   import MilestoneStrip from "./MilestoneStrip.svelte";
   import FixturePicker from "./FixturePicker.svelte";
   import { auth } from "../lib/auth.svelte.ts";
@@ -90,25 +89,10 @@
   // re-renders cleanly.
   let usageHours = $derived(usageHistory.hours.slice(-rangeHours(graphRange)));
 
-  // Marketing posts aggregated by day (UTC date string), for the Marketing
-  // Posts chart rendered beside Site Traffic. Hybrid source: each post is
-  // tagged source="postiz" (automated, sync-regenerated) or "manual" (X /
-  // Reddit / TikTok / Patreon, hand-logged). We split the per-day count into
-  // automated vs manual so the spike-driving hand-posts (esp. Reddit) read
-  // distinctly on the chart. See src/data/marketing-posts.json.
-  type PostDay = { total: number; automated: number; manual: number; platforms: string[] };
-  const postsByDay: Record<string, PostDay> = (() => {
-    const m: Record<string, PostDay> = {};
-    for (const p of (marketingPosts?.posts ?? [])) {
-      const day = (m[p.date] ??= { total: 0, automated: 0, manual: 0, platforms: [] });
-      day.total++;
-      if (p.source === "manual") day.manual++;
-      else day.automated++;
-      const tag = p.source === "manual" ? `${p.platform} (manual)` : p.platform;
-      if (!day.platforms.includes(tag)) day.platforms.push(tag);
-    }
-    return m;
-  })();
+  // The Marketing Posts chart that used to live here (pinned to the Webapp
+  // Serves date axis) moved to the marketing dashboard as its own panel —
+  // src/components/MarketingHistoryPanel.svelte, rendered on
+  // /test/marketing-queue/ with per-channel totals and a post-by-post log.
 
   // Display-density helpers for the Users / Site Traffic SVGs. Every
   // data point always renders — only the bar width and the x-axis text
@@ -646,63 +630,6 @@
     </div>
   {/snippet}
 
-  <!-- Marketing Posts per day. Rendered with the SAME date axis as Webapp
-       Serves (the caller passes that date list), so the bars line up 1:1 and
-       a post-day can be read straight up against a traffic bar. Stacked
-       automated (Postiz) + manual; manual sits on top in a hot color because
-       the hand-posted channels (Reddit especially) tend to be the spike
-       drivers worth eyeballing. -->
-  {#snippet postsChart(dates: string[])}
-    {@const maxPosts = Math.max(...dates.map(dt => postsByDay[dt]?.total ?? 0), 1)}
-    {@const total7d = dates.slice(-7).reduce((s, dt) => s + (postsByDay[dt]?.total ?? 0), 0)}
-    {@const COLOR_AUTO = "#a78bfa"}
-    {@const COLOR_MANUAL = "#fb923c"}
-    <div class="users-chart-section">
-      <h3 class="section-title">
-        Marketing Posts
-        <span class="section-subtitle">{total7d} (7 days) · aligned to Webapp Serves</span>
-      </h3>
-      <div class="users-chart">
-        <svg viewBox="0 0 700 140" class="users-svg">
-          {@render yAxis(maxPosts, 120, 20)}
-          {#each dates as dt, i}
-            {@const x = 50 + i * (600 / (dates.length - 1 || 1))}
-            {@const barW = chartBarWidth(dates.length)}
-            {@const day = postsByDay[dt]}
-            {@const auto = day?.automated ?? 0}
-            {@const man = day?.manual ?? 0}
-            {@const total = auto + man}
-            {@const scale = 100 / maxPosts}
-            {@const autoH = auto * scale}
-            {@const manH = man * scale}
-            {@const totalH = total * scale}
-            {@const showCount = chartShowPerPointDetails(dates.length)}
-            {@const showLabel = chartShouldShowLabel(dt, graphRange)}
-            {@const tooltip = total > 0 ? `${dt}\n${total} post${total === 1 ? "" : "s"}: ${day.platforms.join(", ")}` : `${dt}\nNo posts`}
-            {#if autoH > 0}
-              <rect x={x - barW / 2} y={120 - autoH} width={barW} height={autoH}
-                    fill={COLOR_AUTO} opacity="0.75" rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
-            {/if}
-            {#if manH > 0}
-              <rect x={x - barW / 2} y={120 - autoH - manH} width={barW} height={manH}
-                    fill={COLOR_MANUAL} opacity="0.85" rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
-            {/if}
-            {#if showCount && total > 0}
-              <text x={x} y={120 - totalH - 5} fill="#a78bfa" font-size="10" text-anchor="middle">{total}</text>
-            {/if}
-            {#if showLabel}
-              <text x={x} y={136} fill="#6b7280" font-size="9" text-anchor="middle">{chartDateLabel(dt, graphRange)}</text>
-            {/if}
-          {/each}
-        </svg>
-        <div class="users-chart-legend">
-          <span class="legend-item"><span class="legend-dot" style="background: {COLOR_AUTO}"></span> Automated (Postiz)</span>
-          <span class="legend-item"><span class="legend-dot" style="background: {COLOR_MANUAL}"></span> Manual (X / Reddit / TikTok / Patreon)</span>
-        </div>
-      </div>
-    </div>
-  {/snippet}
-
   {#if viewerIsAdmin && (siteTraffic?.dailyGameServes?.length || siteTraffic?.dailyWebappServes?.length)}
     <div class="claim-ip-row">
       <button onclick={handleClaimIp} disabled={claimIpBusy} class="claim-ip-btn">
@@ -720,8 +647,6 @@
     </div>
     {#if siteTraffic?.dailyWebappServes?.length}
       {@render trafficChart("Webapp Serves", siteTraffic.dailyWebappServes)}
-      <!-- Same date axis as Webapp Serves above ⇒ bars align 1:1 for correlation. -->
-      {@render postsChart(siteTraffic.dailyWebappServes.slice(-rangeDays(graphRange)).map(d => d.date))}
     {/if}
     {#if siteTraffic?.dailyGameServes?.length}
       {@render trafficChart("Game Serves", siteTraffic.dailyGameServes)}

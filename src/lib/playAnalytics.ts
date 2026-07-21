@@ -69,6 +69,15 @@ export interface PlayState {
   inBattle?: boolean;
   event?: number | string | null;
   moving?: boolean;
+  /**
+   * `gameState.newGameStarted` — set true (and sticky) the moment the player
+   * actually presses New Game. Arc added this field specifically for this
+   * funnel (TestBridge.gd FUNNEL-SIGNAL, 2026-06-26); it's what separates
+   * "never even tried to start" from "started, then lost to the pack download".
+   */
+  newGame?: boolean;
+  /** `gameState.inDialogue` — talked to someone; the first real interaction. */
+  dialogue?: boolean;
 }
 
 function sessionId(): string {
@@ -185,10 +194,17 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
       lastScene = st.scene; // furthest location scene, sent on "end"
       stage(st.scene);
     }
+    if (st.newGame) stage("m:newgame");
     if (st.moving) stage("m:moved");
+    if (st.dialogue) stage("m:dialogue");
     if (st.inBattle) stage("m:combat");
-    if (st.event != null && st.event !== 0 && st.event !== "") {
-      stage(`m:event_${st.event}`);
+    // lastTriggeredEventId is -1 (and sometimes 0) when NO story event has
+    // fired yet — the game's "nothing yet" sentinel, not a milestone. Emitting
+    // it produced a bogus "Story event -1" that appeared for every booted
+    // session and read as progress. Only positive ids are real milestones.
+    const ev = typeof st.event === "string" ? Number(st.event) : st.event;
+    if (ev != null && Number.isFinite(ev) && (ev as number) > 0) {
+      stage(`m:event_${ev}`);
     }
   }
   poller = setInterval(tick, POLL_MS);

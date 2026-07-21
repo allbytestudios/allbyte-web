@@ -716,6 +716,8 @@
           inBattle: !!g.inBattle,
           event: g.lastTriggeredEventId ?? null,
           moving: !!g.isMoving,
+          newGame: !!g.newGameStarted,
+          dialogue: !!g.inDialogue,
         };
       } catch {
         return null;

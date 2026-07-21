@@ -10,8 +10,26 @@
   interface Funnel {
     totalSessions: number;
     bootedSessions: number;
+    /** Reached a real gameplay location beyond Title/loader — "actually played". */
+    pastTitleSessions?: number;
+    /** Sessions whose referrer was NOT another allbyte.studio page. */
+    inboundSessions?: number;
     movedSessions: number;
     bootedNoMove: number;
+    /** Trailing-30-day cut of the same funnel. */
+    window30?: {
+      sessions: number;
+      booted: number;
+      past: number;
+      inbound: number;
+      medianDurationSec: number;
+    };
+    /** Unix seconds: first/last session in the retained window. */
+    rangeStart?: number;
+    rangeEnd?: number;
+    retentionDays?: number;
+    /** Known automation (CI Deploy QA / Playwright), excluded from every metric. */
+    automationSessions?: number;
     sceneCounts: Record<string, number>;
     referrers: Record<string, number>;
     devices?: Record<string, number>;
@@ -19,8 +37,10 @@
       string,
       { sessions: number; booted: number; moved: number; past: number; medianDur: number }
     >;
-    daily?: { date: string; sessions: number; booted: number; bots?: number }[];
+    daily?: { date: string; sessions: number; booted: number; past?: number; bots?: number }[];
     medianDurationSec: number;
+    /** Median duration among sessions that got past the title screen. */
+    medianPlayedDurationSec?: number;
     /** Datacenter/cloud bot sessions, flagged server-side by source IP and
      *  excluded from every metric above. Surfaced so the count is visible. */
     botSessions?: number;
@@ -112,6 +132,21 @@
   // signal to line up against marketing drops.
   let daily = $derived(data?.daily ?? []);
   let maxDaily = $derived(daily.reduce((m, d) => Math.max(m, d.sessions), 0));
+
+  // Reporting period. The table is TTL-bounded, so these are NOT lifetime
+  // totals — stating the window stops the numbers being read as all-time.
+  function shortDate(unix: number): string {
+    return new Date(unix * 1000).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
+  let periodLabel = $derived(
+    data?.rangeStart && data?.rangeEnd
+      ? `${shortDate(data.rangeStart)} – ${shortDate(data.rangeEnd)}`
+      : "all retained data"
+  );
   function dayLabel(iso: string): string {
     // "2026-07-01" → "Jul 1"
     const [y, m, d] = iso.split("-").map(Number);
@@ -120,7 +155,9 @@
   }
 
   function milestoneLabel(k: string): string {
+    if (k === "m:newgame") return "Pressed New Game";
     if (k === "m:moved") return "First move";
+    if (k === "m:dialogue") return "Talked to someone";
     if (k === "m:combat") return "Reached combat";
     if (k.startsWith("m:event_")) return `Story event ${k.slice("m:event_".length)}`;
     return k.slice(2);
@@ -141,11 +178,17 @@
     <button class="btn" onclick={load}>Refresh</button>
   {:else}
     <div class="head">
-      <span class="muted">Anonymous, aggregate. Updated {new Date(data.generatedAt * 1000).toLocaleString()}</span>
+      <span class="muted">
+        Play sessions · {periodLabel}
+        <span class="sub">
+          anonymous &amp; aggregate · sessions, not unique people (a returning player counts again) ·
+          rolling {data.retentionDays ?? 90}-day window · updated {new Date(data.generatedAt * 1000).toLocaleString()}
+        </span>
+      </span>
       <button class="btn" onclick={load}>Refresh</button>
     </div>
 
-    <!-- Top-line funnel: arrived -> booted -> moved -->
+    <!-- Top-line funnel: arrived -> booted -> actually played -->
     <div class="cards">
       <div class="card">
         <div class="num">{data.totalSessions}</div>
@@ -153,17 +196,46 @@
       </div>
       <div class="card">
         <div class="num">{data.bootedSessions}</div>
-        <div class="lbl">Booted <span class="sub">{pct(data.bootedSessions, data.totalSessions)}% of arrivals</span></div>
+        <div class="lbl">Booted <span class="sub">{pct(data.bootedSessions, data.totalSessions)}% of arrivals — the game ran</span></div>
       </div>
+      {#if data.pastTitleSessions != null}
+        <div class="card">
+          <div class="num">{data.pastTitleSessions}</div>
+          <div class="lbl">
+            Played <span class="sub">{pct(data.pastTitleSessions, data.totalSessions)}% of arrivals — got past the title screen</span>
+          </div>
+        </div>
+      {/if}
       <div class="card">
-        <div class="num">{fmtDuration(data.medianDurationSec)}</div>
-        <div class="lbl">Median session</div>
+        <div class="num">{fmtDuration(data.medianPlayedDurationSec ?? data.medianDurationSec)}</div>
+        <div class="lbl">
+          Median play
+          <span class="sub">
+            {#if data.medianPlayedDurationSec != null}
+              among sessions that got past the title ({fmtDuration(data.medianDurationSec)} across all arrivals)
+            {/if}
+          </span>
+        </div>
       </div>
     </div>
-    {#if data.botSessions}
+
+    {#if data.window30 && data.window30.sessions !== data.totalSessions}
+      <p class="window-note">
+        Last 30 days: <strong>{data.window30.sessions}</strong> arrived ·
+        <strong>{data.window30.booted}</strong> booted ·
+        <strong>{data.window30.past}</strong> played ·
+        median {fmtDuration(data.window30.medianDurationSec)}
+      </p>
+    {/if}
+
+    {#if data.automationSessions || data.botSessions}
       <p class="bot-note">
-        🤖 {data.botSessions} datacenter bot session{data.botSessions === 1 ? "" : "s"} excluded
-        <span class="sub">flagged server-side by cloud IP (AWS/Azure/GCP) — never counted above</span>
+        🤖 excluded from every number above:
+        {#if data.automationSessions}{data.automationSessions} automation session{data.automationSessions === 1 ? "" : "s"}{/if}{#if data.automationSessions && data.botSessions} · {/if}{#if data.botSessions}{data.botSessions} datacenter bot session{data.botSessions === 1 ? "" : "s"}{/if}
+        <span class="sub">
+          CI Deploy QA / Playwright harnesses (they boot /play/ on prod after every deploy) plus
+          anything arriving from a cloud IP — never counted as players
+        </span>
       </p>
     {/if}
 
@@ -175,7 +247,7 @@
       {:else}
         <div class="daily-chart">
           {#each daily as d (d.date)}
-            <div class="day-col" title="{d.date}: {d.sessions} session{d.sessions === 1 ? '' : 's'}, {d.booted} booted{d.bots ? ` (+${d.bots} bot excluded)` : ''}">
+            <div class="day-col" title="{d.date}: {d.sessions} arrived, {d.booted} booted{d.past != null ? `, ${d.past} played` : ''}{d.bots ? ` (+${d.bots} automation/bot excluded)` : ''}">
               <span class="day-n">{d.sessions}</span>
               <div class="day-bar-track">
                 <div class="day-bar" style="height:{maxDaily ? Math.max(3, Math.round((d.sessions / maxDaily) * 100)) : 0}%">
@@ -235,11 +307,20 @@
         {:else}
           {#each referrers as [host, n]}
             <div class="bar-row">
-              <span class="bar-label">{host}</span>
+              <span class="bar-label">{host === "internal" ? "allbyte.studio" : host}</span>
               <div class="bar"><div class="fill ref" style="width:{pct(n, data.totalSessions)}%"></div></div>
               <span class="bar-n">{n}</span>
             </div>
           {/each}
+          <p class="ref-note muted">
+            <strong>allbyte.studio</strong> = clicked through from another page on this site (the
+            Home → Play now path) — real visitors, just not a new outside referral.
+            <strong>direct</strong> = typed/bookmarked, or the referrer was stripped (common on
+            mobile and from apps).
+            {#if data.inboundSessions != null}
+              {data.inboundSessions} of {data.totalSessions} arrived from outside this site.
+            {/if}
+          </p>
         {/if}
       </section>
 
@@ -318,6 +399,10 @@
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
   .bot-note { margin: 0.5rem 0 0; font-size: 0.82rem; color: rgba(224, 231, 255, 0.6); }
   .bot-note .sub { display: block; margin-top: 0.1rem; }
+  .window-note { margin: 0.75rem 0 0; font-size: 0.85rem; color: rgba(224, 231, 255, 0.75); }
+  .window-note strong { color: #a7f3d0; }
+  .ref-note { font-size: 0.72rem; line-height: 1.5; margin-top: 0.6rem; }
+  .head .sub { display: block; margin-top: 0.15rem; max-width: 46rem; line-height: 1.45; }
   .card {
     background: #131a26; border: 1px solid rgba(167, 243, 208, 0.12);
     border-radius: 6px; padding: 0.9rem 1rem;

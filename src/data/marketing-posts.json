@@ -148,6 +148,13 @@
       "source": "manual",
       "subreddit": "playmygame",
       "note": "hand-posted to r/playmygame — player-persona drop (play-my-game focus group)"
+    },
+    {
+      "date": "2026-07-22",
+      "platform": "reddit",
+      "source": "manual",
+      "subreddit": "godot",
+      "note": "hand-posted to r/godot (Tutorial flair) — WASM/web-export gotchas writeup: why a browser build + the silent gotchas, links the wasm-gotchas-and-web-export devlog"
     }
   ]
 }

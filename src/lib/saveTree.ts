@@ -43,6 +43,10 @@ export interface SaveTreeNode {
   packs?: string[];
   /** e.g. "recommended for testing poison" */
   tags?: string[];
+  /** QA approval — Quinn flips unapproved→approved once she verifies the node
+   *  loads correctly on the live build (manifest-authored, Arc-committed).
+   *  Missing = not yet triaged ("unverified"). */
+  approval?: "approved" | "unapproved";
 }
 
 export interface SaveTreeData {

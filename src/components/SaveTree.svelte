@@ -40,6 +40,15 @@
   function expandAll() {
     collapsed.clear();
   }
+
+  // "Approved only" filter: prune branches with no approved node, keeping the
+  // ancestor path to any approved one so the tree still reads as a tree.
+  let approvedOnly = $state(false);
+  function pruneApproved(entries: TreeEntry[]): TreeEntry[] {
+    return entries
+      .map((e) => ({ ...e, children: pruneApproved(e.children) }))
+      .filter((e) => e.node.approval === "approved" || e.children.length > 0);
+  }
 </script>
 
 {#snippet row(e: TreeEntry)}
@@ -62,6 +71,13 @@
           <span class="tre-arrow">→</span>{/if}
         <span class="tre-label">{e.node.label}</span>
         {#if e.node.is_leaf}<span class="tre-boss">★ boss</span>{/if}
+        {#if e.node.approval === "approved"}
+          <span class="tre-badge appr" title="Quinn verified this node loads correctly">✓ approved</span>
+        {:else if e.node.approval === "unapproved"}
+          <span class="tre-badge unappr" title="known broken / superseded — not ready for review">✗ unapproved</span>
+        {:else}
+          <span class="tre-badge unver" title="not yet triaged by Quinn">· unverified</span>
+        {/if}
         {#if hasKids && isCollapsed}<span class="tre-hidden">+{descendantCount(e)} hidden</span>{/if}
       </span>
       <span class="tre-meta">
@@ -97,14 +113,25 @@
     <div class="tre-tools">
       <button class="tre-tool" onclick={collapseAll}>⊟ Collapse all</button>
       <button class="tre-tool" onclick={expandAll}>⊞ Expand all</button>
+      <label class="tre-appr-toggle">
+        <input type="checkbox" bind:checked={approvedOnly} />
+        Approved only
+      </label>
     </div>
     {#each diffs as d (d)}
+      {@const rows = approvedOnly ? pruneApproved(treeFor(d)) : treeFor(d)}
       <section class="tre-section">
         <h3 class="tre-h">{d}</h3>
         <div class="tre-rows">
-          {#each treeFor(d) as e (e.node.id)}
-            {@render row(e)}
-          {/each}
+          {#if rows.length === 0}
+            <p class="tre-empty">
+              {approvedOnly ? "No approved nodes here yet." : "No nodes."}
+            </p>
+          {:else}
+            {#each rows as e (e.node.id)}
+              {@render row(e)}
+            {/each}
+          {/if}
         </div>
       </section>
     {/each}
@@ -248,6 +275,49 @@
     color: #fbbf24;
     font-size: 0.72rem;
     margin-left: 0.35rem;
+  }
+  .tre-badge {
+    font-size: 0.68rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 3px;
+    margin-left: 0.4rem;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .tre-badge.appr {
+    color: #34d399;
+    background: rgba(52, 211, 153, 0.12);
+    border-color: rgba(52, 211, 153, 0.4);
+  }
+  .tre-badge.unappr {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.12);
+    border-color: rgba(248, 113, 113, 0.4);
+  }
+  .tre-badge.unver {
+    color: #6b7280;
+    background: rgba(107, 114, 128, 0.1);
+    border-color: rgba(107, 114, 128, 0.25);
+  }
+  .tre-appr-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    cursor: pointer;
+    margin-left: auto;
+  }
+  .tre-appr-toggle input {
+    cursor: pointer;
+    accent-color: #34d399;
+  }
+  .tre-empty {
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-style: italic;
+    padding: 0.3rem 0;
+    margin: 0;
   }
   .tre-meta {
     font-size: 0.72rem;

@@ -10,11 +10,19 @@
   import { onMount } from "svelte";
   import { SvelteSet } from "svelte/reactivity";
 
-  const REVIEW_URL = "/test-data/tools/dialogue_review.json";
-  const OVERRIDES_URL = "/test-data/tools/dialogue_overrides.json";
-  // Trailing slash required — trailingSlash:"always" 404s the bare path before
-  // the dev middleware runs (same as /api/decisions/ + /api/answers/).
-  const SAVE_URL = "/api/dialogue-override/";
+  // Env-aware. DEV: local proxy read + dev write middleware — edits land in the
+  // local game repo Arc reads directly. PROD: the admin-gated cloud stack
+  // (allbyte-studio-dialogue-overlay) — edits queue in S3, and App's
+  // `npm run sync:dialogue` bridge pulls them into the local overlay for Arc.
+  const DEV = import.meta.env.DEV;
+  const API = "https://c4fuvlxdsj.execute-api.us-east-1.amazonaws.com";
+  const REVIEW_URL = DEV ? "/test-data/tools/dialogue_review.json" : `${API}/review`;
+  const OVERRIDES_URL = DEV ? "/test-data/tools/dialogue_overrides.json" : `${API}/overrides`;
+  // Dev path keeps a trailing slash (trailingSlash:"always" 404s the bare path).
+  const SAVE_URL = DEV ? "/api/dialogue-override/" : `${API}/override`;
+  function authHeaders(): Record<string, string> {
+    return DEV ? {} : { Authorization: `Bearer ${auth.authToken}` };
+  }
 
   interface Dialogue {
     id: number;
@@ -38,10 +46,6 @@
 
   let loading = $state(true);
   let error = $state<string | null>(null);
-  // True on the deployed site: this editor reads/writes the local game mount via
-  // the dev server, so it only works under `npm run dev`. import.meta.env.DEV is
-  // baked to false in the prod build.
-  let notDev = $state(false);
   let data = $state<ReviewData | null>(null);
   let overrides = $state<Record<string, { lines?: string[] }>>({});
   let drafts = $state<Record<string, string>>({});
@@ -87,17 +91,17 @@
     loading = true;
     error = null;
     try {
-      const r = await fetch(REVIEW_URL, { cache: "no-store" });
+      const r = await fetch(REVIEW_URL, { cache: "no-store", headers: authHeaders() });
       if (!r.ok) throw new Error(`review ${r.status} ${r.statusText}`);
       const txt = await r.text();
       try {
         data = JSON.parse(txt) as ReviewData;
       } catch {
-        throw new Error("dialogue_review.json didn't parse as JSON — is the dev proxy + Chronicles mount available?");
+        throw new Error("dialogue_review.json didn't parse as JSON — is the source reachable?");
       }
       // Overrides: absent/empty = no pending edits (not an error).
       try {
-        const o = await fetch(OVERRIDES_URL, { cache: "no-store" });
+        const o = await fetch(OVERRIDES_URL, { cache: "no-store", headers: authHeaders() });
         if (o.ok) {
           const t = (await o.text()).trim();
           overrides = t ? JSON.parse(t) : {};
@@ -123,11 +127,6 @@
       loading = false;
       return;
     }
-    if (!import.meta.env.DEV) {
-      notDev = true;
-      loading = false;
-      return;
-    }
     await load();
   });
 
@@ -145,7 +144,7 @@
     try {
       const r = await fetch(SAVE_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ id: d.id, lines }),
       });
       if (!r.ok) {
@@ -155,7 +154,7 @@
       overrides = { ...overrides, [k]: { lines } };
       drafts = { ...drafts, [k]: lines.join("\n") };
     } catch (e: any) {
-      alert(`Save failed: ${e?.message ?? e}\n\n(The editor writes to your local game mount — it only works on the dev server.)`);
+      alert(`Save failed: ${e?.message ?? e}`);
     } finally {
       saving = { ...saving, [k]: false };
     }
@@ -167,7 +166,7 @@
     try {
       const r = await fetch(SAVE_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ id: d.id, revert: true }),
       });
       if (!r.ok) {
@@ -203,20 +202,11 @@
     <p class="muted">Loading dialogue…</p>
   {:else if !viewerIsAdmin}
     <p class="muted">Admin only. Sign in with the owner account to edit dialogue.</p>
-  {:else if notDev}
-    <div class="devnote">
-      <p class="devnote-h">The dialogue editor runs on your local dev server.</p>
-      <p class="muted">
-        It reads and writes your local game repo, so it only works under
-        <code>npm run dev</code> → <code>localhost:4321/test/dialogue/</code>. This
-        deployed copy can’t reach the game files, so there’s nothing to edit here.
-      </p>
-    </div>
   {:else if error}
     <p class="err">Couldn’t load dialogue: {error}</p>
     <p class="muted small">
-      This editor reads the game repo live through the dev server. It only works on
-      the local <code>:4321</code> dev build with the Chronicles mount — in prod it’s read-only.
+      Make sure you’re signed in with the owner (admin) account. Dev reads the local
+      Chronicles mount; prod uses the admin-gated dialogue-overlay stack.
     </p>
     <button class="btn" onclick={load}>Retry</button>
   {:else if !data || Object.keys(data.zones ?? {}).length === 0}
@@ -314,15 +304,6 @@
   }
   .muted { color: rgba(224, 231, 255, 0.55); }
   .muted.small { font-size: 0.78rem; line-height: 1.5; margin-top: 0.4rem; }
-  .devnote {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.15);
-    border-radius: 6px;
-    padding: 1rem 1.1rem;
-    max-width: 40rem;
-  }
-  .devnote-h { color: #a7f3d0; font-weight: 700; margin: 0 0 0.4rem; }
-  .devnote .muted { line-height: 1.6; margin: 0; }
   .err { color: #f87171; }
   .sub { color: rgba(224, 231, 255, 0.45); font-weight: normal; font-size: 0.76rem; }
   code { background: rgba(167, 243, 208, 0.1); padding: 0 0.3rem; border-radius: 3px; }

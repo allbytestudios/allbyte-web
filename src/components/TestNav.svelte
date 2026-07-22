@@ -142,6 +142,14 @@
     margin: 0 auto;
     padding: 0.5rem 0.5rem 0;
     border-bottom: 1px solid rgba(167, 243, 208, 0.12);
+    position: sticky;
+    top: 77px;            /* pin just under the sticky PageHeader (~77px tall on desktop) */
+    z-index: 90;          /* below the header (z-index 100) */
+    background: #0a0e17;  /* opaque + matches the page shell, so any px of gap/overlap is invisible */
+  }
+  /* Header collapses to a ~59px single row at its 768px breakpoint. */
+  @media (max-width: 768px) {
+    .test-nav { top: 59px; }
   }
   .nav-tab {
     font-family: "Courier New", monospace;

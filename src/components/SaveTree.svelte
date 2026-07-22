@@ -2,6 +2,7 @@
   import { auth } from "../lib/auth.svelte.ts";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import { difficulties, treeFor, jumpUrl, type TreeEntry, type SaveTreeNode } from "../lib/saveTree";
+  import { SvelteSet } from "svelte/reactivity";
 
   const diffs = difficulties();
   const gated = $derived(
@@ -18,17 +19,50 @@
     if (n.scene) parts.push(n.scene);
     return parts.join(" · ");
   }
+
+  // Per-branch collapse: node ids whose subtree is currently hidden.
+  const collapsed = new SvelteSet<string>();
+  function toggle(id: string) {
+    if (collapsed.has(id)) collapsed.delete(id);
+    else collapsed.add(id);
+  }
+  function descendantCount(e: TreeEntry): number {
+    return e.children.reduce((sum, c) => sum + 1 + descendantCount(c), 0);
+  }
+  function collapseAll() {
+    const walk = (es: TreeEntry[]) =>
+      es.forEach((e) => {
+        if (e.children.length) collapsed.add(e.node.id);
+        walk(e.children);
+      });
+    diffs.forEach((d) => walk(treeFor(d)));
+  }
+  function expandAll() {
+    collapsed.clear();
+  }
 </script>
 
 {#snippet row(e: TreeEntry)}
+  {@const hasKids = e.children.length > 0}
+  {@const isCollapsed = collapsed.has(e.node.id)}
   <div class="tre-row" class:leaf={e.node.is_leaf} style={`--depth:${e.depth}`}>
     <div class="tre-info">
       <span class="tre-line">
         {#if e.depth > 0}<span class="tre-branch">└─</span>{/if}
+        {#if hasKids}
+          <button
+            class="tre-toggle"
+            onclick={() => toggle(e.node.id)}
+            aria-expanded={!isCollapsed}
+            aria-label={isCollapsed ? "Expand branch" : "Collapse branch"}
+            title={isCollapsed ? "Expand branch" : "Collapse branch"}
+          >{isCollapsed ? "▸" : "▾"}</button>
+        {/if}
         {#if e.node.decision && e.depth > 0}<span class="tre-decision">{e.node.decision}</span>
           <span class="tre-arrow">→</span>{/if}
         <span class="tre-label">{e.node.label}</span>
         {#if e.node.is_leaf}<span class="tre-boss">★ boss</span>{/if}
+        {#if hasKids && isCollapsed}<span class="tre-hidden">+{descendantCount(e)} hidden</span>{/if}
       </span>
       <span class="tre-meta">
         {chips(e.node)}{#if e.node.web_version} · v{e.node.web_version}{/if}
@@ -38,9 +72,11 @@
     </div>
     <a class="tre-jump" href={jumpUrl(e.node)} target="_blank" rel="noopener">Jump ↗</a>
   </div>
-  {#each e.children as c (c.node.id)}
-    {@render row(c)}
-  {/each}
+  {#if hasKids && !isCollapsed}
+    {#each e.children as c (c.node.id)}
+      {@render row(c)}
+    {/each}
+  {/if}
 {/snippet}
 
 <div class="tre">
@@ -58,6 +94,10 @@
       <code>npm run sync:tree</code> to mirror them here.
     </p>
   {:else}
+    <div class="tre-tools">
+      <button class="tre-tool" onclick={collapseAll}>⊟ Collapse all</button>
+      <button class="tre-tool" onclick={expandAll}>⊞ Expand all</button>
+    </div>
     {#each diffs as d (d)}
       <section class="tre-section">
         <h3 class="tre-h">{d}</h3>
@@ -148,6 +188,45 @@
     flex-direction: column;
     gap: 0.1rem;
     min-width: 0;
+  }
+  .tre-tools {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+  }
+  .tre-tool {
+    background: none;
+    border: 1px solid rgba(167, 243, 208, 0.25);
+    color: #a7f3d0;
+    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    font-family: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .tre-tool:hover {
+    background: rgba(167, 243, 208, 0.1);
+    border-color: rgba(167, 243, 208, 0.5);
+  }
+  .tre-toggle {
+    background: none;
+    border: none;
+    color: #a7f3d0;
+    cursor: pointer;
+    font-size: 0.8rem;
+    line-height: 1;
+    padding: 0 0.15rem;
+    margin-right: 0.15rem;
+    font-family: inherit;
+  }
+  .tre-toggle:hover {
+    color: #d1fae5;
+  }
+  .tre-hidden {
+    color: #6b7280;
+    font-size: 0.72rem;
+    margin-left: 0.4rem;
+    font-style: italic;
   }
   .tre-branch {
     color: #4b5563;

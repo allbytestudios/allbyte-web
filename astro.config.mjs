@@ -549,6 +549,79 @@ function marketingApproveToArtwork() {
 
 // Dev-only POST endpoint for owner decision write-back.
 // Writes to agent_chat.ndjson in the Chronicles repo.
+// Dev-only POST endpoint for the dialogue editor (/test/dialogue/). Merges one
+// dialogue's edited lines into tools/dialogue_overrides.json — the overlay Arc
+// applies to core_Dialogue.json. App NEVER writes core_Dialogue.json; this file
+// is the boundary. Absent file is created on first save; `revert:true` removes an
+// id from the overlay. Arc archives (empties) the file on apply.
+function dialogueOverrideWriteback() {
+  return {
+    name: "allbyte-dialogue-override-writeback",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.replace(/\/$/, "") ?? "";
+        if (req.method !== "POST" || url !== "/api/dialogue-override") return next();
+        const MAX_BODY = 32 * 1024;
+        let body = "";
+        let tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
+        req.on("end", () => {
+          if (tooLarge) return;
+          try {
+            const { id, lines, revert } = JSON.parse(body);
+            // Dialogue ids are integers (can be negative, e.g. synthetic -2).
+            const idNum =
+              typeof id === "number"
+                ? id
+                : typeof id === "string" && /^-?\d+$/.test(id)
+                  ? parseInt(id, 10)
+                  : null;
+            if (idNum === null || !Number.isInteger(idNum)) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "id must be an integer" }));
+            }
+            const overridesPath = normalize(join(chroniclesRoot, "tools", "dialogue_overrides.json"));
+            let overrides = {};
+            try {
+              const existing = readFileSync(overridesPath, "utf-8").trim();
+              if (existing) overrides = JSON.parse(existing);
+            } catch {}
+            if (revert === true) {
+              delete overrides[String(idNum)];
+            } else {
+              if (
+                !Array.isArray(lines) ||
+                lines.length === 0 ||
+                lines.length > 100 ||
+                !lines.every((l) => typeof l === "string" && l.length <= 4096)
+              ) {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: "lines must be 1-100 strings, each <=4096 chars" }));
+              }
+              overrides[String(idNum)] = { lines };
+            }
+            writeFileSync(overridesPath, JSON.stringify(overrides, null, 2) + "\n");
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true, id: idNum, reverted: revert === true }));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: String(err?.message ?? err) }));
+          }
+        });
+      });
+    },
+  };
+}
+
 function decisionWriteback() {
   return {
     name: "allbyte-decision-writeback",
@@ -898,7 +971,7 @@ export default defineConfig({
     remarkPlugins: [remarkDirective, remarkWalkthroughDirectives],
   },
   vite: {
-    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
+    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

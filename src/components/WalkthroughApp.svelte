@@ -299,6 +299,7 @@
     margin: 0 auto;
     padding: 1.5rem 1.25rem 4rem;
     color: var(--ink);
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
   }
 
   /* ---- Mini-map ---- */

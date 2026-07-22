@@ -174,7 +174,7 @@
   .wt-nav {
     position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem);
     overflow-y: auto; padding-right: 0.5rem;
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
   }
   .nav-head h2 {
     margin: 0 0 0.5rem; font-size: 1rem; color: var(--heart-accent, #3a3020);
@@ -231,7 +231,7 @@
   }
   .lb img { max-width: 100%; max-height: 85vh; object-fit: contain; border: 2px solid #8a7d60; }
   .lb-cap {
-    color: #e8dfc4; font-family: Georgia, serif; font-size: 0.85rem; margin: 0.7rem 0 0; text-align: center;
+    color: #e8dfc4; font-family: "AllByteCustom", Georgia, serif; font-size: 0.85rem; margin: 0.7rem 0 0; text-align: center;
   }
   .lb-close {
     position: absolute; top: 0.8rem; right: 1.1rem; background: none; border: 0; cursor: pointer;
@@ -244,7 +244,7 @@
       display: flex; align-items: center; justify-content: space-between; gap: 1rem;
       position: sticky; top: 0; z-index: 50; padding: 0.5rem 0.9rem;
       background: var(--heart-card-bg, #dbd0a0); border-bottom: 1.5px solid var(--heart-card-border, #7a6e52);
-      font-family: Georgia, serif;
+      font-family: "AllByteCustom", Georgia, serif;
     }
     .bar-btn {
       display: flex; align-items: center; gap: 0.5rem; background: none; border: 0; cursor: pointer;

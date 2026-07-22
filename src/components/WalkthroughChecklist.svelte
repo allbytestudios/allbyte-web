@@ -57,7 +57,7 @@
     border-radius: 5px; padding: 0.75rem 0.9rem 0.8rem; margin: 1.1rem 0;
   }
   h4 {
-    margin: 0 0 0.5rem; font-family: Georgia, "Times New Roman", serif; font-size: 0.9rem;
+    margin: 0 0 0.5rem; font-family: "AllByteCustom", Georgia, "Times New Roman", serif; font-size: 0.9rem;
     color: var(--heart-accent, #3a3020); display: flex; align-items: baseline; gap: 0.5rem;
     letter-spacing: 0.02em; text-transform: uppercase;
   }

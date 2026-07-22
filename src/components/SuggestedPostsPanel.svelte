@@ -226,6 +226,11 @@
     const scored = live
       .map((p) => {
         const postedIds = new Set((dist.posted?.[p.slug] ?? []).map((l) => l.venue));
+        // A published devlog IS, by definition, on the own blog — every post here
+        // is non-draft (see `live` above), so the own-blog venue is already
+        // satisfied. Without this it reads as "never posted", maxing the
+        // staleness score and floating blog-only (general) posts to the top.
+        postedIds.add("own-blog");
         const all = (dist.venues?.[p.audience] ?? []) as Venue[];
         const open = all
           .filter((v) => !postedIds.has(v.id))

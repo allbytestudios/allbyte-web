@@ -38,6 +38,10 @@
 
   let loading = $state(true);
   let error = $state<string | null>(null);
+  // True on the deployed site: this editor reads/writes the local game mount via
+  // the dev server, so it only works under `npm run dev`. import.meta.env.DEV is
+  // baked to false in the prod build.
+  let notDev = $state(false);
   let data = $state<ReviewData | null>(null);
   let overrides = $state<Record<string, { lines?: string[] }>>({});
   let drafts = $state<Record<string, string>>({});
@@ -85,7 +89,12 @@
     try {
       const r = await fetch(REVIEW_URL, { cache: "no-store" });
       if (!r.ok) throw new Error(`review ${r.status} ${r.statusText}`);
-      data = (await r.json()) as ReviewData;
+      const txt = await r.text();
+      try {
+        data = JSON.parse(txt) as ReviewData;
+      } catch {
+        throw new Error("dialogue_review.json didn't parse as JSON — is the dev proxy + Chronicles mount available?");
+      }
       // Overrides: absent/empty = no pending edits (not an error).
       try {
         const o = await fetch(OVERRIDES_URL, { cache: "no-store" });
@@ -111,6 +120,11 @@
       waited += 100;
     }
     if (!isAdmin(auth.currentUser)) {
+      loading = false;
+      return;
+    }
+    if (!import.meta.env.DEV) {
+      notDev = true;
       loading = false;
       return;
     }
@@ -189,6 +203,15 @@
     <p class="muted">Loading dialogue…</p>
   {:else if !viewerIsAdmin}
     <p class="muted">Admin only. Sign in with the owner account to edit dialogue.</p>
+  {:else if notDev}
+    <div class="devnote">
+      <p class="devnote-h">The dialogue editor runs on your local dev server.</p>
+      <p class="muted">
+        It reads and writes your local game repo, so it only works under
+        <code>npm run dev</code> → <code>localhost:4321/test/dialogue/</code>. This
+        deployed copy can’t reach the game files, so there’s nothing to edit here.
+      </p>
+    </div>
   {:else if error}
     <p class="err">Couldn’t load dialogue: {error}</p>
     <p class="muted small">
@@ -291,6 +314,15 @@
   }
   .muted { color: rgba(224, 231, 255, 0.55); }
   .muted.small { font-size: 0.78rem; line-height: 1.5; margin-top: 0.4rem; }
+  .devnote {
+    background: #12161e;
+    border: 1px solid rgba(167, 243, 208, 0.15);
+    border-radius: 6px;
+    padding: 1rem 1.1rem;
+    max-width: 40rem;
+  }
+  .devnote-h { color: #a7f3d0; font-weight: 700; margin: 0 0 0.4rem; }
+  .devnote .muted { line-height: 1.6; margin: 0; }
   .err { color: #f87171; }
   .sub { color: rgba(224, 231, 255, 0.45); font-weight: normal; font-size: 0.76rem; }
   code { background: rgba(167, 243, 208, 0.1); padding: 0 0.3rem; border-radius: 3px; }

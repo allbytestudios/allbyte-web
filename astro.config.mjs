@@ -622,6 +622,79 @@ function dialogueOverrideWriteback() {
   };
 }
 
+// Dev-only POST for editing Arc's ambient dialogue (origin:"arc"). Merges a
+// situation's edited variants into tools/ambient_overrides.json, keyed
+// npc -> situation_id -> {variants}. Arc's apply_ambient_overrides.py folds these
+// back into core_NpcAmbientDialogue.json. Separate overlay from the owner path.
+function ambientOverrideWriteback() {
+  return {
+    name: "allbyte-ambient-override-writeback",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.replace(/\/$/, "") ?? "";
+        if (req.method !== "POST" || url !== "/api/ambient-override") return next();
+        const MAX_BODY = 64 * 1024;
+        let body = "";
+        let tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
+        req.on("end", () => {
+          if (tooLarge) return;
+          try {
+            const { npc, situation_id, variants, revert, clear } = JSON.parse(body);
+            const overridesPath = normalize(join(chroniclesRoot, "tools", "ambient_overrides.json"));
+            let overrides = {};
+            try {
+              const existing = readFileSync(overridesPath, "utf-8").trim();
+              if (existing) overrides = JSON.parse(existing);
+            } catch {}
+            if (clear === true) {
+              writeFileSync(overridesPath, "{}\n");
+              return res.end(JSON.stringify({ ok: true, cleared: true }));
+            }
+            if (typeof npc !== "string" || !npc || typeof situation_id !== "string" || !situation_id) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "npc and situation_id required" }));
+            }
+            if (revert === true) {
+              if (overrides[npc]) {
+                delete overrides[npc][situation_id];
+                if (Object.keys(overrides[npc]).length === 0) delete overrides[npc];
+              }
+            } else {
+              if (
+                !Array.isArray(variants) ||
+                variants.length === 0 ||
+                variants.length > 100 ||
+                !variants.every((v) => typeof v === "string" && v.length <= 4096)
+              ) {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: "variants must be 1-100 strings, each <=4096 chars" }));
+              }
+              if (!overrides[npc]) overrides[npc] = {};
+              overrides[npc][situation_id] = { variants };
+            }
+            writeFileSync(overridesPath, JSON.stringify(overrides, null, 2) + "\n");
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true, npc, situation_id, reverted: revert === true }));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: String(err?.message ?? err) }));
+          }
+        });
+      });
+    },
+  };
+}
+
 function decisionWriteback() {
   return {
     name: "allbyte-decision-writeback",
@@ -971,7 +1044,7 @@ export default defineConfig({
     remarkPlugins: [remarkDirective, remarkWalkthroughDirectives],
   },
   vite: {
-    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
+    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

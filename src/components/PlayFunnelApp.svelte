@@ -102,13 +102,42 @@
           .sort((a, b) => b[1] - a[1])
       : []
   );
-  let milestones = $derived(
-    data
-      ? Object.entries(data.sceneCounts)
-          .filter(([k]) => k.startsWith("m:"))
-          .sort((a, b) => b[1] - a[1])
-      : []
-  );
+  // Milestone progression funnel: milestones in PLAY ORDER (not by count), with
+  // step-over-step drop-off, so you see how far players get and where they fall off.
+  const MILESTONE_SEQ = ["m:newgame", "m:moved", "m:dialogue", "m:combat"];
+  let milestoneFunnel = $derived.by(() => {
+    if (!data) return [];
+    const counts = new Map(
+      Object.entries(data.sceneCounts).filter(([k]) => k.startsWith("m:"))
+    );
+    // story events after the known sequence, in numeric order (event_1, event_2, …)
+    const eventNum = (k: string) => {
+      const n = parseInt(k.slice("m:event_".length), 10);
+      return Number.isNaN(n) ? Number.MAX_SAFE_INTEGER : n;
+    };
+    const events = [...counts.keys()]
+      .filter((k) => k.startsWith("m:event_"))
+      .sort((a, b) => eventNum(a) - eventNum(b));
+    const seq = [...MILESTONE_SEQ, ...events];
+    const others = [...counts.keys()].filter((k) => !seq.includes(k));
+    const order = [...seq, ...others].filter((k) => counts.has(k));
+    const entry = order.length ? counts.get(order[0]) ?? 0 : 0;
+    let prev = entry;
+    return order.map((k, i) => {
+      const n = counts.get(k) ?? 0;
+      const ofEntry = entry > 0 ? Math.round((n / entry) * 100) : 0;
+      const ofPrior = i === 0 ? 100 : prev > 0 ? Math.round((n / prev) * 100) : 0;
+      const row = { key: k, label: milestoneLabel(k), n, ofEntry, ofPrior, first: i === 0 };
+      prev = n;
+      return row;
+    });
+  });
+  // Biggest single drop-off (lowest kept-% among non-first steps) — the row to fix.
+  let worstDropKey = $derived.by(() => {
+    const steps = milestoneFunnel.filter((r) => !r.first);
+    if (!steps.length) return null;
+    return steps.reduce((w, r) => (r.ofPrior < w.ofPrior ? r : w)).key;
+  });
   let referrers = $derived(
     data ? Object.entries(data.referrers).sort((a, b) => b[1] - a[1]) : []
   );
@@ -261,6 +290,35 @@
       {/if}
     </section>
 
+    <!-- Milestone progression — how far players get once they start, and where they drop -->
+    <section class="milestone-funnel">
+      <h3>
+        Milestone progression
+        <span class="sub">(in play order · bar = share of the first step · % = kept from the previous step)</span>
+      </h3>
+      {#if milestoneFunnel.length === 0}
+        <p class="muted">No milestones yet — appears as players progress through <code>/play/</code>.</p>
+      {:else}
+        {#each milestoneFunnel as m (m.key)}
+          <div class="mf-row" class:worst={m.key === worstDropKey}>
+            <span class="mf-label" title={m.label}>{m.label}</span>
+            <div class="mf-track">
+              <div class="mf-bar" style="width:{Math.max(2, m.ofEntry)}%"></div>
+            </div>
+            <span class="mf-stat">
+              {m.n}
+              {#if !m.first}<span class="mf-kept">· kept {m.ofPrior}%</span>{/if}
+            </span>
+          </div>
+        {/each}
+        <p class="mf-note muted">
+          Bar length = share of everyone who reached the first step ({milestoneFunnel[0]?.label}). The
+          “kept %” is how many of the previous step continued —
+          <span class="worst-key">red</span> marks the biggest drop-off, where you’re losing the most players.
+        </p>
+      {/if}
+    </section>
+
     <!-- "Moved"/"never moved" cards removed 2026-06-25: movedSessions is sampled
          from the transient gameState.isMoving at a 4s poll, so it under-counts
          badly (a player who walked 4 scenes still read as "never moved"). Scenes
@@ -277,22 +335,6 @@
             <div class="bar-row">
               <span class="bar-label">{scene}</span>
               <div class="bar"><div class="fill" style="width:{pct(n, data.totalSessions)}%"></div></div>
-              <span class="bar-n">{n}</span>
-            </div>
-          {/each}
-        {/if}
-      </section>
-
-      <!-- Milestones -->
-      <section>
-        <h3>Milestones <span class="sub">(distinct sessions)</span></h3>
-        {#if milestones.length === 0}
-          <p class="muted">No milestones yet.</p>
-        {:else}
-          {#each milestones as [k, n]}
-            <div class="bar-row">
-              <span class="bar-label">{milestoneLabel(k)}</span>
-              <div class="bar"><div class="fill alt" style="width:{pct(n, data.totalSessions)}%"></div></div>
               <span class="bar-n">{n}</span>
             </div>
           {/each}
@@ -435,9 +477,9 @@
     display: flex;
     align-items: flex-end;
     gap: 0.35rem;
-    height: 140px;
     overflow-x: auto;
-    padding-bottom: 0.2rem;
+    overflow-y: hidden;          /* kill the phantom vertical scrollbar from overflow-x + fixed height */
+    padding-bottom: 0.9rem;      /* room for the rotated day labels */
   }
   .day-col {
     display: flex;
@@ -446,11 +488,12 @@
     justify-content: flex-end;
     gap: 0.25rem;
     min-width: 26px;
-    height: 100%;
     flex: 1 1 26px;
   }
   .day-n { font-size: 0.68rem; color: rgba(224, 231, 255, 0.7); }
-  .day-bar-track { flex: 1; width: 60%; display: flex; align-items: flex-end; }
+  /* Fixed bar-area height (was flex:1 tied to the container's fixed height) so the
+     chart sizes to its content and never overflows vertically. */
+  .day-bar-track { height: 110px; width: 60%; display: flex; align-items: flex-end; }
   .day-bar {
     position: relative;
     width: 100%;
@@ -474,6 +517,33 @@
     margin-top: 0.2rem;
     height: 1.2em;
   }
+
+  /* Milestone progression funnel */
+  .milestone-funnel { margin-top: 1.5rem; }
+  .mf-row {
+    display: grid;
+    grid-template-columns: 11rem 1fr 9rem;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.35rem 0;
+    font-size: 0.82rem;
+  }
+  .mf-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mf-track { background: rgba(251, 191, 36, 0.08); border-radius: 3px; height: 16px; }
+  .mf-bar {
+    height: 100%;
+    background: #fbbf24;
+    border-radius: 3px;
+    min-width: 2px;
+    transition: width 0.3s ease;
+  }
+  .mf-stat { text-align: right; color: rgba(224, 231, 255, 0.75); font-size: 0.78rem; white-space: nowrap; }
+  .mf-kept { color: rgba(224, 231, 255, 0.5); }
+  .mf-row.worst .mf-bar { background: #f87171; }
+  .mf-row.worst .mf-label { color: #fca5a5; }
+  .mf-row.worst .mf-kept { color: #f87171; }
+  .mf-note { font-size: 0.72rem; margin-top: 0.6rem; line-height: 1.5; }
+  .mf-note .worst-key { color: #f87171; font-weight: 700; }
 
   /* Engagement-by-device graph */
   .device-engagement { margin-top: 1.5rem; }

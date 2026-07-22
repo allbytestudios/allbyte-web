@@ -1,12 +1,8 @@
 <script lang="ts">
   import { auth } from "../lib/auth.svelte.ts";
   import { isAdmin } from "../lib/tier";
+  import { BUG_READ_URL as READ_URL } from "../lib/bugReports";
   import { onMount } from "svelte";
-
-  // ReadEndpoint output of the bug-reports stack (allbyte-studio-bug-reports,
-  // us-east-1). Admin-gated server-side (tier=="admin" on the caller's record);
-  // returns reports newest-first, each with a presigned snapshot URL when present.
-  const READ_URL = "https://g5byr6mvm9.execute-api.us-east-1.amazonaws.com/reports";
 
   interface Report {
     reportId: string;

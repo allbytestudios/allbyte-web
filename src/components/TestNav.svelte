@@ -3,6 +3,8 @@
   import { fetchBeadsIssues } from "../lib/beadsSource";
   import { epicsOnly, isOpen, isClosed } from "../lib/beadsTypes";
   import { subscribeToFile } from "../lib/testEvents";
+  import { fetchBugCounts } from "../lib/bugReports";
+  import { auth } from "../lib/auth.svelte";
   import { onMount, onDestroy } from "svelte";
 
   interface Props {
@@ -17,16 +19,26 @@
   // Owner Questions: yellow=pending, grey=total
   let questionsTotal = $state<number | null>(null);
   let questionsPending = $state<number | null>(null);
+  // Bugs: yellow=unread (untriaged), grey=total. Needs the auth token, so it only
+  // populates for admins; on failure we keep the last value rather than blanking.
+  let bugUnread = $state<number | null>(null);
+  let bugTotal = $state<number | null>(null);
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;
 
   async function refresh() {
-    const [idx, bd, oq] = await Promise.all([
+    const [idx, bd, oq, bugs] = await Promise.all([
       fetchIndex().catch(() => null),
       fetchBeadsIssues().catch(() => []),
       fetchOwnerQuestions().catch(() => null),
+      fetchBugCounts(auth.authToken).catch(() => null),
     ]);
     testCount = idx?.summary?.total_tests ?? null;
+
+    if (bugs) {
+      bugUnread = bugs.unread > 0 ? bugs.unread : null;
+      bugTotal = bugs.total;
+    }
 
     const epics = epicsOnly(bd);
     const open = epics.filter(isOpen).length;
@@ -56,6 +68,16 @@
     refresh();
     pollTimer = setInterval(refresh, 15000);
     unsubs = WATCHED.map((p) => subscribeToFile(p, refresh));
+    // Bug counts need the auth token; re-run once auth is ready so the badge
+    // appears promptly instead of waiting for the next 15s poll.
+    (async () => {
+      let waited = 0;
+      while (!auth.authReady && waited < 5000) {
+        await new Promise((r) => setTimeout(r, 100));
+        waited += 100;
+      }
+      if (auth.authReady) refresh();
+    })();
   });
 
   onDestroy(() => {
@@ -101,6 +123,10 @@
   </a>
   <a href="/test/bug-reports/" class="nav-tab" class:active={active === "bugs"}>
     Bugs
+    {#if bugUnread}
+      <span class="nav-count nav-yellow">{bugUnread}</span>
+    {/if}
+    <span class="nav-count nav-grey">{bugTotal ?? 0}</span>
   </a>
   <a href="/test/scenarios/" class="nav-tab" class:active={active === "scenarios"}>
     Scenarios

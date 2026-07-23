@@ -14,6 +14,7 @@
     "sync:scenarios": "node scripts/sync-scenario-fixtures.js",
     "sync:tree": "node scripts/sync-save-tree.js",
     "sync:dialogue": "node scripts/sync-dialogue.js",
+    "deploy:tree": "node scripts/deploy-tree.js",
     "changelog": "node scripts/deploy-history.js",
     "promote": "node scripts/promote.js",
     "finalize": "node scripts/finalize-web-deploy.js",

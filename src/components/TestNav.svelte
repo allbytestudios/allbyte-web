@@ -150,9 +150,10 @@
     z-index: 90;          /* below the header (z-index 100) */
     background: #0a0e17;  /* opaque + matches the page shell, so any px of gap/overlap is invisible */
   }
-  /* Header collapses to a ~59px single row at its 768px breakpoint. */
+  /* Mobile: don't stick — the grid nav is tall and would eat the small screen.
+     Scroll it away normally; the sticky pin is a desktop affordance only. */
   @media (max-width: 768px) {
-    .test-nav { top: 59px; }
+    .test-nav { position: static; }
   }
   .nav-tab {
     font-family: "Courier New", monospace;

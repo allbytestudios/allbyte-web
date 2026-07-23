@@ -101,6 +101,12 @@ for (const n of rows) {
     // QA approval (Quinn-authored, Arc-committed): "approved" | "unapproved";
     // absent = unverified. Drives the red/green badge + "Approved only" filter.
     approval: n.approval === "approved" || n.approval === "unapproved" ? n.approval : undefined,
+    // Narrative-spine tags (Arc-committed, schema v1.1): slugs into
+    // src/data/story-spine.json. Drive the chapter→section outline + the
+    // difficulty filter; parent/decision become metadata, not layout.
+    chapter: n.chapter || undefined,
+    section: n.section || undefined,
+    seq: typeof n.seq === "number" ? n.seq : undefined,
   });
 }
 

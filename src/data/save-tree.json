@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "schema": "save-state-tree v1",
-  "generated_at": "2026-07-23T03:02:33.957Z",
+  "schema": "save-state-tree v1.1",
+  "generated_at": "2026-07-23T22:30:30.977Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -19,7 +19,10 @@
         "hard",
         "root",
         "intro"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 10
     },
     {
       "id": "hard_root_looted",
@@ -37,7 +40,10 @@
         "hard",
         "maximal",
         "100-sen room chest grabbed"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 20
     },
     {
       "id": "hard_shop_maximal",
@@ -55,7 +61,10 @@
         "hard",
         "maximal",
         "0 sen — spent on Leather Boots + Mugwort"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 5
     },
     {
       "id": "hard_town_maximal_items",
@@ -73,7 +82,10 @@
         "hard",
         "maximal",
         "Leather Boots x1 + Mugwort x2 + Valerian Powder x3"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 8
     },
     {
       "id": "hard_town",
@@ -91,7 +103,10 @@
         "hard",
         "pauper",
         "0-sen — skipped 100-sen room chest"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 30
     },
     {
       "id": "hard_windmill1",
@@ -109,7 +124,10 @@
         "hard",
         "pauper",
         "decision-free spine — overlaps frontier chain"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 70
     },
     {
       "id": "med_intro",
@@ -127,7 +145,10 @@
         "medium",
         "key",
         "intro"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 10
     },
     {
       "id": "med_ev1_churchsquare",
@@ -144,7 +165,10 @@
       "tags": [
         "medium",
         "flesh"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 60
     },
     {
       "id": "med_ev2_windmill1",
@@ -161,7 +185,10 @@
       "tags": [
         "medium",
         "flesh"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 70
     },
     {
       "id": "med_ev3_windmill1_2f",
@@ -178,7 +205,10 @@
       "tags": [
         "medium",
         "flesh"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 80
     },
     {
       "id": "med_ev8_mayors",
@@ -195,7 +225,10 @@
       "tags": [
         "medium",
         "flesh"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 90
     },
     {
       "id": "med_ev10_churchsquare",
@@ -212,7 +245,10 @@
       "tags": [
         "medium",
         "flesh"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 110
     },
     {
       "id": "med_ev11_mayors",
@@ -229,7 +265,10 @@
       "tags": [
         "medium",
         "flesh"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 120
     },
     {
       "id": "med_ev12_eliashouse",
@@ -246,13 +285,16 @@
       "tags": [
         "medium",
         "flesh"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 130
     },
     {
       "id": "med_before_dungeon",
       "difficulty": "medium",
       "parent": "med_ev12_eliashouse",
-      "decision": "medium full-prep before-dungeon (100 Sen / Valerian x3 / Irid x2 / Glenn equipped / Item Relic), cond 11",
+      "decision": "medium full-prep before-dungeon (20 Sen / Valerian x3 / Irid x2 / Mugwort x3 / Glenn equipped / Item Relic / waterway key), cond 11",
       "is_leaf": false,
       "label": "Medium · BEFORE DUNGEON (full-prep)",
       "scene": "Windmill1Basement",
@@ -265,7 +307,10 @@
         "key",
         "before-dungeon"
       ],
-      "approval": "approved"
+      "approval": "approved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 10
     },
     {
       "id": "med_boss_pauper",
@@ -286,7 +331,10 @@
         "before-boss",
         "pauper"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 30
     },
     {
       "id": "med_boss_leveled",
@@ -307,7 +355,10 @@
         "before-boss",
         "max"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 40
     },
     {
       "id": "hard_before_churchsquare_fight",
@@ -325,7 +376,10 @@
         "hard",
         "key",
         "before-churchsquare-fight"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 100
     },
     {
       "id": "hard_before_dungeon",
@@ -344,7 +398,10 @@
         "key",
         "before-dungeon"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 10
     },
     {
       "id": "hard_boss_pauper",
@@ -365,7 +422,10 @@
         "before-boss",
         "pauper"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 30
     },
     {
       "id": "hard_boss_max",
@@ -386,7 +446,10 @@
         "before-boss",
         "max"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 40
     },
     {
       "id": "easy_root",
@@ -404,7 +467,10 @@
         "easy",
         "key",
         "intro"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 10
     },
     {
       "id": "easy_before_churchsquare_fight",
@@ -422,7 +488,10 @@
         "easy",
         "key",
         "before-churchsquare-fight"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 100
     },
     {
       "id": "easy_boss_pauper",
@@ -443,7 +512,10 @@
         "before-boss",
         "pauper"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 30
     },
     {
       "id": "easy_boss_max",
@@ -464,7 +536,10 @@
         "before-boss",
         "max"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 40
     },
     {
       "id": "easy_boss_sidebuild",
@@ -487,7 +562,10 @@
         "side-branch",
         "equipped"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 50
     },
     {
       "id": "med_boss_sidebuild",
@@ -510,7 +588,10 @@
         "side-branch",
         "equipped"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 50
     },
     {
       "id": "hard_boss_sidebuild",
@@ -533,7 +614,10 @@
         "side-branch",
         "equipped"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 50
     },
     {
       "id": "med_grind_start",
@@ -555,7 +639,10 @@
         "debug-assisted",
         "equipped"
       ],
-      "approval": "unapproved"
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 20
     }
   ]
 }

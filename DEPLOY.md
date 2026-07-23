@@ -124,14 +124,20 @@ job in `.github/workflows/qa.yml` reads the live `channels.json` and boots
 every published channel (gated channels get the anonymous lock check only — CI
 holds no user tokens). Results land in `test-snapshot/qa-runs/<run-id>/`.
 
-## How `develop` deploys — git push → CodeBuild (LIVE, hands-off)
+## How `develop` deploys — git push (token-gated) → CodeBuild (LIVE, hands-off)
 
 `develop` builds and deploys itself **from source** on a git push. There is **no
 host daemon** and nothing to run on the laptop.
 
-- **Trigger:** a push to the `develop` branch of the private game repo fires a
-  GitHub webhook on the CodeBuild project `allbyte-godot-develop`. That's the
-  entire deploy ritual.
+- **Trigger (TOKEN-GATED, cost fix 2026-07-23):** a push to the `develop` branch
+  of the private game repo fires the CodeBuild project `allbyte-godot-develop`
+  **only when the HEAD commit message contains `[deploy-develop]`**. Ordinary
+  pushes no longer build — develop was auto-building ~14×/day (~$15/mo, the bulk
+  of the AWS bill). To deploy, Arc tags the push (`git commit --allow-empty -m
+  "[deploy-develop] <what/why>"`) — only when the owner asks. Consequence: the
+  deployed `develop` channel reflects the **last tagged deploy, not the branch
+  HEAD**. The filter is the `COMMIT_MESSAGE` FilterGroup in
+  `deploy/godot-export-codebuild.yaml`; remove it to restore build-on-push.
 - **Build (isolated in AWS):** CodeBuild clones the repo via CodeConnections
   (OAuth — no token in the pipeline), installs the custom **key-baked** web export
   template from private S3, then runs `tools/ci/cloud_export.sh` (headless import →
@@ -176,7 +182,7 @@ command in `CLAUDE.md`). Wiring alpha/beta to CodeBuild (`buildspec.alpha/beta` 
 | obfuscator `stale shim` and it did NOT self-heal | key unavailable | check `GODOT_RELEASE_SCRIPT_KEY` in `docker/.env` (game key). |
 | `test_gate != pass` refusal | gate failed on Arc's side | fix the game/tests; not a deploy issue. |
 | prod `develop` behind a `develop`-branch commit | CodeBuild build failed or the webhook didn't fire | check the `allbyte-godot-develop` build history + the `DevelopBuildFailure` alarm; fix game/gate and re-push, or retry the build in the CodeBuild console. |
-| nothing deploying after a `develop` push | webhook/build didn't fire, or the push didn't land on `develop` | confirm the commit is on the `develop` branch; check `allbyte-godot-develop` build history for a triggered run. |
+| nothing deploying after a `develop` push | **expected** unless the commit message carried `[deploy-develop]` (token gate, 2026-07-23) — or the push didn't land on `develop` | to actually deploy, re-push with the token (`git commit --allow-empty -m "[deploy-develop] …"`); confirm the commit is on `develop`; check `allbyte-godot-develop` build history for a triggered run. |
 | a live channel needs shipping | live channels aren't on the cloud path yet | promote deliberately host-side: `npm run promote -- --channel <alpha\|alpha-debug\|beta>`. |
 | `develop` deploy step green but the game is broken | the light post-deploy boot smoke failed after upload — artifacts are live on the dev path | read the CodeBuild logs for the smoke output; bad build → fix + re-push; false alarm → `python scripts/smoke_prod.py --channel develop --boot-only` to re-check. |
 | entitled user gets 403 / fallback page on beta | expired cookies (12h TTL), key-pair-id mismatch, or the Lambda can't read the signing secret | re-login → `betaGate` refetches; check `allbyte-studio-beta-cookies` CloudWatch AUDIT lines; confirm `CfBetaKeyPairId` matches the public key in the key group. |
@@ -186,7 +192,7 @@ command in `CLAUDE.md`). Wiring alpha/beta to CodeBuild (`buildspec.alpha/beta` 
 
 ## Manual ops
 
-Normal develop deploys need none of this — Arc pushes `develop` and CodeBuild does it.
+Normal develop deploys need none of this — Arc pushes `develop` with a `[deploy-develop]`-tagged commit and CodeBuild does it.
 These are **break-glass**, for when the cloud path is down and a build must ship by hand
 against a host-mounted manifest:
 

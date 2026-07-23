@@ -191,9 +191,17 @@ Resources:
       SourceVersion: !Ref BuildBranch
       Triggers:
         Webhook: true
+        # Cost gate (2026-07-23): develop was auto-building on EVERY push
+        # (~14/day → ~$15/mo of CodeBuild, the bulk of the AWS bill). A push now
+        # only builds+deploys when its HEAD commit message carries the
+        # [deploy-develop] token, which Arc adds ONLY when the owner asks for a
+        # develop deploy. Ordinary develop pushes no longer trigger a build.
+        # The three filters are AND-ed: PUSH to develop whose message contains
+        # the token. Remove the COMMIT_MESSAGE line to restore build-on-push.
         FilterGroups:
           - - { Type: EVENT, Pattern: PUSH }
             - { Type: HEAD_REF, Pattern: !Sub "^refs/heads/${BuildBranch}$" }
+            - { Type: COMMIT_MESSAGE, Pattern: '\[deploy-develop\]' }
       LogsConfig:
         CloudWatchLogs:
           Status: ENABLED

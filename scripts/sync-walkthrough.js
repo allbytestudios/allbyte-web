@@ -263,6 +263,20 @@ for (const file of files) {
   // but checking here means she catches it from her own container with a dry
   // run, without needing a build or the sharp binary.
   const body = raw.slice(fmMatch[0].length);
+
+  // Scene bodies must not use h1-h3 — the STEP label owns h3, so a body heading
+  // at that level or shallower renders as a SIBLING of the step and flattens the
+  // outline. Require `####` or deeper. Fenced code is stripped first so a
+  // `# comment` inside a code block doesn't trip the check.
+  const bodyNoCode = body.replace(/```[\s\S]*?```/g, "");
+  const badHeading = bodyNoCode.match(/^(#{1,3})\s+(\S.*)$/m);
+  if (badHeading) {
+    err(
+      rel,
+      `body heading "${badHeading[1]} ${badHeading[2].slice(0, 40)}" is h${badHeading[1].length} — the step label owns h1-h3; use "####" or deeper in scene prose`
+    );
+  }
+
   const KNOWN_DIRECTIVES = new Set(["shot"]);
   // [^\S\n]* not \s* — with the /m flag \s also matches the preceding newline,
   // which shifts m.index onto the blank line and makes the extracted line empty.

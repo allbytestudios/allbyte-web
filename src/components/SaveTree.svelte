@@ -20,14 +20,22 @@
     return parts.join(" · ");
   }
 
-  // Per-branch collapse: node ids whose subtree is currently hidden.
+  // Collapse state: difficulty sections (by name) + branch nodes (by id).
+  const collapsedSections = new SvelteSet<string>();
   const collapsed = new SvelteSet<string>();
   function toggle(id: string) {
     if (collapsed.has(id)) collapsed.delete(id);
     else collapsed.add(id);
   }
+  function toggleSection(d: string) {
+    if (collapsedSections.has(d)) collapsedSections.delete(d);
+    else collapsedSections.add(d);
+  }
   function descendantCount(e: TreeEntry): number {
     return e.children.reduce((sum, c) => sum + 1 + descendantCount(c), 0);
+  }
+  function countNodes(es: TreeEntry[]): number {
+    return es.reduce((n, e) => n + 1 + countNodes(e.children), 0);
   }
   function collapseAll() {
     const walk = (es: TreeEntry[]) =>
@@ -35,11 +43,18 @@
         if (e.children.length) collapsed.add(e.node.id);
         walk(e.children);
       });
-    diffs.forEach((d) => walk(treeFor(d)));
+    diffs.forEach((d) => {
+      collapsedSections.add(d);
+      walk(treeFor(d));
+    });
   }
   function expandAll() {
     collapsed.clear();
+    collapsedSections.clear();
   }
+  // Default collapsed: difficulty sections start closed (clean 3-header overview);
+  // expanding one shows its full spine, with per-branch toggles for the rest.
+  diffs.forEach((d) => collapsedSections.add(d));
 
   // "Approved only" filter: prune branches with no approved node, keeping the
   // ancestor path to any approved one so the tree still reads as a tree.
@@ -120,19 +135,26 @@
     </div>
     {#each diffs as d (d)}
       {@const rows = approvedOnly ? pruneApproved(treeFor(d)) : treeFor(d)}
+      {@const sClosed = collapsedSections.has(d)}
       <section class="tre-section">
-        <h3 class="tre-h">{d}</h3>
-        <div class="tre-rows">
-          {#if rows.length === 0}
-            <p class="tre-empty">
-              {approvedOnly ? "No approved nodes here yet." : "No nodes."}
-            </p>
-          {:else}
-            {#each rows as e (e.node.id)}
-              {@render row(e)}
-            {/each}
-          {/if}
-        </div>
+        <button class="tre-h" onclick={() => toggleSection(d)} aria-expanded={!sClosed}>
+          <span class="tre-h-caret">{sClosed ? "▸" : "▾"}</span>
+          <span class="tre-h-name">{d}</span>
+          <span class="tre-h-count">{countNodes(rows)} node{countNodes(rows) === 1 ? "" : "s"}</span>
+        </button>
+        {#if !sClosed}
+          <div class="tre-rows">
+            {#if rows.length === 0}
+              <p class="tre-empty">
+                {approvedOnly ? "No approved nodes here yet." : "No nodes."}
+              </p>
+            {:else}
+              {#each rows as e (e.node.id)}
+                {@render row(e)}
+              {/each}
+            {/if}
+          </div>
+        {/if}
       </section>
     {/each}
   {/if}
@@ -177,13 +199,35 @@
     margin-bottom: 1.75rem;
   }
   .tre-h {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid rgba(167, 243, 208, 0.12);
+    color: #a7f3d0;
+    font-family: inherit;
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #a7f3d0;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.12);
-    padding-bottom: 0.35rem;
+    padding: 0 0 0.35rem;
     margin: 0 0 0.6rem;
+    cursor: pointer;
+  }
+  .tre-h:hover {
+    border-bottom-color: rgba(167, 243, 208, 0.4);
+  }
+  .tre-h-caret {
+    color: #6b7280;
+  }
+  .tre-h-count {
+    margin-left: auto;
+    color: #6b7280;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.72rem;
   }
   .tre-rows {
     display: flex;

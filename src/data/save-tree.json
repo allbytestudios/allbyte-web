@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1",
-  "generated_at": "2026-07-17T22:45:01.155Z",
+  "generated_at": "2026-07-23T02:03:06.550Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -252,10 +252,10 @@
       "id": "med_before_dungeon",
       "difficulty": "medium",
       "parent": "med_ev12_eliashouse",
-      "decision": "Event 13 — town done, dungeon open",
+      "decision": "medium full-prep before-dungeon (100 Sen / Valerian x3 / Irid x2 / Glenn equipped / Item Relic), cond 11",
       "is_leaf": false,
-      "label": "Medium · BEFORE DUNGEON (skip town)",
-      "scene": "MayorsHouse",
+      "label": "Medium · BEFORE DUNGEON (full-prep)",
+      "scene": "Windmill1Basement",
       "chain_legal": true,
       "packs": [
         "Laria"
@@ -264,7 +264,8 @@
         "medium",
         "key",
         "before-dungeon"
-      ]
+      ],
+      "approval": "approved"
     },
     {
       "id": "med_boss_pauper",
@@ -284,7 +285,8 @@
         "key",
         "before-boss",
         "pauper"
-      ]
+      ],
+      "approval": "unapproved"
     },
     {
       "id": "med_boss_leveled",
@@ -304,7 +306,8 @@
         "key",
         "before-boss",
         "max"
-      ]
+      ],
+      "approval": "unapproved"
     },
     {
       "id": "hard_before_churchsquare_fight",
@@ -340,7 +343,8 @@
         "hard",
         "key",
         "before-dungeon"
-      ]
+      ],
+      "approval": "unapproved"
     },
     {
       "id": "hard_boss_pauper",
@@ -360,7 +364,8 @@
         "key",
         "before-boss",
         "pauper"
-      ]
+      ],
+      "approval": "unapproved"
     },
     {
       "id": "hard_boss_max",
@@ -380,7 +385,8 @@
         "key",
         "before-boss",
         "max"
-      ]
+      ],
+      "approval": "unapproved"
     },
     {
       "id": "easy_root",
@@ -436,7 +442,8 @@
         "key",
         "before-boss",
         "pauper"
-      ]
+      ],
+      "approval": "unapproved"
     },
     {
       "id": "easy_boss_max",
@@ -456,7 +463,99 @@
         "key",
         "before-boss",
         "max"
-      ]
+      ],
+      "approval": "unapproved"
+    },
+    {
+      "id": "easy_boss_sidebuild",
+      "difficulty": "easy",
+      "parent": "easy_before_churchsquare_fight",
+      "decision": "Save A — side-branch build (Push/Cleanse/Cure), 4 gear pieces equipped, no central line / no relic",
+      "is_leaf": true,
+      "label": "Easy · BEFORE BOSS · Save A: side-branch build (L5, equipped, no Smite)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "easy",
+        "key",
+        "before-boss",
+        "save-a",
+        "side-branch",
+        "equipped"
+      ],
+      "approval": "unapproved"
+    },
+    {
+      "id": "med_boss_sidebuild",
+      "difficulty": "medium",
+      "parent": "med_before_dungeon",
+      "decision": "Save A — side-branch build (Push/Cleanse/Cure), 4 gear pieces equipped, no central line / no relic",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · Save A: side-branch build (L5, equipped, no Smite)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "before-boss",
+        "save-a",
+        "side-branch",
+        "equipped"
+      ],
+      "approval": "unapproved"
+    },
+    {
+      "id": "hard_boss_sidebuild",
+      "difficulty": "hard",
+      "parent": "hard_before_dungeon",
+      "decision": "Save A — side-branch build (Push/Cleanse/Cure), 4 gear pieces equipped, no central line / no relic",
+      "is_leaf": true,
+      "label": "Hard · BEFORE BOSS · Save A: side-branch build (L5, equipped, no Smite)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "hard",
+        "key",
+        "before-boss",
+        "save-a",
+        "side-branch",
+        "equipped"
+      ],
+      "approval": "unapproved"
+    },
+    {
+      "id": "med_grind_start",
+      "difficulty": "medium",
+      "parent": "med_before_dungeon",
+      "decision": "Save-B grind seed: Glenn's Longsword EQUIPPED + Mugwort x16 (debug-granted) + Item Relic in bag, L1 Waterway1. grind_to_level(5) climbs from here to produce central-line Save B. Debug-assisted provenance (Mugwort granted, not shop-bought).",
+      "is_leaf": false,
+      "label": "Medium · Waterway1 grind-start (equipped + Mugwort, L1 — Save-B grind seed)",
+      "scene": "Waterway1",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "medium",
+        "grind-start",
+        "save-b-seed",
+        "debug-assisted",
+        "equipped"
+      ],
+      "approval": "unapproved"
     }
   ]
 }

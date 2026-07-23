@@ -98,6 +98,9 @@ for (const n of rows) {
     chain_legal: n.chain_legal !== false,
     packs: Array.isArray(n.packs) ? n.packs : undefined,
     tags: Array.isArray(n.tags) ? n.tags : undefined,
+    // QA approval (Quinn-authored, Arc-committed): "approved" | "unapproved";
+    // absent = unverified. Drives the red/green badge + "Approved only" filter.
+    approval: n.approval === "approved" || n.approval === "unapproved" ? n.approval : undefined,
   });
 }
 

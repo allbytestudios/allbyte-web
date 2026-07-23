@@ -6,24 +6,26 @@ import WalkthroughChrome from "../../components/WalkthroughChrome.svelte";
 import WalkthroughChecklist from "../../components/WalkthroughChecklist.svelte";
 import WalkthroughShot from "../../components/WalkthroughShot.svelte";
 import { getCollection, render } from "astro:content";
+import spine from "../../data/story-spine.json";
 
-// Guided-playthrough structure (2026-07-21): scenes group into three sections
-// by `kind`, ordered by `order` within each. The prose is server-rendered here
-// so the guide is fully readable without JS — the islands only add navigation,
-// ticks, and the lightbox on top.
-const SECTIONS = [
-  { key: "story", label: "Story Walkthrough" },
-  { key: "optional", label: "Other Scenes" },
-  { key: "dungeon", label: "The Waterways" },
-] as const;
+// Narrative-spine render (2026-07-23): the guide is a 4-level outline —
+// chapter → section → step → scene — driven entirely by src/data/story-spine.json
+// (Quinn owns its contents). The STEP label is the only heading; a scene's
+// `title` is just a muted location label, and `kind: transit` scenes render as a
+// one-line route between stops. Ordering + membership come from the spine + the
+// per-scene `step` tag, so Quinn's content churn lands as data, never code.
+type Rendered = {
+  data: any;
+  Content: Awaited<ReturnType<typeof render>>["Content"];
+  alsoAt: string[];
+};
 
 const entries = (await getCollection("walkthrough")).sort(
   (a, b) => a.data.order - b.data.order
 );
 
 // Revisit cross-links are DERIVED from the scene FK, not authored. A scene
-// visited at several story points appears as several files sharing one `scene`;
-// linking them by hand would be one more thing to keep in sync.
+// visited at several story points shares one `scene` across several files.
 const visitsByScene = new Map<string, string[]>();
 for (const e of entries) {
   const list = visitsByScene.get(e.data.scene) ?? [];
@@ -31,7 +33,7 @@ for (const e of entries) {
   visitsByScene.set(e.data.scene, list);
 }
 
-const rendered = await Promise.all(
+const rendered: Rendered[] = await Promise.all(
   entries.map(async (entry) => ({
     data: entry.data,
     Content: (await render(entry)).Content,
@@ -39,31 +41,59 @@ const rendered = await Promise.all(
   }))
 );
 
-const sections = SECTIONS.map((s) => ({
-  ...s,
-  scenes: rendered.filter((r) => r.data.kind === s.key),
-})).filter((s) => s.scenes.length > 0);
+// Bucket scenes by their step tag (already globally order-sorted).
+const byStep = new Map<string, Rendered[]>();
+for (const r of rendered) {
+  const list = byStep.get(r.data.step) ?? [];
+  list.push(r);
+  byStep.set(r.data.step, list);
+}
 
-// Compact metadata for the nav island — no prose, no bodies.
-const navSections = sections.map((s) => ({
-  key: s.key,
-  label: s.label,
-  scenes: s.scenes.map((r) => ({
-    code: r.data.code,
-    title: r.data.title,
-    kind: r.data.kind ?? "",
-    order: r.data.order,
-    items: (r.data.items ?? []).map((i) => ({ name: i.name })),
-    boss: !!r.data.boss,
-  })),
-}));
+// Build the outline from the spine, dropping any chapter/section/step with no
+// scenes (e.g. the Laria Valley placeholder, or leaving-laria if it were empty).
+const chapters = (spine.chapters ?? [])
+  .map((ch: any) => ({
+    key: ch.key,
+    label: ch.label,
+    sections: (ch.sections ?? [])
+      .map((sec: any) => ({
+        key: sec.key,
+        label: sec.label,
+        steps: (sec.steps ?? [])
+          .map((st: any) => ({ key: st.key, label: st.label, scenes: byStep.get(st.key) ?? [] }))
+          .filter((st: any) => st.scenes.length > 0),
+      }))
+      .filter((sec: any) => sec.steps.length > 0),
+  }))
+  .filter((ch: any) => ch.sections.length > 0);
 
+const chapterLabel = chapters[0]?.label ?? "Walkthrough";
+const stepCount = chapters.reduce(
+  (n: number, ch: any) => n + ch.sections.reduce((m: number, s: any) => m + s.steps.length, 0),
+  0
+);
 const totalItems = entries.reduce((n, e) => n + (e.data.items?.length ?? 0), 0);
+
+// Compact nav model — sections → steps (the outline the reader scans + spies on).
+const navSections = chapters.flatMap((ch: any) =>
+  ch.sections.map((section: any) => ({
+    key: section.key,
+    label: section.label,
+    steps: section.steps.map((step: any) => ({
+      key: step.key,
+      label: step.label,
+      boss: step.scenes.some((s: any) => !!s.data.boss),
+      items: step.scenes.flatMap((s: any) =>
+        (s.data.items ?? []).map((i: any) => ({ code: s.data.code, name: i.name }))
+      ),
+    })),
+  }))
+);
 ---
 
 <BaseLayout
   title="Walkthrough: Laria — The Chronicles of Nesis — AllByte Studios"
-  description="A complete guided playthrough of Laria Village in The Chronicles of Nesis — scene-by-scene directions, annotated screenshots, every findable item, and the Mother Slime boss fight."
+  description="A complete guided playthrough of Laria Village in The Chronicles of Nesis — step-by-step directions, annotated screenshots, every findable item, and the Mother Slime boss fight."
 >
   <PageHeader
     theme="heart"
@@ -75,13 +105,13 @@ const totalItems = entries.reduce((n, e) => n + (e.data.items?.length ?? 0), 0);
 
   <main class="wt-page">
     <div class="wt-intro">
-      <h1>Laria Village</h1>
+      <h1>{chapterLabel}</h1>
       <p class="lede">
-        A complete guided playthrough of the opening area — the critical path in play order,
+        A complete guided playthrough of the opening area — every story step in play order,
         the optional rooms worth a detour, and the Waterways dungeon down to the Mother Slime.
       </p>
       <p class="meta">
-        {entries.length} scenes · {totalItems} findable items · tick them off as you go
+        {stepCount} steps · {entries.length} scenes · {totalItems} findable items · tick them off as you go
       </p>
     </div>
 
@@ -90,84 +120,104 @@ const totalItems = entries.reduce((n, e) => n + (e.data.items?.length ?? 0), 0);
 
       <article class="wt-doc">
         {
-          sections.map((section) => (
-            <section class="wt-section">
-              <h2 class="section-head" id={`section-${section.key}`}>
-                {section.label}
-              </h2>
-              {section.scenes.map((s) => {
-                // Astro renders a component only from a capitalized standalone
-                // binding — `<s.Content />` as a member expression silently
-                // emits nothing, leaving an empty prose div and no build error.
-                const SceneProse = s.Content;
-                return (
-                <section class="wt-scene" id={s.data.code} data-code={s.data.code}>
-                  <header class="scene-head">
-                    <span class="scene-code">{s.data.code}</span>
-                    <h3>{s.data.title}</h3>
-                    {s.data.kind && <span class="scene-kind">{s.data.kind}</span>}
-                  </header>
+          chapters.map((chapter, ci) => (
+            <>
+              {ci > 0 && <h2 class="chapter-head">{chapter.label}</h2>}
+              {chapter.sections.map((section) => (
+                <section class="wt-section">
+                  <h2 class="section-head" id={`section-${section.key}`}>
+                    {section.label}
+                  </h2>
+                  {section.steps.map((step) => (
+                    <section class="wt-step" id={step.key} data-step={step.key}>
+                      <h3 class="step-head">{step.label}</h3>
+                      {step.scenes.map((s) => {
+                        // Astro renders a component only from a capitalized
+                        // standalone binding — a member expression emits nothing.
+                        const SceneProse = s.Content;
+                        if (s.data.kind === "transit") {
+                          // Connective scene: a single muted route line, no chrome.
+                          return (
+                            <div class="wt-transit" id={s.data.code} data-code={s.data.code}>
+                              <span class="transit-loc">{s.data.title}</span>
+                              <div class="transit-route">
+                                <SceneProse />
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <section class="wt-scene" id={s.data.code} data-code={s.data.code}>
+                            <header class="scene-head">
+                              <span class="scene-loc">{s.data.title}</span>
+                              {s.data.kind && s.data.kind !== "story" && (
+                                <span class="scene-kind">{s.data.kind}</span>
+                              )}
+                            </header>
 
-                  {s.alsoAt.length > 0 && (
-                    <p class="revisit">
-                      Also visited at{" "}
-                      {s.alsoAt.map((c, i) => (
-                        <>
-                          {i > 0 && ", "}
-                          <a href={`#${c}`}>{c}</a>
-                        </>
-                      ))}
-                    </p>
-                  )}
+                            {s.alsoAt.length > 0 && (
+                              <p class="revisit">
+                                Also visited at{" "}
+                                {s.alsoAt.map((c, i) => (
+                                  <>
+                                    {i > 0 && ", "}
+                                    <a href={`#${c}`}>{c}</a>
+                                  </>
+                                ))}
+                              </p>
+                            )}
 
-                  {s.data.screenshots?.map((shot, shotIdx) => (
-                    <WalkthroughShot
-                      name={shot.replace(/\.[^.]+$/, "")}
-                      alt={`${s.data.title} — ${s.data.code}`}
-                      indicators={s.data.indicators ?? []}
-                      eager={s.data.order === 1 && shotIdx === 0}
-                      client:visible
-                    />
+                            {s.data.screenshots?.map((shot, shotIdx) => (
+                              <WalkthroughShot
+                                name={shot.replace(/\.[^.]+$/, "")}
+                                alt={`${s.data.title} — ${s.data.code}`}
+                                indicators={s.data.indicators ?? []}
+                                eager={s.data.order === 1 && shotIdx === 0}
+                                client:visible
+                              />
+                            ))}
+
+                            {/* client:load, not client:visible — the first
+                                checklist is above the fold, and a tick that
+                                lands before hydration is silently lost. */}
+                            <WalkthroughChecklist
+                              code={s.data.code}
+                              items={s.data.items ?? []}
+                              client:load
+                            />
+
+                            <div class="wt-prose">
+                              <SceneProse />
+                            </div>
+
+                            {s.data.boss && (
+                              <aside class="boss-card">
+                                <h4>Boss — {s.data.boss.name}</h4>
+                                <dl>
+                                  {s.data.boss.hp != null && (
+                                    <div><dt>HP</dt><dd>{s.data.boss.hp}</dd></div>
+                                  )}
+                                  {s.data.boss.cond != null && (
+                                    <div><dt>Story flag</dt><dd>cond {s.data.boss.cond}</dd></div>
+                                  )}
+                                  {s.data.boss.steal?.length > 0 && (
+                                    <div><dt>Steal</dt><dd>{s.data.boss.steal.join(", ")}</dd></div>
+                                  )}
+                                  {s.data.boss.attacks?.length > 0 && (
+                                    <div><dt>Attacks</dt><dd>{s.data.boss.attacks.join(", ")}</dd></div>
+                                  )}
+                                </dl>
+                                {s.data.boss.notes && <p class="boss-notes">{s.data.boss.notes}</p>}
+                              </aside>
+                            )}
+                          </section>
+                        );
+                      })}
+                    </section>
                   ))}
-
-                  {/* client:load, not client:visible — the first checklist is
-                      above the fold, and a tick that lands before hydration is
-                      silently lost. These are tiny components; the eager cost is
-                      cheaper than a dropped interaction. */}
-                  <WalkthroughChecklist
-                    code={s.data.code}
-                    items={s.data.items ?? []}
-                    client:load
-                  />
-
-                  <div class="wt-prose">
-                    <SceneProse />
-                  </div>
-
-                  {s.data.boss && (
-                    <aside class="boss-card">
-                      <h4>Boss — {s.data.boss.name}</h4>
-                      <dl>
-                        {s.data.boss.hp != null && (
-                          <div><dt>HP</dt><dd>{s.data.boss.hp}</dd></div>
-                        )}
-                        {s.data.boss.cond != null && (
-                          <div><dt>Story flag</dt><dd>cond {s.data.boss.cond}</dd></div>
-                        )}
-                        {s.data.boss.steal?.length > 0 && (
-                          <div><dt>Steal</dt><dd>{s.data.boss.steal.join(", ")}</dd></div>
-                        )}
-                        {s.data.boss.attacks?.length > 0 && (
-                          <div><dt>Attacks</dt><dd>{s.data.boss.attacks.join(", ")}</dd></div>
-                        )}
-                      </dl>
-                      {s.data.boss.notes && <p class="boss-notes">{s.data.boss.notes}</p>}
-                    </aside>
-                  )}
                 </section>
-                );
-              })}
-            </section>
+              ))}
+            </>
           ))
         }
       </article>
@@ -199,24 +249,39 @@ const totalItems = entries.reduce((n, e) => n + (e.data.items?.length ?? 0), 0);
     display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 2.2rem; align-items: start;
   }
 
+  .chapter-head {
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem); color: var(--heart-accent, #3a3020);
+    margin: 2.5rem 0 1.2rem; letter-spacing: 0.01em;
+  }
   .wt-section { margin-bottom: 2.5rem; }
+  /* Section — the mid-level band (Exploring Laria / Into the Waterways / …). */
   .section-head {
     font-size: 1.35rem; color: var(--heart-accent, #3a3020); margin: 0 0 1.2rem;
     padding-bottom: 0.4rem; border-bottom: 2px solid var(--heart-card-border, #7a6e52);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.02em; scroll-margin-top: 1rem;
+  }
+  /* Step — the ONLY real heading a reader navigates by ("Waking Up", …). */
+  .wt-step { margin-bottom: 1.8rem; scroll-margin-top: 1rem; }
+  .step-head {
+    font-size: 1.08rem; color: var(--heart-accent, #3a3020); margin: 0 0 0.8rem;
+    letter-spacing: 0.01em; display: flex; align-items: baseline; gap: 0.5rem;
+  }
+  .step-head::before {
+    content: ""; flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+    background: var(--heart-card-border, #7a6e52); transform: translateY(-0.15em);
   }
 
   .wt-scene {
     background: rgba(253, 246, 227, 0.42);
     border: 1.5px solid rgba(122, 110, 82, 0.5); border-radius: 6px;
-    padding: 1.1rem 1.3rem 1.3rem; margin-bottom: 1.6rem; scroll-margin-top: 1rem;
+    padding: 1.1rem 1.3rem 1.3rem; margin-bottom: 1.1rem; scroll-margin-top: 1rem;
   }
   .scene-head { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
-  .scene-code {
-    font-size: 0.72rem; color: var(--heart-accent-dim, #5a4d38); letter-spacing: 0.05em;
-    background: rgba(58, 48, 32, 0.1); padding: 0.12rem 0.45rem; border-radius: 3px;
+  /* Location label — de-emphasized "you are here", NOT a heading. */
+  .scene-loc {
+    font-size: 0.82rem; color: var(--heart-accent-dim, #5a4d38); font-style: italic;
+    letter-spacing: 0.01em;
   }
-  .scene-head h3 { margin: 0; font-size: 1.15rem; color: var(--heart-accent, #3a3020); flex: 1; min-width: 0; }
   .scene-kind {
     font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--heart-accent-dim, #5a4d38); border: 1px solid rgba(58, 48, 32, 0.3);
@@ -224,6 +289,19 @@ const totalItems = entries.reduce((n, e) => n + (e.data.items?.length ?? 0), 0);
   }
   .revisit { margin: 0 0 0.7rem; font-size: 0.78rem; color: var(--heart-accent-dim, #5a4d38); font-style: italic; }
   .revisit a { color: var(--heart-accent, #3a3020); }
+
+  /* Transit — connective tissue between stops. One muted route line, no card. */
+  .wt-transit {
+    display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+    padding: 0.15rem 0.2rem 0.15rem 0.9rem; margin: 0 0 1.1rem;
+    border-left: 2px dashed rgba(122, 110, 82, 0.55);
+  }
+  .transit-loc {
+    font-size: 0.76rem; color: var(--heart-accent-dim, #5a4d38); font-style: italic; flex: none;
+  }
+  .transit-route { font-size: 0.9rem; line-height: 1.5; }
+  .transit-route :global(p) { margin: 0.1rem 0; }
+  .transit-route :global(strong) { color: var(--heart-accent, #3a3020); }
 
   .wt-prose { font-size: 0.95rem; line-height: 1.7; }
   .wt-prose :global(p) { margin: 0 0 0.85rem; }
@@ -240,8 +318,22 @@ const totalItems = entries.reduce((n, e) => n + (e.data.items?.length ?? 0), 0);
   }
   .wt-prose :global(hr) { border: 0; border-top: 1px solid rgba(122, 110, 82, 0.5); margin: 1.2rem 0; }
 
-  /* Inline ::shot figures — plain HTML from the remark transform, so they're
-     styled here rather than in a component. */
+  /* Pro Tip — skippable advice; the subtle default blockquote is fine. */
+  .wt-prose :global(blockquote.wt-tip) {
+    border-left-color: #7a6e52; background: rgba(122, 110, 82, 0.09);
+  }
+  /* TO PROGRESS — an unintuitive story gate ("you are stuck, this is why").
+     Deliberately LOUDER than a tip: a saturated amber signpost with a filled
+     left bar, so it can't be scrolled past. */
+  .wt-prose :global(blockquote.wt-progress) {
+    border-left: 5px solid #b0640f; background: rgba(176, 100, 15, 0.12);
+    padding: 0.65rem 1rem; border-radius: 0 4px 4px 0; margin: 1.1rem 0;
+  }
+  .wt-prose :global(blockquote.wt-progress) :global(strong:first-child) {
+    color: #8a4d08; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.9em;
+  }
+
+  /* Inline ::shot figures — plain HTML from the remark transform. */
   .wt-prose :global(.wt-inline-shot) { margin: 1.2rem 0; }
   .wt-prose :global(.inline-shot-btn) {
     display: block; width: 100%; padding: 0; cursor: zoom-in; line-height: 0; background: none;

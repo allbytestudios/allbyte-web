@@ -33,6 +33,9 @@ const KNOWN = new Set(["shot"]);
 const DIMS_PATH = resolve("./src/data/walkthrough-stills.json");
 const SIZES = "(max-width: 900px) 100vw, 800px";
 
+// Flatten a mdast node to its text, so we can classify a callout by its lead.
+const nodeText = (n) => (n.type === "text" ? n.value : (n.children ?? []).map(nodeText).join(""));
+
 function loadDims() {
   try {
     return existsSync(DIMS_PATH) ? JSON.parse(readFileSync(DIMS_PATH, "utf8")) : {};
@@ -137,6 +140,24 @@ export default function remarkWalkthroughDirectives() {
               ]
             : []),
         ];
+      }
+    });
+
+    // Classify callout blockquotes by their bold lead so CSS can style them.
+    // Quinn authors them as `> **TO PROGRESS:** …` / `> **💡 Pro Tip** …`.
+    // TO PROGRESS flags an unintuitive story gate (a stuck-point) and must read
+    // LOUDER than a skippable tip — it gets its own accent via .wt-progress.
+    visit(tree, "blockquote", (bq) => {
+      const firstPara = (bq.children ?? []).find((c) => c.type === "paragraph");
+      const strong = (firstPara?.children ?? []).find((c) => c.type === "strong");
+      const lead = strong ? nodeText(strong).trim() : "";
+      let cls = null;
+      if (/^TO PROGRESS/i.test(lead)) cls = "wt-progress";
+      else if (/pro\s*tip/i.test(lead)) cls = "wt-tip";
+      if (cls) {
+        bq.data ??= {};
+        bq.data.hName = "blockquote";
+        bq.data.hProperties = { ...(bq.data.hProperties ?? {}), className: [cls] };
       }
     });
   };

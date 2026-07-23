@@ -56,8 +56,16 @@ const walkthrough = defineCollection({
       /** FK into the scene graph (walkthrough-scenes.json). Validated at sync. */
       scene: z.string(),
       area: z.string(),
+      /** Narrative-spine tags — slugs into src/data/story-spine.json. The render
+       *  hierarchy is chapter → section → step → scene; the STEP label is the only
+       *  heading, and `title` below is just a location ("you are here") label. */
+      chapter: z.string(),
+      section: z.string(),
+      step: z.string(),
       /** Position within the area. */
       order: z.number(),
+      /** Location only, e.g. "Mayor's House". Rendered as a muted label on the
+       *  scene block, never as a heading — the step label is the heading. */
       title: z.string(),
       /** Free-form descriptor, e.g. "town hub". Display only. */
       kind: z.string().optional(),

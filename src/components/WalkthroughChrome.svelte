@@ -11,24 +11,23 @@
   import { onMount } from "svelte";
   import { ticks } from "../lib/walkthroughTicks.svelte";
 
-  interface SceneMeta {
-    code: string;
-    title: string;
-    kind: string;
-    order: number;
-    items: { name: string }[];
+  interface Step {
+    key: string;
+    label: string;
     boss: boolean;
-    revisitOf?: string | null;
+    items: { code: string; name: string }[];
   }
   interface Section {
     key: string;
     label: string;
-    scenes: SceneMeta[];
+    steps: Step[];
   }
 
   let { sections = [] as Section[] } = $props();
 
-  let activeCode = $state<string>("");
+  // Nav + scroll-spy key on the STEPS, not the scenes — a step outline reads as
+  // a walkthrough, a scene list reads as a database dump.
+  let activeStep = $state<string>("");
   let navOpen = $state(false);
 
   // --- lightbox --------------------------------------------------------------
@@ -60,23 +59,23 @@
     window.addEventListener("keydown", onKey);
     document.addEventListener("click", onDelegatedClick);
 
-    // Scroll-spy. rootMargin biases toward the scene occupying the upper-middle
-    // of the viewport, which is what a reader considers "where I am".
+    // Scroll-spy on steps. rootMargin biases toward the step occupying the
+    // upper-middle of the viewport, which is what a reader considers "where I am".
     const ratios = new Map<string, number>();
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          const code = (e.target as HTMLElement).dataset.code ?? "";
-          ratios.set(code, e.isIntersecting ? e.intersectionRatio : 0);
+          const key = (e.target as HTMLElement).dataset.step ?? "";
+          ratios.set(key, e.isIntersecting ? e.intersectionRatio : 0);
         }
         let best = "";
         let bestRatio = 0;
-        for (const [code, r] of ratios) if (r > bestRatio) [best, bestRatio] = [code, r];
-        if (best) activeCode = best;
+        for (const [key, r] of ratios) if (r > bestRatio) [best, bestRatio] = [key, r];
+        if (best) activeStep = best;
       },
       { rootMargin: "-15% 0px -55% 0px", threshold: [0, 0.25, 0.5, 1] }
     );
-    document.querySelectorAll("[data-code]").forEach((n) => io.observe(n));
+    document.querySelectorAll("[data-step]").forEach((n) => io.observe(n));
 
     return () => {
       window.removeEventListener("walkthrough:lightbox", onOpen);
@@ -92,15 +91,15 @@
     document.body.style.overflow = "";
   }
 
-  function jump(code: string) {
-    document.getElementById(code)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  function jump(key: string) {
+    document.getElementById(key)?.scrollIntoView({ behavior: "smooth", block: "start" });
     navOpen = false;
   }
 
-  const pairs = (scenes: SceneMeta[]) =>
-    scenes.flatMap((s) => s.items.map((i) => [s.code, i.name] as [string, string]));
+  const stepPairs = (step: Step) =>
+    step.items.map((i) => [i.code, i.name] as [string, string]);
 
-  let allPairs = $derived(pairs(sections.flatMap((s) => s.scenes)));
+  let allPairs = $derived(sections.flatMap((s) => s.steps.flatMap(stepPairs)));
   let total = $derived(ticks.progress(allPairs));
 </script>
 
@@ -124,21 +123,20 @@
   </div>
 
   {#each sections as section}
-    {@const sp = ticks.progress(pairs(section.scenes))}
+    {@const sp = ticks.progress(section.steps.flatMap(stepPairs))}
     <div class="nav-section">
       <h3>
         {section.label}
         {#if sp.total}<span class="sec-count">{sp.done}/{sp.total}</span>{/if}
       </h3>
       <ul>
-        {#each section.scenes as s}
+        {#each section.steps as step}
           <li>
-            <button class="nav-link" class:active={activeCode === s.code} onclick={() => jump(s.code)}>
-              <span class="code">{s.code}</span>
-              <span class="title">{s.title}</span>
-              {#if s.boss}<span class="pip boss" title="Boss">◆</span>{/if}
-              {#if s.items.length}
-                {@const ip = ticks.progress(s.items.map((i) => [s.code, i.name] as [string, string]))}
+            <button class="nav-link" class:active={activeStep === step.key} onclick={() => jump(step.key)}>
+              <span class="title">{step.label}</span>
+              {#if step.boss}<span class="pip boss" title="Boss">◆</span>{/if}
+              {#if step.items.length}
+                {@const ip = ticks.progress(stepPairs(step))}
                 <span class="pip items" class:done={ip.done === ip.total}>{ip.done}/{ip.total}</span>
               {/if}
             </button>

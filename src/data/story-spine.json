@@ -1,0 +1,89 @@
+{
+  "_owner": "Quinn \u2014 canonical narrative spine. App copies this into allbyte-web/src/data/story-spine.json; both the walkthrough render and the save-tree outline read it. Quinn owns names/order/membership; App owns the render. Arc stamps `chapter`+`section` keys onto save_tree_manifest.json nodes (no labels, no structure block \u2014 they come from here).",
+  "_rules": [
+    "CHAPTERS are evocative PLACE names in journey order.",
+    "'Overworld' is a MODE/view, never a chapter or section label (owner ruling).",
+    "SECTIONS are the player-facing gameplay beats. The section name IS the beat name.",
+    "difficulty is a per-node FILTER on the save tree, never a grouping level.",
+    "Walkthrough scenes group by where the content sits in read-order. Save-tree nodes group by WHICH BEAT THE NODE DROPS YOU INTO (a 'before dungeon' node standing in the Mayor's House belongs to Into the Waterways). See NOTE-1 in QA_CLAUDE_SPINE_UNIFICATION.md.",
+    "STEPS are the third level: evocative story/action headers ('Waking Up', 'Finding Aremis' Windmill'), NEVER scene names (owner 2026-07-23). One step may span several scenes \u2014 the scenes render under it in order, each with its own directions to the next. Per-scene `title` is the LOCATION only, rendered as a de-emphasized label, not as the heading.",
+    "Callout `TO PROGRESS:` marks a story gate whose trigger is unintuitive \u2014 the one action that advances the plot when a player would otherwise wander looking for it (e.g. sleeping in Elias' bed). Use it sparingly; it is a gate marker, not a hint."
+  ],
+  "version": "1.1",
+  "chapters": [
+    {
+      "key": "laria-village",
+      "label": "Laria Village",
+      "sections": [
+        {
+          "key": "exploring-laria",
+          "label": "Exploring Laria",
+          "steps": [
+            {
+              "key": "waking-up",
+              "label": "Waking Up"
+            },
+            {
+              "key": "finding-aremis-windmill",
+              "label": "Finding Aremis' Windmill"
+            },
+            {
+              "key": "unjamming-the-mill",
+              "label": "Unjamming the Mill"
+            },
+            {
+              "key": "report-the-slime",
+              "label": "Report the Slime"
+            },
+            {
+              "key": "the-sword-and-your-first-fight",
+              "label": "The Sword & Your First Fight"
+            },
+            {
+              "key": "after-the-fight",
+              "label": "After the Fight"
+            }
+          ]
+        },
+        {
+          "key": "into-the-waterways",
+          "label": "Into the Waterways",
+          "steps": [
+            {
+              "key": "marching-orders",
+              "label": "Marching Orders"
+            },
+            {
+              "key": "stocking-up",
+              "label": "Stocking Up"
+            },
+            {
+              "key": "down-the-channels",
+              "label": "Down the Channels"
+            },
+            {
+              "key": "facing-the-mother-slime",
+              "label": "Facing the Mother Slime"
+            }
+          ]
+        },
+        {
+          "key": "leaving-laria",
+          "label": "Leaving Laria",
+          "steps": [
+            {
+              "key": "bringing-word-back",
+              "label": "Bringing Word Back"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "laria-valley",
+      "label": "Laria Valley",
+      "placeholder": true,
+      "sections": []
+    }
+  ]
+}

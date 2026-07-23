@@ -159,7 +159,7 @@ if (files.length === 0) {
 }
 
 const FM_RE = /^---\r?\n([\s\S]*?)\r?\n---/;
-const REQUIRED = ["code", "scene", "area", "order", "title"];
+const REQUIRED = ["code", "scene", "area", "order", "title", "chapter", "section", "step"];
 const KNOWN = new Set([...REQUIRED, "kind", "items", "screenshots", "boss", "indicators"]);
 const INDICATOR_TARGETS = new Set(["chest", "door", "bed", "npc", "item", "exit"]);
 

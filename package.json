@@ -35,7 +35,8 @@
     "qa:browsers": "python tests/cross-browser-qa/run.py",
     "push-marketing-strategy": "node scripts/push-marketing-strategy.js",
     "sync:walkthrough": "node scripts/sync-walkthrough.js",
-    "sync:walkthrough:dry": "node scripts/sync-walkthrough.js --dry-run"
+    "sync:walkthrough:dry": "node scripts/sync-walkthrough.js --dry-run",
+    "sync:walkthrough-edits": "node scripts/sync-walkthrough-edits.js"
   },
   "repository": {
     "type": "git",

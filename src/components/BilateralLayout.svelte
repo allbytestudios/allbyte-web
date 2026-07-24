@@ -338,7 +338,7 @@
         <div class="card-wrapper">
           <a href="/test/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Dev Console <span class="cursor-arrow"></span></h3>
-            <p>Tests, agents, tickets &amp; milestones — live build status at a glance.</p>
+            <p>Live build status, tests, save tree, milestones.</p>
             <span class="entry-count">Free overview · Hero+ for depth</span>
           </a>
         </div>
@@ -360,7 +360,7 @@
         <div class="card-wrapper">
           <a href="/devlog/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Devlog <span class="cursor-arrow"></span></h3>
-            <p>Engineering, workflow, strategy, narrative &amp; craft posts — all in one feed with tag filters.</p>
+            <p>Engineering, workflow, strategy, narrative &amp; craft posts.</p>
             <span class="entry-count">Free · drafts for Hero+</span>
           </a>
         </div>
@@ -379,7 +379,7 @@
         <div class="card-wrapper">
           <a href="/test/" class="link-card engine-card" onmouseenter={playCursor}>
             <h3>Dev Console <span class="cursor-arrow"></span></h3>
-            <p>Tests, agents, tickets &amp; milestones — live build status at a glance.</p>
+            <p>Live build status, tests, save tree, milestones.</p>
             <span class="entry-count">Free overview · Hero+ for depth</span>
           </a>
         </div>

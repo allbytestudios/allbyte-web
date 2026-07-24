@@ -8,9 +8,9 @@
  */
 
 const DEV = import.meta.env.DEV;
-// Phase 2 sets this to the overlay HTTP API base, e.g.
-// "https://xxxx.execute-api.us-east-1.amazonaws.com".
-const PROD_API = "";
+// Prod overlay stack (allbyte-studio-walkthrough-overlay): public GET applies the
+// overlay for every visitor; admin POST saves an edit + appends to Quinn's feed.
+const PROD_API = "https://p3xadxo3l7.execute-api.us-east-1.amazonaws.com";
 
 /** Whether inline editing is wired for this environment. Dev = yes (writeback
  *  middleware); prod = only once the Phase-2 overlay stack (PROD_API) is set.

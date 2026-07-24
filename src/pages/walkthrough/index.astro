@@ -5,6 +5,7 @@ import Footer from "../../components/Footer.astro";
 import WalkthroughChrome from "../../components/WalkthroughChrome.svelte";
 import WalkthroughChecklist from "../../components/WalkthroughChecklist.svelte";
 import WalkthroughShot from "../../components/WalkthroughShot.svelte";
+import WalkthroughEditor from "../../components/WalkthroughEditor.svelte";
 import { getCollection, render } from "astro:content";
 import spine from "../../data/story-spine.json";
 
@@ -18,6 +19,7 @@ type Rendered = {
   data: any;
   Content: Awaited<ReturnType<typeof render>>["Content"];
   alsoAt: string[];
+  body: string;
 };
 
 const entries = (await getCollection("walkthrough")).sort(
@@ -38,6 +40,7 @@ const rendered: Rendered[] = await Promise.all(
     data: entry.data,
     Content: (await render(entry)).Content,
     alsoAt: (visitsByScene.get(entry.data.scene) ?? []).filter((c) => c !== entry.data.code),
+    body: entry.body ?? "",
   }))
 );
 
@@ -73,6 +76,12 @@ const stepCount = chapters.reduce(
   0
 );
 const totalItems = entries.reduce((n, e) => n + (e.data.items?.length ?? 0), 0);
+
+// Raw scene bodies for the inline editor (admin) — BODY markdown only; the editor
+// never touches frontmatter. Escaping `<` keeps the JSON from closing the tag.
+const sceneBodies: Record<string, { body: string; scene?: string }> = {};
+for (const r of rendered) sceneBodies[r.data.code] = { body: r.body, scene: r.data.scene };
+const bodiesJson = JSON.stringify(sceneBodies).replace(/</g, "\\u003c");
 
 // Compact nav model — sections → steps (the outline the reader scans + spies on).
 const navSections = chapters.flatMap((ch: any) =>
@@ -222,6 +231,9 @@ const navSections = chapters.flatMap((ch: any) =>
         }
       </article>
     </div>
+
+    <script type="application/json" id="wt-scene-bodies" is:inline set:html={bodiesJson}></script>
+    <WalkthroughEditor client:load />
   </main>
 
   <Footer theme="heart" />

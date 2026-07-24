@@ -695,6 +695,104 @@ function ambientOverrideWriteback() {
   };
 }
 
+// Dev-only overlay for the walkthrough inline editor (owner's prose edits).
+//   GET  /api/walkthrough-overrides  -> { overrides: { <code>: {...} } }
+//   POST /api/walkthrough-override   -> save one (body markdown only) or revert.
+// The overlay applies over Quinn's VERBATIM base at render — her scenes/*.md are
+// never touched. Every real edit also appends a diff record to her learning feed
+// so she can fold improvements back into her source. Store + feed live in the
+// coord dir (parent of the Chronicles repo), where Quinn reads.
+function whHash(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+function walkthroughOverrideWriteback() {
+  const COORD = normalize(join(chroniclesRoot, ".."));
+  const STORE = join(COORD, "walkthrough_overrides.dev.json");
+  const FEED = join(COORD, "WALKTHROUGH_EDITS_FOR_QUINN.ndjson");
+  const readStore = () => {
+    try {
+      const t = readFileSync(STORE, "utf-8").trim();
+      return t ? JSON.parse(t) : {};
+    } catch {
+      return {};
+    }
+  };
+  return {
+    name: "allbyte-walkthrough-override-writeback",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.replace(/\/$/, "") ?? "";
+        if (req.method === "GET" && url === "/api/walkthrough-overrides") {
+          res.setHeader("Content-Type", "application/json");
+          return res.end(JSON.stringify({ overrides: readStore() }));
+        }
+        if (req.method !== "POST" || url !== "/api/walkthrough-override") return next();
+        const MAX_BODY = 64 * 1024;
+        let body = "";
+        let tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
+        req.on("end", () => {
+          if (tooLarge) return;
+          try {
+            const { code, scene, edited_md, base_md, note, revert } = JSON.parse(body);
+            if (typeof code !== "string" || !/^[A-Z]+-\d+\.\d+$/.test(code)) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "code must look like L-1.7" }));
+            }
+            const overrides = readStore();
+            if (revert === true) {
+              delete overrides[code];
+              writeFileSync(STORE, JSON.stringify(overrides, null, 2) + "\n");
+              res.setHeader("Content-Type", "application/json");
+              return res.end(JSON.stringify({ ok: true, code, reverted: true }));
+            }
+            if (typeof edited_md !== "string" || !edited_md.trim() || edited_md.length > 20000) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "edited_md required, <=20000 chars" }));
+            }
+            const id = `${code}-${whHash(edited_md)}`;
+            const ts = new Date().toISOString();
+            const override = {
+              id,
+              code,
+              scene: typeof scene === "string" ? scene : undefined,
+              edited_md,
+              base_md: typeof base_md === "string" ? base_md : undefined,
+              note: typeof note === "string" && note.trim() ? note.trim() : undefined,
+              ts,
+            };
+            overrides[code] = override;
+            writeFileSync(STORE, JSON.stringify(overrides, null, 2) + "\n");
+            // Append to Quinn's learning feed only when the text actually changed.
+            if (typeof base_md === "string" && base_md.trim() !== edited_md.trim()) {
+              const rec = { op: "edit", id, code, scene: override.scene, ts, base_md, edited_md, note: override.note };
+              try {
+                appendFileSync(FEED, JSON.stringify(rec) + "\n");
+              } catch {}
+            }
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true, override }));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: String(err?.message ?? err) }));
+          }
+        });
+      });
+    },
+  };
+}
+
 function decisionWriteback() {
   return {
     name: "allbyte-decision-writeback",
@@ -1044,7 +1142,7 @@ export default defineConfig({
     remarkPlugins: [remarkDirective, remarkWalkthroughDirectives],
   },
   vite: {
-    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
+    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

@@ -36,7 +36,8 @@
     "push-marketing-strategy": "node scripts/push-marketing-strategy.js",
     "sync:walkthrough": "node scripts/sync-walkthrough.js",
     "sync:walkthrough:dry": "node scripts/sync-walkthrough.js --dry-run",
-    "sync:walkthrough-edits": "node scripts/sync-walkthrough-edits.js"
+    "sync:walkthrough-edits": "node scripts/sync-walkthrough-edits.js",
+    "sync:manual": "node scripts/sync-manual.js"
   },
   "repository": {
     "type": "git",

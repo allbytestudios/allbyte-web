@@ -23,6 +23,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
 import { createHash } from "node:crypto";
+import { normalizeDashes } from "./dash-normalize.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CHRONICLES = process.env.CHRONICLES_DIR || join(homedir(), "Desktop/GameDev/ChroniclesOfNesis");
@@ -132,8 +133,11 @@ const BLOB = `<script type="application/json" id="manual-bodies">${bodiesJson}</
 // allbyte-studio-manual-overlay stack.
 const MANUAL_API = "https://2qvnqlwv78.execute-api.us-east-1.amazonaws.com";
 const editorJsPath = join(root, "scripts/manual-editor.js");
+// The client editor renders overrides through the same dash normalizer, so prepend
+// its source (export stripped) ahead of the editor IIFE — one source of truth.
+const NORM_SRC = readFileSync(join(root, "scripts/dash-normalize.js"), "utf8").replace(/^export\s+/m, "");
 const EDITOR = existsSync(editorJsPath)
-  ? `<script>${readFileSync(editorJsPath, "utf8").replace("%%MANUAL_API%%", MANUAL_API).replace(/<\/(script)/gi, "<\\/$1")}</script>`
+  ? `<script>${NORM_SRC}\n${readFileSync(editorJsPath, "utf8").replace("%%MANUAL_API%%", MANUAL_API).replace(/<\/(script)/gi, "<\\/$1")}</script>`
   : "";
 if (!/<html/i.test(html)) {
   html = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
@@ -145,6 +149,9 @@ if (!/<html/i.test(html)) {
   html = html.replace(/(<body[^>]*>)/i, (m) => m + BACK).replace(/<\/body>/i, BLOB + EDITOR + "</body>");
 }
 
+// House rule: no em-dashes (AI tell). Strip them from all visible prose as the
+// final step — masks <script>/<style>/comments so injected code is untouched.
+html = normalizeDashes(html);
 writeFileSync(join(OUT_DIR, "index.html"), html);
 const total = readdirSync(ASSET_DIR).reduce((n, f) => n, 0);
 log(`de-inlined ${Object.keys(seen).length} asset(s); ${Object.keys(bodies).length} section bodies exposed.`);

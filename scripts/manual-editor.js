@@ -89,7 +89,12 @@
   }
   function applyOne(key) {
     var el = proseOf(key), ov = overrides[key];
-    if (el && ov) { el.innerHTML = renderMd(ov.edited_md); el.closest(".leaf").setAttribute("data-overridden", "true"); }
+    if (el && ov) {
+      var rendered = renderMd(ov.edited_md);
+      if (typeof normalizeDashes === "function") rendered = normalizeDashes(rendered); // no em-dashes (AI tell)
+      el.innerHTML = rendered;
+      el.closest(".leaf").setAttribute("data-overridden", "true");
+    }
   }
   function applyAll() { Object.keys(overrides).forEach(applyOne); }
 
@@ -134,9 +139,9 @@
     modal.innerHTML =
       '<div class="me-scrim"></div><div class="me-panel" role="dialog" aria-modal="true">' +
       '<div class="me-head"><span>Edit <b>' + esc(key) + '</b></span><button class="me-x" aria-label="Cancel">✕</button></div>' +
-      '<p class="me-hint">Section body only — the frontmatter (stat cards, icons, callouts) stays Quinn’s source. Goes live and is sent to Quinn.</p>' +
+      '<p class="me-hint">Section body only. The frontmatter (stat cards, icons, callouts) stays Quinn’s source. Goes live and is sent to Quinn.</p>' +
       '<textarea class="me-md" spellcheck="true"></textarea>' +
-      '<label class="me-note-l">Why did you change it? <span class="me-opt">(optional — it’s what Quinn learns from)</span>' +
+      '<label class="me-note-l">Why did you change it? <span class="me-opt">(optional, it’s what Quinn learns from)</span>' +
       '<input class="me-note" placeholder="e.g. wrote the real bio; tightened the phrasing" /></label>' +
       '<div class="me-actions"><button class="me-cancel">Cancel</button><button class="me-save">Save &amp; publish</button></div></div>';
     document.body.appendChild(modal);

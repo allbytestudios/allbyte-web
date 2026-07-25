@@ -33,6 +33,7 @@
  *                                hardcoded here because this file is public)
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, copyFileSync, rmSync, statSync } from "node:fs";
+import { normalizeDashesMd } from "./dash-normalize.js";
 import { join, resolve, relative, basename, extname } from "node:path";
 import { createRequire } from "node:module";
 
@@ -343,7 +344,10 @@ mkdirSync(DEST_IMG, { recursive: true });
 for (const { file, fm } of parsed) {
   const outDir = join(DEST_MD, String(fm.area));
   mkdirSync(outDir, { recursive: true });
-  copyFileSync(file, join(outDir, basename(file))); // byte-for-byte, never rewritten
+  // Body faithful, but em-dashes stripped (house rule: an em-dash reads as an AI
+  // tell). normalizeDashesMd preserves the frontmatter verbatim (the spine guard)
+  // and only rewrites body prose punctuation.
+  writeFileSync(join(outDir, basename(file)), normalizeDashesMd(readFileSync(file, "utf8")));
 }
 
 let converted = 0;

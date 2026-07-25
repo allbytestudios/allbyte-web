@@ -399,7 +399,7 @@ function normalizeDashes(html) {
   var EN = "–";       // en-dash
   var reEnRange = new RegExp("(\\d)\\s*(?:&#8211;|&ndash;|" + EN + ")\\s*(\\d)", "g");
   var reEnAny = new RegExp("&#8211;|&ndash;|" + EN, "g");
-  var emAlt = "&#8212;|&mdash;|" + EM + "|--";
+  var emAlt = "&#8212;|&mdash;|" + EM + "|(?<!-)--(?!-)"; // isolated "--" only, never a "---" run
 
   // en-dash numeric range -> hyphen; leftover en-dash unifies to em handling
   w = w.replace(reEnRange, "$1-$2");
@@ -435,6 +435,46 @@ function normalizeDashes(html) {
 
   var reUnmask = new RegExp(S + "(\\d+)" + S, "g");
   return w.replace(reUnmask, function (_, i) { return masks[+i]; });
+}
+
+/**
+ * normalizeDashesMd - the same house rule applied to raw MARKDOWN (the walkthrough
+ * scene bodies), line by line. BODY ONLY: a leading `---` frontmatter block is
+ * preserved verbatim (it's the spine guard) and fenced code is skipped.
+ *   - heading `## Title — sub`                          -> "Title: sub"
+ *   - list item `- **Label** — value` (bold label lead) -> "**Label**: value"
+ *   - en-dash numeric range (3–5)                       -> "3-5"
+ *   - trailing dash at line end                         -> ".."
+ *   - everything else                                   -> ", "
+ */
+export function normalizeDashesMd(md) {
+  if (!md) return md;
+  var head = "", body = md;
+  var fm = md.match(/^﻿?---\r?\n[\s\S]*?\r?\n---\r?\n?/);
+  if (fm) { head = fm[0]; body = md.slice(fm[0].length); }
+  var lines = body.split("\n");
+  var inFence = false;
+  var out = lines.map(function (line) {
+    if (/^\s*(```|~~~)/.test(line)) { inFence = !inFence; return line; }
+    if (inFence) return line;
+    // thematic break (---, ***, - - -) is structure, not a dash: leave it alone
+    if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) return line;
+    var s = line;
+    s = s.replace(/(\d)\s*–\s*(\d)/g, "$1-$2");   // en-dash range -> hyphen
+    s = s.replace(/–/g, "—");                       // leftover en -> em handling
+    var D = "—|(?<!-)--(?!-)";                       // em-dash OR an isolated "--"
+    if (!new RegExp(D).test(s)) return s;
+    // list item whose lead is a bold label: colon on that first dash (no space before ":")
+    s = s.replace(new RegExp("^(\\s*(?:[-*+]|\\d+\\.)\\s+\\*\\*[^*]+\\*\\*)\\s*(?:" + D + ")\\s*"), "$1: ");
+    // trailing dash at end of line -> ".."
+    s = s.replace(new RegExp("\\s*(?:" + D + ")\\s*$"), "..");
+    // heading subtitle -> colon (rare in walkthrough, safe)
+    if (/^\s*#{1,6}\s/.test(s)) s = s.replace(new RegExp("\\s*(?:" + D + ")\\s*", "g"), ": ");
+    // default -> comma
+    s = s.replace(new RegExp("\\s*(?:" + D + ")\\s*", "g"), ", ");
+    return s;
+  });
+  return head + out.join("\n");
 }
 
 /* Instruction Booklet inline editor — injected into the standalone /manual/ page

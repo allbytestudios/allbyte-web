@@ -14,6 +14,8 @@
  * build; this only re-renders the handful of scenes an owner has overridden.
  */
 
+import { normalizeDashes } from "../../scripts/dash-normalize.js";
+
 const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -101,5 +103,6 @@ export function renderProse(md: string): string {
     out.push(`<p>${inline(buf.join(" "))}</p>`);
   }
 
-  return out.join("\n");
+  // House rule: no em-dashes (AI tell) — strip them from the rendered override HTML.
+  return normalizeDashes(out.join("\n"));
 }

@@ -18,8 +18,8 @@ USAGE
   python tests/e2e/live_console.py --channel alpha
   python tests/e2e/live_console.py --grep "MD5|decrypt|error"   # filter console
   python tests/e2e/live_console.py --wait 25 --headed
-  python tests/e2e/live_console.py --drive newgame,menus   # best-effort game drive
-  python tests/e2e/live_console.py --url https://allbyte.studio/play/?channel=develop
+  python tests/e2e/live_console.py --raw --drive "enter,menudump"   # drive via hooks
+  python tests/e2e/live_console.py --raw --drive "menu:items,export"
   python tests/e2e/live_console.py --out report.json       # full JSON report
 
 OPTIONS
@@ -27,8 +27,9 @@ OPTIONS
   --raw             load /godot/<channel>/index.html directly (no /play embed/gate)
   --base <url>      site origin (default: https://allbyte.studio)
   --url <url>       explicit URL, overrides --channel/--raw/--base
-  --drive <steps>   comma list, best-effort via TestBridge hooks:
-                    newgame,move,menus,encounter (only fire if the hook exists)
+  --drive <steps>   comma list via real TestBridge hooks, each "name" or "name:arg":
+                    enter | cancel | inject:<action> | encounter[:<id>] |
+                    loadsave:<slot> | menu:<label> | menudump | export
   --wait <s>        seconds to observe after load (default: 15)
   --grep <regex>    only print console lines matching this (case-insensitive)
   --headed          show the browser window
@@ -72,13 +73,48 @@ def game_frame(page, raw):
     return page.main_frame
 
 
-HOOK_SNIPS = {
-    # best-effort; each only fires if the hook is present on the game window.
-    "newgame": "window._testNewGame ? (window._testNewGame(), 'newgame fired') : 'no _testNewGame hook'",
-    "menus": "window._testOpenMenu ? (window._testOpenMenu('status'), 'menu:status fired') : 'no _testOpenMenu hook'",
-    "encounter": "window._testEncounter ? (window._testEncounter(), 'encounter fired') : 'no _testEncounter hook'",
-    "move": "window._testMove ? (window._testMove('down'), 'move fired') : 'no _testMove hook'",
-}
+# Real TestBridge hooks (per Arc, confirmed live). They are WRITE sentinels the
+# game polls each frame - set window.<hook> = <value>, then poll a result var;
+# `typeof` is 'undefined' until set, so never guard by existence, just assign.
+# NOTE: do NOT touch window._testBridgeNode (removed, QB-039) - use published
+# objects (_testBridge_lastCombatSnapshot / _testBridge_itemsGrid / _skillTreeGrid).
+#
+# --drive steps (comma list, each "name" or "name:arg"):
+#   enter            -> _testPressEnter=1        (advance Title / dialogue / confirm)
+#   cancel           -> _testPressCancel=1
+#   inject:<action>  -> _testInjectAction="<action>"   (arbitrary ui_* action)
+#   encounter[:<id>] -> _testEncounter=<id|0>   (fire the current scene's encounter)
+#   loadsave:<slot>  -> _testLoadGame=<slot>     (load a staged save)
+#   menu:<label>     -> _testMenuNavLabel="<label>", poll _testMenuNavResult (labels lowercased)
+#   menudump         -> _testMenuNavDump=1, read _testMenuNavDumpResult (labels/graph)
+#   export           -> _testExportCurrentSave=1, read _testExportedSave (live party/items)
+def _set(gf, hook, val_js):
+    return asc(gf.evaluate(f"() => {{ try {{ window.{hook} = {val_js}; return 'set {hook}={val_js}'; }} catch(e){{ return 'err:'+e; }} }}"))
+
+
+def _read(gf, var, cap=400):
+    v = gf.evaluate(f"() => {{ try {{ var v = window.{var}; return v==null?null:(typeof v==='string'?v:JSON.stringify(v)); }} catch(e){{ return 'err:'+e; }} }}")
+    return (asc(v)[:cap] if v is not None else None)
+
+
+def drive_step(gf, page, step):
+    name, _, arg = step.partition(":")
+    if name == "enter":       return _set(gf, "_testPressEnter", "1")
+    if name == "cancel":      return _set(gf, "_testPressCancel", "1")
+    if name == "inject":      return _set(gf, "_testInjectAction", json.dumps(arg))
+    if name == "encounter":   return _set(gf, "_testEncounter", arg or "0")
+    if name == "loadsave":    return _set(gf, "_testLoadGame", arg or "1")
+    if name == "menu":
+        _set(gf, "_testMenuNavLabel", json.dumps(arg)); page.wait_for_timeout(1500)
+        return f"nav -> {_read(gf, '_testMenuNavResult')}"
+    if name == "menudump":
+        _set(gf, "_testMenuNavDump", "1"); page.wait_for_timeout(1500)
+        return f"dump -> {_read(gf, '_testMenuNavDumpResult')}"
+    if name == "export":
+        _set(gf, "_testExportCurrentSave", "1"); page.wait_for_timeout(1500)
+        n = gf.evaluate("() => (window._testExportedSave||'').length")
+        return f"exported live save (len {n})"
+    return "unknown step (see --drive docs)"
 
 
 def main():
@@ -151,13 +187,9 @@ def main():
             state = {"error": asc(e)}
 
         for step in [s.strip() for s in a.drive.split(",") if s.strip()]:
-            snip = HOOK_SNIPS.get(step)
-            if not snip:
-                drove.append((step, "unknown step"))
-                continue
             try:
-                drove.append((step, asc(gf.evaluate(f"() => {{ try {{ return {snip}; }} catch(e){{ return 'err: '+e; }} }}"))))
-                page.wait_for_timeout(2500)
+                drove.append((step, drive_step(gf, page, step)))
+                page.wait_for_timeout(2000)
             except Exception as e:
                 drove.append((step, f"eval-failed: {asc(e)}"))
 

@@ -290,6 +290,12 @@
             </button>
           {/if}
         </div>
+        <a
+          class="demo-manual-link"
+          href="/manual/"
+          onclick={(e) => e.stopPropagation()}
+          style="display:inline-block;margin-top:0.7rem;font-family:inherit;font-size:0.85rem;color:#e8dcc0;background:rgba(44,33,24,0.62);border:1px solid rgba(154,119,54,0.65);border-radius:6px;padding:0.4rem 0.95rem;text-decoration:none;"
+        >📖 Read the Instruction Booklet</a>
       </div>
     </div>
   </div>

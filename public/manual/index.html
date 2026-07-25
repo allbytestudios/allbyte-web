@@ -1,0 +1,322 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Instruction Booklet — The Chronicles of Nesis</title><meta name="description" content="The Chronicles of Nesis instruction booklet — world, cast, controls, combat, and bestiary."><meta name="theme-color" content="#cdbf9f"></head><body><a href="/" class="manual-home">← AllByte Studios</a><style>
+@font-face { font-family:"ModernGoth"; src:url(assets/bc9c7f784afb.otf) format("opentype"); font-display:swap; }
+:root{
+  --ink:#2c2118; --ink-soft:#5f5140; --crimson:#8a2b21; --gilt:#9a7736; --gilt-2:#b8974e;
+  --paper-fallback:#e7dcc2; --rule:rgba(60,40,22,.28);
+  --desk:#cdbf9f; --desk-edge:rgba(60,40,20,.30);
+}
+@media (prefers-color-scheme:dark){ :root{ --desk:#241d16; --desk-edge:rgba(0,0,0,.55); } }
+:root[data-theme="light"]{ --desk:#cdbf9f; --desk-edge:rgba(60,40,20,.30); }
+:root[data-theme="dark"]{ --desk:#241d16; --desk-edge:rgba(0,0,0,.55); }
+*{box-sizing:border-box;}
+body{ margin:0; background:var(--desk); color:var(--ink);
+  font-family:"ModernGoth","Iowan Old Style",Palatino,Georgia,serif;
+  line-height:1.6; font-size:18px; -webkit-font-smoothing:antialiased;
+  padding:clamp(14px,4vw,60px) 0; }
+.booklet{ max-width:760px; margin:0 auto; }
+.page{ position:relative; background-image:url(assets/37816d609378.png); background-color:var(--paper-fallback);
+  background-size:cover; background-position:center;
+  padding:clamp(30px,6vw,68px) clamp(24px,6vw,64px);
+  box-shadow:0 2px 2px rgba(0,0,0,.10),0 18px 44px var(--desk-edge);
+  border:1px solid rgba(60,40,20,.18); }
+.page + .page{ margin-top:26px; }
+img{ max-width:100%; }
+.pixel{ image-rendering:pixelated; }
+
+/* ---- cover ---- */
+.cover{ text-align:center; padding-block:clamp(46px,10vw,110px); }
+.cover .frame{ border:2px double var(--crimson); padding:clamp(26px,6vw,56px) clamp(18px,5vw,40px);
+  outline:1px solid var(--gilt); outline-offset:6px; }
+.cover .kicker{ font-family:"ModernGoth"; letter-spacing:.28em; text-transform:uppercase;
+  color:var(--crimson); font-size:clamp(12px,2.4vw,15px); }
+.cover h1{ font-family:"ModernGoth"; font-weight:400; color:var(--ink);
+  font-size:clamp(40px,9vw,76px); line-height:.98; margin:.34em 0 .12em; text-wrap:balance;
+  text-shadow:2px 2px 0 rgba(138,43,33,.16); }
+.cover .sub{ font-family:"ModernGoth"; letter-spacing:.34em; text-transform:uppercase;
+  color:var(--gilt); font-size:clamp(13px,2.6vw,17px); margin-top:.5em; }
+.cover .crest{ font-size:44px; color:var(--crimson); margin:.2em 0 .1em; }
+.cover .foot{ margin-top:clamp(28px,6vw,54px); color:var(--ink-soft); font-style:italic; font-size:15px; }
+
+/* ---- toc ---- */
+.toc h2{ font-family:"ModernGoth"; font-weight:400; color:var(--crimson); text-align:center;
+  font-size:clamp(24px,5vw,34px); letter-spacing:.04em; margin:.2em 0 1em; }
+.toc ol{ list-style:none; margin:0; padding:0; }
+.toc li{ margin:0; }
+.toc a{ display:flex; align-items:baseline; gap:.5em; text-decoration:none; color:var(--ink);
+  padding:.42em 0; border-bottom:1px dotted var(--rule); }
+.toc a:hover .toc-t{ color:var(--crimson); }
+.toc .toc-t{ font-size:1.05em; }
+.toc .toc-dot{ flex:1; border-bottom:1px dotted var(--rule); transform:translateY(-.18em); }
+.toc .toc-p{ font-family:"ModernGoth"; color:var(--gilt); letter-spacing:.06em; font-variant-numeric:tabular-nums; }
+
+/* ---- leaf / chapter ---- */
+.leaf-head,.leaf-foot{ display:flex; align-items:center; justify-content:space-between; color:var(--gilt); }
+.leaf-head{ border-bottom:1px solid var(--rule); padding-bottom:.5em; margin-bottom:1.1em; }
+.eyebrow{ font-family:"ModernGoth"; letter-spacing:.22em; text-transform:uppercase; font-size:11px; color:var(--ink-soft); }
+.folio,.folio-b{ font-family:"ModernGoth"; letter-spacing:.08em; font-size:13px; }
+.leaf-foot{ border-top:1px solid var(--rule); padding-top:.7em; margin-top:1.8em; justify-content:center; gap:1.1em; }
+.leaf-foot .orn{ color:var(--crimson); }
+.leaf-foot .folio-b{ color:var(--ink-soft); }
+h1.chapter{ font-family:"ModernGoth"; font-weight:400; color:var(--crimson); font-size:clamp(30px,6.4vw,50px);
+  line-height:1; margin:.1em 0 .7em; text-wrap:balance;
+  border-left:5px solid var(--gilt); padding-left:.4em; }
+
+/* ---- prose ---- */
+.prose h2{ font-family:"ModernGoth"; font-weight:400; color:var(--ink); font-size:clamp(21px,4vw,28px);
+  margin:1.5em 0 .35em; letter-spacing:.02em; }
+.prose h3{ font-weight:700; color:var(--crimson); font-size:1.12em; margin:1.25em 0 .3em;
+  letter-spacing:.01em; }
+.prose h4{ font-weight:700; color:var(--ink); font-size:1em; margin:1em 0 .2em; }
+.prose p{ margin:.6em 0; max-width:64ch; }
+.prose ul,.prose ol{ margin:.55em 0 .8em; padding-left:1.4em; max-width:64ch; }
+.prose li{ margin:.24em 0; }
+.prose li ul{ margin:.24em 0; }
+.prose hr{ border:0; height:1px; background:var(--rule); margin:1.5em 0; }
+.prose a{ color:var(--crimson); }
+code{ font-family:"SFMono-Regular",Consolas,monospace; font-size:.86em; background:rgba(60,40,20,.09);
+  padding:.05em .35em; border-radius:2px; }
+.item{ font-variant:small-caps; font-weight:700; color:var(--gilt); letter-spacing:.02em; white-space:nowrap; }
+.item::before{ content:"\2726 "; color:var(--crimson); font-size:.8em; }
+
+/* callouts */
+blockquote.callout{ margin:1em 0; padding:.7em 1em .7em 1.1em; background:rgba(154,119,54,.10);
+  border-left:4px solid var(--gilt); border-radius:0 3px 3px 0; }
+blockquote.callout strong:first-child{ color:var(--crimson); }
+blockquote.enote{ background:repeating-linear-gradient(-45deg,rgba(120,90,40,.05),rgba(120,90,40,.05) 8px,transparent 8px,transparent 16px);
+  border-left-color:var(--ink-soft); color:var(--ink-soft); font-size:.9em; font-style:italic; }
+p.enote{ color:var(--ink-soft); font-size:.9em; font-style:italic;
+  border-left:3px solid var(--ink-soft); padding-left:.8em; margin:.9em 0; }
+
+/* tables */
+.tbl-wrap{ overflow-x:auto; margin:1em 0; }
+table{ border-collapse:collapse; width:100%; font-size:.95em; }
+th,td{ text-align:left; padding:.5em .7em; border-bottom:1px solid var(--rule); vertical-align:top; }
+thead th{ font-family:"ModernGoth"; font-weight:400; color:var(--crimson); letter-spacing:.03em;
+  border-bottom:2px solid var(--gilt); font-size:.95em; }
+tbody tr:nth-child(even){ background:rgba(60,40,20,.045); }
+
+/* figures + icons */
+.dtype-icon,.status-icon{ width:26px; height:26px; vertical-align:middle; image-rendering:pixelated; }
+.figure{ text-align:center; margin:1.2em auto; }
+.figure img{ image-rendering:pixelated; }
+.figure figcaption{ font-style:italic; color:var(--ink-soft); font-size:.86em; margin-top:.5em; }
+.figure.portrait img,.figure.sprite img{ background:rgba(60,40,20,.06); border:1px solid var(--rule);
+  padding:14px; border-radius:4px; }
+.figure.portrait{ float:right; margin:.2em 0 1em 1.4em; }
+.figure.sprite.venom img{ filter:hue-rotate(230deg) saturate(1.5); }
+.figure.hud img{ width:100%; border:1px solid var(--rule); box-shadow:0 4px 14px rgba(0,0,0,.25); }
+.subentry{ padding-bottom:1em; }
+.subentry + .subentry{ border-top:1px solid var(--rule); padding-top:1.2em; margin-top:1.2em; }
+.lead{ font-size:1.08em; font-style:italic; color:var(--ink-soft); max-width:60ch; margin:.2em 0 1.3em; }
+
+/* FF-style character card: portrait + stat block, floated beside the bio */
+.charcard{ float:right; width:216px; margin:.2em 0 1em 1.5em; }
+.charcard .figure.portrait{ float:none; margin:0 0 .55em; }
+.statblock{ margin:0; padding:.65em .85em; background:rgba(60,40,20,.07);
+  border:1px solid var(--rule); border-top:3px solid var(--crimson);
+  display:grid; grid-template-columns:auto 1fr; gap:.28em .7em; font-size:.85em; }
+.statblock dt{ font-family:"ModernGoth"; color:var(--crimson); letter-spacing:.03em; }
+.statblock dd{ margin:0; text-align:right; }
+@media (max-width:560px){ .charcard{ float:none; width:auto; max-width:250px; margin:1em auto; } }
+
+/* controls legend */
+.legend{ display:flex; flex-direction:column; gap:.5em; margin:0 0 1.4em; padding:1em 1.1em;
+  background:rgba(60,40,20,.06); border:1px solid var(--rule); border-radius:4px; }
+.legend-row{ display:flex; align-items:center; gap:1em; flex-wrap:wrap; }
+.legend-label{ font-family:"ModernGoth"; color:var(--crimson); min-width:150px; letter-spacing:.03em; font-size:.9em; }
+.legend-keys{ display:flex; gap:.55em; flex-wrap:wrap; }
+.keycap{ display:inline-flex; align-items:center; gap:.3em; font-size:.82em; color:var(--ink-soft); }
+.keycap img{ width:30px; height:30px; image-rendering:pixelated; }
+.keycap b{ font-family:"ModernGoth"; font-weight:400; }
+
+a:focus-visible{ outline:2px solid var(--crimson); outline-offset:3px; }
+@media (max-width:560px){ .figure.portrait{ float:none; margin:1em auto; } .legend-label{ min-width:0; } }
+.manual-home{position:fixed;top:12px;left:14px;z-index:60;font-family:'ModernGoth',Georgia,serif;font-size:14px;color:var(--gilt,#9a7736);text-decoration:none;background:rgba(0,0,0,.22);padding:4px 11px;border-radius:5px;}.manual-home:hover{color:var(--crimson,#8a2b21);}</style>
+
+<div class="booklet">
+  <div class="page cover">
+    <div class="frame">
+      <div class="kicker">Allbyte Presents</div>
+      <div class="crest">&#9884;</div>
+      <h1>Chronicles<br>of Nesis</h1>
+      <div class="sub">Instruction Booklet</div>
+      <div class="foot">A tale of sword &amp; faith &mdash; for the free demo</div>
+    </div>
+  </div>
+
+  <div class="page toc">
+    <h2>Table of Contents</h2>
+    <ol><li><a href="#ch1"><span class="toc-t">Prologue</span><span class="toc-dot"></span><span class="toc-p">01</span></a></li><li><a href="#ch2"><span class="toc-t">The Cast</span><span class="toc-dot"></span><span class="toc-p">02</span></a></li><li><a href="#ch3"><span class="toc-t">Controls</span><span class="toc-dot"></span><span class="toc-p">03</span></a></li><li><a href="#ch4"><span class="toc-t">The Screen</span><span class="toc-dot"></span><span class="toc-p">04</span></a></li><li><a href="#ch5"><span class="toc-t">Exploring</span><span class="toc-dot"></span><span class="toc-p">05</span></a></li><li><a href="#ch6"><span class="toc-t">Battle</span><span class="toc-dot"></span><span class="toc-p">06</span></a></li><li><a href="#ch7"><span class="toc-t">Damage & Status</span><span class="toc-dot"></span><span class="toc-p">07</span></a></li><li><a href="#ch8"><span class="toc-t">Skills</span><span class="toc-dot"></span><span class="toc-p">08</span></a></li><li><a href="#ch9"><span class="toc-t">Growth & Status</span><span class="toc-dot"></span><span class="toc-p">09</span></a></li><li><a href="#ch10"><span class="toc-t">Items & Equipment</span><span class="toc-dot"></span><span class="toc-p">10</span></a></li><li><a href="#ch11"><span class="toc-t">Menus</span><span class="toc-dot"></span><span class="toc-p">11</span></a></li><li><a href="#ch12"><span class="toc-t">Bestiary</span><span class="toc-dot"></span><span class="toc-p">12</span></a></li><li><a href="#ch13"><span class="toc-t">Hints & Tips</span><span class="toc-dot"></span><span class="toc-p">13</span></a></li></ol>
+  </div>
+
+  <div class="page"><section class="leaf" id="ch1">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">01</span></div>
+  <h1 class="chapter">Prologue</h1>
+  <div class="prose"><p class="enote">&#128310; <strong>RESERVED &#8212; owner is handcrafting this.</strong> The Prologue needs the owner's own words (world, tone, the setup before the rules). Placeholder only; do not auto-fill. App: render a titled section with a "coming soon" state or just hold the slot.</p>
+<p><strong>Known topic for this section:</strong> the <strong>Anam</strong> &#8212; the imparted spirits of past masters that relics carry (the Skills page hints at this as "rumored" and points here for the real lore). Whatever else the Prologue covers, the Anam concept resolves here.</p></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">01</span></div>
+</section></div><div class="page"><section class="leaf" id="ch2">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">02</span></div>
+  <h1 class="chapter">The Cast</h1>
+  <div class="prose"><p class="lead">Over the adventure you gather companions, each a different answer to a fight. These are the heroes you come to know &#8212; and how they carry themselves in battle.</p><div class="subentry"><div class="charcard"><div class="figure portrait"><img src="assets/0a95ed894d6b.png" alt="Elias"><figcaption>Elias</figcaption></div><dl class="statblock"><dt>Class</dt><dd>Paladin</dd><dt>Weapon</dt><dd>Glenn's Longsword</dd><dt>Element</dt><dd>Radiant</dd><dt>Home</dt><dd>Laria</dd></dl></div><p class="enote">&#128310; <em>Placeholder bio &#8212; owner blurb pending.</em></p>
+<p>The one you play as &#8212; a young <strong>Paladin</strong> of Laria, a holy warrior built on <strong>strength and faith</strong>. He wields <strong>Glenn's Longsword</strong> and the signature radiant attack, <strong>Smite</strong>. Balanced offense and defense (even STR/CON), with <strong>Wisdom/Intelligence as off-stats</strong> that unlock his powerful radiant path &#8212; the more you invest, the more Smite defines him.</p></div><div class="subentry"><div class="charcard"><div class="figure portrait"><img src="assets/a7f005aba7e6.png" alt="Falmri"><figcaption>Falmri</figcaption></div><dl class="statblock"><dt>Class</dt><dd>Warrior</dd><dt>Weapon</dt><dd>&#8212;</dd><dt>Element</dt><dd>Earth</dd><dt>Home</dt><dd>&#8212;</dd></dl></div><p class="enote">&#128310; <em>Placeholder bio &#8212; owner blurb pending.</em></p>
+<p>The party's frontline muscle &#8212; the <strong>heaviest physical hitter</strong> (top Strength, with the Constitution to soak blows). Where Elias balances, Falmri commits: raw melee damage and staying power. Built to stand at the front and hit hard.</p></div><div class="subentry"><div class="charcard"><div class="figure portrait"><img src="assets/b5e706d3e175.png" alt="Mia"><figcaption>Mia</figcaption></div><dl class="statblock"><dt>Class</dt><dd>Mage</dd><dt>Weapon</dt><dd>&#8212;</dd><dt>Element</dt><dd>&#8212;</dd><dt>Home</dt><dd>&#8212;</dd></dl></div><p class="enote">&#128310; <em>Placeholder bio &#8212; owner blurb pending.</em></p>
+<p>The party's <strong>mage</strong> &#8212; devastating magical power (by far the highest Intelligence and Wisdom). Fragile up close, but her spells strike where physical defense can't help. The answer to armored and magic-vulnerable foes.</p></div></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">02</span></div>
+</section></div><div class="page"><section class="leaf" id="ch3">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">03</span></div>
+  <h1 class="chapter">Controls</h1>
+  <div class="prose"><div class="legend"><div class="legend-row"><span class="legend-label">Move / navigate</span><span class="legend-keys"><span class="keycap"><img src="assets/918aafe8c21d.png" alt="W"><b>W</b></span><span class="keycap"><img src="assets/4c712f3c676d.png" alt="A"><b>A</b></span><span class="keycap"><img src="assets/c05351044ccd.png" alt="S"><b>S</b></span><span class="keycap"><img src="assets/98fb206d5cae.png" alt="D"><b>D</b></span><span class="keycap"><img src="assets/f77ee093863a.png" alt="&#8593;"><b>&#8593;</b></span><span class="keycap"><img src="assets/984465769945.png" alt="&#8592;"><b>&#8592;</b></span><span class="keycap"><img src="assets/91b09b5cc7a1.png" alt="&#8595;"><b>&#8595;</b></span><span class="keycap"><img src="assets/ef6a8e5cb2a3.png" alt="&#8594;"><b>&#8594;</b></span></span></div><div class="legend-row"><span class="legend-label">Confirm / interact</span><span class="legend-keys"><span class="keycap"><img src="assets/4d6ccdeb1e20.png" alt="Enter"><b>Enter</b></span><span class="keycap"><img src="assets/ece80fa39c70.png" alt="L-Click"><b>L-Click</b></span></span></div><div class="legend-row"><span class="legend-label">Open menu</span><span class="legend-keys"><span class="keycap"><img src="assets/bba841325284.png" alt="Space"><b>Space</b></span><span class="keycap"><img src="assets/3f631d2ad913.png" alt="Tab"><b>Tab</b></span></span></div><div class="legend-row"><span class="legend-label">Cancel / back</span><span class="legend-keys"><span class="keycap"><img src="assets/0a5a560fdd55.png" alt="Esc"><b>Esc</b></span><span class="keycap"><img src="assets/e0aa0c90cacd.png" alt="R-Click"><b>R-Click</b></span></span></div></div><p>The game plays two ways at once &#8212; <strong>keyboard</strong> or <strong>mouse</strong> &#8212; and you can switch any time just by using the other.</p>
+<h2>Keyboard + Mouse (desktop)</h2>
+<div class="tbl-wrap"><table><thead><tr><th>Do this</th><th>Keyboard</th><th>Mouse</th></tr></thead><tbody><tr><td><strong>Move / navigate menus</strong></td><td><strong>W A S D</strong> or <strong>Arrow keys</strong></td><td>move the mouse; <strong>left-click</strong> a spot to walk there</td></tr><tr><td><strong>Interact / Confirm</strong></td><td><strong>Enter</strong></td><td><strong>left-click</strong> the thing (NPC, door, chest, button)</td></tr><tr><td><strong>Open the Menu</strong> (pause/status)</td><td><strong>Space</strong>, <strong>K</strong>, or <strong>Tab</strong></td><td>the on-screen menu button</td></tr><tr><td><strong>Cancel / Back</strong></td><td><strong>Esc</strong></td><td><strong>right-click</strong></td></tr><tr><td><strong>End Turn</strong> (in battle)</td><td><strong>Esc</strong> / End</td><td>the End button</td></tr><tr><td><strong>Scene-exit markers</strong> toggle</td><td>&#8212;</td><td>(controller <strong>&#9651; / Y</strong>)</td></tr></tbody></table></div>
+<ul><li><strong>Two modes, auto-switching:</strong> moving the <strong>mouse</strong> switches to <strong>mouse mode</strong> (a feather cursor appears); pressing <strong>WASD/arrows</strong> switches back to <strong>keyboard mode</strong>. <em>Only mouse <strong>movement</strong> flips the mode &#8212; a click never does.</em></li><li><strong>Left-click = confirm/interact everywhere</strong> &#8212; walk to a spot, talk, pick a menu option, confirm an attack.</li></ul>
+<p class="enote">&#128310; <em>App: controls diagram from the in-game input icons &#8212; WebBootstrap/GUI/Assets/InputIcons/ (keyboard_</em>, mouse_<em>).</em></p>
+<h2>Mobile &#8212; touch controls (browser)</h2>
+<p class="enote">&#128310; <strong>PENDING owner confirm on the model</strong> (App has the specifics + art). Today's code is <strong>tap-to-move</strong> (tap a spot &#8594; walk there, an expanding "TouchPing" marks it; a virtual cursor drives menus). The owner also referred to a <strong>"browser controller overlay"</strong> (on-screen d-pad + buttons). Once the model's confirmed I'll write the touch scheme &#8212; taps/overlay, the ping feedback, and how menus + combat work by touch &#8212; with App's mobile art.</p></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">03</span></div>
+</section></div><div class="page"><section class="leaf" id="ch4">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">04</span></div>
+  <h1 class="chapter">The Screen</h1>
+  <div class="prose"><div class="figure hud"><img src="assets/76106def8eed.png" alt="Battle HUD"><figcaption>The battle screen &#8212; callout regions are described below</figcaption></div><p>This page names everything you see on screen &#8212; the <strong>field</strong> (walking around) and the <strong>battle</strong> view &#8212; so you always know what you're looking at. &#128310; <em>App: this is the signature annotated-diagram page &#8212; a labeled screenshot with callout numbers pointing at each element below.</em></p>
+<h2>The Field screen (walking around)</h2>
+<p><strong>Indicators &#8212; the game tells you what you can do:</strong></p>
+<ul><li><strong>Scene-exit markers</strong> <em>(new, ON by default)</em> &#8212; a <strong>floating animated triangle</strong> hovers over every way <em>out</em> of the area, so you can always see where you can walk to leave. Toggle them off/on with the <strong>&#9651; / Y button</strong> (outside battle). They vanish during combat.</li><li><strong>Interact cursor</strong> &#8212; hover the mouse over something you can use and a small <strong>icon appears at the cursor</strong> telling you what a click will do: a <strong>speech bubble</strong> over an NPC (talk), a hand/marker over a chest, door, or lever. If there's no icon, there's nothing to interact with there.</li><li><strong>Things worth grabbing SHINE.</strong> Pickups catch your eye with a shine/glow:<ul><li><strong>Treasure chests</strong> &#8212; glint until opened; an <strong>opened chest stays visibly open</strong>, so at a glance you know which you've already looted.</li><li><strong>Item bags</strong> &#8212; dropped loot from a won fight sits on the ground as a <strong>bag</strong>, shining until you walk over it.</li><li><strong>Relics on the ground</strong> &#8212; a relic waiting to be picked up <strong>shines</strong> to mark it.</li></ul></li><li><strong>Input-mode toast</strong> &#8212; switch between mouse and keyboard and a small <strong>icon flashes top-right</strong> (~2s) showing which mode you're in now (the game plays either way &#8212; see <strong>Controls</strong>).</li></ul>
+<h2>The Battle screen (verbose HUD breakdown)</h2>
+<p class="enote">&#128310; <em>App: the annotated diagram uses <strong><code>combat_hud_clean.png</code></strong> (frontmatter <code>battle_hud_screenshot</code>). It's a clean capture &#8212; the only overlay to add is <strong>callout lines/numbers pointing to each region below</strong>. Region positions in the image: &#9312; bottom-left, &#9313; bottom-center, &#9314; bottom-right, &#9315; far-left column, &#9316; top-right.</em></p>
+<p><strong>Callout map (matches the screenshot):</strong></p>
+<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Where in the image</th><th>What it is</th></tr></thead><tbody><tr><td><strong>&#9312;</strong></td><td><strong>bottom-left</strong></td><td><strong>Your unit panel</strong> &#8212; portrait + name + <strong>Lv</strong>, and the three bars <strong>HP / MP / AP</strong>, plus the in-battle <strong>item slot</strong></td></tr><tr><td><strong>&#9313;</strong></td><td><strong>bottom-center</strong></td><td><strong>The action menu</strong> &#8212; header shows the current action (<strong>Attack</strong>), buttons <strong>Move &#183; Skill &#183; End &#183; Run</strong></td></tr><tr><td><strong>&#9314;</strong></td><td><strong>bottom-right</strong></td><td><strong>Enemy panel</strong> &#8212; the targeted foe's name + <strong>HP / MP / AP</strong> (+ its item slot)</td></tr><tr><td><strong>&#9315;</strong></td><td><strong>far-left column</strong></td><td><strong>Turn-order forecast</strong> &#8212; a vertical rail of upcoming turns (numbered), portrait per turn, <strong>active unit on top</strong></td></tr><tr><td><strong>&#9316;</strong></td><td><strong>top-right</strong></td><td><strong>Mode banners</strong> (<strong>VIEW / SELECTED / CONFIRM</strong> &#8212; the combat cursor state) + the <strong>combat menu button</strong></td></tr></tbody></table></div>
+<p>When a fight starts you're on a <strong>tile grid</strong>. The HUD reads:</p>
+<ul><li><strong>Your unit panel</strong> <em>(bottom-left)</em> &#8212; the active character's <strong>portrait + name</strong>, and three bars:<ul><li><strong>HP</strong> (red) &#8212; health; hit zero and the character falls.</li><li><strong>MP</strong> (blue) &#8212; magic, spent on skills like Smite/Cure.</li><li><strong>AP</strong> (green) &#8212; Action Points for <strong>this turn</strong> (move + attack + skills each cost AP).</li></ul></li><li><strong>Enemy panel</strong> <em>(bottom-right)</em> &#8212; the targeted enemy's name + HP/MP/AP (enemy stat detail shows only with the <strong>Scan</strong> relic slotted; otherwise "???").</li><li><strong>Turn order</strong> &#8212; units act in <strong>initiative</strong> order; the rail shows who's up next.</li><li><strong>The action menu</strong> <em>(on your turn)</em> &#8212; <strong>Move &#183; Attack &#183; Ability (skill) &#183; End &#183; Run Away.</strong> (Using items needs the <strong>Item</strong> relic slotted.)</li><li><strong>Grid highlights</strong> &#8212; when you pick Attack or a skill, the grid lights up: <strong>red</strong> = the cell you'll hit (auto-targeted), <strong>yellow</strong> = the reach/range preview. Move shows the tiles you can step to.</li><li><strong>Combat log</strong> &#8212; toggle the log to see each attack's chance + result (HIT / MISS / <strong>CRIT</strong>) and damage. &#128310; <em>(full log display pending; opens in the side panel on desktop.)</em></li></ul></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">04</span></div>
+</section></div><div class="page"><section class="leaf" id="ch5">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">05</span></div>
+  <h1 class="chapter">Exploring</h1>
+  <div class="prose"><p>Outside battle you walk the world, talk to people, and poke at everything.</p>
+<ul><li><strong>Move</strong> &#8212; WASD/arrows, or click a spot to walk there (see <strong>Controls</strong>).</li><li><strong>Talk</strong> &#8212; walk up to an NPC and interact; a <strong>speech bubble</strong> at the cursor means they'll talk.</li><li><strong>Doors &amp; exits</strong> &#8212; step onto a doorway/edge to change areas. The <strong>scene-exit triangles</strong> show every way out (see <strong>The Screen</strong>).</li><li><strong>Chests &amp; pickups</strong> &#8212; anything worth grabbing <strong>shines</strong>; an opened chest stays open so you know what you've looted. Won fights drop <strong>item bags</strong> on the ground; walk over them to collect.</li><li><strong>Rest</strong> &#8212; beds (like the one in Elias' house) fully restore <strong>HP and MP</strong>. Remember where they are.</li><li><strong>Save</strong> &#8212; from the menu; you can save freely in the village.</li></ul></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">05</span></div>
+</section></div><div class="page"><section class="leaf" id="ch6">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">06</span></div>
+  <h1 class="chapter">Battle</h1>
+  <div class="prose"><p>Combat is turn-based on a <strong>tile grid</strong>. Units act in <strong>initiative</strong> order (higher Agility/Dexterity acts sooner). For what each part of the screen means, see <strong>The Screen</strong>; here's how it <em>works</em>.</p>
+<h2>Your turn &#8212; the actions</h2>
+<ul><li><strong>Move</strong> &#8212; step across tiles (costs AP).</li><li><strong>Attack</strong> &#8212; strike an adjacent enemy (most attacks are <strong>range 1</strong>).</li><li><strong>Ability</strong> &#8212; use a skill (costs AP + often MP). See <strong>Skills</strong>.</li><li><strong>End</strong> &#8212; end your turn. &#183; <strong>Run Away</strong> &#8212; flee the battle.</li><li><strong>Items</strong> in battle need the <strong>Item</strong> relic slotted (see <strong>Skills</strong>).</li></ul>
+<h2>AP economy</h2>
+<p>Each turn you get <strong>AP</strong> (Action Points); move, attack, and skills each cost AP &#8212; plan the turn around it. AP grows with your Stamina stat (1 &#8594; up to 5).</p>
+<h2>How damage &amp; hits work (the short version)</h2>
+<ul><li><strong>Damage</strong> scales your <strong>attack</strong> against the target's <strong>defense</strong> (a ratio &#8212; high defense soaks a %, never to zero on a normal hit), plus a little random <strong>variance</strong>.</li><li><strong>Critical hits</strong> deal bonus damage. <strong>Yours is higher than most enemies'</strong> (~16% vs ~6%), so crits tend to swing fights your way &#8212; you'll see <strong>"CRIT"</strong> in the log.</li><li><strong>Hits are reliable</strong> in an even matchup (~95%); a <strong>miss</strong> (~5%) is the odd unlucky swing.</li><li><strong>Physical resistance</strong> (some foes, like the VSlime) <strong>halves</strong> physical damage. <strong>Radiant damage (Smite) ignores defense AND resistance</strong> &#8212; only <em>magic</em> defense reduces it. That's why Smite answers tanky enemies.</li></ul>
+<h2>Range &amp; areas</h2>
+<p>Most attacks are <strong>adjacent</strong> (range 1). Some skills and enemy attacks reach further &#8212; e.g. the Mother Slime's <strong>poison cloud</strong> is a <strong>radius-3 area</strong>, so you can be hurt without standing next to her.</p>
+<h2>Big units take up more than one tile</h2>
+<p>Some units &#8212; large enemies and bosses &#8212; <strong>occupy more than one grid cell</strong> at once (a 2&#215;2 block, for example) instead of a single tile. A big unit is easier to reach (any of its cells counts as adjacent) and easier to catch in an area.</p>
+<p><strong>A multi-cell skill can hit the same unit more than once.</strong> An area attack resolves <strong>cell by cell</strong>, so if its zone covers <em>several</em> cells of one large unit, that unit is struck <strong>once for each of its cells the area touches</strong>. Line a wide skill up across two or three of a boss's tiles and every overlap lands &#8212; that's how you pour extra damage into a big target in a single cast.</p>
+<blockquote class="callout"><strong>Example &#8212; Elias's Sweep Attack on the Mother Slime.</strong> The Mother Slime fills a <strong>block of several tiles</strong>. Elias's <strong>Sweep Attack</strong> hits an <em>area</em> of cells at once, so if the sweep overlaps <strong>three</strong> of her tiles it deals <strong>three separate hits</strong> in one action &#8212; where a plain Attack would strike her only once. Positioning your area skills to catch the most of a big enemy is a real damage multiplier.</blockquote>
+<h2>Status effects</h2>
+<ul><li><strong>Poison</strong> &#8212; damage each turn; cure with <strong><span class="item">Valerian Powder</span></strong> (or ride it out). Some enemies leave <strong>poison trails</strong> on tiles &#8212; avoid them.</li></ul></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">06</span></div>
+</section></div><div class="page"><section class="leaf" id="ch7">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">07</span></div>
+  <h1 class="chapter">Damage & Status</h1>
+  <div class="prose"><p>Every attack carries a <strong>damage type</strong>, and many types also leave a <strong>status effect</strong> on the target or a hazard on the <strong>terrain</strong>. This page is the complete reference &#8212; some entries are marked <strong>&#9672;</strong> because they belong to the full game and aren't in the free demo yet, but they're documented here so nothing surprises you later.</p>
+<h2>Damage types</h2>
+<p>The <strong>type</strong> decides what defends against it. <strong>Physical</strong> is blocked by physical defense; every <strong>element</strong> (poison, acid, ice, fire, radiant, necrotic) is blocked by <strong>magic</strong> defense &#8212; and <strong>Radiant ignores physical defense <em>and</em> resistance</strong>, which is why it cuts through armored, tanky foes.</p>
+<div class="tbl-wrap"><table><thead><tr><th>Icon</th><th>Type</th><th>What it is</th><th>Element of</th></tr></thead><tbody><tr><td><img class="dtype-icon" alt="Physical" src="assets/ec8ee6763179.png"></td><td><strong>Physical</strong></td><td>plain weapon damage &#8212; no element, leaves no status</td><td>every fighter</td></tr><tr><td><img class="dtype-icon" alt="Poison" src="assets/c9ad20b5b13b.png"></td><td><strong>Poison</strong></td><td>venom that corrodes over time</td><td><strong>Falmri</strong> (Earth)</td></tr><tr><td><img class="dtype-icon" alt="Acid" src="assets/64ae00215d2f.png"></td><td><strong>Acid</strong></td><td>corrosive &#8212; eats through defenses</td><td><strong>Falmri</strong> (Earth)</td></tr><tr><td>&#9672;</td><td><strong>Ice</strong></td><td>biting cold that slows and freezes</td><td>the <strong>Wizard</strong></td></tr><tr><td>&#9672;</td><td><strong>Fire</strong></td><td>burning flame that spreads</td><td>the <strong>Wizard</strong></td></tr><tr><td><img class="dtype-icon" alt="Radiant" src="assets/f06eb51f6347.png"></td><td><strong>Radiant</strong></td><td>holy light &#8212; <strong>ignores physical defense &amp; resistance</strong></td><td><strong>Elias</strong> (Paladin)</td></tr><tr><td>&#9672;</td><td><strong>Necrotic</strong></td><td>death magic &#8212; curses and dooms</td><td>certain foes</td></tr></tbody></table></div>
+<h2>Status effects &#8212; the two tiers</h2>
+<p>Each element inflicts a status that <strong>sticks for several turns</strong>, and every status has <strong>two tiers</strong>: a base <strong>Tier 1</strong>, and a stronger <strong>Tier 2</strong> it can escalate into. <strong>Cleanse</strong> clears any status (of either tier) at once, and a couple of elements have a dedicated cure item.</p>
+<div class="tbl-wrap"><table><thead><tr><th>Icon</th><th>Element</th><th><strong>Tier 1</strong> (base)</th><th><strong>Tier 2</strong> (escalated) &#9672;</th></tr></thead><tbody><tr><td><img class="status-icon" alt="Poisoned" src="assets/b4fed39fc8ac.png"></td><td>Poison</td><td><strong>Poisoned</strong> &#8212; damage every turn (stacks if ignored)</td><td><strong>Confused</strong> &#8212; takes a random action every turn</td></tr><tr><td><img class="status-icon" alt="Acid Covered" src="assets/8f16e57f55cd.png"></td><td>Acid</td><td><strong>Acid Covered</strong> &#8212; corroded; takes extra physical damage &amp; deals less</td><td><strong>Vulnerable</strong> &#8212; all damage taken is doubled</td></tr><tr><td>&#9672;</td><td>Ice</td><td><strong>Chilled</strong> &#8212; movement reduced</td><td><strong>Frozen</strong> &#8212; can't act for 3 turns</td></tr><tr><td>&#9672;</td><td>Fire</td><td><strong>Scorched</strong> &#8212; damage every turn</td><td><strong>Aflame</strong> &#8212; heavy damage every turn, and it spreads</td></tr><tr><td>&#9672;</td><td>Radiant</td><td><strong>Blind</strong> &#8212; accuracy slashed, attacks often miss</td><td><strong>Stunned</strong> &#8212; loses its next turn, takes +50% damage</td></tr><tr><td>&#9672;</td><td>Necrotic</td><td><strong>Cursed</strong> &#8212; a necrotic curse</td><td><strong>Doom</strong> &#8212; KO'd when the countdown runs out</td></tr></tbody></table></div>
+<p>Each is a <strong>separate status</strong>. <strong>Tier 2 statuses come into play later in the game</strong> &#8212; <strong>&#9672;</strong> marks them (and the Ice/Fire/Necrotic lines), designed for the full game, not the free demo.</p>
+<p><strong>Cures:</strong> <strong>Cleanse</strong> removes any status; <strong><span class="item">Valerian Powder</span></strong> cures Poison, <strong><span class="item">Barbados Extract</span></strong> cures Acid.</p>
+<blockquote class="callout"><strong>&#128161; Poison is the one you'll actually meet in the demo.</strong> The <strong>VSlime</strong> and the <strong>Mother Slime's poison cloud</strong> apply <strong>Poisoned</strong> (Tier 1), and it keeps ticking after the moment that caused it. Carry <strong><span class="item">Valerian Powder</span></strong>, or learn <strong>Cleanse</strong> (which strips <em>any</em> status at once). Don't linger on <strong>poison-trail tiles</strong> &#8212; they re-apply it.</blockquote>
+<h2>Terrain hazards</h2>
+<p>Elements also leave the <strong>ground</strong> dangerous. Standing on afflicted terrain applies its element each turn.</p>
+<div class="tbl-wrap"><table><thead><tr><th>Terrain</th><th>Element</th><th>On the ground it&#8230;</th></tr></thead><tbody><tr><td><strong>Poison</strong></td><td>Poison</td><td>poisons anything standing on it</td></tr><tr><td><strong>Acid</strong></td><td>Acid</td><td>coats units in acid</td></tr><tr><td><strong>Icy</strong></td><td>Ice</td><td>turns the footing slick &#8212; units can go <strong>prone</strong></td></tr><tr><td><strong>Burning</strong></td><td>Fire</td><td>scorches units caught on it</td></tr><tr><td><strong>Hallowed</strong></td><td>Radiant</td><td>consecrated ground &#8212; holy footing</td></tr><tr><td><strong>Cursed</strong></td><td>Necrotic</td><td>blighted ground &#8212; necrotic footing</td></tr></tbody></table></div>
+<h2>How a unit <em>takes</em> a type &#8212; reactions &amp; effects</h2>
+<p>On top of defense, a unit can have a built-in <strong>reaction</strong> to a damage type &#8212; and note that <strong>Heal</strong> and <strong>Absorb</strong> are <em>effects</em>, not damage types:</p>
+<ul><li><strong>Immune</strong> &#8212; takes <strong>0</strong> of that type (a Slime is immune to its own poison &#8212; you'll see the crossed-out immunity icon).</li><li><strong>Resistant</strong> &#8212; takes <strong>reduced</strong> damage (physical resistance halves physical, for instance).</li><li><strong>Absorb</strong> &#8212; the unit is <strong>healed</strong> by that type instead of harmed.</li><li><strong>Heal</strong> &#8212; the restorative effect itself (Cure, Mugwort) &#8212; it <strong>adds</strong> HP rather than dealing damage.</li></ul>
+<blockquote class="callout"><strong>Why Radiant matters:</strong> an armored or tanky foe shrugs off physical hits, but <strong>Radiant ignores physical defense and resistance entirely</strong> &#8212; it only answers to <em>magic</em> defense, which those foes barely have. That's the whole reason <strong>Smite</strong> is Elias's answer to a wall like the VSlime.</blockquote></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">07</span></div>
+</section></div><div class="page"><section class="leaf" id="ch8">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">08</span></div>
+  <h1 class="chapter">Skills</h1>
+  <div class="prose"><p><strong>Skills</strong> are the special abilities you use in battle &#8212; beyond the plain <strong>Attack</strong>. They come in <strong>two kinds</strong>, and the difference is <em>where they come from</em>, not how they feel to use:</p>
+<ul><li><strong>Class skills</strong> &#8212; earned on your <strong>Paladin class tree</strong> (spend <strong>SP</strong>). They're part of <em>you</em> &#8212; permanent.</li><li><strong>Relic skills</strong> &#8212; granted by a <strong>relic</strong> you've <strong>slotted</strong> (a relic is an <em>item</em> you own). They travel <em>with the relic</em> &#8212; swappable.</li></ul>
+<h2>The two kinds at a glance</h2>
+<h3>Class skills (from the Paladin tree)</h3>
+<p>Unlocked by spending <strong>SP</strong> on the class tree, walking node to node. Once learned, they're yours for good. Types:</p>
+<ul><li><strong>Action</strong> &#8212; used on your turn (<strong>Smite</strong>, <strong>Cure</strong>, <strong>Cleanse</strong>, <strong>Push Attack</strong>). Cost AP, often MP.</li><li><strong>Passive</strong> &#8212; always on.</li><li><strong>Reaction</strong> &#8212; trigger automatically (e.g. a counter when hit).</li></ul>
+<h3>Relic skills (from slotted relics)</h3>
+<p>A <strong>relic</strong> is an item you find and own. On its own it sits in your bag doing nothing &#8212; you <strong>slot it into a Relic Slot</strong> (in the <strong>Skills</strong> menu) to turn on the skill it grants.</p>
+<blockquote class="callout"><strong>Rumored&#8230;</strong> They say a relic carries an <strong>Anam</strong> &#8212; the imparted spirit of a past master &#8212; and to slot one is to receive their skill, which then <em>grows the more you wield it</em> in battle (the mastery you come to feel as <strong>Expertise</strong>). Whether that's truth or a villager's tale&#8230; the <strong>Prologue</strong> tells more of the Anam.</blockquote>
+<p>Demo relics:</p>
+<ul><li><strong>Item</strong> &#8212; lets you use consumables (<strong><span class="item">Mugwort</span></strong>, etc.) <em>in combat</em>.</li><li><strong>Scan</strong> &#8212; reveals enemy stat blocks (without it, enemy stats read "???").</li><li><strong>Move</strong> &#8212; improves movement.</li><li><strong>Health</strong> &#8212; boosts survivability.</li><li><strong>Berserckounter</strong> &#8212; a counter-attack (dropped by the Mother Slime).</li></ul>
+<h2>Same, and different</h2>
+<p><strong>What they share:</strong></p>
+<ul><li>Both are <strong>used in battle</strong> the same way (an action on your turn, a passive, or a reaction).</li><li>Both <strong>grow with use</strong> &#8212; every skill and every relic earns <strong>Expertise</strong> and gets stronger the more you lean on it (see below).</li><li>Both spend the same resources (AP, and MP for the bigger ones).</li></ul>
+<p><strong>What sets them apart:</strong></p>
+<div class="tbl-wrap"><table><thead><tr><th></th><th><strong>Class skill</strong></th><th><strong>Relic skill</strong></th></tr></thead><tbody><tr><td>Where it comes from</td><td>the <strong>Paladin tree</strong> (spend SP)</td><td>a <strong>relic</strong> (an item you own + slot)</td></tr><tr><td>Permanence</td><td><strong>permanent</strong> &#8212; part of your build</td><td><strong>swappable</strong> &#8212; only active while the relic is slotted</td></tr><tr><td>Requires</td><td>SP + reaching the node</td><td>an <strong>unlocked Relic Slot</strong> to put it in</td></tr><tr><td>Its Expertise&#8230;</td><td>stays with <strong>you</strong></td><td>travels with the <strong>relic</strong> (re-slot it and its mastery comes along)</td></tr></tbody></table></div>
+<p>So: class skills are <em>who you are</em>; relic skills are <em>what you're carrying</em>. A relic is the bridge &#8212; an <strong>item</strong> that becomes a <strong>skill</strong> the moment it's slotted.</p>
+<h2>Unlocking class skills &#8212; the Paladin class tree</h2>
+<p>Spend <strong>SP</strong> (earned by leveling, ~3&#8211;5 per level) to buy nodes on the tree, moving from unlocked node to adjacent node. The tree mixes <strong>skills</strong>, <strong>ability-score nodes</strong> (raise a raw stat), and the <strong>Relic Slot</strong> node. You pick your path &#8212; lean toward the radiant line for <strong>Smite/Cure</strong>, or the physical line for <strong>Push Attack</strong> and raw STR.</p>
+<h2>Unlocking relic skills &#8212; the Relic Slot</h2>
+<p>A <strong>Relic Slot</strong> is itself a <strong>node on the class tree</strong> (spend SP to unlock it). Unlocking a slot gives you a <em>place to put</em> a relic; the tree can grant more than one slot. Then, in the <strong>Skills</strong> menu, drop a relic you own into the slot &#8212; now its skill is live.</p>
+<blockquote class="callout"><strong>&#128161; Pro Tip &#8212; an empty slot does nothing.</strong> The moment you unlock a Relic Slot, fill it. The <strong>Item</strong> relic is a great first choice &#8212; it lets you drink Mugwort mid-battle, which is a lifesaver.</blockquote>
+<h2>Expertise &#8212; skills grow the more you use them <em>(Medium &amp; Hard only)</em></h2>
+<p>Every skill <strong>and</strong> every relic earns <strong>Expertise Points (EP)</strong> each time you use it in battle, and at EP milestones it <strong>upgrades</strong> &#8212; hitting harder and/or costing less. It rewards <em>committing to</em> a skill. A relic's expertise <strong>travels with the relic itself</strong> &#8212; move it and the mastery goes along.</p>
+<p>Example &#8212; <strong>Smite</strong> climbs as you use it:</p>
+<div class="tbl-wrap"><table><thead><tr><th>Tier</th><th>Earned at</th><th>Effect</th></tr></thead><tbody><tr><td>Baseline</td><td>(start)</td><td>radiant &#215;0.6, damage &#215;1.25, 3 MP</td></tr><tr><td>L2</td><td>EP &#8805; 40</td><td>radiant &#215;0.8</td></tr><tr><td>L3</td><td>EP &#8805; 100</td><td>radiant &#215;1.0</td></tr><tr><td>L4</td><td>EP &#8805; 200</td><td>damage &#215;1.5</td></tr><tr><td>L5</td><td>EP &#8805; 350</td><td>MP cost &#8594; 1 (cheap to spam)</td></tr></tbody></table></div>
+<p><strong>&#9888;&#65039; Expertise is only active on Medium and Hard.</strong> On <strong>Easy it's off</strong> &#8212; skills stay at baseline no matter how much you use them (Easy keeps things simpler and story-focused; Medium/Hard add the depth of mastering skills through use).</p>
+<h2>Your first skills</h2>
+<p>Early on your SP is scarce, so spend it with intent:</p>
+<ol><li><strong>A stat node or two</strong> to open the tree in your chosen direction (STR line for melee, WIS line for radiant).</li><li><strong>Push Attack</strong> &#8212; the cheapest <strong>action</strong> skill and a strong opener (shove an enemy back).</li><li><strong>The Relic Slot</strong> &#8212; unlocking it early is worth it: slot the <strong>Item</strong> relic and you can heal with Mugwort <em>inside</em> combat, which turns tight fights winnable.</li></ol>
+<p>Then the signature payoffs come deeper in: <strong>Cure</strong> (heal without items) and <strong>Smite</strong> (radiant damage that bypasses physical defense/resistance &#8212; the answer to tanky foes like the VSlime).</p></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">08</span></div>
+</section></div><div class="page"><section class="leaf" id="ch9">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">09</span></div>
+  <h1 class="chapter">Growth & Status</h1>
+  <div class="prose"><h3>Abbreviations at a glance</h3>
+<div class="tbl-wrap"><table><thead><tr><th></th><th></th><th></th></tr></thead><tbody><tr><td><strong>HP</strong> &#8212; Health Points (survive)</td><td><strong>MP</strong> &#8212; Magic Points (fuel skills)</td><td><strong>AP</strong> &#8212; Action Points (actions/turn)</td></tr><tr><td><strong>XP</strong> &#8212; Experience (fills &#8594; level up)</td><td><strong>JP</strong> &#8212; Job Points (spend &#8594; raw stats)</td><td><strong>SP</strong> &#8212; Skill Points (spend &#8594; skill tree)</td></tr><tr><td><strong>EP</strong> &#8212; Expertise Points (grow a skill/relic through use)</td><td></td><td></td></tr></tbody></table></div>
+<p><em>(&#8220;CP&#8221; is the <strong>old name for JP</strong> &#8212; you may see it in older material; it&#8217;s Job Points now.)</em></p>
+<hr>
+<p>You grow in <strong>two independent ways</strong> &#8212; raising <strong>raw stats</strong> (your build) and unlocking the <strong>skill tree</strong>.</p>
+<h2>XP &#8594; Levels</h2>
+<p>Win fights for <strong>XP</strong>; fill the bar to <strong>level up</strong>. Each level grants <strong>JP</strong>, <strong>SP</strong>, and <strong>AP</strong>.</p>
+<h2>Raw stats vs Battle stats</h2>
+<ul><li><strong>Raw stats</strong> are what you invest in with <strong>JP</strong>: <strong>Strength</strong> (physical damage), <strong>Constitution</strong> (HP/defense), <strong>Agility</strong> (dodge/speed), <strong>Dexterity</strong> (accuracy), <strong>Intelligence</strong> (magic/Smite + magic defense), <strong>Wisdom</strong> (supports magic), <strong>Stamina</strong> (AP).</li><li><strong>Battle stats</strong> are <em>calculated from</em> raw stats &#8212; HP, attack, defense, accuracy, etc. You never edit them directly; <strong>pick a raw stat by the battle stat you want</strong> (hit harder &#8594; STR; survive &#8594; CON; power Smite &#8594; INT/WIS).</li></ul>
+<p><strong>Elias is a Paladin</strong> &#8212; lean <strong>STR/CON</strong>, with <strong>WIS/INT as off-stats</strong> that unlock the radiant (Smite) path.</p>
+<h2>The currencies</h2>
+<div class="tbl-wrap"><table><thead><tr><th></th><th>Spend on</th><th>Where</th></tr></thead><tbody><tr><td><strong>JP</strong> &#8212; Job Points</td><td><strong>raw stats</strong> (your permanent build)</td><td><strong>Status</strong> menu</td></tr><tr><td><strong>SP</strong> &#8212; Skill Points</td><td>the <strong>Paladin class tree</strong> (skills + Relic Slot)</td><td><strong>Skill Tree</strong> menu</td></tr><tr><td><strong>AP</strong> &#8212; Action Points</td><td>actions <strong>per turn</strong> in battle (from Stamina)</td><td>(automatic in combat)</td></tr><tr><td><strong>MP</strong> &#8212; Magic Points</td><td><strong>skill casts</strong> (Smite/Cure) &#8212; restore with <strong><span class="item">Irid Liquor</span></strong></td><td>(in combat)</td></tr></tbody></table></div>
+<blockquote class="callout"><strong>&#128161; Spend your JP and SP after every level-up.</strong> Leveling <em>grants</em> them, but the power only lands once you actually spend it (JP in <strong>Status</strong>, SP in the <strong>Skill Tree</strong>). An unspent pile is wasted power.</blockquote></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">09</span></div>
+</section></div><div class="page"><section class="leaf" id="ch10">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">10</span></div>
+  <h1 class="chapter">Items & Equipment</h1>
+  <div class="prose"><h2>Consumables &#8212; each does ONE thing</h2>
+<ul><li><strong><span class="item">Mugwort</span></strong> &#8212; <strong>heals HP</strong> (the <em>only</em> HP-restore in the demo). Using it in battle needs the <strong>Item</strong> relic.</li><li><strong><span class="item">Irid Liquor</span></strong> &#8212; <strong>restores MP</strong> (for skills).</li><li><strong><span class="item">Valerian Powder</span></strong> &#8212; <strong>cures poison</strong>.</li></ul>
+<h2>Equipment</h2>
+<ul><li><strong>Weapon</strong> &#8212; your attack (Elias claims <strong>Glenn's Longsword</strong> early).</li><li><strong>Armor / accessories</strong> &#8212; defense and effects. <strong>Buying gear isn't wearing it</strong> &#8212; open <strong>Equipment</strong> and equip it (see the Pro Tip). Armor is <strong>optional</strong> but makes fights easier.</li></ul>
+<blockquote class="callout"><strong>&#128161; Equip what you buy/find.</strong> A bought Leather Chestpiece does nothing sitting in your bag &#8212; open <strong>Equipment</strong> and put it on.</blockquote>
+<h2>Relics &#8212; items that grant skills</h2>
+<p>A <strong>relic</strong> is also an item you own &#8212; but its whole job is the <strong>skill</strong> it grants when <strong>slotted</strong>. See <strong>Skills</strong> for how relics work (and the rumored <strong>Anam</strong> behind them). In your bag, a relic is just an item until you slot it.</p></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">10</span></div>
+</section></div><div class="page"><section class="leaf" id="ch11">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">11</span></div>
+  <h1 class="chapter">Menus</h1>
+  <div class="prose"><p>Open the menu with <strong>Space / K / Tab</strong> (or the on-screen menu button). Each does one job:</p>
+<div class="tbl-wrap"><table><thead><tr><th>Menu</th><th>What it's for</th></tr></thead><tbody><tr><td><strong>Status</strong></td><td><strong>spend JP</strong> to raise raw stats; view your character</td></tr><tr><td><strong>Equipment</strong></td><td><strong>equip</strong> weapon / armor / accessories</td></tr><tr><td><strong>Skills</strong></td><td><strong>slot relics</strong> into an unlocked Relic Slot</td></tr><tr><td><strong>Skill Tree</strong> (Paladin tree)</td><td><strong>spend SP</strong> to unlock skills + nodes (incl. the Relic Slot)</td></tr><tr><td><strong>Items</strong></td><td>use / view consumables</td></tr><tr><td><strong>Save / Load</strong></td><td>save your game (free in the village)</td></tr></tbody></table></div>
+<p class="enote">&#128310; <em>App: annotate a screenshot of each menu (menu_annotated/) showing where each choice lives.</em></p></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">11</span></div>
+</section></div><div class="page"><section class="leaf" id="ch12">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">12</span></div>
+  <h1 class="chapter">Bestiary</h1>
+  <div class="prose"><p class="lead">A field guide to what you'll meet in the demo &#8212; what it is, what it does, and how to put it down.</p><div class="subentry"><div class="figure sprite "><img src="assets/0326a31fed7a.png" alt="Slime"><figcaption>Slime</figcaption></div><p>The bread-and-butter Waterway foe. <strong>No resistances, no tricks</strong> &#8212; straightforward to fight: physical attacks land fine, and <strong>Glenn's Longsword drops one in about two hits</strong>. Poison-immune (don't bother), and it hits for a modest 3&#8211;5.</p>
+<p><strong>How to fight:</strong> just attack. The danger is <strong>numbers</strong>, not any single Slime &#8212; a room of two or three can chip a low-level party down, so heal between fights.</p></div><div class="subentry"><div class="figure sprite venom"><img src="assets/0326a31fed7a.png" alt="Venom Slime"><figcaption>Venom Slime</figcaption></div><p>The <strong>real</strong> trash threat, and a lesson in the combat system. Three things make it nasty:</p>
+<ul><li><strong>It halves your physical damage</strong> (physical resist &#189;) &#8212; your sword takes roughly <em>twice</em> as long to kill it.</li><li><strong>Every hit poisons you</strong> &#8212; cure it with <strong><span class="item">Valerian Powder</span></strong>, or ride out the damage-over-time.</li><li><strong>Don't try to poison it back</strong> &#8212; it <strong>absorbs</strong> poison and <em>heals</em> from it.</li></ul>
+<p><strong>How to fight:</strong> <strong>radiant damage (Smite) ignores its physical resistance</strong> &#8212; that's the clean answer once you have it. Until then, grind it down physically and keep your poison cured. It's the enemy that teaches "bring the right tool."</p></div></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">12</span></div>
+</section></div><div class="page"><section class="leaf" id="ch13">
+  <div class="leaf-head"><span class="eyebrow">Chronicles of Nesis</span><span class="folio">13</span></div>
+  <h1 class="chapter">Hints & Tips</h1>
+  <div class="prose"><ul><li><strong>Spend your JP and SP after every level.</strong> Leveling grants them; the power only lands once you spend it (JP in Status, SP in the Skill Tree). Don't sit on a pile.</li><li><strong>Fill every Relic Slot the moment you unlock one.</strong> An empty slot does nothing &#8212; the <strong>Item</strong> relic (drink Mugwort mid-battle) is a great first choice.</li><li><strong>Equip what you buy or find.</strong> Gear in your bag does nothing until you put it on in <strong>Equipment</strong>.</li><li><strong>Heal between fights.</strong> <strong>Mugwort</strong> is your only HP-restore &#8212; top up before the next room, and rest at a bed when you can.</li><li><strong>Rush the wrong enemy and you'll bleed.</strong> The <strong>VSlime</strong> halves physical damage and poisons you &#8212; bring <strong>Valerian Powder</strong>, and <strong>Smite</strong> it if you can (radiant ignores its resistance).</li><li><strong>Crits are on your side.</strong> Your crit chance beats most enemies' &#8212; even fights swing your way with a little luck.</li><li><strong>Save often</strong> &#8212; free in the village.</li><li><strong>Use your favorite skills.</strong> On Medium/Hard, skills <strong>grow with use</strong> (Expertise) &#8212; leaning on one makes it far stronger over a run.</li></ul></div>
+  <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">13</span></div>
+</section></div>
+</div>
+</body></html>

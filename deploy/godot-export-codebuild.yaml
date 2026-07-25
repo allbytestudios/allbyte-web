@@ -186,8 +186,10 @@ Resources:
         Location: !Sub "https://github.com/${GameRepoId}.git"
         Auth: { Type: CODECONNECTIONS, Resource: !Ref GitHubConnectionArn }
         # buildspec lives in the PRIVATE game repo (Arc owns the export command);
-        # see the spec doc for its required shape.
-        BuildSpec: buildspec.develop.yml
+        # see the spec doc for its required shape. Renamed develop→web when the
+        # game repo unified all channels into one env-driven spec (CHANNEL/DEBUG/
+        # ALPHA defaults reproduce develop); the project just selects the file.
+        BuildSpec: buildspec.web.yml
       SourceVersion: !Ref BuildBranch
       Triggers:
         Webhook: true

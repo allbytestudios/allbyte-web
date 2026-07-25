@@ -444,11 +444,15 @@ a:focus-visible{ outline:2px solid var(--crimson); outline-offset:3px; }
   }
 
   // ---- admin edit affordance ------------------------------------------------
+  // Grouped chapters render several .md files as one leaf (e.g. "Combat" =
+  // battle + screen + status_damage). A single-file overlay would clobber the
+  // other files' content, so skip them until multi-file editing lands.
+  var GROUPED = { battle: 1 };
   function injectButtons() {
     var leaves = document.querySelectorAll(".leaf[data-section]");
     for (var i = 0; i < leaves.length; i++) {
       var leaf = leaves[i], key = leaf.getAttribute("data-section");
-      if (!bodies[key]) continue; // single-file section only (cast/bestiary nest entries)
+      if (!bodies[key] || GROUPED[key]) continue; // single-file, non-grouped sections only
       var head = leaf.querySelector(".leaf-head");
       if (!head || head.querySelector(".manual-edit-btn")) continue;
       var b = document.createElement("button");

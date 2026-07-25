@@ -10,6 +10,12 @@
  */
 (function () {
   "use strict";
+  // Embedded (e.g. the /play left-letterbox iframe): hide the home back-link so
+  // it doesn't navigate the panel away.
+  if (window.self !== window.top) {
+    var _mh = document.querySelector(".manual-home");
+    if (_mh) _mh.style.display = "none";
+  }
   var MANUAL_API = "%%MANUAL_API%%";
   var AUTH_API = "https://api.allbyte.studio";
   var bodies = {};

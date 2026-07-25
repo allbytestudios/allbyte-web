@@ -49,8 +49,8 @@
   function channelTag(id: string): string {
     const c = runtimeChannels?.[id] as { version?: string; deployedAt?: number } | undefined;
     if (c && typeof c === "object" && c.version) {
-      const rel = relTime(c.deployedAt);
-      return ` · ${c.version}${rel ? ` · ${rel}` : ""}`;
+      // Version only — the relative-time suffix overflowed the collapsed select.
+      return ` · ${c.version}`;
     }
     if (id === "alpha" || id === "alpha-debug") {
       const v = gameVersion.version?.replace(/^v/, "");
@@ -248,6 +248,33 @@
 
   <div class="demo-section">
     <div class="demo-row" style="position: relative;" onclick={launchGame} onmouseenter={onDemoEnter} onmouseleave={onDemoLeave}>
+      <div class="demo-link">
+        <div class="demo-banner">
+          <img src={demoHovered ? "/ChroniclesOfNesisTitle.gif" : "/ChroniclesOfNesisTitle-still.png"} alt="The Chronicles of Nesis Demo" class="demo-gif" />
+          <img src="/ChroniclesOfNesisTitleName.png" alt="The Chronicles of Nesis" class="demo-title-overlay" />
+          <div class="demo-version-stack">
+            <span class="demo-version-overlay" aria-label={`Build version ${gameVersion.version}`}>
+              {gameVersion.version.startsWith("v") ? gameVersion.version : `v${gameVersion.version}`}
+            </span>
+            <a class="demo-changelog-link" href="/changelog/" onclick={(e) => e.stopPropagation()}>What's new ›</a>
+          </div>
+        </div>
+      </div>
+      <div class="demo-actions">
+        <div class="demo-cta-group">
+          <button class="demo-cta play-cta" type="button" aria-label="Play in browser">
+            Play In Browser
+          </button>
+          <a class="demo-cta manual-cta" href="/manual/" onclick={(e) => e.stopPropagation()} aria-label="Read the game manual">
+            Read Game Manual
+          </a>
+          {#if installPrompt && !isInstalled}
+            <button class="demo-cta install-cta" type="button" onclick={(e) => { e.stopPropagation(); handleInstallClick(); }} aria-label="Install Chronicles as an app on this device">
+              Install as App
+            </button>
+          {/if}
+        </div>
+      </div>
       {#if pickerList.length > 1}
         <div class="version-picker" onclick={(e) => e.stopPropagation()} role="presentation">
           <label class="version-picker-label" for="game-version-select">Version</label>
@@ -267,36 +294,6 @@
           </select>
         </div>
       {/if}
-      <div class="demo-link">
-        <div class="demo-banner">
-          <img src={demoHovered ? "/ChroniclesOfNesisTitle.gif" : "/ChroniclesOfNesisTitle-still.png"} alt="The Chronicles of Nesis Demo" class="demo-gif" />
-          <img src="/ChroniclesOfNesisTitleName.png" alt="The Chronicles of Nesis" class="demo-title-overlay" />
-          <div class="demo-version-stack">
-            <span class="demo-version-overlay" aria-label={`Build version ${gameVersion.version}`}>
-              {gameVersion.version.startsWith("v") ? gameVersion.version : `v${gameVersion.version}`}
-            </span>
-            <a class="demo-changelog-link" href="/changelog/" onclick={(e) => e.stopPropagation()}>What's new ›</a>
-          </div>
-        </div>
-      </div>
-      <div class="demo-actions">
-        <div class="demo-cta-group">
-          <button class="demo-cta play-cta" type="button" aria-label="Play in browser">
-            Play In Browser
-          </button>
-          {#if installPrompt && !isInstalled}
-            <button class="demo-cta install-cta" type="button" onclick={(e) => { e.stopPropagation(); handleInstallClick(); }} aria-label="Install Chronicles as an app on this device">
-              Install as App
-            </button>
-          {/if}
-        </div>
-        <a
-          class="demo-manual-link"
-          href="/manual/"
-          onclick={(e) => e.stopPropagation()}
-          style="display:inline-block;margin-top:0.7rem;font-family:inherit;font-size:0.85rem;color:#e8dcc0;background:rgba(44,33,24,0.62);border:1px solid rgba(154,119,54,0.65);border-radius:6px;padding:0.4rem 0.95rem;text-decoration:none;"
-        >📖 Read the Instruction Booklet</a>
-      </div>
     </div>
   </div>
 
@@ -1049,6 +1046,11 @@
      later) rather than primary/secondary. */
   .install-cta {
     /* No visual difference from .demo-cta; class kept for future hooks. */
+  }
+  .manual-cta {
+    /* Same boxed CTA treatment as Play — it's an <a>, so drop the underline. */
+    text-decoration: none;
+    display: inline-block;
   }
 
 

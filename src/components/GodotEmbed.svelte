@@ -5,7 +5,7 @@
   import { auth } from "../lib/auth.svelte.ts";
   import { isAdmin, isTierAtLeast, tierLabel } from "../lib/tier";
   import VirtualGamepad from "./VirtualGamepad.svelte";
-  import MinimapPanel from "./MinimapPanel.svelte";
+  import ManualLetterboxPanel from "./ManualLetterboxPanel.svelte";
   import { initPlayAnalytics } from "../lib/playAnalytics";
   import { initConsoleLogShipper } from "../lib/consoleLogShipper";
   import DownloadGate from "./DownloadGate.svelte";
@@ -1418,7 +1418,7 @@
       allow="cross-origin-isolated; fullscreen"
     ></iframe>
     <VirtualGamepad iframe={iframeEl} />
-    <MinimapPanel />
+    <ManualLetterboxPanel />
     <div class="acct-chip" title={acctTooltip}>
       <span class="acct-dot" class:on={acctCloudOn}></span>{acctLine}
     </div>

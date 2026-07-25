@@ -38,11 +38,28 @@ if (!existsSync(SRC)) {
   process.exit(0);
 }
 
-// Section order = the TOC (ch1..chN map to these keys, in this order).
-const SECTION_ORDER = [
-  "story", "cast", "controls", "screen", "exploring", "battle",
-  "status_damage", "skills", "growth", "items", "menus", "bestiary", "hints",
+// Map a chapter TITLE -> its section key. Title-based (not positional) so it
+// survives Quinn reordering / adding / dropping sections in the export. Most
+// specific first; each real title matches exactly one rule.
+const TITLE_RULES = [
+  [/prolog|story/i, "story"],
+  [/cast|character/i, "cast"],
+  [/control/i, "controls"],
+  [/screen|hud/i, "screen"],
+  [/explor/i, "exploring"],
+  [/battle|combat/i, "battle"],
+  [/damage/i, "status_damage"],
+  [/growth/i, "growth"],
+  [/skill/i, "skills"],
+  [/item|equip/i, "items"],
+  [/menu/i, "menus"],
+  [/bestiary|enem/i, "bestiary"],
+  [/hint|tips/i, "hints"],
 ];
+const titleToKey = (title) => {
+  for (const [re, key] of TITLE_RULES) if (re.test(title)) return key;
+  return null;
+};
 
 // --- per-section base markdown bodies (for the editor to bind to) ------------
 // Single-file sections keyed by their key; cast/bestiary are per-entry files.
@@ -83,27 +100,48 @@ html = html.replace(/data:([^;,]+);base64,([A-Za-z0-9+/=]+)/g, (_m, mime, blob) 
   return `assets/${seen[key]}`;
 });
 
-// --- tag each chapter leaf with its section key ------------------------------
-// The render emits `<section class="leaf" id="chN">`; map chN → SECTION_ORDER[N-1].
-html = html.replace(/<section class="leaf" id="ch(\d+)"/g, (m, n) => {
-  const key = SECTION_ORDER[Number(n) - 1];
-  return key ? `<section class="leaf" id="ch${n}" data-section="${key}"` : m;
-});
+// --- tag each chapter leaf with its section key (by title) -------------------
+// The render emits `<section class="leaf" id="chN">…<h1 class="chapter">Title<`.
+// Derive the key from the Title so reordering/dropping sections can't misalign it.
+html = html.replace(
+  /(<section class="leaf" id="ch\d+")([\s\S]*?<h1 class="chapter">([^<]+)<)/g,
+  (m, open, mid, title) => {
+    const key = titleToKey(title.trim());
+    return key ? `${open} data-section="${key}"${mid}` : m;
+  }
+);
 
 // --- inject the back-link + the base-markdown blob ---------------------------
 const BACK = '<a href="/" class="manual-home">← AllByte Studios</a>';
-const BACKCSS = ".manual-home{position:fixed;top:12px;left:14px;z-index:60;font-family:'ModernGoth',Georgia,serif;font-size:14px;color:var(--gilt,#9a7736);text-decoration:none;background:rgba(0,0,0,.22);padding:4px 11px;border-radius:5px;}.manual-home:hover{color:var(--crimson,#8a2b21);}</style>";
-html = html.replace("</style>", BACKCSS, 1);
+const EDITOR_CSS =
+  ".manual-home{position:fixed;top:12px;left:14px;z-index:60;font-family:'ModernGoth',Georgia,serif;font-size:14px;color:var(--gilt,#9a7736);text-decoration:none;background:rgba(0,0,0,.22);padding:4px 11px;border-radius:5px;}.manual-home:hover{color:var(--crimson,#8a2b21);}" +
+  ".manual-edit-btn{font-family:'ModernGoth',Georgia,serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--crimson,#8a2b21);background:rgba(138,43,33,.08);border:1px solid rgba(138,43,33,.35);border-radius:4px;padding:2px 9px;cursor:pointer;margin-left:.6em;}.manual-edit-btn:hover{background:rgba(138,43,33,.16);}.leaf[data-overridden] .manual-edit-btn::after{content:' · edited';color:var(--gilt,#9a7736);}" +
+  ".me-scrim{position:fixed;inset:0;z-index:200;background:rgba(30,22,10,.5);}" +
+  ".me-panel{position:fixed;z-index:201;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,94vw);max-height:90vh;display:flex;flex-direction:column;background:#f4ecd7;color:#2c2118;border:1px solid #9a7736;border-radius:8px;box-shadow:0 12px 40px rgba(30,22,10,.5);font-family:'ModernGoth',Georgia,serif;padding:1rem 1.1rem 1.1rem;}" +
+  ".me-head{display:flex;align-items:center;justify-content:space-between;font-size:1rem;}.me-head b{color:#8a2b21;}.me-x{background:none;border:0;font-size:1.3rem;line-height:1;cursor:pointer;color:#5f5140;padding:.1rem .35rem;}.me-hint{margin:.35rem 0 .6rem;font-size:.8rem;color:#5f5140;}" +
+  ".me-md{width:100%;min-height:280px;flex:1;resize:vertical;font-family:'Courier New',monospace;font-size:.85rem;line-height:1.55;color:#2c2118;background:#fbf5e6;border:1px solid #b8974e;border-radius:5px;padding:.7rem .8rem;}" +
+  ".me-note-l{display:block;margin:.7rem 0 0;font-size:.82rem;color:#5f5140;}.me-opt{color:#9a7736;font-style:italic;}.me-note{display:block;width:100%;margin-top:.3rem;font-family:'ModernGoth',Georgia,serif;font-size:.85rem;color:#2c2118;background:#fbf5e6;border:1px solid #b8974e;border-radius:5px;padding:.45rem .6rem;}" +
+  ".me-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:.9rem;}.me-cancel,.me-save{font-family:'ModernGoth',Georgia,serif;font-size:.85rem;padding:.45rem 1rem;border-radius:5px;cursor:pointer;}.me-cancel{background:none;border:1px solid #9a7736;color:#5f5140;}.me-save{background:#8a2b21;border:1px solid #6e2018;color:#f4ecd7;}.me-save:disabled{opacity:.55;cursor:default;}" +
+  ".me-toast{position:fixed;z-index:220;left:50%;bottom:1.4rem;transform:translateX(-50%);background:#3a5a34;color:#eafaea;font-family:'ModernGoth',Georgia,serif;font-size:.85rem;padding:.55rem 1rem;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.35);}.me-toast.err{background:#6e2b21;color:#fbeae8;}" +
+  "</style>";
+html = html.replace("</style>", EDITOR_CSS, 1);
 const bodiesJson = JSON.stringify(bodies).replace(/</g, "\\u003c");
 const BLOB = `<script type="application/json" id="manual-bodies">${bodiesJson}</script>`;
+// Inject the inline editor (admin-gated client). MANUAL_API = the deployed
+// allbyte-studio-manual-overlay stack.
+const MANUAL_API = "https://2qvnqlwv78.execute-api.us-east-1.amazonaws.com";
+const editorJsPath = join(root, "scripts/manual-editor.js");
+const EDITOR = existsSync(editorJsPath)
+  ? `<script>${readFileSync(editorJsPath, "utf8").replace("%%MANUAL_API%%", MANUAL_API).replace(/<\/(script)/gi, "<\\/$1")}</script>`
+  : "";
 if (!/<html/i.test(html)) {
   html = '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
     '<title>Instruction Booklet — The Chronicles of Nesis</title>' +
     '<meta name="description" content="The Chronicles of Nesis instruction booklet — world, cast, controls, combat, and bestiary.">' +
-    '<meta name="theme-color" content="#cdbf9f"></head><body>' + BACK + html + BLOB + '</body></html>';
+    '<meta name="theme-color" content="#cdbf9f"></head><body>' + BACK + html + BLOB + EDITOR + '</body></html>';
 } else {
-  html = html.replace(/(<body[^>]*>)/i, (m) => m + BACK).replace(/<\/body>/i, BLOB + "</body>");
+  html = html.replace(/(<body[^>]*>)/i, (m) => m + BACK).replace(/<\/body>/i, BLOB + EDITOR + "</body>");
 }
 
 writeFileSync(join(OUT_DIR, "index.html"), html);

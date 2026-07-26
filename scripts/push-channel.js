@@ -58,7 +58,7 @@ const dryRun = process.argv.includes("--dry-run");
 const promote = process.argv.includes("--promote");
 
 // Dev channels deploy freely; every other (live/player-facing) channel needs --promote.
-const DEV_CHANNELS = new Set(["develop", "beta-debug", "alpha-debug"]);
+const DEV_CHANNELS = new Set(["develop", "beta-debug", "alpha-debug", "staging"]);
 
 function die(msg) { console.error(`[push-channel] ERROR: ${msg}`); process.exit(1); }
 function run(cmd) {

@@ -1,0 +1,222 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Cloud Godot web-export + deploy for the `staging` QA channel (frozen tagged
+  cuts off origin/staging). Clone of the develop pipeline: same exporter image,
+  buildspec, gate + boot-smoke, but its own least-priv role, /godot/staging/
+  prefix, and a [deploy-staging] token gate. A push to the
+  private game repo's staging branch triggers CodeBuild, which runs a headless
+  Godot export inside a pinned exporter image, then runs scripts/push-channel.js
+  to obfuscate + deploy to s3://<SiteBucket>/godot/staging/ and publish
+  channels.json. All creds are role/Secrets-Manager based; no key material or
+  source lives in this (public) template.
+  SCAFFOLD — deployable once (a) the ExporterImageUri exists in ECR and
+  (b) Arc confirms the export is hermetic from a clean clone. See
+  APP_CLAUDE_CLOUD_EXPORTER_SPEC.md.
+
+Parameters:
+  GitHubConnectionArn:
+    Type: String
+    Description: >
+      CodeConnections (CodeStar) connection ARN authorizing read of the PRIVATE
+      game repo. Created once via console OAuth — never a pasted token.
+  GameRepoId:
+    Type: String
+    Description: "owner/repo of the PRIVATE game source (e.g. AllByte/ChroniclesOfNesis)."
+  BuildBranch:
+    Type: String
+    Default: staging
+    Description: Branch whose pushes trigger a build+deploy.
+  ExporterImageUri:
+    Type: String
+    Description: >
+      ECR image URI (pinned by tag/digest) of the exporter: Godot 4.6.2 headless +
+      web export templates + node. Built from a REVIEWED commit of the public
+      exporter repo — community PRs do not auto-flow in. Push target, e.g.
+      <account-id>.dkr.ecr.<region>.amazonaws.com/<your-exporter-repo> — tags
+      are IMMUTABLE, so use a unique tag per build (e.g. godot-4.6.2-<date>).
+  KeySecretArn:
+    Type: String
+    Description: >
+      Secrets Manager ARN of the Godot script-encryption key (game/content key).
+      Value provisioned out-of-band by the owner/Arc; never in this template.
+  SiteBucket:
+    Type: String
+    Description: S3 bucket that serves the site / game (pass on deploy).
+  DistributionId:
+    Type: String
+    Description: CloudFront distribution to invalidate (pass on deploy).
+  SecureTemplateBucket:
+    Type: String
+    Description: >
+      Private bucket holding the key‑baked (SECRET) Godot web export template.
+      The build installs it over the stock template so encrypted PCKs decrypt at
+      runtime. Same trust tier as the Secrets Manager key — never public.
+
+Resources:
+  # --- least-privilege build role: can ONLY ship the staging debug path -------
+  ExportBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: allbyte-studio-godot-staging-export
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codebuild.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: deploy-staging-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # write ONLY the staging debug prefix + the shared channels.json.
+              # Cannot touch /godot/public, /godot/beta, the site, anything else.
+              - Sid: WriteStagingObjects
+                Effect: Allow
+                Action: [s3:PutObject, s3:GetObject]
+                Resource:
+                  - !Sub "arn:aws:s3:::${SiteBucket}/godot/staging/*"
+                  - !Sub "arn:aws:s3:::${SiteBucket}/godot/channels.json"
+              # aws s3 sync needs ListBucket, scoped to the staging prefix.
+              - Sid: ListStagingPrefix
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${SiteBucket}"
+                Condition:
+                  StringLike:
+                    "s3:prefix": ["godot/staging/*", "godot/channels.json"]
+              - Sid: InvalidateOneDistribution
+                Effect: Allow
+                Action: cloudfront:CreateInvalidation
+                Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${DistributionId}"
+              # read ONLY the one key secret (also injected as masked env below).
+              - Sid: ReadKeySecret
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref KeySecretArn
+              # the key-baked web export template (secret) — installed before export
+              - Sid: ReadSecureTemplate
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${SecureTemplateBucket}/godot-templates/*"
+              - Sid: UseSourceConnection
+                Effect: Allow
+                # CodeBuild validates at project-create that the role can pull via the
+                # connection — needs Get*/Use, not just UseConnection. Both service
+                # namespaces (renamed CodeStar Connections → CodeConnections).
+                Action:
+                  - codeconnections:UseConnection
+                  - codeconnections:GetConnection
+                  - codeconnections:GetConnectionToken
+                  - codestar-connections:UseConnection
+                  - codestar-connections:GetConnection
+                  - codestar-connections:GetConnectionToken
+                Resource: !Ref GitHubConnectionArn
+              - Sid: PullExporterImage
+                Effect: Allow
+                Action: [ecr:GetDownloadUrlForLayer, ecr:BatchGetImage, ecr:BatchCheckLayerAvailability]
+                # scoped to the exporter repo — build code can't pull arbitrary images
+                Resource: !Sub "arn:aws:ecr:us-east-1:${AWS::AccountId}:repository/allbyte/godot-exporter"
+              - Sid: EcrAuth
+                Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Sid: Logs
+                Effect: Allow
+                Action: [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/allbyte-godot-staging:*"
+
+  # Declared (not auto-created) so retention is set and the metric filter attaches.
+  ExportLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/codebuild/allbyte-godot-staging
+      RetentionInDays: 30
+
+  # Turns Arc's final structured log line
+  # {stage, ok, duration_s, bytes, version, git_sha, channel} into an alarmable
+  # metric — a failed cloud staging export/deploy.
+  BuildFailureMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ExportLogGroup
+      FilterPattern: '{ $.ok IS FALSE }'
+      MetricTransformations:
+        - MetricNamespace: AllByte/GodotExport
+          MetricName: StagingBuildFailure
+          MetricValue: "1"
+          DefaultValue: 0
+
+  BuildFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: allbyte-godot-staging-build-failure
+      AlarmDescription: A cloud staging export/deploy emitted ok:false (see CodeBuild logs).
+      Namespace: AllByte/GodotExport
+      MetricName: StagingBuildFailure
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  ExportProject:
+    Type: AWS::CodeBuild::Project
+    DependsOn: ExportLogGroup
+    Properties:
+      Name: allbyte-godot-staging
+      Description: Headless Godot web export + push-channel deploy for the staging channel.
+      ServiceRole: !GetAtt ExportBuildRole.Arn
+      TimeoutInMinutes: 30
+      Artifacts: { Type: NO_ARTIFACTS }
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        Image: !Ref ExporterImageUri
+        ImagePullCredentialsType: SERVICE_ROLE
+        EnvironmentVariables:
+          - { Name: SITE_BUCKET, Value: !Ref SiteBucket }
+          - { Name: DISTRIBUTION_ID, Value: !Ref DistributionId }
+          # staging overrides the buildspec's default CHANNEL=develop so the
+          # manifest stamps channel=staging (deploy target /godot/staging/).
+          # DEBUG/ALPHA stay at the buildspec defaults (Beta-Debug featureset:
+          # TestBridge hooks for Quinn's QA driver), same preset as develop.
+          - { Name: CHANNEL, Value: staging }
+          # Same key, TWO names (both MASKED, never printed/committed):
+          #   GODOT_SCRIPT_ENCRYPTION_KEY  — Godot's export step (cloud_export.sh) reads this
+          #   GODOT_RELEASE_SCRIPT_KEY     — our obfuscator (obfuscate-godot-export.js) reads this
+          # The Secrets Manager secret must be a PLAIN string (the 64-hex key), not JSON.
+          - { Name: GODOT_SCRIPT_ENCRYPTION_KEY, Type: SECRETS_MANAGER, Value: !Ref KeySecretArn }
+          - { Name: GODOT_RELEASE_SCRIPT_KEY, Type: SECRETS_MANAGER, Value: !Ref KeySecretArn }
+      Source:
+        Type: GITHUB
+        Location: !Sub "https://github.com/${GameRepoId}.git"
+        Auth: { Type: CODECONNECTIONS, Resource: !Ref GitHubConnectionArn }
+        # buildspec lives in the PRIVATE game repo (Arc owns the export command);
+        # see the spec doc for its required shape. Renamed staging→web when the
+        # game repo unified all channels into one env-driven spec (CHANNEL/DEBUG/
+        # ALPHA defaults reproduce staging); the project just selects the file.
+        BuildSpec: buildspec.web.yml
+      SourceVersion: !Ref BuildBranch
+      Triggers:
+        Webhook: true
+        # Cost gate (2026-07-23): staging was auto-building on EVERY push
+        # (~14/day → ~$15/mo of CodeBuild, the bulk of the AWS bill). A push now
+        # only builds+deploys when its HEAD commit message carries the
+        # [deploy-staging] token, which Arc adds ONLY when the owner asks for a
+        # staging deploy. Ordinary staging pushes no longer trigger a build.
+        # The three filters are AND-ed: PUSH to staging whose message contains
+        # the token. Remove the COMMIT_MESSAGE line to restore build-on-push.
+        FilterGroups:
+          - - { Type: EVENT, Pattern: PUSH }
+            - { Type: HEAD_REF, Pattern: !Sub "^refs/heads/${BuildBranch}$" }
+            - { Type: COMMIT_MESSAGE, Pattern: '\[deploy-staging\]' }
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Ref ExportLogGroup
+
+Outputs:
+  ProjectName: { Value: !Ref ExportProject }
+  BuildRoleArn: { Value: !GetAtt ExportBuildRole.Arn }

@@ -22,7 +22,7 @@ import { isAdmin, isTierAtLeast, type Tier } from "./tier";
 type AuthUser = { tier?: Tier | string | null } | null | undefined;
 
 export interface GameVersion {
-  id: "alpha" | "alpha-debug" | "beta" | "beta-debug" | "develop";
+  id: "alpha" | "alpha-debug" | "beta" | "beta-debug" | "develop" | "staging";
   label: string;
   /** iframe path for this build */
   path: string;
@@ -45,6 +45,10 @@ export const GAME_VERSIONS: GameVersion[] = [
   { id: "beta",        label: "Beta",            path: "/godot/beta/index.html",       minTier: "initiate", available: false },
   { id: "beta-debug",  label: "Beta (Debug)",    path: "/godot/beta-debug/index.html", minTier: "legend",   available: false },
   { id: "develop",     label: "Develop (Debug)", path: "/godot/develop/index.html",    minTier: "legend",   available: false },
+  // Frozen tagged QA cut (0.8.x line) off origin/staging — Quinn re-baselines here.
+  // Debug featureset (TestBridge hooks for her driver), Legend/admin-gated, runtime
+  // availability via channels.json. Deploys via the fast lane ([deploy-staging]).
+  { id: "staging",     label: "Staging (QA)",    path: "/godot/staging/index.html",    minTier: "legend",   available: false },
 ];
 
 export function isUnlocked(v: GameVersion, user: AuthUser): boolean {

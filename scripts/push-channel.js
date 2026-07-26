@@ -44,6 +44,7 @@ import { existsSync, readFileSync, writeFileSync, unlinkSync, readdirSync } from
 import { createHash } from "crypto";
 import { gzipSync } from "zlib";
 import { join, dirname } from "path";
+import { resolveScriptKey, verifyPckEncryption } from "./verify-pck-encryption.js";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -132,6 +133,31 @@ for (const p of packEntries) {
     die(`unsafe pack path '${p && p.path}' — expected a bare <name>.pck (no slashes/metachars)`);
 }
 for (const p of packEntries) verify(join(packsDir, p.path), p.sha256, `pack ${p.path}`);
+
+// --- encryption gate: decrypt + MD5-verify every encrypted entry -------------
+// sha256 above proves the pack is what the build produced; this proves the build
+// produced a pack whose encrypted scripts/scenes actually DECRYPT under the
+// release key. A subset failing = a mixed-key / corrupt export (the 2026-07-25
+// combat hang: menus + combat scripts wouldn't decrypt -> on-demand loads hung).
+// Catch it HERE, not on a player's screen. Only ever SKIPS (loud warning) when no
+// key is resolvable (local break-glass) or the pack format isn't the one the
+// verifier knows — never a silent pass on an actual decrypt failure.
+{
+  const encKey = resolveScriptKey(process.argv);
+  if (!encKey) {
+    console.warn("[push-channel] ⚠ no release key resolvable — SKIPPING encryption verify (deploying UNVERIFIED). Set GODOT_RELEASE_SCRIPT_KEY or pass --key=<64hex> to gate.");
+  } else {
+    for (const pk of [basePck, ...packEntries.map((p) => join(packsDir, p.path))]) {
+      const r = verifyPckEncryption(pk, encKey);
+      if (!r.supported) { console.warn(`[push-channel] ⚠ ${pk}: ${r.reason} — encryption NOT verified.`); continue; }
+      console.log(`[push-channel] 🔐 ${pk}: ${r.encrypted} encrypted entr(y|ies), ${r.verified} decrypt+MD5 OK, ${r.failures.length} failed`);
+      if (r.failures.length) {
+        for (const f of r.failures.slice(0, 15)) console.error(`   ✗ ${f.path}: ${f.reason}`);
+        die(`encryption verify FAILED for ${pk}: ${r.failures.length} encrypted entr(y|ies) won't decrypt under the release key — corrupt/mixed-key export, refusing to deploy (nothing uploaded).`);
+      }
+    }
+  }
+}
 
 // --- obfuscate the base build (idempotent) -----------------------------
 const baseIndex = join(baseDir, "index.html");

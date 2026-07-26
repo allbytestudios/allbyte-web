@@ -61,6 +61,9 @@ RUN mkdir -p /workspace/GameDev/Godots && ln -sf /usr/local/bin/godot /workspace
 # the obfuscator at root/scripts/ and gameVersions.ts at root/src/lib/. With
 # push-channel at /opt/exporter/, root=/opt — so mirror that layout.
 COPY scripts/push-channel.js /opt/exporter/push-channel.js
+# push-channel imports ./verify-pck-encryption.js (the pre-deploy decrypt+MD5
+# gate) as a SIBLING — must sit next to it at /opt/exporter/ or the import 404s.
+COPY scripts/verify-pck-encryption.js /opt/exporter/verify-pck-encryption.js
 COPY scripts/obfuscate-godot-export.js /opt/scripts/obfuscate-godot-export.js
 COPY src/lib/gameVersions.ts /opt/src/lib/gameVersions.ts
 

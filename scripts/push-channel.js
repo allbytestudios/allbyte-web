@@ -44,7 +44,6 @@ import { existsSync, readFileSync, writeFileSync, unlinkSync, readdirSync } from
 import { createHash } from "crypto";
 import { gzipSync } from "zlib";
 import { join, dirname } from "path";
-import { resolveScriptKey, verifyPckEncryption } from "./verify-pck-encryption.js";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -143,12 +142,19 @@ for (const p of packEntries) verify(join(packsDir, p.path), p.sha256, `pack ${p.
 // key is resolvable (local break-glass) or the pack format isn't the one the
 // verifier knows — never a silent pass on an actual decrypt failure.
 {
-  const encKey = resolveScriptKey(process.argv);
-  if (!encKey) {
+  // Load the verifier lazily + resiliently: a missing module (e.g. an exporter
+  // image that shipped push-channel without it) must WARN and skip, never crash
+  // the deploy. The gate hardens against corruption; it must not itself be a
+  // single point of failure.
+  let gate = null;
+  try { gate = await import("./verify-pck-encryption.js"); }
+  catch (e) { console.warn(`[push-channel] ⚠ encryption verifier unavailable (${e.code || e.message}) — SKIPPING gate (deploying UNVERIFIED).`); }
+  const encKey = gate ? gate.resolveScriptKey(process.argv) : null;
+  if (gate && !encKey) {
     console.warn("[push-channel] ⚠ no release key resolvable — SKIPPING encryption verify (deploying UNVERIFIED). Set GODOT_RELEASE_SCRIPT_KEY or pass --key=<64hex> to gate.");
-  } else {
+  } else if (gate && encKey) {
     for (const pk of [basePck, ...packEntries.map((p) => join(packsDir, p.path))]) {
-      const r = verifyPckEncryption(pk, encKey);
+      const r = gate.verifyPckEncryption(pk, encKey);
       if (!r.supported) { console.warn(`[push-channel] ⚠ ${pk}: ${r.reason} — encryption NOT verified.`); continue; }
       console.log(`[push-channel] 🔐 ${pk}: ${r.encrypted} encrypted entr(y|ies), ${r.verified} decrypt+MD5 OK, ${r.failures.length} failed`);
       if (r.failures.length) {

@@ -99,6 +99,8 @@ tbody tr:nth-child(even){ background:rgba(60,40,20,.045); }
 .dtype-icon,.status-icon{ width:26px; height:26px; vertical-align:middle; image-rendering:pixelated; }
 .figure{ text-align:center; margin:1.2em auto; }
 .figure img{ image-rendering:pixelated; }
+/* hi-res annotated diagrams/screenshots must downscale SMOOTH, not nearest (which granulates on phones) */
+.figure.wide img{ image-rendering:auto; }
 .figure figcaption{ font-style:italic; color:var(--ink-soft); font-size:.86em; margin-top:.5em; }
 .figure.portrait img,.figure.sprite img{ background:rgba(60,40,20,.06); border:1px solid var(--rule);
   padding:14px; border-radius:4px; }
@@ -194,7 +196,7 @@ a:focus-visible{ outline:2px solid var(--crimson); outline-offset:3px; }
 <ul><li><strong>Left-click</strong>: <strong>confirm / interact</strong>: walk to a spot, talk to an NPC, open a chest, pick a menu option, or pick an attack target.</li><li><strong>Right-click</strong>: <strong>Cancel / Back</strong> (also <strong>Run</strong> in battle).</li><li><strong>Two modes, auto-switching:</strong> moving the <strong>mouse</strong> switches to mouse mode (a feather cursor appears); pressing <strong>WASD</strong> switches back. <em>Only mouse <strong>movement</strong> flips the mode, a click never does.</em></li></ul>
 <h2>Mobile: touch controls</h2>
 <p>On a phone (landscape) the game draws an <strong>on-screen controller</strong>, a <strong>d-pad</strong> on the left and the four <strong>face buttons</strong> on the right:</p>
-<figure class="figure wide"><img src="assets/d18d8e394c9c.png" alt="The mobile touch controller, d-pad on the left, face buttons on the right."><figcaption>The mobile touch controller, d-pad on the left, face buttons on the right.</figcaption></figure>
+<figure class="figure wide"><img src="assets/95d10b2bf92c.png" alt="The mobile touch controller, d-pad on the left, face buttons on the right."><figcaption>The mobile touch controller, d-pad on the left, face buttons on the right.</figcaption></figure>
 <ul><li><strong>D-pad</strong>: move and navigate menus.</li><li><strong>&#10005; Cross</strong> <em>(bottom)</em>, <strong>Confirm / Interact</strong>.</li><li><strong>&#9675; Circle</strong> <em>(right)</em>, <strong>Cancel / Back</strong>.</li><li><strong>&#9744; Square</strong> <em>(left)</em>, <strong>Select / Open the Menu</strong>.</li><li><strong>&#9651; Triangle</strong> <em>(top)</em>, <strong>secondary</strong> (e.g. toggle the scene-exit markers).</li></ul>
 <p><em>(PlayStation convention: <strong>Cross = confirm, Circle = cancel</strong>.)</em></p></div>
   <div class="leaf-foot"><span class="orn">&#10070;</span><span class="folio-b">04</span></div>
@@ -452,7 +454,7 @@ function normalizeDashes(html) {
  *   - trailing dash at line end                         -> ".."
  *   - everything else                                   -> ", "
  */
-export function normalizeDashesMd(md) {
+function normalizeDashesMd(md) {
   if (!md) return md;
   var head = "", body = md;
   var fm = md.match(/^﻿?---\r?\n[\s\S]*?\r?\n---\r?\n?/);

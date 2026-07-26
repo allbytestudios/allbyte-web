@@ -135,7 +135,10 @@ const MANUAL_API = "https://2qvnqlwv78.execute-api.us-east-1.amazonaws.com";
 const editorJsPath = join(root, "scripts/manual-editor.js");
 // The client editor renders overrides through the same dash normalizer, so prepend
 // its source (export stripped) ahead of the editor IIFE — one source of truth.
-const NORM_SRC = readFileSync(join(root, "scripts/dash-normalize.js"), "utf8").replace(/^export\s+/m, "");
+// Strip EVERY `export ` (the module has two: normalizeDashes + normalizeDashesMd);
+// a stray `export` in a plain <script> throws "Unexpected token 'export'" and kills
+// the whole editor bundle (no overlay apply, no Edit buttons).
+const NORM_SRC = readFileSync(join(root, "scripts/dash-normalize.js"), "utf8").replace(/^export\s+/gm, "");
 const EDITOR = existsSync(editorJsPath)
   ? `<script>${NORM_SRC}\n${readFileSync(editorJsPath, "utf8").replace("%%MANUAL_API%%", MANUAL_API).replace(/<\/(script)/gi, "<\\/$1")}</script>`
   : "";

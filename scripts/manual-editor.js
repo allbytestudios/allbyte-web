@@ -83,8 +83,15 @@
   }
 
   // ---- apply overrides ------------------------------------------------------
+  function esc(s) { return window.CSS && CSS.escape ? CSS.escape(s) : s; }
   function proseOf(key) {
-    var leaf = document.querySelector('.leaf[data-section="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]');
+    // per-entry key (cast:elias) -> the card's .charbio; else the section's .prose
+    var sub = /^([a-z]+):(.+)$/.exec(key);
+    if (sub) {
+      var card = document.querySelector("[data-" + sub[1] + "-key=\"" + esc(sub[2]) + "\"]");
+      return card ? card.querySelector(".charbio") : null;
+    }
+    var leaf = document.querySelector('.leaf[data-section="' + esc(key) + '"]');
     return leaf ? leaf.querySelector(".prose") : null;
   }
   function applyOne(key) {
@@ -93,7 +100,8 @@
       var rendered = renderMd(ov.edited_md);
       if (typeof normalizeDashes === "function") rendered = normalizeDashes(rendered); // no em-dashes (AI tell)
       el.innerHTML = rendered;
-      el.closest(".leaf").setAttribute("data-overridden", "true");
+      var container = el.closest("[data-cast-key]") || el.closest(".leaf");
+      if (container) container.setAttribute("data-overridden", "true");
     }
   }
   function applyAll() { Object.keys(overrides).forEach(applyOne); }
@@ -114,19 +122,28 @@
   // ---- admin edit affordance ------------------------------------------------
   // Grouped chapters render several .md files as one leaf (e.g. "Combat" =
   // battle + screen + status_damage). A single-file overlay would clobber the
-  // other files' content, so skip them until multi-file editing lands.
+  // other files' content, so skip them until per-subfile Combat editing lands.
   var GROUPED = { battle: 1 };
+  function addBtn(anchor, key) {
+    if (!anchor || anchor.querySelector(".manual-edit-btn")) return;
+    var b = document.createElement("button");
+    b.className = "manual-edit-btn"; b.type = "button"; b.textContent = "Edit";
+    (function (k) { b.addEventListener("click", function () { openEditor(k); }); })(key);
+    anchor.appendChild(b);
+  }
   function injectButtons() {
+    // single-file, non-grouped sections -> button in the leaf head
     var leaves = document.querySelectorAll(".leaf[data-section]");
     for (var i = 0; i < leaves.length; i++) {
       var leaf = leaves[i], key = leaf.getAttribute("data-section");
-      if (!bodies[key] || GROUPED[key]) continue; // single-file, non-grouped sections only
-      var head = leaf.querySelector(".leaf-head");
-      if (!head || head.querySelector(".manual-edit-btn")) continue;
-      var b = document.createElement("button");
-      b.className = "manual-edit-btn"; b.type = "button"; b.textContent = "Edit";
-      (function (k) { b.addEventListener("click", function () { openEditor(k); }); })(key);
-      head.appendChild(b);
+      if (!bodies[key] || GROUPED[key]) continue;
+      addBtn(leaf.querySelector(".leaf-head"), key);
+    }
+    // per-character cast cards -> a button per card (bodies keyed cast:<name>)
+    var cards = document.querySelectorAll("[data-cast-key]");
+    for (var j = 0; j < cards.length; j++) {
+      var card = cards[j], ckey = "cast:" + card.getAttribute("data-cast-key");
+      if (bodies[ckey] && card.querySelector(".charbio")) addBtn(card, ckey);
     }
   }
 

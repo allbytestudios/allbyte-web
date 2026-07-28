@@ -113,11 +113,41 @@ html = html.replace(
   }
 );
 
+// --- per-character cast cards: data-cast-key + wrap each card's bio -----------
+// The Characters chapter renders one <div class="charcard"> per character; the
+// frontmatter (portrait, statblock, quote) renders first, then the BODY (cast/
+// <key>.md) as loose <p>s. Tag each card by its figcaption name and wrap the body
+// region (after the quote, up to the next card / leaf-foot) in .charbio, so the
+// inline editor can bind a per-character Edit -> cast:<key> without touching the
+// frontmatter (spine guard) or the chapter footer.
+const CAST_NAME_KEY = { elias: "elias", falmri: "falmri", mia: "mia" };
+html = html.replace(
+  /(<section class="leaf"[^>]*data-section="cast"[\s\S]*?)(?=<section class="leaf"|<\/body>)/,
+  (leaf) => leaf.replace(
+    /(<div class="charcard")([\s\S]*?)(?=<div class="charcard"|<div class="leaf-foot"|<\/section>)/g,
+    (card, open, rest) => {
+      const fig = /<figcaption[^>]*>([^<]+)</.exec(card);
+      if (!fig) return card;
+      const key = CAST_NAME_KEY[fig[1].trim().split(/\s+/)[0].toLowerCase()];
+      if (!key) return card;
+      let tagged = `${open} data-cast-key="${key}"${rest}`;
+      const qi = tagged.indexOf("char-quote");
+      const pe = qi >= 0 ? tagged.indexOf("</p>", qi) : -1;
+      if (pe >= 0) {
+        const cut = pe + 4;
+        tagged = tagged.slice(0, cut) + '<div class="prose charbio">' + tagged.slice(cut) + "</div>";
+      }
+      return tagged;
+    }
+  )
+);
+
 // --- inject the back-link + the base-markdown blob ---------------------------
 const BACK = '<a href="/" class="manual-home">← AllByte Studios</a>';
 const EDITOR_CSS =
   ".manual-home{position:fixed;top:12px;left:14px;z-index:60;font-family:'ModernGoth',Georgia,serif;font-size:14px;color:var(--gilt,#9a7736);text-decoration:none;background:rgba(0,0,0,.22);padding:4px 11px;border-radius:5px;}.manual-home:hover{color:var(--crimson,#8a2b21);}" +
   ".manual-edit-btn{font-family:'ModernGoth',Georgia,serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--crimson,#8a2b21);background:rgba(138,43,33,.08);border:1px solid rgba(138,43,33,.35);border-radius:4px;padding:2px 9px;cursor:pointer;margin-left:.6em;}.manual-edit-btn:hover{background:rgba(138,43,33,.16);}.leaf[data-overridden] .manual-edit-btn::after{content:' · edited';color:var(--gilt,#9a7736);}" +
+  "[data-cast-key]{position:relative;}[data-cast-key] .manual-edit-btn{position:absolute;top:10px;right:10px;margin:0;z-index:5;}[data-cast-key][data-overridden] .manual-edit-btn::after{content:' · edited';color:var(--gilt,#9a7736);}" +
   ".me-scrim{position:fixed;inset:0;z-index:200;background:rgba(30,22,10,.5);}" +
   ".me-panel{position:fixed;z-index:201;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,94vw);max-height:90vh;display:flex;flex-direction:column;background:#f4ecd7;color:#2c2118;border:1px solid #9a7736;border-radius:8px;box-shadow:0 12px 40px rgba(30,22,10,.5);font-family:'ModernGoth',Georgia,serif;padding:1rem 1.1rem 1.1rem;}" +
   ".me-head{display:flex;align-items:center;justify-content:space-between;font-size:1rem;}.me-head b{color:#8a2b21;}.me-x{background:none;border:0;font-size:1.3rem;line-height:1;cursor:pointer;color:#5f5140;padding:.1rem .35rem;}.me-hint{margin:.35rem 0 .6rem;font-size:.8rem;color:#5f5140;}" +

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import NavAuth from "../components/NavAuth.svelte";
 ---
 
 <BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A world that has forgotten its heroes. Play the free browser demo of The Chronicles of Nesis, a handcrafted tactical RPG from AllByte Studios.">
@@ -8,6 +9,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   <a class="brand" href="#play"><img class="brand-icon" src="/home/eed5218325.png" alt=""><span>AllByte</span></a>
   <nav class="links">
     <span class="navgroup"><a href="#play">The Chronicles of Nesis</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="#studio">Studio</a></span>
+    <NavAuth client:load />
     <button class="theme-toggle" onclick="var r=document.documentElement,d=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches);r.setAttribute('data-theme',d?'light':'dark');this.textContent=d?'☾':'☀';" aria-label="Toggle theme">☾</button>
   </nav>
 </div></header>

@@ -1,18 +1,198 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import BilateralLayout from "../components/BilateralLayout.svelte";
-import { getCollection } from "astro:content";
-import assetIndex from "../data/asset-index.json";
-import spriteGifs from "../data/sprite-gifs.json";
-
-const allPosts = (await getCollection("devlogs")).filter((p) => !p.data.draft && !p.data.unlisted);
-const devlogTotal = allPosts.length;
-const artCounts = {
-  music: assetIndex.music.length,
-  artwork: new Set(spriteGifs.map((s: any) => s.character)).size,
-};
 ---
 
-<BaseLayout title="AllByte Studios">
-  <BilateralLayout client:load devlogTotal={devlogTotal} artCounts={artCounts} />
+<BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A world that has forgotten its heroes. Play the free browser demo of The Chronicles of Nesis, a handcrafted tactical RPG from AllByte Studios.">
+  <div class="home">
+<header class="nav"><div class="nav-in">
+  <a class="brand" href="#play"><img class="brand-icon" src="/home/eed5218325.png" alt=""><span>AllByte</span></a>
+  <nav class="links">
+    <span class="navgroup"><a href="#play">The Chronicles of Nesis</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="#studio">Studio</a></span>
+    <button class="theme-toggle" onclick="var r=document.documentElement,d=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches);r.setAttribute('data-theme',d?'light':'dark');this.textContent=d?'☾':'☀';" aria-label="Toggle theme">☾</button>
+  </nav>
+</div></header>
+
+<!-- HERO: the game -->
+<div class="ghero" id="play"><div class="wrap">
+  <h1>The Chronicles of Nesis</h1>
+  <div class="subtitle">A world that has forgotten its heroes,<br>and heroes who have forgotten themselves.</div>
+  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><a class="btn btn-primary btn-lg" href="/play/">Play the Demo</a><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div><span class="hero-banner-trust">Free · Runs in your browser · No download</span></div></div>
+</div></div>
+
+<hr class="rule">
+
+<!-- WHAT IT PLAYS LIKE -->
+<section id="pitch"><div class="wrap">
+  <div class="sec-head"><div class="eyebrow">Gameplay</div><h2>A Deep Tactical RPG</h2><p class="lede">Grid combat, a hand-built world, and choices that matter, in a browser.</p></div>
+  <div class="frow"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/9d006f4f31.jpg" alt="Tactical grid combat"></div><div class="txt"><div class="fnum">I</div><h3>Tactical Combat</h3><p>Turn-based, positional battles on a grid: flank, focus fire, and time your skills. Every unit, terrain tile, and status effect matters. No random encounters.</p></div></div>
+  <div class="frow rev"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/b6f1f4dacb.jpg" alt="Exploring the world"></div><div class="txt"><div class="fnum">II</div><h3>A World to Explore</h3><p>Wander villages, forests, and dungeons drawn entirely by hand. Find hidden relics, unlock the skill tree, and gear up for what waits below.</p></div></div>
+  <div class="frow"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/81bc45c69c.jpg" alt="Story and dialogue"></div><div class="txt"><div class="fnum">III</div><h3>Legacy &amp; Lore</h3><p>A world three hundred years past its age of heroes. Meet a cast with their own reasons to walk the silent roads, and uncover what the Anam left behind.</p></div></div>
+</div></section>
+
+<hr class="rule">
+
+<!-- CHARACTERS (animated) -->
+<section id="creation"><div class="wrap">
+  <div class="sec-head"><div class="eyebrow">Characters</div></div>
+  <div class="cards3">
+    <div class="charcard"><div class="charstage"><div class="sprite sm elias" role="img" aria-label="Elias"></div></div><h3>Elias</h3><p class="quote">“The strong are meant to help the weak.”</p></div>
+    <div class="charcard"><div class="charstage"><div class="sprite sm falmri" role="img" aria-label="Falmri"></div></div><h3>Falmri</h3><p class="quote">“The right path is always simple… if you’re an idiot.”</p></div>
+    <div class="charcard"><div class="charstage"><div class="sprite mia" role="img" aria-label="Mia"></div></div><h3>Mia</h3><p class="quote">“Fate is just an easy excuse for inaction.”</p></div>
+  </div>
+  <div style="text-align:center;margin-top:1.8rem"><a class="btn btn-ghost" href="#creation">Meet the Characters</a></div>
+</div></section>
+
+<hr class="rule">
+
+<!-- THE WORLD -->
+
+<!-- STUDIO: small, at the bottom -->
+<section id="studio" class="studio"><div class="wrap">
+  <div class="studioline">
+    <div class="eyebrow">The Studio Behind the World</div>
+    <div class="who">AllByte Studios</div>
+    <div class="tag">Building Big Worlds with Small Teams</div>
+    <p class="sub">Independent games, open development, and the technology behind them, shared as they’re made.</p>
+  </div>
+  <div class="bts">
+    <div class="btscard"><div class="sigil">✒</div><h4>Development Journal</h4><p>The decisions, dead ends, and breakthroughs behind the game.</p><a href="/devlog/">Read Devlogs</a></div>
+    <div class="btscard"><div class="sigil">✦</div><h4>Art &amp; Music Collection</h4><p>Sprites, soundtrack, font design, and visual development. Handcrafted.</p><a href="/artwork/">Explore</a></div>
+    <div class="btscard"><div class="sigil">⚙</div><h4>Builder’s Workshop <span class="relic-dot"></span></h4><p>Tools, systems, and architecture behind The Chronicles of Nesis.</p><a href="/test/">Enter</a></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="fnav"><a href="/play/">Play</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="/manual/">Manual</a><a href="/walkthrough/">Strategy Guide</a><a href="#studio">Studio</a></div>
+  <div class="cr">The Chronicles of Nesis · © AllByte Studios · Made and shared in the open.</div>
+</div>
+
+</footer>
+  </div>
 </BaseLayout>
+
+<style is:global>
+
+  :root { --paper-tex:url("/home/1f41ebc796.jpg"); --fl-bright:1;
+    --ink:#3a2c1b; --ink-soft:#6a5836; --crimson:#8a2b21; --crimson-lt:#a8412f; --gilt:#9a7736; --gilt-lt:#c8a24e; --gilt-deep:#7a5c22; --relic:#2f8f7a;
+    --rule:rgba(122,92,34,.55); --shadow:rgba(58,44,27,.28); --panel:rgba(247,238,214,.55); --paperblend:rgba(231,217,184,.22); }
+  @media (prefers-color-scheme:dark){ :root{ --paper-tex:url("/home/aed76c48b4.jpg"); --fl-bright:1.75; --ink:#ecdcbd; --ink-soft:#bda87f; --crimson:#e0715a; --crimson-lt:#eb886d; --gilt:#c8a24e; --gilt-lt:#e6c877; --gilt-deep:#a07e34; --relic:#5fd0b3; --rule:rgba(200,162,78,.42); --shadow:rgba(0,0,0,.55); --panel:rgba(38,29,18,.5); --paperblend:rgba(18,13,7,.28); } }
+  :root[data-theme="dark"]{ --paper-tex:url("/home/aed76c48b4.jpg"); --fl-bright:1.75; --ink:#ecdcbd; --ink-soft:#bda87f; --crimson:#e0715a; --crimson-lt:#eb886d; --gilt:#c8a24e; --gilt-lt:#e6c877; --gilt-deep:#a07e34; --relic:#5fd0b3; --rule:rgba(200,162,78,.42); --shadow:rgba(0,0,0,.55); --panel:rgba(38,29,18,.5); --paperblend:rgba(18,13,7,.28); }
+  :root[data-theme="light"]{ --paper-tex:url("/home/1f41ebc796.jpg"); --fl-bright:1; --ink:#3a2c1b; --ink-soft:#6a5836; --crimson:#8a2b21; --crimson-lt:#a8412f; --gilt:#9a7736; --gilt-lt:#c8a24e; --gilt-deep:#7a5c22; --relic:#2f8f7a; --rule:rgba(122,92,34,.55); --shadow:rgba(58,44,27,.28); --panel:rgba(247,238,214,.55); --paperblend:rgba(231,217,184,.22); }
+
+  *{box-sizing:border-box;}
+  .home{ min-height:100vh; color:var(--ink); line-height:1.64; background:linear-gradient(var(--paperblend),var(--paperblend)),var(--paper-tex); background-size:cover; background-attachment:fixed; font-family:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif; -webkit-font-smoothing:antialiased; overflow-x:clip; }
+  h1,h2,h3,.display{ font-family:"AllByteCustom","Trajan Pro",Georgia,serif; font-weight:400; text-wrap:balance; }
+  img{ max-width:100%; display:block; } a{ color:inherit; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.4rem); }
+  .eyebrow{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.26em; font-size:.72rem; color:var(--gilt-deep); display:flex; align-items:center; gap:.7rem; justify-content:center; }
+  .eyebrow::before,.eyebrow::after{ content:""; flex:1; max-width:3rem; height:1px; background:linear-gradient(90deg,transparent,var(--rule),transparent); }
+  .rule{ max-width:1080px; margin:1.6rem auto 0; height:0; border:0; border-top:1px solid var(--rule); position:relative; }
+  .rule::after{ content:""; position:absolute; left:50%; top:-3px; width:7px; height:7px; transform:translateX(-50%) rotate(45deg); background:var(--gilt); box-shadow:0 0 0 3px var(--paperblend); }
+
+  .btn{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.1em; font-size:.84rem; text-decoration:none; display:inline-flex; align-items:center; gap:.5em; padding:.78rem 1.5rem; border-radius:2px; border:1px solid var(--gilt); transition:transform .15s,box-shadow .2s,background .2s; cursor:pointer; }
+  .btn-primary{ background:var(--crimson); color:#f6eccf; border-color:var(--gilt-deep); box-shadow:0 2px 0 rgba(0,0,0,.18),inset 0 0 0 1px rgba(200,162,78,.35); }
+  .btn-primary:hover{ background:var(--crimson-lt); transform:translateY(-1px); box-shadow:0 5px 16px var(--shadow); }
+  .btn-ghost{ background:rgba(200,162,78,.05); color:var(--ink); } .btn-ghost:hover{ background:rgba(154,119,54,.16); transform:translateY(-1px); }
+  .btn-lg{ font-size:.98rem; padding:.95rem 1.9rem; }
+
+  .frame{ position:relative; border:1px solid var(--gilt); box-shadow:inset 0 0 0 3px var(--paperblend),inset 0 0 0 4px var(--rule); border-radius:2px; }
+  .frame > .fl{ position:absolute; width:54px; height:54px; z-index:3; pointer-events:none; opacity:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+  .fl-tl{ top:-14px; left:-14px; transform:rotate(0);} .fl-tr{ top:-14px; right:-14px; transform:rotate(90deg);} .fl-br{ bottom:-14px; right:-14px; transform:rotate(180deg);} .fl-bl{ bottom:-14px; left:-14px; transform:rotate(270deg);}
+  .ghero .art > .fl{ width:112px; height:112px; }
+
+  /* minimal game nav + sticky Play */
+  header.nav{ position:sticky; top:0; z-index:40; background:linear-gradient(var(--paperblend),var(--paperblend)),var(--paper-tex); background-size:cover; border-bottom:2px solid var(--rule); box-shadow:0 1px 0 var(--gilt-lt),0 3px 10px var(--shadow); }
+  .nav-in{ display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.5rem clamp(1.1rem,4vw,2.4rem); max-width:1200px; margin:0 auto; }
+  .brand{ display:inline-flex; align-items:center; gap:.5rem; font-family:"AllByteCustom",Georgia,serif; font-size:1.15rem; letter-spacing:.03em; text-decoration:none; color:var(--crimson); white-space:nowrap; }
+  .brand-icon{ width:28px; height:28px; display:block; }
+  .navgroup{ display:flex; align-items:center; }
+  nav.links .navgroup a{ padding:.2rem 1.4rem; }
+  nav.links .navgroup a:first-child{ padding-left:0; }
+  .navgroup a + a{ border-left:1px solid var(--rule); }
+  nav.links{ display:flex; gap:1.3rem; align-items:center; }
+  nav.links a{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.09em; font-size:.72rem; color:var(--ink-soft); text-decoration:none; border-bottom:2px solid transparent; padding:.2rem 0; transition:.18s; }
+  nav.links a:hover{ color:var(--crimson); border-color:var(--gilt); }
+  .nav-play{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.08em; font-size:.74rem; background:var(--crimson); color:#f6eccf; padding:.4rem .9rem; border-radius:2px; text-decoration:none; border:1px solid var(--gilt-deep); }
+  .theme-toggle{ background:none; border:1px solid var(--rule); color:var(--ink-soft); border-radius:2px; padding:.28rem .5rem; cursor:pointer; font-size:.9rem; line-height:1; }
+  @media (max-width:880px){ nav.links a:not(.nav-play){ display:none; } }
+
+  /* HERO — the game, front & center */
+  .ghero{ text-align:center; padding:clamp(2.4rem,5vw,3.8rem) 0 clamp(1.8rem,3vw,2.6rem); }
+  .ghero .kick{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.22em; font-size:.8rem; color:var(--gilt-deep); }
+  .ghero h1{ color:var(--crimson); text-wrap:balance; font-size:clamp(2.8rem,8vw,5rem); margin:.4rem 0 .12rem; line-height:1.02; -webkit-text-stroke:2px #45120d; text-stroke:2px #45120d; paint-order:stroke fill; text-shadow:0 1px 0 rgba(255,247,224,.32),0 3px 7px rgba(0,0,0,.22); }
+  .ghero .subtitle{ font-family:"AllByteCustom",Georgia,serif; color:var(--ink); font-size:clamp(1.25rem,2.9vw,1.72rem); letter-spacing:.015em; line-height:1.5; margin:.5rem auto 0; text-shadow:0 1px 0 rgba(255,247,224,.5); }
+  .ghero .art{ max-width:960px; margin:1.6rem auto 0; padding:6px; background:var(--panel); }
+  .ghero .art{ position:relative; } .ghero .art img:not(.fl){ width:100%; display:block; height:clamp(340px,46vh,470px); object-fit:cover; object-position:50% 55%; }
+  .hero-scrim{ position:absolute; left:6px; right:6px; bottom:6px; height:62%; z-index:1; pointer-events:none; background:linear-gradient(to top,rgba(26,15,9,.86),rgba(26,15,9,.34) 52%,transparent); }
+  .hero-banner{ position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:2; width:min(92%,600px); display:flex; flex-direction:column; align-items:center; gap:.7rem; text-align:center; padding:1.05rem 1.3rem .95rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.97),rgba(240,229,198,.97)); border:1px solid var(--gilt-lt); box-shadow:0 12px 30px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,247,224,.22); }
+  .hero-banner::before{ content:""; position:absolute; inset:4px; border:1px solid var(--rule); border-radius:2px; pointer-events:none; }
+  .hero-banner-cta{ display:flex; gap:.9rem; flex-wrap:wrap; justify-content:center; }
+  .hero-banner-trust{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.14em; font-size:.68rem; color:var(--gilt-deep); }
+  @media (max-width:520px){ .hero-banner{ position:static; transform:none; width:auto; margin:1rem auto 0; } .hero-scrim{ display:none; } }
+  .ghero .cta{ display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem; align-items:center; }
+  .ghero .trust{ display:block; margin-top:.9rem; font-size:.86rem; color:var(--ink-soft); letter-spacing:.02em; }
+
+  section{ padding:clamp(2.6rem,5vw,3.8rem) 0; position:relative; }
+  .sec-head{ text-align:center; margin-bottom:2.2rem; }
+  .sec-head h2{ font-size:clamp(1.9rem,4.5vw,2.9rem); margin:.5rem 0 .3rem; color:var(--crimson); }
+  .lede{ max-width:74ch; margin:0 auto; color:var(--ink-soft); font-size:1.1rem; }
+
+  /* WHAT IT PLAYS LIKE — alternating feature rows w/ screenshots */
+  .frow{ display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(1.5rem,4vw,3rem); align-items:center; margin:0 auto clamp(2rem,4vw,3rem); max-width:1000px; }
+  .frow:last-child{ margin-bottom:0; }
+  .frow.rev .shot{ order:2; }
+  .frow .shot{ padding:6px; background:var(--panel); }
+  .frow .shot img:not(.fl){ width:100%; display:block; }
+  .frow h3{ color:var(--crimson); font-size:clamp(1.5rem,3.5vw,2.1rem); margin:.1rem 0 .5rem; }
+  .frow p{ font-size:1.08rem; color:var(--ink); margin:0; }
+  .frow .fnum{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt); letter-spacing:.1em; font-size:.8rem; }
+  @media (max-width:720px){ .frow{ grid-template-columns:1fr; } .frow.rev .shot{ order:0; } .frow .txt{ text-align:center; } }
+
+  /* EXPLORE NESIS — animated character sprites */
+  .cards3{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.3rem; margin-top:1.4rem; }
+  .charcard{ background:var(--panel); border:1px solid var(--rule); box-shadow:inset 0 0 0 3px var(--paperblend); border-radius:2px; padding:1.7rem 1.2rem 1.5rem; text-align:center; transition:transform .18s,box-shadow .2s; }
+  .charcard:hover{ transform:translateY(-4px); box-shadow:inset 0 0 0 3px var(--paperblend),0 12px 28px var(--shadow); }
+  .charstage{ height:158px; margin:0 auto 1rem; display:flex; align-items:flex-end; justify-content:center; position:relative; border-radius:9px 9px 2px 2px; background:radial-gradient(120% 92% at 50% 12%,rgba(47,143,122,.12),transparent 62%); box-shadow:inset 0 0 0 1px var(--gilt-lt),inset 0 0 0 4px var(--panel),inset 0 0 0 5px var(--rule); overflow:hidden; }
+  .charstage::after{ content:""; position:absolute; bottom:16px; left:50%; width:74px; height:12px; transform:translateX(-50%); border-radius:50%; background:radial-gradient(ellipse at center,rgba(0,0,0,.30),transparent 72%); }
+  .sprite{ position:relative; z-index:1; margin-bottom:16px; image-rendering:pixelated; background-repeat:no-repeat; filter:drop-shadow(0 2px 3px rgba(0,0,0,.38)); }
+  .sprite.sm{ width:88px; height:88px; background-size:528px 88px; }
+  .sprite.mia{ width:128px; height:128px; background-size:768px 128px; }
+  .charcard:hover .sprite.sm{ animation:walk .82s steps(6) infinite; }
+  .charcard:hover .sprite.mia{ animation:walkmia .82s steps(6) infinite; }
+  @media (prefers-reduced-motion:reduce){ .charcard:hover .sprite.sm,.charcard:hover .sprite.mia{ animation:none; } }
+  @keyframes walk{ to{ background-position-x:-528px; } }
+  @keyframes walkmia{ to{ background-position-x:-768px; } }
+  .sprite.elias{ background-image:url("/home/2e357dffa1.png"); } .sprite.falmri{ background-image:url("/home/5b7344d4ff.png"); } .sprite.mia{ background-image:url("/home/22fc6ef1a3.png"); }
+  .charcard h3{ color:var(--crimson); font-size:1.55rem; margin:0 0 .4rem; } .charcard .quote{ color:var(--ink-soft); font-style:italic; font-size:.98rem; }
+  @media (max-width:680px){ .cards3{ grid-template-columns:1fr; max-width:340px; margin-inline:auto; } }
+
+  .illum{ font-size:1.15rem; }
+  .illum::first-letter{ font-family:"AllByteCustom",Georgia,serif; float:left; font-size:4.4rem; line-height:.72; margin:.35rem .7rem .1rem 0; padding:.32rem .42rem .18rem; color:#f7edcf; background:linear-gradient(150deg,var(--crimson),#5f1b14); border:2px solid var(--gilt-lt); box-shadow:0 2px 8px var(--shadow),inset 0 0 0 1px rgba(200,162,78,.5); text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .world{ display:grid; grid-template-columns:1.08fr .92fr; gap:clamp(1.5rem,4vw,3rem); align-items:center; }
+  .world .map{ padding:6px; background:var(--panel); } .world .cta{ display:flex; gap:.8rem; margin-top:1.2rem; flex-wrap:wrap; }
+  @media (max-width:760px){ .world{ grid-template-columns:1fr; } .illum::first-letter{ float:none; display:inline-block; } }
+
+  /* STUDIO — small, at the very bottom */
+  .studio{ background:linear-gradient(var(--paperblend),var(--paperblend)); padding:clamp(2.2rem,4vw,3rem) 0; }
+  .studioline{ text-align:center; }
+  .studioline .who{ font-family:"AllByteCustom",Georgia,serif; color:var(--crimson); font-size:1.7rem; }
+  .studioline .tag{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt-deep); letter-spacing:.03em; font-size:1.05rem; margin-top:.15rem; }
+  .studioline .sub{ color:var(--ink-soft); max-width:52ch; margin:.6rem auto 0; font-size:.98rem; }
+  .bts{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.1rem; margin-top:1.8rem; }
+  .btscard{ background:var(--panel); border:1px solid var(--rule); box-shadow:inset 0 0 0 3px var(--paperblend); border-radius:2px; padding:1.3rem 1.3rem; transition:transform .18s,box-shadow .2s; }
+  .btscard:hover{ transform:translateY(-3px); box-shadow:inset 0 0 0 3px var(--paperblend),0 10px 24px var(--shadow); }
+  .btscard .sigil{ font-size:1.4rem; color:var(--gilt); } .btscard h4{ font-family:"AllByteCustom",Georgia,serif; color:var(--ink); font-size:1.34rem; letter-spacing:.01em; margin:.4rem 0 .35rem; }
+  .btscard p{ color:var(--ink); font-size:.94rem; line-height:1.5; margin:0 0 .8rem; }
+  .btscard a{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.08em; font-size:.84rem; color:var(--crimson); text-decoration:none; border-bottom:1px solid var(--gilt); }
+  .relic-dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--relic); vertical-align:middle; margin-left:.35rem; animation:pulse 2.6s ease-out infinite; }
+  @keyframes pulse{ 0%{ box-shadow:0 0 0 0 color-mix(in srgb,var(--relic) 60%,transparent);} 70%{ box-shadow:0 0 0 9px transparent;} 100%{ box-shadow:0 0 0 0 transparent;} }
+  @media (max-width:760px){ .bts{ grid-template-columns:1fr; } }
+
+  footer{ padding:1.8rem 0 2.6rem; border-top:2px solid var(--rule); text-align:center; color:var(--ink-soft); }
+  footer .fnav{ display:flex; gap:1.2rem; justify-content:center; flex-wrap:wrap; font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.08em; font-size:.72rem; }
+  footer .fnav a{ color:var(--ink-soft); text-decoration:none; } footer .fnav a:hover{ color:var(--crimson); }
+  footer .cr{ font-size:.8rem; margin-top:.9rem; opacity:.75; }
+  .note{ max-width:1080px; margin:1.4rem auto 0; padding:.9rem 1.1rem; border:1px dashed var(--rule); border-radius:2px; font-size:.86rem; color:var(--ink-soft); background:var(--panel); }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
+
+</style>

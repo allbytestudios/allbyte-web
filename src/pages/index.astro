@@ -6,12 +6,33 @@ import HeroPlay from "../components/HeroPlay.svelte";
 
 <BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A world that has forgotten its heroes. Play the free browser demo of The Chronicles of Nesis, a handcrafted tactical RPG from AllByte Studios.">
   <div class="home">
+  <script is:inline>
+    (function () {
+      var r = document.documentElement;
+      var read = function () { var m = document.cookie.match(/(?:^|; )abtheme=(light|dark)/); return m ? m[1] : null; };
+      var stored = read();
+      if (stored) r.setAttribute("data-theme", stored);
+      var cur = function () { var t = r.getAttribute("data-theme"); return t || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light"); };
+      window.__abTheme = {
+        icon: function () { return cur() === "dark" ? "☀" : "☾"; },
+        toggle: function (btn) {
+          var next = cur() === "dark" ? "light" : "dark";
+          r.setAttribute("data-theme", next);
+          document.cookie = "abtheme=" + next + ";path=/;max-age=31536000;SameSite=Lax";
+          if (btn) btn.textContent = next === "dark" ? "☀" : "☾";
+        },
+      };
+      var syncIcon = function () { var b = document.querySelector(".theme-toggle"); if (b) b.textContent = window.__abTheme.icon(); };
+      if (document.readyState !== "loading") syncIcon(); else document.addEventListener("DOMContentLoaded", syncIcon);
+      document.addEventListener("astro:page-load", function () { var s = read(); if (s) r.setAttribute("data-theme", s); syncIcon(); });
+    })();
+  </script>
 <header class="nav"><div class="nav-in">
   <a class="brand" href="#play"><img class="brand-icon" src="/home/eed5218325.png" alt=""><span>AllByte</span></a>
   <nav class="links">
     <span class="navgroup"><a href="#play">The Chronicles of Nesis</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="#studio">Studio</a></span>
     <NavAuth client:load />
-    <button class="theme-toggle" onclick="var r=document.documentElement,d=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches);r.setAttribute('data-theme',d?'light':'dark');this.textContent=d?'☾':'☀';" aria-label="Toggle theme">☾</button>
+    <button class="theme-toggle" onclick="__abTheme.toggle(this)" aria-label="Toggle theme">☾</button>
   </nav>
 </div></header>
 

@@ -8,7 +8,7 @@
   import { onMount, onDestroy } from "svelte";
 
   interface Props {
-    active: "roadmap" | "tickets" | "tests" | "decisions" | "marketing" | "players" | "traffic" | "scenarios" | "bugs" | "deploy" | "dialogue";
+    active: "roadmap" | "tickets" | "tests" | "decisions" | "marketing" | "players" | "traffic" | "scenarios" | "bugs" | "deploy" | "dialogue" | "vignettes";
   }
   let { active }: Props = $props();
 
@@ -133,6 +133,9 @@
   </a>
   <a href="/test/dialogue/" class="nav-tab" class:active={active === "dialogue"}>
     Dialogue
+  </a>
+  <a href="/test/vignettes/" class="nav-tab" class:active={active === "vignettes"}>
+    Vignettes
   </a>
 </nav>
 

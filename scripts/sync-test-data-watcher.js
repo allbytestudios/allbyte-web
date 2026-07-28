@@ -95,6 +95,7 @@ export function buildSyncCommands({
   const ownerQuestions = toPosix(join(chroniclesDir, "tickets", "owner_questions.json"));
   const ownerAnswers = toPosix(join(chroniclesDir, "tickets", "owner_answers.ndjson"));
   const daemonHeartbeat = toPosix(join(chroniclesDir, "tickets", ".answer_daemon_heartbeat.json"));
+  const relicVignettes = toPosix(join(chroniclesDir, "tools", "relic_vignettes.json"));
   const cmds = [];
   cmds.push({
     label: "test_index.json",
@@ -147,6 +148,17 @@ export function buildSyncCommands({
     argv: [
       "aws", "s3", "cp", ownerQuestions,
       `s3://${bucket}/test-snapshot/tickets/owner_questions.json`,
+      "--region", region,
+      "--cache-control", cacheCtrl,
+      "--content-type", "application/json",
+    ],
+  });
+  cmds.push({
+    label: "tools/relic_vignettes.json",
+    localPath: relicVignettes,
+    argv: [
+      "aws", "s3", "cp", relicVignettes,
+      `s3://${bucket}/test-snapshot/tools/relic_vignettes.json`,
       "--region", region,
       "--cache-control", cacheCtrl,
       "--content-type", "application/json",

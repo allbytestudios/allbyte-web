@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import NavAuth from "../components/NavAuth.svelte";
+import HeroPlay from "../components/HeroPlay.svelte";
 ---
 
 <BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A world that has forgotten its heroes. Play the free browser demo of The Chronicles of Nesis, a handcrafted tactical RPG from AllByte Studios.">
@@ -18,7 +19,7 @@ import NavAuth from "../components/NavAuth.svelte";
 <div class="ghero" id="play"><div class="wrap">
   <h1>The Chronicles of Nesis</h1>
   <div class="subtitle">A world that has forgotten its heroes,<br>and heroes who have forgotten themselves.</div>
-  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><a class="btn btn-primary btn-lg" href="/play/">Play the Demo</a><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div><span class="hero-banner-trust">Free · Runs in your browser · No download</span></div></div>
+  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div><span class="hero-banner-trust">Free · Runs in your browser · No download</span></div></div>
 </div></div>
 
 <hr class="rule">

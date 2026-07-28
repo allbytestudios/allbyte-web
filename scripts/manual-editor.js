@@ -24,9 +24,9 @@
   var token = null;
 
   // ---- markdown -> HTML (the manual's prose subset, incl. pipe tables) ------
-  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function escHtml(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function inline(raw) {
-    var t = esc(raw);
+    var t = escHtml(raw);
     t = t.replace(/`([^`]+)`/g, function (_, c) { return "<code>" + c + "</code>"; });
     t = t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (_, x, u) { return '<a href="' + u + '">' + x + "</a>"; });
     t = t.replace(/\[([^\]]+)\]/g, function (_, x) { return '<span class="item">' + x + "</span>"; }); // [Item] chips

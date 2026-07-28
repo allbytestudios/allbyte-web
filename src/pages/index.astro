@@ -40,7 +40,7 @@ import HeroPlay from "../components/HeroPlay.svelte";
 <div class="ghero" id="play"><div class="wrap">
   <h1>The Chronicles of Nesis</h1>
   <div class="subtitle">A world that has forgotten its heroes,<br>and heroes who have forgotten themselves.</div>
-  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div><span class="hero-banner-trust">Free · Runs in your browser · No download</span></div></div>
+  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="hero-media"><img class="hm-scene" src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hm-manual" aria-hidden="true"></div></div><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div><span class="hero-banner-trust">Free · Runs in your browser · No download</span></div></div>
 </div></div>
 
 <hr class="rule">
@@ -147,6 +147,15 @@ import HeroPlay from "../components/HeroPlay.svelte";
   .ghero .subtitle{ font-family:"AllByteCustom",Georgia,serif; color:var(--ink); font-size:clamp(1.25rem,2.9vw,1.72rem); letter-spacing:.015em; line-height:1.5; margin:.5rem auto 0; text-shadow:0 1px 0 rgba(255,247,224,.5); }
   .ghero .art{ max-width:960px; margin:1.6rem auto 0; padding:6px; background:var(--panel); }
   .ghero .art{ position:relative; } .ghero .art img:not(.fl){ width:100%; display:block; height:clamp(340px,46vh,470px); object-fit:cover; object-position:50% 55%; }
+  .hero-media{ position:relative; overflow:hidden; }
+  .hm-scene{ transition:transform 3.2s ease-out; will-change:transform; }
+  .hm-manual{ position:absolute; inset:0; opacity:0; pointer-events:none; background-image:url("/home/manual-strip.jpg"); background-size:100% auto; background-position:50% 0; background-color:#e9dcb2; transition:opacity .35s ease; }
+  /* Play hover: slow zoom into the world */
+  .ghero .art:has(.play-main:hover) .hm-scene{ transform:scale(1.09); }
+  /* Read the Manual hover: reveal + slide the manual pages */
+  .ghero .art:has(.btn-ghost:hover) .hm-manual{ opacity:1; animation:manualslide 11s linear infinite alternate; }
+  @keyframes manualslide{ from{ background-position:50% 0; } to{ background-position:50% 100%; } }
+  @media (prefers-reduced-motion:reduce){ .hm-scene{ transition:none; } .hm-manual{ animation:none !important; } }
   .hero-scrim{ position:absolute; left:6px; right:6px; bottom:6px; height:62%; z-index:1; pointer-events:none; background:linear-gradient(to top,rgba(26,15,9,.86),rgba(26,15,9,.34) 52%,transparent); }
   .hero-banner{ position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:2; width:min(92%,600px); display:flex; flex-direction:column; align-items:center; gap:.7rem; text-align:center; padding:1.05rem 1.3rem .95rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.97),rgba(240,229,198,.97)); border:1px solid var(--gilt-lt); box-shadow:0 12px 30px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,247,224,.22); }
   .hero-banner::before{ content:""; position:absolute; inset:4px; border:1px solid var(--rule); border-radius:2px; pointer-events:none; }

@@ -707,6 +707,82 @@ function whHash(s) {
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
   return h.toString(36);
 }
+// Dev-only POST for editing relic vignette prose (the owner-approval gate).
+// Merges a relic's edited tier lines into tools/relic_vignette_overrides.json,
+// keyed "<relic_name>|<tier>" -> {lines}. Arc's apply_relic_vignette_overrides.py
+// folds these back into core_RelicVignettes.json. Mirrors the dialogue overlay.
+function relicVignetteOverrideWriteback() {
+  return {
+    name: "allbyte-relic-vignette-override-writeback",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.replace(/\/$/, "") ?? "";
+        if (req.method !== "POST" || url !== "/api/relic-vignette-override") return next();
+        const MAX_BODY = 64 * 1024;
+        let body = "";
+        let tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
+        req.on("end", () => {
+          if (tooLarge) return;
+          try {
+            const { relic_name, tier, lines, revert } = JSON.parse(body);
+            if (typeof relic_name !== "string" || !relic_name || relic_name.length > 120) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "relic_name required" }));
+            }
+            const tierNum =
+              typeof tier === "number"
+                ? tier
+                : typeof tier === "string" && /^\d+$/.test(tier)
+                  ? parseInt(tier, 10)
+                  : null;
+            if (tierNum === null || !Number.isInteger(tierNum) || tierNum < 1 || tierNum > 20) {
+              res.statusCode = 400;
+              return res.end(JSON.stringify({ error: "tier must be a positive integer" }));
+            }
+            const key = relic_name + "|" + tierNum;
+            const overridesPath = normalize(join(chroniclesRoot, "tools", "relic_vignette_overrides.json"));
+            let overrides = {};
+            try {
+              const existing = readFileSync(overridesPath, "utf-8").trim();
+              if (existing) overrides = JSON.parse(existing);
+            } catch {}
+            if (revert === true) {
+              delete overrides[key];
+            } else {
+              if (
+                !Array.isArray(lines) ||
+                lines.length === 0 ||
+                lines.length > 50 ||
+                !lines.every((l) => typeof l === "string" && l.length <= 4096)
+              ) {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: "lines must be 1-50 strings, each <=4096 chars" }));
+              }
+              overrides[key] = { lines };
+            }
+            writeFileSync(overridesPath, JSON.stringify(overrides, null, 2) + "\n");
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true, key, reverted: revert === true }));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: String(err?.message ?? err) }));
+          }
+        });
+      });
+    },
+  };
+}
+
 function walkthroughOverrideWriteback() {
   const COORD = normalize(join(chroniclesRoot, ".."));
   const STORE = join(COORD, "walkthrough_overrides.dev.json");
@@ -1142,7 +1218,7 @@ export default defineConfig({
     remarkPlugins: [remarkDirective, remarkWalkthroughDirectives],
   },
   vite: {
-    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
+    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), relicVignetteOverrideWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

@@ -84,12 +84,14 @@
 
   // ---- apply overrides ------------------------------------------------------
   function esc(s) { return window.CSS && CSS.escape ? CSS.escape(s) : s; }
+  function charbioFor(card) { var n = card.nextElementSibling; while (n) { if (n.classList && n.classList.contains("charbio")) return n; if (n.hasAttribute && n.hasAttribute("data-cast-key")) return null; n = n.nextElementSibling; } return null; }
+  function cardForCharbio(bio) { var n = bio.previousElementSibling; while (n) { if (n.hasAttribute && n.hasAttribute("data-cast-key")) return n; n = n.previousElementSibling; } return null; }
   function proseOf(key) {
     // per-entry key (cast:elias) -> the card's .charbio; else the section's .prose
     var sub = /^([a-z]+):(.+)$/.exec(key);
     if (sub) {
       var card = document.querySelector("[data-" + sub[1] + "-key=\"" + esc(sub[2]) + "\"]");
-      return card ? card.querySelector(".charbio") : null;
+      return card ? charbioFor(card) : null;
     }
     var leaf = document.querySelector('.leaf[data-section="' + esc(key) + '"]');
     return leaf ? leaf.querySelector(".prose") : null;
@@ -100,7 +102,7 @@
       var rendered = renderMd(ov.edited_md);
       if (typeof normalizeDashes === "function") rendered = normalizeDashes(rendered); // no em-dashes (AI tell)
       el.innerHTML = rendered;
-      var container = el.closest("[data-cast-key]") || el.closest(".leaf");
+      var container = el.closest("[data-cast-key]") || (el.classList && el.classList.contains("charbio") ? cardForCharbio(el) : null) || el.closest(".leaf");
       if (container) container.setAttribute("data-overridden", "true");
     }
   }
@@ -143,7 +145,7 @@
     var cards = document.querySelectorAll("[data-cast-key]");
     for (var j = 0; j < cards.length; j++) {
       var card = cards[j], ckey = "cast:" + card.getAttribute("data-cast-key");
-      if (bodies[ckey] && card.querySelector(".charbio")) addBtn(card, ckey);
+      if (bodies[ckey] && charbioFor(card)) addBtn(card, ckey);
     }
   }
 

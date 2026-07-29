@@ -676,7 +676,16 @@
       // Returning from the app switcher drops fullscreen — re-arm so the next tap
       // re-enters it (see reArmFullscreen). visibilitychange→visible is the signal.
       const onVisible = () => {
-        if (document.visibilityState === "visible") reArmFullscreen();
+        const visible = document.visibilityState === "visible";
+        // Feed the game's hidden-time accumulator (window._allbyteHiddenAccumMs,
+        // maintained by the game's shim) so mobile background time isn't counted
+        // toward playtime. GodotEmbed is the reliable app-pause signal for mobile
+        // wrappers where the iframe's own visibilitychange can be throttled/missed.
+        // Contract: { type:"allbyte:visibility", visible:bool }; the shim folds it in.
+        try {
+          iframeEl?.contentWindow?.postMessage({ type: "allbyte:visibility", visible }, "*");
+        } catch {}
+        if (visible) reArmFullscreen();
       };
       document.addEventListener("visibilitychange", onVisible);
       visibilityOff = () => document.removeEventListener("visibilitychange", onVisible);

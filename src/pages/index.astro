@@ -80,9 +80,9 @@ import HeroPlay from "../components/HeroPlay.svelte";
     <p class="sub">Independent games, open development, and the technology behind them, shared as they’re made.</p>
   </div>
   <div class="bts">
-    <div class="btscard"><div class="sigil">✒</div><h4>Development Journal</h4><p>The decisions, dead ends, and breakthroughs behind the game.</p><a href="/devlog/">Read Devlogs</a></div>
-    <div class="btscard"><div class="sigil">✦</div><h4>Art &amp; Music Collection</h4><p>Sprites, soundtrack, font design, and visual development. Handcrafted.</p><a href="/artwork/">Explore</a></div>
-    <div class="btscard"><div class="sigil">⚙</div><h4>Builder’s Workshop <span class="relic-dot"></span></h4><p>Tools, systems, and architecture behind The Chronicles of Nesis.</p><a href="/test/">Enter</a></div>
+    <a class="btscard" href="/devlog/"><div class="sigil">✒</div><h4>Development Journal</h4><p>The decisions, dead ends, and breakthroughs behind the game.</p><span class="cta">Read Devlogs</span></a>
+    <a class="btscard" href="/artwork/"><div class="sigil">✦</div><h4>Art &amp; Music Collection</h4><p>Sprites, soundtrack, font design, and visual development. Handcrafted.</p><span class="cta">Explore</span></a>
+    <a class="btscard" href="/test/"><div class="sigil">⚙</div><h4>Builder’s Workshop <span class="relic-dot"></span></h4><p>Tools, systems, and architecture behind The Chronicles of Nesis.</p><span class="cta">Enter</span></a>
   </div>
 </div></section>
 
@@ -219,11 +219,13 @@ import HeroPlay from "../components/HeroPlay.svelte";
   .studioline .tag{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt-deep); letter-spacing:.03em; font-size:1.05rem; margin-top:.15rem; }
   .studioline .sub{ color:var(--ink-soft); max-width:52ch; margin:.6rem auto 0; font-size:.98rem; }
   .bts{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.1rem; margin-top:1.8rem; }
-  .btscard{ background:var(--panel); border:1px solid var(--rule); box-shadow:inset 0 0 0 3px var(--paperblend); border-radius:2px; padding:1.3rem 1.3rem; transition:transform .18s,box-shadow .2s; }
+  .btscard{ display:block; text-decoration:none; color:inherit; cursor:pointer; background:var(--panel); border:1px solid var(--rule); box-shadow:inset 0 0 0 3px var(--paperblend); border-radius:2px; padding:1.3rem 1.3rem; transition:transform .18s,box-shadow .2s; }
   .btscard:hover{ transform:translateY(-3px); box-shadow:inset 0 0 0 3px var(--paperblend),0 10px 24px var(--shadow); }
   .btscard .sigil{ font-size:1.4rem; color:var(--gilt); } .btscard h4{ font-family:"AllByteCustom",Georgia,serif; color:var(--ink); font-size:1.34rem; letter-spacing:.01em; margin:.4rem 0 .35rem; }
   .btscard p{ color:var(--ink); font-size:.94rem; line-height:1.5; margin:0 0 .8rem; }
-  .btscard a{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.08em; font-size:.84rem; color:var(--crimson); text-decoration:none; border-bottom:1px solid var(--gilt); }
+  .btscard .cta{ display:inline-block; font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.08em; font-size:.84rem; color:var(--crimson); border-bottom:1px solid var(--gilt); }
+  .btscard:hover .cta{ border-bottom-color:var(--crimson); }
+  .btscard:focus-visible{ outline:2px solid var(--crimson); outline-offset:3px; }
   .relic-dot{ display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--relic); vertical-align:middle; margin-left:.35rem; animation:pulse 2.6s ease-out infinite; }
   @keyframes pulse{ 0%{ box-shadow:0 0 0 0 color-mix(in srgb,var(--relic) 60%,transparent);} 70%{ box-shadow:0 0 0 9px transparent;} 100%{ box-shadow:0 0 0 0 transparent;} }
   @media (max-width:760px){ .bts{ grid-template-columns:1fr; } }

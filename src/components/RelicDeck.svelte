@@ -1,7 +1,8 @@
 <script>
-  // Interactive relic codex: click through the demo's five relics. Data is
-  // static (icon + type + skill + expertise tiers + a story-fragment teaser);
-  // skill copy is a first pass — confirm against the game.
+  // Interactive relic codex: click through the demo's five relics. The stack is
+  // a keyed circular list — on next/prev the order rotates and CSS transitions
+  // carry each card to its new slot, so the front card recedes to the back and
+  // the one beneath it comes forward. Skill copy is a first pass — confirm vs game.
   const RELICS = [
     { name: "Berserckounter Relic", type: "reaction", tiers: 4, icon: "/home/relics/Skill_Berserckounter.png",
       skill: "Raises the damage you take in place of the damage you deal.",
@@ -25,46 +26,54 @@
     passive:  { label: "Passive",  c: "var(--t-passive)" },
   };
   const ROMAN = ["", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ"];
+  const N = RELICS.length;
 
-  let current = $state(0);
-  const go = (i) => { current = (i + RELICS.length) % RELICS.length; };
-  const next = () => go(current + 1);
-  const prev = () => go(current - 1);
+  let order = $state([0, 1, 2, 3, 4]); // front → back
+  let busy = $state(false);
+  const front = $derived(order[0]);
+
+  function settle() { setTimeout(() => (busy = false), 430); }
+  function next() { if (busy) return; busy = true; order = [...order.slice(1), order[0]]; settle(); }
+  function prev() { if (busy) return; busy = true; order = [order[N - 1], ...order.slice(0, N - 1)]; settle(); }
+  function go(ri) {
+    if (busy) return;
+    const pos = order.indexOf(ri);
+    if (pos === 0) return;
+    busy = true;
+    order = [...order.slice(pos), ...order.slice(0, pos)];
+    settle();
+  }
 </script>
 
 <div class="relicdeck">
   <div class="deck">
-    <!-- decorative fanned back cards: signal there are several -->
-    <div class="card back b3" style="--tc:var(--t-passive)"></div>
-    <div class="card back b2" style="--tc:var(--t-action)"></div>
-    <div class="card back b1" style="--tc:var(--t-passive)"></div>
-
-    <button class="card front" style={`--tc:${TYPE[RELICS[current].type].c}`} onclick={next}
-      aria-label={`${RELICS[current].name} — click for the next relic`}>
-      {#key current}
-        <div class="inner">
-          <span class="type-tab">{TYPE[RELICS[current].type].label}</span>
-          <span class="medallion"><img src={RELICS[current].icon} alt="" width="72" height="72" /></span>
-          <span class="rname">{RELICS[current].name}</span>
-          <span class="rskill">{RELICS[current].skill}</span>
+    {#each order as ri, slot (ri)}
+      <button class="card" class:front={slot === 0} style={`--slot:${slot}; --tc:${TYPE[RELICS[ri].type].c}; z-index:${N - slot}`}
+        onclick={next} tabindex={slot === 0 ? 0 : -1} aria-hidden={slot !== 0}
+        aria-label={`${RELICS[ri].name} — click for the next relic`}>
+        <span class="inner">
+          <span class="type-tab">{TYPE[RELICS[ri].type].label}</span>
+          <span class="medallion"><img src={RELICS[ri].icon} alt="" width="72" height="72" /></span>
+          <span class="rname">{RELICS[ri].name}</span>
+          <span class="rskill">{RELICS[ri].skill}</span>
           <span class="tiers">
             <span class="lbl">Expertise</span>
-            {#each Array(RELICS[current].tiers) as _, i}
+            {#each Array(RELICS[ri].tiers) as _, i}
               <span class="pip {i === 0 ? 'on' : ''}">{ROMAN[i + 1]}</span>
             {/each}
           </span>
-          <span class="frag"><span class="q">&ldquo;</span>{RELICS[current].frag}<span class="tier-note"> &mdash; Tier {ROMAN[1]} of {ROMAN[RELICS[current].tiers]}</span></span>
-        </div>
-      {/key}
-    </button>
+          <span class="frag"><span class="q">&ldquo;</span>{RELICS[ri].frag}<span class="tier-note"> &mdash; Tier {ROMAN[1]} of {ROMAN[RELICS[ri].tiers]}</span></span>
+        </span>
+      </button>
+    {/each}
   </div>
 
   <div class="controls">
     <button class="arrow" onclick={prev} aria-label="Previous relic">&lsaquo;</button>
     <div class="dots">
       {#each RELICS as r, i}
-        <button class="dot {i === current ? 'active' : ''}" style={`--tc:${TYPE[r.type].c}`}
-          onclick={() => go(i)} aria-label={r.name} aria-current={i === current}></button>
+        <button class="dot {i === front ? 'active' : ''}" style={`--tc:${TYPE[r.type].c}`}
+          onclick={() => go(i)} aria-label={r.name} aria-current={i === front}></button>
       {/each}
     </div>
     <button class="arrow" onclick={next} aria-label="Next relic">&rsaquo;</button>
@@ -86,22 +95,30 @@
     display:flex; flex-direction:column; align-items:center;
     font-family:Georgia,"Times New Roman",serif; color:var(--ink);
   }
-  .deck{ position:relative; width:290px; height:410px; }
-  .card{ position:absolute; inset:0; border-radius:8px; background:var(--panel);
-    border:1px solid var(--gilt); box-shadow:0 10px 26px var(--shadow),inset 0 0 0 3px var(--paperblend),inset 0 0 0 4px var(--rule); }
-  .card::before{ content:""; position:absolute; top:0; left:0; right:0; height:7px; border-radius:8px 8px 0 0; background:var(--tc,#999); }
-  .back{ pointer-events:none; }
-  .b3{ transform:translate(30px,22px) rotate(5.5deg); z-index:1; filter:brightness(.97); }
-  .b2{ transform:translate(-20px,12px) rotate(-4deg); z-index:2; }
-  .b1{ transform:translate(14px,7px) rotate(2.5deg); z-index:3; }
-  .front{ z-index:4; transform:translate(0,-2px); cursor:pointer; padding:0; text-align:center;
-    font:inherit; color:inherit; transition:transform .15s, box-shadow .2s; }
-  .front:hover{ transform:translate(0,-6px); box-shadow:0 16px 34px var(--shadow),inset 0 0 0 3px var(--paperblend),inset 0 0 0 4px var(--rule); }
-  .front:focus-visible{ outline:2px solid var(--crimson); outline-offset:4px; }
+  .deck{ position:relative; width:290px; height:428px; }
 
-  .inner{ position:absolute; inset:0; padding:20px 20px 18px; display:flex; flex-direction:column; align-items:center;
-    animation:rd-in .28s ease; }
-  @keyframes rd-in{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+  .card{
+    position:absolute; top:14px; left:0; width:290px; height:410px;
+    border-radius:8px; background:var(--panel); border:1px solid var(--gilt);
+    box-shadow:0 10px 26px var(--shadow),inset 0 0 0 3px var(--paperblend),inset 0 0 0 4px var(--rule);
+    padding:0; text-align:center; font:inherit; color:inherit; cursor:default; pointer-events:none;
+    transform-origin:center 70%;
+    transform:
+      translateX(calc(var(--slot) * 5px))
+      translateY(calc(var(--slot) * -9px))
+      rotate(calc(var(--slot) * 1.5deg))
+      scale(calc(1 - var(--slot) * 0.035));
+    transition:transform .42s cubic-bezier(.33,.02,.23,1);
+  }
+  .card::before{ content:""; position:absolute; top:0; left:0; right:0; height:7px; border-radius:8px 8px 0 0; background:var(--tc,#999); }
+  .card.front{ cursor:pointer; pointer-events:auto; }
+  .card.front:hover{ transform:translateY(-4px); box-shadow:0 16px 34px var(--shadow),inset 0 0 0 3px var(--paperblend),inset 0 0 0 4px var(--rule); }
+  .card.front:focus-visible{ outline:2px solid var(--crimson); outline-offset:4px; }
+
+  .inner{ position:absolute; inset:0; padding:20px 20px 18px; display:flex; flex-direction:column; align-items:center; }
+  /* only the front card's text shows; backs are dimmed so they read as blank stock */
+  .card:not(.front) .inner{ opacity:0; transition:opacity .3s; }
+  .card.front .inner{ opacity:1; transition:opacity .3s .12s; }
 
   .type-tab{ text-transform:uppercase; letter-spacing:.16em; font-size:.62rem; font-weight:700; color:#fff;
     background:var(--tc); padding:.24rem .7rem; border-radius:2px; margin-top:.2rem; }
@@ -119,7 +136,7 @@
   .frag .q{ color:var(--gilt-deep); font-size:1.3rem; line-height:0; vertical-align:-.2em; margin-right:.05rem; }
   .tier-note{ color:var(--gilt-deep); font-style:normal; }
 
-  .controls{ display:flex; align-items:center; gap:.9rem; margin-top:1.5rem; }
+  .controls{ display:flex; align-items:center; gap:.9rem; margin-top:1.4rem; }
   .arrow{ background:none; border:1px solid var(--gilt); color:var(--crimson); width:30px; height:30px; border-radius:50%;
     font-size:1.2rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s; }
   .arrow:hover{ background:var(--paperblend); }
@@ -135,5 +152,7 @@
   .legend span{ display:inline-flex; align-items:center; gap:.35rem; }
   .legend i{ width:11px; height:11px; border-radius:2px; display:inline-block; }
 
-  @media (prefers-reduced-motion:reduce){ .inner{ animation:none; } .front,.arrow,.dot{ transition:none; } }
+  @media (prefers-reduced-motion:reduce){
+    .card,.card .inner,.arrow,.dot{ transition:none; }
+  }
 </style>

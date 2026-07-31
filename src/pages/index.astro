@@ -39,7 +39,8 @@ import HeroPlay from "../components/HeroPlay.svelte";
 <!-- HERO: the game -->
 <div class="ghero" id="play"><div class="wrap">
   <h1>The Chronicles of Nesis</h1>
-  <div class="subtitle">A world that has forgotten its heroes,<br>and heroes who have forgotten themselves.</div>
+  <div class="subtitle">A classic fantasy RPG<br>built in the spirit of 90s JRPGs with the possibilities of modern technology.</div>
+  <p class="hero-lede">Grid-based combat, a hand-built world, and the freedom to shape your journey, playable directly in your browser.</p>
   <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="hero-media"><img class="hm-scene" src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hm-manual" aria-hidden="true"></div></div><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div></div></div>
   <p class="hero-caption">Play instantly in your browser</p>
 </div></div>
@@ -48,10 +49,10 @@ import HeroPlay from "../components/HeroPlay.svelte";
 
 <!-- WHAT IT PLAYS LIKE -->
 <section id="pitch"><div class="wrap">
-  <div class="sec-head"><div class="eyebrow">Gameplay</div><h2>A classic fantasy RPG</h2><p class="sec-sub">built in the spirit of 90s JRPGs with the possibilities of modern technology.</p><p class="lede">Grid-based combat, a hand-built world, and the freedom to shape your journey, playable directly in your browser.</p></div>
+  <div class="sec-head"><div class="eyebrow">The World of Nesis</div><h2>A World That Remembers the People History Forgot</h2><p class="lede">Trade routes have vanished. Kingdoms stand isolated. Ancient cities lie in ruins.</p><p class="lede">When Elias pulls a forgotten sword from an ancient grave, he begins a journey across Nesis to uncover what remains of a world slowly losing its past. Join Elias as he uncovers relics of the past, mastering new abilities while uncovering the forgotten stories woven into each one.</p></div>
   <div class="frow"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/9d006f4f31.jpg" alt="Tactical grid combat"></div><div class="txt"><div class="fnum">I</div><h3>Tactical Combat</h3><p>Turn-based tactical battles where positioning is everything. Every unit, terrain tile, and status effect can change the outcome of a fight. No random encounters, every battle begins in the world around you.</p></div></div>
   <div class="frow rev"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="xfade" role="img" aria-label="Exploring a hand-drawn dwarven ruin; when an enemy is engaged, the tactical combat grid and HUD fade in over the very same view — no scene cut."><img class="xf xf1" src="/home/seamless-1.jpg" alt=""><img class="xf xf2" src="/home/seamless-2.jpg" alt=""><img class="xf xf3" src="/home/seamless-3.jpg" alt=""><img class="xf xf4" src="/home/seamless-4.jpg" alt=""></div></div><div class="txt"><div class="fnum">II</div><h3>Seamless Exploration &amp; Combat</h3><p>Wander villages, forests, and dungeons drawn entirely by hand. Enemies roam the same world you explore, and every encounter unfolds directly within the environment. Where you engage, how you approach, and the battlefield around you all become part of the strategy.</p></div></div>
-  <div class="frow"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/skilltree.jpg" alt="The skill tree, unlock nodes to grow each hero"></div><div class="txt"><div class="fnum">III</div><h3>Grow Your Heroes</h3><p>Unlock permanent skills from each class tree, discover relics that grant new powers, and invest in the attributes that fit your strategy. Each hero retains their unique class identity while giving you the freedom to shape them to your playstyle.</p></div></div><div class="frow rev"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/81bc45c69c.jpg" alt="Story and dialogue"></div><div class="txt"><div class="fnum">IV</div><h3>Legacy &amp; Lore</h3><p>A world three hundred years after the Age of Heroes. Three are drawn to its forgotten roads, each searching for something different, as they uncover what the Anam left behind.</p></div></div>
+  <div class="frow"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/skilltree.jpg" alt="The skill tree, unlock nodes to grow each hero"></div><div class="txt"><div class="fnum">III</div><h3>Grow Your Heroes</h3><p>Unlock permanent skills from each class tree, discover relics that grant new powers, and invest in the attributes that fit your strategy. Each hero retains their unique class identity while giving you the freedom to shape them to your playstyle.</p></div></div><div class="frow rev"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/81bc45c69c.jpg" alt="Story and dialogue"></div><div class="txt"><div class="fnum">IV</div><h3>Legacy &amp; Lore</h3><p>A world three hundred years after the Age of Heroes. Three are drawn to its forgotten roads, each searching for something different.</p></div></div>
 </div></section>
 
 <hr class="rule">
@@ -146,6 +147,7 @@ import HeroPlay from "../components/HeroPlay.svelte";
   .ghero .kick{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.22em; font-size:.8rem; color:var(--gilt-deep); }
   .ghero h1{ color:var(--crimson); text-wrap:balance; font-size:clamp(2.8rem,8vw,5rem); margin:.4rem 0 .12rem; line-height:1.02; -webkit-text-stroke:2px #45120d; text-stroke:2px #45120d; paint-order:stroke fill; text-shadow:0 1px 0 rgba(255,247,224,.32),0 3px 7px rgba(0,0,0,.22); }
   .ghero .subtitle{ font-family:"AllByteCustom",Georgia,serif; color:var(--ink); font-size:clamp(1.25rem,2.9vw,1.72rem); letter-spacing:.015em; line-height:1.5; margin:.5rem auto 0; text-shadow:0 1px 0 rgba(255,247,224,.5); }
+  .ghero .hero-lede{ max-width:60ch; margin:.7rem auto 0; color:var(--ink-soft); font-size:clamp(.98rem,1.7vw,1.1rem); line-height:1.55; }
   .ghero .art{ max-width:960px; margin:1.6rem auto 0; padding:6px; background:var(--panel); }
   .ghero .art{ position:relative; } .ghero .art img:not(.fl){ width:100%; display:block; height:clamp(340px,46vh,470px); object-fit:cover; object-position:50% 55%; }
   .hero-media{ position:relative; overflow:hidden; }
@@ -172,6 +174,7 @@ import HeroPlay from "../components/HeroPlay.svelte";
   .sec-head h2{ font-size:clamp(1.9rem,4.5vw,2.9rem); margin:.5rem 0 .3rem; color:var(--crimson); }
   .sec-head .sec-sub{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt-deep); font-size:clamp(1rem,2vw,1.25rem); letter-spacing:.01em; margin:0 auto .7rem; max-width:36ch; }
   .lede{ max-width:74ch; margin:0 auto; color:var(--ink-soft); font-size:1.1rem; }
+  .sec-head .lede + .lede{ margin-top:.7rem; }
 
   /* WHAT IT PLAYS LIKE — alternating feature rows w/ screenshots */
   .frow{ display:flex; flex-direction:column; align-items:center; gap:1.3rem; max-width:820px; margin:0 auto; }

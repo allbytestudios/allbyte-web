@@ -180,18 +180,20 @@ import HeroPlay from "../components/HeroPlay.svelte";
   .frow .txt{ order:0; text-align:center; max-width:62ch; }
   .frow .shot{ order:1; width:100%; padding:6px; background:var(--panel); }
   .frow .shot img:not(.fl){ width:100%; display:block; }
-  /* Seamless explore->combat crossfade: 4 stacked frames, opacity-cycled */
+  /* Seamless explore->combat crossfade. xf1 (the explored world) is a constant
+     opaque BASE; grid/HUD/combat only ever fade IN on top of an already-opaque
+     layer, so the page background never bleeds through mid-fade (no flash).
+     Long holds on the world + combat; snappy 0.24s fades through grid/HUD. */
   .xfade{ position:relative; line-height:0; width:100%; }
-  .xfade .xf{ position:absolute; inset:0; opacity:0; animation-duration:8s; animation-iteration-count:infinite; animation-timing-function:ease-in-out; }
-  .xfade .xf1{ position:relative; animation-name:xf1; }
+  .xfade .xf{ position:absolute; inset:0; opacity:0; animation-duration:8s; animation-iteration-count:infinite; animation-timing-function:linear; }
+  .xfade .xf1{ position:relative; opacity:1; animation:none; }
   .xfade .xf2{ animation-name:xf2; }
   .xfade .xf3{ animation-name:xf3; }
   .xfade .xf4{ animation-name:xf4; }
-  @keyframes xf1{ 0%{opacity:1} 22%{opacity:1} 30%{opacity:0} 90%{opacity:0} 100%{opacity:1} }
-  @keyframes xf2{ 0%{opacity:0} 22%{opacity:0} 30%{opacity:1} 38%{opacity:1} 44%{opacity:0} 100%{opacity:0} }
-  @keyframes xf3{ 0%{opacity:0} 38%{opacity:0} 44%{opacity:1} 50%{opacity:1} 56%{opacity:0} 100%{opacity:0} }
-  @keyframes xf4{ 0%{opacity:0} 50%{opacity:0} 56%{opacity:1} 90%{opacity:1} 100%{opacity:0} }
-  @media (prefers-reduced-motion:reduce){ .xfade .xf{ animation:none; opacity:0; } .xfade .xf2{ opacity:1; } }
+  @keyframes xf2{ 0%,37%{opacity:0} 40%,90%{opacity:1} 96%,100%{opacity:0} }
+  @keyframes xf3{ 0%,45%{opacity:0} 48%,90%{opacity:1} 96%,100%{opacity:0} }
+  @keyframes xf4{ 0%,53%{opacity:0} 56%,90%{opacity:1} 96%,100%{opacity:0} }
+  @media (prefers-reduced-motion:reduce){ .xfade .xf{ animation:none; } .xfade .xf2{ opacity:1; } .xfade .xf3,.xfade .xf4{ opacity:0; } }
   .frow h3{ color:var(--crimson); font-size:clamp(1.5rem,3.5vw,2.1rem); margin:.1rem 0 .5rem; }
   .frow p{ font-size:1.08rem; color:var(--ink); margin:0; }
   .frow .fnum{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt); letter-spacing:.1em; font-size:.8rem; }

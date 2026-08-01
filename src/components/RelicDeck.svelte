@@ -1,8 +1,10 @@
 <script>
-  // Interactive relic codex: click through the demo's five relics. The stack is
-  // a keyed circular list — on next/prev the order rotates and CSS transitions
-  // carry each card to its new slot, so the front card recedes to the back and
-  // the one beneath it comes forward. Skill copy is a first pass — confirm vs game.
+  // Interactive relic codex. The deck is a keyed circular stack; every card
+  // shows its full face at all times (no fading). On next/prev the front card
+  // physically DEALS — slides out to the side, revealing the card beneath, then
+  // arcs up and around to the back of the stack — via a keyframe path, while the
+  // rest slide forward one slot. Like flipping through a deck by hand.
+  // Skill copy is a first pass — confirm against the game.
   const RELICS = [
     { name: "Berserckounter Relic", type: "reaction", tiers: 4, icon: "/home/relics/Skill_Berserckounter.png",
       skill: "Raises the damage you take in place of the damage you deal.",
@@ -27,28 +29,36 @@
   };
   const ROMAN = ["", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ"];
   const N = RELICS.length;
+  const DEAL_MS = 720;
 
   let order = $state([0, 1, 2, 3, 4]); // front → back
+  let moving = $state(null);           // relic index currently dealing
+  let dir = $state(1);                 // 1 = to back, -1 = from back
   let busy = $state(false);
+  let queued = 0;
   const front = $derived(order[0]);
 
-  function settle() { setTimeout(() => (busy = false), 430); }
-  function next() { if (busy) return; busy = true; order = [...order.slice(1), order[0]]; settle(); }
-  function prev() { if (busy) return; busy = true; order = [order[N - 1], ...order.slice(0, N - 1)]; settle(); }
-  function go(ri) {
-    if (busy) return;
-    const pos = order.indexOf(ri);
-    if (pos === 0) return;
-    busy = true;
-    order = [...order.slice(pos), ...order.slice(0, pos)];
-    settle();
+  function step(d) {
+    busy = true; dir = d;
+    if (d > 0) { moving = order[0]; order = [...order.slice(1), order[0]]; }
+    else { moving = order[N - 1]; order = [order[N - 1], ...order.slice(0, N - 1)]; }
+    setTimeout(() => {
+      moving = null; busy = false;
+      if (queued > 0) { queued--; step(1); }
+    }, DEAL_MS);
   }
+  function next() { if (busy) { queued++; return; } step(1); }
+  function prev() { if (busy) return; step(-1); }
+  function go(ri) { const pos = order.indexOf(ri); if (pos <= 0) return; next(); queued += pos - 1; }
 </script>
 
 <div class="relicdeck">
   <div class="deck">
     {#each order as ri, slot (ri)}
-      <button class="card" class:front={slot === 0} style={`--slot:${slot}; --tc:${TYPE[RELICS[ri].type].c}; z-index:${N - slot}`}
+      <button
+        class="card {moving === ri ? (dir > 0 ? 'deal-back' : 'deal-front') : ''}"
+        class:front={slot === 0 && moving === null}
+        style={`--slot:${slot}; --tc:${TYPE[RELICS[ri].type].c}; z-index:${N - slot}`}
         onclick={next} tabindex={slot === 0 ? 0 : -1} aria-hidden={slot !== 0}
         aria-label={`${RELICS[ri].name} — click for the next relic`}>
         <span class="inner">
@@ -92,33 +102,49 @@
     --crimson:#8a2b21; --gilt:#9a7736; --gilt-deep:#6f5321; --ink:#3a2c1b; --ink-soft:#5b4a33;
     --panel:#efe6cd; --rule:#c9b78a; --paperblend:#e7dcbd; --shadow:rgba(60,40,15,.28);
     --t-action:#8a2b21; --t-reaction:#b6862c; --t-passive:#4f7a4a;
+    width:100%; overflow-x:clip;
     display:flex; flex-direction:column; align-items:center;
     font-family:Georgia,"Times New Roman",serif; color:var(--ink);
   }
-  .deck{ position:relative; width:290px; height:428px; }
+  .deck{ position:relative; width:290px; height:430px; }
 
   .card{
-    position:absolute; top:14px; left:0; width:290px; height:410px;
+    position:absolute; top:16px; left:0; width:290px; height:410px;
     border-radius:8px; background:var(--panel); border:1px solid var(--gilt);
     box-shadow:0 10px 26px var(--shadow),inset 0 0 0 3px var(--paperblend),inset 0 0 0 4px var(--rule);
     padding:0; text-align:center; font:inherit; color:inherit; cursor:default; pointer-events:none;
-    transform-origin:center 70%;
+    transform-origin:center 72%; backface-visibility:hidden;
     transform:
-      translateX(calc(var(--slot) * 5px))
-      translateY(calc(var(--slot) * -9px))
-      rotate(calc(var(--slot) * 1.5deg))
-      scale(calc(1 - var(--slot) * 0.035));
-    transition:transform .42s cubic-bezier(.33,.02,.23,1);
+      translateY(calc(var(--slot) * -7px))
+      scale(calc(1 - var(--slot) * 0.03));
+    transition:transform .6s cubic-bezier(.33,.02,.23,1);
   }
   .card::before{ content:""; position:absolute; top:0; left:0; right:0; height:7px; border-radius:8px 8px 0 0; background:var(--tc,#999); }
   .card.front{ cursor:pointer; pointer-events:auto; }
   .card.front:hover{ transform:translateY(-4px); box-shadow:0 16px 34px var(--shadow),inset 0 0 0 3px var(--paperblend),inset 0 0 0 4px var(--rule); }
   .card.front:focus-visible{ outline:2px solid var(--crimson); outline-offset:4px; }
 
+  /* the dealing card follows a hand-path instead of a straight transition */
+  .card.deal-back{ animation:deal-back .72s cubic-bezier(.4,.08,.3,1) forwards; }
+  .card.deal-front{ animation:deal-front .72s cubic-bezier(.4,.08,.3,1) forwards; }
+  /* slide fully out to the right (revealing the card beneath) → hold → swing up
+     and left, dropping behind the stack, settling into the back slot */
+  @keyframes deal-back{
+    0%   { transform:translate(0,0) rotate(0) scale(1); z-index:60; }
+    38%  { transform:translate(262px,2px) rotate(4deg) scale(1); z-index:60; }
+    52%  { transform:translate(262px,-6px) rotate(4deg) scale(.99); z-index:60; }
+    74%  { transform:translate(150px,-22px) rotate(2deg) scale(.93); z-index:1; }
+    100% { transform:translate(0,-28px) rotate(0) scale(.88); z-index:1; }
+  }
+  @keyframes deal-front{
+    0%   { transform:translate(0,-28px) rotate(0) scale(.88); z-index:1; }
+    26%  { transform:translate(150px,-22px) rotate(2deg) scale(.93); z-index:60; }
+    48%  { transform:translate(262px,-6px) rotate(4deg) scale(.99); z-index:60; }
+    62%  { transform:translate(262px,2px) rotate(4deg) scale(1); z-index:60; }
+    100% { transform:translate(0,0) rotate(0) scale(1); z-index:60; }
+  }
+
   .inner{ position:absolute; inset:0; padding:20px 20px 18px; display:flex; flex-direction:column; align-items:center; }
-  /* only the front card's text shows; backs are dimmed so they read as blank stock */
-  .card:not(.front) .inner{ opacity:0; transition:opacity .3s; }
-  .card.front .inner{ opacity:1; transition:opacity .3s .12s; }
 
   .type-tab{ text-transform:uppercase; letter-spacing:.16em; font-size:.62rem; font-weight:700; color:#fff;
     background:var(--tc); padding:.24rem .7rem; border-radius:2px; margin-top:.2rem; }
@@ -153,6 +179,7 @@
   .legend i{ width:11px; height:11px; border-radius:2px; display:inline-block; }
 
   @media (prefers-reduced-motion:reduce){
-    .card,.card .inner,.arrow,.dot{ transition:none; }
+    .card{ transition:none; }
+    .card.deal-back,.card.deal-front{ animation-duration:.001s; }
   }
 </style>

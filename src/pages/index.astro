@@ -195,11 +195,11 @@ import RelicDeck from "../components/RelicDeck.svelte";
      the two not-pixel-aligned shots share one frame. .xfade clips the zoom. */
   .xfade{ position:relative; line-height:0; width:100%; overflow:hidden; }
   .xfade .xf{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0;
-    transform-origin:50% 56%; will-change:transform,opacity;
+    transform-origin:44% 77%; will-change:transform,opacity;
     animation-duration:10s; animation-iteration-count:infinite; animation-timing-function:linear; }
   .xfade .xf1{ position:relative; height:auto; opacity:1; animation-name:kbzoom; }
   .xfade .xf2{ animation-name:kbzoom, xf2; }
-  @keyframes kbzoom{ 0%{transform:scale(1)} 46%{transform:scale(1.13)} 88%{transform:scale(1.13)} 100%{transform:scale(1)} }
+  @keyframes kbzoom{ 0%{transform:scale(1)} 46%{transform:scale(1.18)} 88%{transform:scale(1.18)} 100%{transform:scale(1)} }
   @keyframes xf2{ 0%,34%{opacity:0} 44%,86%{opacity:1} 94%,100%{opacity:0} }
   @media (prefers-reduced-motion:reduce){ .xfade .xf{ animation:none; transform:none; } .xfade .xf2{ opacity:1; } }
   .frow h3{ color:var(--crimson); font-size:clamp(1.5rem,3.5vw,2.1rem); margin:.1rem 0 .5rem; }

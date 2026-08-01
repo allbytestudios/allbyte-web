@@ -5,7 +5,7 @@ import GodotEmbed from "../components/GodotEmbed.svelte";
 const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
 ---
 
-<BaseLayout title="Chronicles of Nesis">
+<BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A handcrafted tactical RPG in the spirit of 90s JRPGs. Play free in your browser — desktop, tablet, or phone. No install, no account.">
   <main class="play-page">
     {fixture && <span class="fixture-label">Fixture: {fixture}</span>}
     <GodotEmbed client:load {fixture} />

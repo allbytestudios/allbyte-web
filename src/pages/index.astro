@@ -5,7 +5,7 @@ import HeroPlay from "../components/HeroPlay.svelte";
 import RelicDeck from "../components/RelicDeck.svelte";
 ---
 
-<BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A world that has forgotten its heroes. Play the free browser demo of The Chronicles of Nesis, a handcrafted tactical RPG from AllByte Studios.">
+<BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A world that has forgotten its heroes. Play The Chronicles of Nesis free in your browser, a handcrafted tactical RPG from AllByte Studios.">
   <div class="home">
   <script is:inline>
     (function () {
@@ -40,10 +40,10 @@ import RelicDeck from "../components/RelicDeck.svelte";
 <!-- HERO: the game -->
 <div class="ghero" id="play"><div class="wrap">
   <h1>The Chronicles of Nesis</h1>
-  <div class="subtitle">A classic fantasy RPG built in the spirit of 90s JRPGs<br>with the possibilities of modern technology.</div>
-  <p class="hero-lede">Grid-based combat, a hand-built world, and the freedom to shape your journey, playable directly in your browser.</p>
+  <div class="subtitle">A classic fantasy RPG, <br class="sub-br2">built in the spirit of 90s JRPGs,<br>with the possibilities of modern technology.</div>
+  <p class="hero-lede">Grid-based combat, a hand-built world, and the freedom to shape your journey. Playable in your browser, on desktop, tablet, or phone.</p>
   <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="hero-media"><img class="hm-scene" src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hm-manual" aria-hidden="true"></div></div><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div></div></div>
-  <p class="hero-caption">Play instantly in your browser</p>
+  <p class="hero-caption">No install. No account. Works on desktop, tablet, and phone.</p>
 </div></div>
 
 <hr class="rule">
@@ -148,6 +148,8 @@ import RelicDeck from "../components/RelicDeck.svelte";
   .ghero .kick{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.22em; font-size:.8rem; color:var(--gilt-deep); }
   .ghero h1{ color:var(--crimson); text-wrap:balance; font-size:clamp(2.8rem,8vw,5rem); margin:.4rem 0 .12rem; line-height:1.02; -webkit-text-stroke:2px #45120d; text-stroke:2px #45120d; paint-order:stroke fill; text-shadow:0 1px 0 rgba(255,247,224,.32),0 3px 7px rgba(0,0,0,.22); }
   .ghero .subtitle{ font-family:"AllByteCustom",Georgia,serif; color:var(--ink); font-size:clamp(1.05rem,2.05vw,1.3rem); letter-spacing:.015em; line-height:1.5; margin:.5rem auto 0; text-shadow:0 1px 0 rgba(255,247,224,.5); }
+  .ghero .subtitle .sub-br2{ display:none; }
+  @media (max-width:600px){ .ghero .subtitle .sub-br2{ display:inline; } }
   .ghero .hero-lede{ max-width:60ch; margin:.7rem auto 0; color:var(--ink-soft); font-size:clamp(.98rem,1.7vw,1.1rem); line-height:1.55; }
   .ghero .art{ max-width:960px; margin:1.6rem auto 0; padding:6px; background:var(--panel); }
   .ghero .art{ position:relative; } .ghero .art img:not(.fl){ width:100%; display:block; height:clamp(340px,46vh,470px); object-fit:cover; object-position:50% 55%; }

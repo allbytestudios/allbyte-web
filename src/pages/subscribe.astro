@@ -4,7 +4,7 @@ import Footer from "../components/Footer.astro";
 import PageHeader from "../components/PageHeader.astro";
 
 const title = "Subscribe — AllByte Studios";
-const description = "Support AllByte Studios and unlock minor version release builds, full asset access, and deep Dev Console inspection.";
+const description = "Support AllByte Studios — the whole game is free to play. Patrons get early access to new builds, full asset downloads, and deep Dev Console inspection.";
 
 // Tiers are hosted on Patreon (campaign 16252801). Pledging happens on
 // Patreon; the site reads your membership when you log in with Patreon.
@@ -16,7 +16,7 @@ const tiers = [
     color: "#a7f3d0",
     patreonUrl: "https://www.patreon.com/checkout/AllByteStudios?rid=28882017",
     features: [
-      "Beta and beyond — every post-Alpha build as it ships (the Demo stays free for everyone)",
+      "Early access — play every new build the moment it ships, ahead of the public release",
       "All game assets unlocked",
     ],
   },
@@ -38,7 +38,7 @@ const tiers = [
     patreonUrl: "https://www.patreon.com/checkout/AllByteStudios?rid=28882311",
     features: [
       "Everything in Hero",
-      "Debug builds — in-game dev tools + debug HUD (Demo & Beta)",
+      "Debug builds — in-game dev tools + debug HUD on every channel",
       "Walkthrough — interactive scene-by-scene map of the game (in progress)",
       "Worker history — full agent task logs and durations",
       "Ticket backlog — P3/deferred priorities and subtask detail",
@@ -54,8 +54,8 @@ const tiers = [
     <main class="content">
       <section class="support-intro">
         <p class="intro-lead">
-          <em>The Chronicles of Nesis</em> is free to play, and it stays free
-          through the Alpha release.
+          <em>The Chronicles of Nesis</em> is free to play &mdash; the whole
+          game, every build, no paywall.
         </p>
         <p>
           I built it solo, and I host it myself on AWS &mdash; right now about
@@ -63,11 +63,11 @@ const tiers = [
           becoming a patron is the most direct way to keep the servers running.
         </p>
         <p class="intro-value">
-          Patrons (<strong>Initiate</strong> and up) also unlock everything after
-          Alpha as I port it in &mdash; so your support keeps the game online today
-          <em>and</em> gets you what&rsquo;s coming next. Curious where it goes?
-          Here&rsquo;s the <a href="/self-hosting-with-claude/">self-hosted stack and
-          its costs</a>.
+          Patrons (<strong>Initiate</strong> and up) get every new build the
+          moment it ships &mdash; early access to what&rsquo;s next, plus every
+          game asset to download. Your support keeps the servers online and the
+          game free for everyone. Curious where it goes? Here&rsquo;s the
+          <a href="/self-hosting-with-claude/">self-hosted stack and its costs</a>.
         </p>
       </section>
 
@@ -94,7 +94,7 @@ const tiers = [
         <h2 class="support-title">Already a patron?</h2>
         <p class="support-body">
           Pledges are handled on Patreon. Once you've joined a tier, log in with
-          Patreon here to unlock your build access, asset downloads, and Dev
+          Patreon here to sync your early access, asset downloads, and Dev
           Console inspection — your tier syncs automatically.
         </p>
         <a class="patreon-login-btn" href={PATREON_LOGIN}>Log in with Patreon</a>
@@ -113,7 +113,7 @@ const tiers = [
           </div>
           <div class="faq-item">
             <h3>What's a minor version release build?</h3>
-            <p>Each minor version (0.4.x → 0.5.0) ships a playable build with the latest features. Subscribers get access to these as they land, ahead of the public demo.</p>
+            <p>Each minor version (0.4.x → 0.5.0) ships a playable build with the latest features. Patrons get access to these as they land, ahead of the public release.</p>
           </div>
           <div class="faq-item">
             <h3>What's in the Dev Console?</h3>

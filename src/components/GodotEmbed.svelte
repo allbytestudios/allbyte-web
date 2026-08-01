@@ -643,7 +643,7 @@
         if (r === "granted") proceedToGame();
         else if (r === "denied")
           error =
-            "The Beta build is for Initiate-tier patrons and up. The free Demo is available to everyone.";
+            "The Beta build is for Initiate-tier patrons and up. Episode One is free for everyone.";
         else
           error = "The Beta build isn't available right now — please try again later.";
       });

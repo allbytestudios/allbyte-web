@@ -1,6 +1,6 @@
 <script lang="ts">
   // Homepage hero Play control. One button for normal play — its target is the
-  // richest build the visitor's tier unlocks (free → Demo, paid → Beta once it
+  // richest build the visitor's tier unlocks (free → Episode One, patrons → Beta once it
   // ships). Admins additionally get a dropdown caret to reach the debug channels.
   // /play reads the choice from ?v=<id> (GodotEmbed). Auth is initialised globally
   // by <AuthInit>; runtime channel availability comes from /godot/channels.json.
@@ -28,7 +28,7 @@
 
   const def = $derived(defaultVersion(auth.currentUser, runtime));
   const admin = $derived(isAdmin(auth.currentUser));
-  const primaryLabel = $derived(def.id.startsWith("beta") ? "Play the Beta" : "Play the Demo");
+  const primaryLabel = $derived(def.id.startsWith("beta") ? "Play the Beta" : "Play Free");
 
   function play(id: string) {
     window.location.href = `/play/?v=${encodeURIComponent(id)}`;

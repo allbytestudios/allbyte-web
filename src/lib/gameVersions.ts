@@ -36,12 +36,12 @@ export interface GameVersion {
 // Labels are DISPLAY text (dropdown); the ids/paths/deploy channels stay "alpha"
 // etc. so the deploy pipeline + channels.json + ?v= links are unaffected.
 export const GAME_VERSIONS: GameVersion[] = [
-  { id: "alpha",       label: "Demo",            path: "/godot/public/index.html",     minTier: "default",  available: true },
+  { id: "alpha",       label: "Episode One",       path: "/godot/public/index.html",     minTier: "default",  available: true },
   // Moving off the /godot/ root to a clean isolated subdir so it can be a proper
   // cloud channel with its own least-priv deploy role (2026-07-14). available:false
   // until the demo-debug CodeBuild project ships to the new path (pending Arc's
   // buildspec.web.yml); the one-click promote button will publish it at runtime.
-  { id: "alpha-debug", label: "Demo (Debug)",    path: "/godot/alpha-debug/index.html", minTier: "legend",   available: false },
+  { id: "alpha-debug", label: "Episode One (Debug)", path: "/godot/alpha-debug/index.html", minTier: "legend",   available: false },
   { id: "beta",        label: "Beta",            path: "/godot/beta/index.html",       minTier: "initiate", available: false },
   { id: "beta-debug",  label: "Beta (Debug)",    path: "/godot/beta-debug/index.html", minTier: "legend",   available: false },
   { id: "develop",     label: "Develop (Debug)", path: "/godot/develop/index.html",    minTier: "legend",   available: false },

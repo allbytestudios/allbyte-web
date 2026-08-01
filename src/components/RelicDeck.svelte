@@ -89,7 +89,7 @@
     <button class="arrow" onclick={next} aria-label="Next relic">&rsaquo;</button>
   </div>
 
-  <p class="count">Five relics wait hidden across <b>the demo</b></p>
+  <p class="count">Five relics wait hidden across <b>Episode One</b></p>
   <div class="legend">
     <span><i style="background:var(--t-action)"></i>Action</span>
     <span><i style="background:var(--t-reaction)"></i>Reaction</span>

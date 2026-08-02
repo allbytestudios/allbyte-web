@@ -167,8 +167,11 @@ import gameVersion from "../data/game-version.json";
   .ghero .art:has(.btn-ghost:hover) .hm-manual{ opacity:1; animation:manualslide 11s linear infinite alternate; }
   @keyframes manualslide{ from{ background-position:50% 0; } to{ background-position:50% 100%; } }
   @media (prefers-reduced-motion:reduce){ .hm-scene{ transition:none; } .hm-manual{ animation:none !important; } }
-  .hero-scrim{ position:absolute; left:6px; right:6px; bottom:6px; height:62%; z-index:1; pointer-events:none; background:linear-gradient(to top,rgba(26,15,9,.86),rgba(26,15,9,.34) 52%,transparent); }
-  .hero-banner{ position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:2; width:min(92%,600px); display:flex; flex-direction:column; align-items:center; gap:.7rem; text-align:center; padding:1.05rem 1.3rem .95rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.97),rgba(240,229,198,.97)); border:1px solid var(--gilt-lt); box-shadow:0 12px 30px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,247,224,.22); }
+  /* scrim retired: the CTA banner sits BENEATH the video now (not overlaid), so
+     no need to darken the video bottom — keeps the water reflection visible. */
+  .hero-scrim{ display:none; }
+  /* CTA banner flows beneath the hero video (inside the frame), all viewports. */
+  .hero-banner{ position:relative; z-index:2; width:min(92%,600px); margin:14px auto 2px; display:flex; flex-direction:column; align-items:center; gap:.7rem; text-align:center; padding:1.05rem 1.3rem .95rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.97),rgba(240,229,198,.97)); border:1px solid var(--gilt-lt); box-shadow:0 8px 20px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,247,224,.22); }
   .hero-banner::before{ content:""; position:absolute; inset:4px; border:1px solid var(--rule); border-radius:2px; pointer-events:none; }
   .hero-banner-cta{ display:flex; gap:.9rem; flex-wrap:wrap; justify-content:center; align-items:stretch; width:100%; }
   .hero-banner-cta > .btn{ flex:1 1 0; justify-content:center; }

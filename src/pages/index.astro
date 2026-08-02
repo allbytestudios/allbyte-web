@@ -53,7 +53,7 @@ import gameVersion from "../data/game-version.json";
 <section id="pitch"><div class="wrap">
   <div class="sec-head"><div class="eyebrow">The World of Nesis</div><h2>A World That Remembers the People History Forgot</h2><p class="lede">Trade routes have vanished. Kingdoms stand isolated. Ancient cities lie in ruins.</p><p class="lede">When Elias pulls a forgotten sword from an ancient grave, he begins a journey across Nesis to uncover what remains of a world slowly losing its past. Join Elias as he uncovers relics of the past, mastering new abilities while uncovering the forgotten stories woven into each one.</p></div>
   <div class="frow"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/9d006f4f31.jpg" alt="Tactical grid combat"></div><div class="txt"><div class="fnum">I</div><h3>Tactical Combat</h3><p>Turn-based tactical battles where positioning is everything. Every unit, terrain tile, and status effect can change the outcome of a fight. No random encounters, every battle begins in the world around you.</p></div></div>
-  <div class="frow rev"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="xfade" role="img" aria-label="Exploring the hand-drawn church square; when an enemy is engaged, the tactical combat grid and HUD fade in over the same square — no scene cut."><img class="xf xf1" src="/home/b6f1f4dacb.jpg" alt=""><img class="xf xf2" src="/home/churchsquare-combat.jpg" alt=""></div></div><div class="txt"><div class="fnum">II</div><h3>Seamless Exploration &amp; Combat</h3><p>Wander villages, forests, and dungeons drawn entirely by hand. Enemies roam the same world you explore, and every encounter unfolds directly within the environment. Where you engage, how you approach, and the battlefield around you all become part of the strategy.</p></div></div>
+  <div class="frow rev"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><video src="/home/church-zoom.mp4" poster="/home/church-zoom-poster.jpg" autoplay loop muted playsinline preload="metadata" aria-label="Real in-game footage: exploring the church square, then the camera zooms straight into tactical combat as an enemy is engaged — no scene cut."></video></div><div class="txt"><div class="fnum">II</div><h3>Seamless Exploration &amp; Combat</h3><p>Wander villages, forests, and dungeons drawn entirely by hand. Enemies roam the same world you explore, and every encounter unfolds directly within the environment. Where you engage, how you approach, and the battlefield around you all become part of the strategy.</p></div></div>
   <div class="frow"><div class="shot frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><img src="/home/skilltree.jpg" alt="The skill tree, unlock nodes to grow each hero"></div><div class="txt"><div class="fnum">III</div><h3>Class Skill Trees</h3><p>Unlock permanent skills from each class tree and invest in the attributes that fit your strategy. Each hero retains their unique class identity while giving you the freedom to shape them to your playstyle.</p></div></div><div class="frow"><div class="txt"><div class="fnum">IV</div><h3>Relics of the Past</h3><p>Discover relics hidden throughout Nesis and wield them as powerful skills in battle. As your expertise grows, each relic reveals fragments of the story behind it, uncovering choices, sacrifices, and lives that shaped the world long before Elias's journey began.</p></div><div class="relic-visual"><RelicDeck client:visible /></div></div>
 </div></section>
 
@@ -194,25 +194,10 @@ import gameVersion from "../data/game-version.json";
   .frow:last-child{ margin-bottom:0; }
   .frow .txt{ order:0; text-align:center; max-width:62ch; }
   .frow .shot{ order:1; width:100%; padding:6px; background:var(--panel); }
-  .frow .shot img:not(.fl){ width:100%; display:block; }
+  .frow .shot img:not(.fl), .frow .shot video{ width:100%; display:block; }
   .frow .relic-visual{ width:100%; display:flex; justify-content:center; }
-  /* Ken Burns push-in on the EXPLORE shot: ~1s dwell on the UNZOOMED wide church
-     square, zoom in, then crossfade to combat IMMEDIATELY as the zoom lands (no
-     dwell at the zoomed square). DECOUPLED: only xf1 (explore) zooms — combat
-     (xf2) is opacity-only so it isn't over-zoomed. xf1 pushes to 2.0x into
-     52%/88% (further down, into the courtyard/plaza where the grid forms).
-     object-fit:cover so both share one frame; .xfade clips the zoom. 8s loop:
-     0-12% hold wide (~1s), 12-32% zoom in, 32-40% crossfade (no post-zoom
-     dwell), 40-82% hold combat, 82-100% fade + zoom back out. */
-  .xfade{ position:relative; line-height:0; width:100%; overflow:hidden; }
-  .xfade .xf{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0;
-    transform-origin:52% 88%; will-change:transform,opacity;
-    animation-duration:8s; animation-iteration-count:infinite; animation-timing-function:linear; }
-  .xfade .xf1{ position:relative; height:auto; opacity:1; animation-name:kbzoom; }
-  .xfade .xf2{ animation-name:xf2; }
-  @keyframes kbzoom{ 0%{transform:scale(1)} 12%{transform:scale(1)} 32%{transform:scale(2)} 82%{transform:scale(2)} 100%{transform:scale(1)} }
-  @keyframes xf2{ 0%,32%{opacity:0} 40%,82%{opacity:1} 88%,100%{opacity:0} }
-  @media (prefers-reduced-motion:reduce){ .xfade .xf{ animation:none; transform:none; } .xfade .xf2{ opacity:1; } }
+  /* Section II uses the REAL in-game church explore->combat zoom video now
+     (.frow .shot video above); the former CSS Ken Burns crossfade was retired. */
   .frow h3{ color:var(--crimson); font-size:clamp(1.5rem,3.5vw,2.1rem); margin:.1rem 0 .5rem; }
   .frow p{ font-size:1.08rem; color:var(--ink); margin:0; }
   .frow .fnum{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt); letter-spacing:.1em; font-size:.8rem; }

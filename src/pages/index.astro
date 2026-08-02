@@ -103,12 +103,16 @@ import gameVersion from "../data/game-version.json";
   :root { --paper-tex:url("/home/1f41ebc796.jpg"); --fl-bright:1;
     --ink:#3a2c1b; --ink-soft:#6a5836; --crimson:#8a2b21; --crimson-lt:#a8412f; --gilt:#9a7736; --gilt-lt:#c8a24e; --gilt-deep:#7a5c22; --relic:#2f8f7a;
     --rule:rgba(122,92,34,.55); --shadow:rgba(58,44,27,.28); --panel:rgba(247,238,214,.55); --paperblend:rgba(231,217,184,.22); }
-  @media (prefers-color-scheme:dark){ :root{ --paper-tex:url("/home/aed76c48b4.jpg"); --fl-bright:1.75; --ink:#ecdcbd; --ink-soft:#bda87f; --crimson:#e0715a; --crimson-lt:#eb886d; --gilt:#c8a24e; --gilt-lt:#e6c877; --gilt-deep:#a07e34; --relic:#5fd0b3; --rule:rgba(200,162,78,.42); --shadow:rgba(0,0,0,.55); --panel:rgba(38,29,18,.5); --paperblend:rgba(18,13,7,.28); } }
-  :root[data-theme="dark"]{ --paper-tex:url("/home/aed76c48b4.jpg"); --fl-bright:1.75; --ink:#ecdcbd; --ink-soft:#bda87f; --crimson:#e0715a; --crimson-lt:#eb886d; --gilt:#c8a24e; --gilt-lt:#e6c877; --gilt-deep:#a07e34; --relic:#5fd0b3; --rule:rgba(200,162,78,.42); --shadow:rgba(0,0,0,.55); --panel:rgba(38,29,18,.5); --paperblend:rgba(18,13,7,.28); }
+  @media (prefers-color-scheme:dark){ :root{ --paper-tex:url("/home/aed76c48b4.jpg"); --fl-bright:1.75; --ink:#ecdcbd; --ink-soft:#bda87f; --crimson:#e0715a; --crimson-lt:#eb886d; --gilt:#c8a24e; --gilt-lt:#e6c877; --gilt-deep:#a07e34; --relic:#5fd0b3; --rule:rgba(200,162,78,.42); --shadow:rgba(0,0,0,.55); --panel:rgba(38,29,18,.5); --paperblend:rgba(18,13,7,.28); --paper-fallback:#1a130b; } }
+  :root[data-theme="dark"]{ --paper-tex:url("/home/aed76c48b4.jpg"); --fl-bright:1.75; --ink:#ecdcbd; --ink-soft:#bda87f; --crimson:#e0715a; --crimson-lt:#eb886d; --gilt:#c8a24e; --gilt-lt:#e6c877; --gilt-deep:#a07e34; --relic:#5fd0b3; --rule:rgba(200,162,78,.42); --shadow:rgba(0,0,0,.55); --panel:rgba(38,29,18,.5); --paperblend:rgba(18,13,7,.28); --paper-fallback:#1a130b; }
   :root[data-theme="light"]{ --paper-tex:url("/home/1f41ebc796.jpg"); --fl-bright:1; --ink:#3a2c1b; --ink-soft:#6a5836; --crimson:#8a2b21; --crimson-lt:#a8412f; --gilt:#9a7736; --gilt-lt:#c8a24e; --gilt-deep:#7a5c22; --relic:#2f8f7a; --rule:rgba(122,92,34,.55); --shadow:rgba(58,44,27,.28); --panel:rgba(247,238,214,.55); --paperblend:rgba(231,217,184,.22); }
 
   *{box-sizing:border-box;}
-  .home{ min-height:100vh; color:var(--ink); line-height:1.64; background:linear-gradient(var(--paperblend),var(--paperblend)),var(--paper-tex); background-size:cover; background-attachment:fixed; font-family:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif; -webkit-font-smoothing:antialiased; overflow-x:clip; }
+  /* background-color fallback + NO background-attachment:fixed — a fixed bg
+     blanks to white in Chrome once the autoplay hero <video> forces GPU
+     compositing, so the texture scrolls normally and a solid paper tone always
+     backs it. */
+  .home{ min-height:100vh; color:var(--ink); line-height:1.64; background-color:var(--paper-fallback,#e7dcbd); background-image:linear-gradient(var(--paperblend),var(--paperblend)),var(--paper-tex); background-size:cover; font-family:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif; -webkit-font-smoothing:antialiased; overflow-x:clip; }
   h1,h2,h3,.display{ font-family:"AllByteCustom","Trajan Pro",Georgia,serif; font-weight:400; text-wrap:balance; }
   img{ max-width:100%; display:block; } a{ color:inherit; }
   .wrap{ max-width:1080px; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.4rem); }

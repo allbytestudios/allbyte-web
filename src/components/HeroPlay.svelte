@@ -28,7 +28,7 @@
 
   const def = $derived(defaultVersion(auth.currentUser, runtime));
   const admin = $derived(isAdmin(auth.currentUser));
-  const primaryLabel = $derived(def.id.startsWith("beta") ? "Play the Beta" : "Play Free");
+  const primaryLabel = "Play";
 
   function play(id: string) {
     window.location.href = `/play/?v=${encodeURIComponent(id)}`;
@@ -41,7 +41,7 @@
 <svelte:document onclick={onDocClick} />
 
 <span class="heroplay">
-  <button class="btn btn-primary btn-lg play-main" onclick={() => play(def.id)}>
+  <button class="btn btn-primary btn-lg play-main" class:split={admin} onclick={() => play(def.id)}>
     {primaryLabel}
   </button>
 
@@ -80,8 +80,13 @@
     display: inline-flex;
     align-items: stretch;
   }
-  /* split-button look: main button squares its right edge, caret squares its left */
   .heroplay .play-main {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+  /* split-button look only when the admin caret is present (main squares its
+     right edge, caret squares its left); otherwise the button keeps full radius */
+  .heroplay .play-main.split {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
   }

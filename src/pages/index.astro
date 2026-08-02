@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import NavAuth from "../components/NavAuth.svelte";
 import HeroPlay from "../components/HeroPlay.svelte";
 import RelicDeck from "../components/RelicDeck.svelte";
+import gameVersion from "../data/game-version.json";
 ---
 
 <BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A world that has forgotten its heroes. Play The Chronicles of Nesis free in your browser, a handcrafted tactical RPG from AllByte Studios.">
@@ -42,7 +43,7 @@ import RelicDeck from "../components/RelicDeck.svelte";
   <h1>The Chronicles of Nesis</h1>
   <div class="subtitle">A classic fantasy RPG, <br class="sub-br2">built in the spirit of 90s JRPGs,<br>with the possibilities of modern technology.</div>
   <p class="hero-lede">Grid-based combat, a hand-built world, and the freedom to shape your journey. Playable in your browser, on desktop, tablet, or phone.</p>
-  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="hero-media"><img class="hm-scene" src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hm-manual" aria-hidden="true"></div></div><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div></div></div>
+  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="hero-media"><img class="hm-scene" src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hm-manual" aria-hidden="true"></div></div><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div><a class="hero-version" href="/changelog/">{gameVersion.version} &middot; What&rsquo;s new &rsaquo;</a></div></div></div>
   <p class="hero-caption">No install. No account. Works on desktop, tablet, and phone.</p>
 </div></div>
 
@@ -165,8 +166,12 @@ import RelicDeck from "../components/RelicDeck.svelte";
   .hero-scrim{ position:absolute; left:6px; right:6px; bottom:6px; height:62%; z-index:1; pointer-events:none; background:linear-gradient(to top,rgba(26,15,9,.86),rgba(26,15,9,.34) 52%,transparent); }
   .hero-banner{ position:absolute; left:50%; bottom:22px; transform:translateX(-50%); z-index:2; width:min(92%,600px); display:flex; flex-direction:column; align-items:center; gap:.7rem; text-align:center; padding:1.05rem 1.3rem .95rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.97),rgba(240,229,198,.97)); border:1px solid var(--gilt-lt); box-shadow:0 12px 30px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,247,224,.22); }
   .hero-banner::before{ content:""; position:absolute; inset:4px; border:1px solid var(--rule); border-radius:2px; pointer-events:none; }
-  .hero-banner-cta{ display:flex; gap:.9rem; flex-wrap:wrap; justify-content:center; }
+  .hero-banner-cta{ display:flex; gap:.9rem; flex-wrap:wrap; justify-content:center; align-items:stretch; width:100%; }
+  .hero-banner-cta > .btn{ flex:1 1 0; justify-content:center; }
+  .hero-banner-cta :global(.heroplay){ flex:1 1 0; }
   .hero-banner-trust{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.14em; font-size:.68rem; color:var(--gilt-deep); }
+  .hero-version{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.12em; font-size:.72rem; color:var(--gilt-deep); text-decoration:none; }
+  .hero-version:hover{ color:var(--crimson); text-decoration:underline; }
   .ghero .hero-caption{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt-deep); font-size:.95rem; letter-spacing:.02em; margin:.75rem auto 0; }
   @media (max-width:520px){ .hero-banner{ position:static; transform:none; width:auto; margin:1rem auto 0; } .hero-scrim{ display:none; } }
   .ghero .cta{ display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem; align-items:center; }

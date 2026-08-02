@@ -43,7 +43,7 @@ import gameVersion from "../data/game-version.json";
   <h1>The Chronicles of Nesis</h1>
   <div class="subtitle">A classic fantasy RPG, <br class="sub-br2">built in the spirit of 90s JRPGs,<br>with the possibilities of modern technology.</div>
   <p class="hero-lede">Grid-based combat, a hand-built world, and the freedom to shape your journey. Playable in your browser, on desktop, tablet, or phone.</p>
-  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="hero-media"><img class="hm-scene" src="/home/3fcb87330e.jpg" alt="A scene from The Chronicles of Nesis" loading="eager"><div class="hm-manual" aria-hidden="true"></div></div><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div><a class="hero-version" href="/changelog/">{gameVersion.version} &middot; What&rsquo;s new &rsaquo;</a></div></div></div>
+  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="hero-media"><video class="hm-scene" src="/home/frontroad-hero.mp4" poster="/home/frontroad-hero-poster.jpg" autoplay loop muted playsinline preload="auto" aria-label="Elias runs the front road of Laria — a parallax landscape of windmill, distant mountains, and a reflecting stream"></video><div class="hm-manual" aria-hidden="true"></div></div><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div><a class="hero-version" href="/changelog/">{gameVersion.version} &middot; What&rsquo;s new &rsaquo;</a></div></div></div>
   <p class="hero-caption">No install. No account. Works on desktop, tablet, and phone.</p>
 </div></div>
 
@@ -153,7 +153,7 @@ import gameVersion from "../data/game-version.json";
   @media (max-width:600px){ .ghero .subtitle .sub-br2{ display:inline; } }
   .ghero .hero-lede{ max-width:60ch; margin:.7rem auto 0; color:var(--ink-soft); font-size:clamp(.98rem,1.7vw,1.1rem); line-height:1.55; }
   .ghero .art{ max-width:960px; margin:1.6rem auto 0; padding:6px; background:var(--panel); }
-  .ghero .art{ position:relative; } .ghero .art img:not(.fl){ width:100%; display:block; height:clamp(340px,46vh,470px); object-fit:cover; object-position:50% 55%; }
+  .ghero .art{ position:relative; } .ghero .art img:not(.fl), .ghero .art video.hm-scene{ width:100%; display:block; height:clamp(340px,46vh,470px); object-fit:cover; object-position:50% 55%; }
   .hero-media{ position:relative; overflow:hidden; }
   .hm-scene{ transition:transform 3.2s ease-out; will-change:transform; }
   .hm-manual{ position:absolute; inset:0; opacity:0; pointer-events:none; background-image:url("/home/manual-strip.jpg"); background-size:100% auto; background-position:50% 0; background-color:#e9dcb2; transition:opacity .35s ease; }

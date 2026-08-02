@@ -115,7 +115,7 @@ import gameVersion from "../data/game-version.json";
      blanked-white div). The root canvas background is immune to this, so we put
      it there and keep .home transparent. */
   .home{ min-height:100vh; color:var(--ink); line-height:1.64; font-family:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif; -webkit-font-smoothing:antialiased; overflow-x:clip; }
-  :global(body){ background-color:var(--paper-fallback,#e7dcbd); background-image:linear-gradient(var(--paperblend),var(--paperblend)),var(--paper-tex); background-size:cover; background-attachment:fixed; }
+  body{ background-color:var(--paper-fallback,#e7dcbd); background-image:linear-gradient(var(--paperblend),var(--paperblend)),var(--paper-tex); background-size:cover; background-attachment:fixed; }
   h1,h2,h3,.display{ font-family:"AllByteCustom","Trajan Pro",Georgia,serif; font-weight:400; text-wrap:balance; }
   img{ max-width:100%; display:block; } a{ color:inherit; }
   .wrap{ max-width:1080px; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.4rem); }

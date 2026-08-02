@@ -187,22 +187,23 @@ import RelicDeck from "../components/RelicDeck.svelte";
   .frow .shot{ order:1; width:100%; padding:6px; background:var(--panel); }
   .frow .shot img:not(.fl){ width:100%; display:block; }
   .frow .relic-visual{ width:100%; display:flex; justify-content:center; }
-  /* Fast Ken Burns push-in on the EXPLORE shot toward the combat courtyard, a
-     ~1s DWELL on the zoomed church square, then the combat shot fades in at its
-     native framing. DECOUPLED: only xf1 (explore) zooms — combat (xf2) is
-     opacity-only so it isn't over-zoomed, minimizing the visual jump at the cut.
-     xf1 pushes to 1.8x into 52%/85% (the plaza in front of the church where the
-     grid forms). object-fit:cover so both share one frame; .xfade clips the zoom.
-     8s loop: 0-18% zoom in, 18-30% hold church square (~1s), 30-37% crossfade,
-     37-80% hold combat, then fade + zoom back out. */
+  /* Ken Burns push-in on the EXPLORE shot with a dwell at each end: ~1s on the
+     UNZOOMED wide church square, zoom in, ~1s on the ZOOMED church square, then
+     the combat shot fades in at its native framing and holds. DECOUPLED: only
+     xf1 (explore) zooms — combat (xf2) is opacity-only so it isn't over-zoomed,
+     minimizing the jump at the cut. xf1 pushes to 1.8x into 52%/85% (the plaza
+     in front of the church where the grid forms). object-fit:cover so both share
+     one frame; .xfade clips the zoom. 9s loop: 0-11% hold wide (~1s), 11-28%
+     zoom in, 28-39% hold zoomed (~1s), 39-46% crossfade, 46-82% hold combat,
+     82-100% fade + zoom back out. */
   .xfade{ position:relative; line-height:0; width:100%; overflow:hidden; }
   .xfade .xf{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0;
     transform-origin:52% 85%; will-change:transform,opacity;
-    animation-duration:8s; animation-iteration-count:infinite; animation-timing-function:linear; }
+    animation-duration:9s; animation-iteration-count:infinite; animation-timing-function:linear; }
   .xfade .xf1{ position:relative; height:auto; opacity:1; animation-name:kbzoom; }
   .xfade .xf2{ animation-name:xf2; }
-  @keyframes kbzoom{ 0%{transform:scale(1)} 18%{transform:scale(1.8)} 82%{transform:scale(1.8)} 100%{transform:scale(1)} }
-  @keyframes xf2{ 0%,30%{opacity:0} 37%,80%{opacity:1} 86%,100%{opacity:0} }
+  @keyframes kbzoom{ 0%{transform:scale(1)} 11%{transform:scale(1)} 28%{transform:scale(1.8)} 82%{transform:scale(1.8)} 100%{transform:scale(1)} }
+  @keyframes xf2{ 0%,39%{opacity:0} 46%,82%{opacity:1} 88%,100%{opacity:0} }
   @media (prefers-reduced-motion:reduce){ .xfade .xf{ animation:none; transform:none; } .xfade .xf2{ opacity:1; } }
   .frow h3{ color:var(--crimson); font-size:clamp(1.5rem,3.5vw,2.1rem); margin:.1rem 0 .5rem; }
   .frow p{ font-size:1.08rem; color:var(--ink); margin:0; }

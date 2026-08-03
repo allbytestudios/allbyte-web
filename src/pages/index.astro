@@ -40,11 +40,19 @@ import gameVersion from "../data/game-version.json";
 
 <!-- HERO: the game -->
 <div class="ghero" id="play"><div class="wrap">
-  <h1>The Chronicles of Nesis</h1>
-  <div class="subtitle">A classic fantasy RPG, <br class="sub-br2">built in the spirit of 90s JRPGs, <br class="sub-br1">with the possibilities of modern technology.</div>
-  <p class="hero-lede">Grid-based combat, a hand-built world, and the freedom to shape your journey. Playable in your browser, on desktop, tablet, or phone.</p>
-  <div class="art frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><div class="hero-media"><video class="hm-scene" src="/home/frontroad-hero.mp4" poster="/home/frontroad-hero-poster.jpg" autoplay loop muted playsinline preload="auto" aria-label="Elias runs the front road of Laria — a parallax landscape of windmill, distant mountains, and a reflecting stream"></video><div class="hm-manual" aria-hidden="true"></div></div><div class="hero-scrim"></div><div class="hero-banner"><div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div><a class="hero-version" href="/changelog/">{gameVersion.version} &middot; What&rsquo;s new &rsaquo;</a></div></div></div>
-  <p class="hero-caption">No install. No account. Works on desktop, tablet, and phone.</p>
+  <div class="hero-stage">
+    <div class="hero-plate hero-title-plate">
+      <h1>The Chronicles of Nesis</h1>
+      <div class="subtitle">A classic fantasy RPG, <br class="sub-br2">built in the spirit of 90s JRPGs, <br class="sub-br1">with the possibilities of modern technology.</div>
+      <p class="hero-lede">Grid-based combat, a hand-built world, and the freedom to shape your journey. Playable in your browser, on desktop, tablet, or phone.</p>
+    </div>
+    <video class="hero-video" src="/home/frontroad-hero.mp4" poster="/home/frontroad-hero-poster.jpg" autoplay loop muted playsinline preload="auto" aria-label="Elias runs the front road of Laria — a parallax landscape of windmill, distant mountains, and a reflecting stream"></video>
+    <div class="hero-plate hero-cta-plate">
+      <div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div>
+      <p class="hero-cta-caption">No install. No account. Works on desktop, tablet, and phone.</p>
+      <a class="hero-version" href="/changelog/">{gameVersion.version} &middot; What&rsquo;s new &rsaquo;</a>
+    </div>
+  </div>
 </div></div>
 
 <hr class="rule">
@@ -164,40 +172,33 @@ import gameVersion from "../data/game-version.json";
   @media (min-width:768px){ .ghero .subtitle .sub-br1{ display:none; } }
   .ghero .hero-lede{ max-width:60ch; margin:.7rem auto 0; color:var(--ink-soft); font-size:clamp(.98rem,1.7vw,1.1rem); line-height:1.55; }
   @media (min-width:768px){ .ghero .hero-lede{ max-width:78ch; } }
-  .ghero .art{ max-width:960px; margin:1.6rem auto 0; padding:6px; background:var(--panel); }
-  /* Desktop: shrink the hero so the CTA + caption stay above the fold while the
-     video keeps its FULL frame (Elias' water reflection + clouds — no crop). We
-     cap .art WIDTH by viewport HEIGHT so video-height = 100dvh minus the ~570px
-     the rest of the hero needs (nav, title, tagline, lede, CTA, caption,
-     paddings). Clamped 480px..960px; self-adjusts to the screen. */
-  @media (min-width:768px){ .ghero .art{ max-width: clamp(480px, calc((100dvh - 570px) * 1.379), 960px); } }
-  .ghero .art{ position:relative; } .ghero .art img:not(.fl){ width:100%; display:block; height:clamp(340px,46vh,470px); object-fit:cover; object-position:50% 55%; }
-  /* hero video shows its FULL frame (natural aspect) so both the clouds (top)
-     and the water reflection (bottom) are visible — no cover-crop. */
-  .ghero .art video.hm-scene{ width:100%; height:auto; aspect-ratio:1200/870; display:block; }
-  .hero-media{ position:relative; overflow:hidden; }
-  .hm-scene{ transition:transform 3.2s ease-out; will-change:transform; }
-  .hm-manual{ position:absolute; inset:0; opacity:0; pointer-events:none; background-image:url("/home/manual-strip.jpg"); background-size:100% auto; background-position:50% 0; background-color:#e9dcb2; transition:opacity .35s ease; }
-  /* Play hover: slow zoom into the world */
-  .ghero .art:has(.play-main:hover) .hm-scene{ transform:scale(1.09); }
-  /* Read the Manual hover: reveal + slide the manual pages */
-  .ghero .art:has(.btn-ghost:hover) .hm-manual{ opacity:1; animation:manualslide 11s linear infinite alternate; }
-  @keyframes manualslide{ from{ background-position:50% 0; } to{ background-position:50% 100%; } }
-  @media (prefers-reduced-motion:reduce){ .hm-scene{ transition:none; } .hm-manual{ animation:none !important; } }
-  /* scrim retired: the CTA banner sits BENEATH the video now (not overlaid), so
-     no need to darken the video bottom — keeps the water reflection visible. */
-  .hero-scrim{ display:none; }
-  /* CTA banner flows beneath the hero video (inside the frame), all viewports. */
-  .hero-banner{ position:relative; z-index:2; width:min(92%,600px); margin:14px auto 2px; display:flex; flex-direction:column; align-items:center; gap:.7rem; text-align:center; padding:1.05rem 1.3rem .95rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.97),rgba(240,229,198,.97)); border:1px solid var(--gilt-lt); box-shadow:0 8px 20px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,247,224,.22); }
-  .hero-banner::before{ content:""; position:absolute; inset:4px; border:1px solid var(--rule); border-radius:2px; pointer-events:none; }
-  .hero-banner-cta{ display:flex; gap:.9rem; flex-wrap:wrap; justify-content:center; align-items:stretch; width:100%; }
+  /* HERO STAGE — the video sizes as large as it fits; title + CTA are PLATES.
+     Mobile: stacked (title above the video, CTA below — there's vertical room).
+     Desktop (>=768px): the video fills the viewport and the plates FLOAT over its
+     top and bottom (overlapping it), always on top + visible. */
+  .hero-stage{ position:relative; width:100%; max-width:960px; margin:1.1rem auto 0; display:flex; flex-direction:column; align-items:center; }
+  .hero-video{ order:2; display:block; width:100%; height:auto; aspect-ratio:1200/870; border-radius:6px; box-shadow:0 12px 34px var(--shadow); transition:transform 3.2s ease-out; will-change:transform; }
+  .hero-stage:has(.play-main:hover) .hero-video{ transform:scale(1.03); }
+  @media (prefers-reduced-motion:reduce){ .hero-video{ transition:none; } }
+  .hero-title-plate{ order:1; margin-bottom:.55rem; }
+  .hero-cta-plate{ order:3; width:min(94%,600px); margin-top:.9rem; display:flex; flex-direction:column; align-items:center; gap:.55rem; }
+  .hero-cta-caption{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt-deep); font-size:clamp(.82rem,1.3vw,.95rem); letter-spacing:.02em; margin:0; }
+  .hero-banner-cta{ display:flex; gap:.8rem; flex-wrap:wrap; justify-content:center; align-items:stretch; width:100%; }
   .hero-banner-cta > .btn{ flex:1 1 0; justify-content:center; }
   .hero-banner-cta :global(.heroplay){ flex:1 1 0; }
-  .hero-banner-trust{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.14em; font-size:.68rem; color:var(--gilt-deep); }
   .hero-version{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.12em; font-size:.72rem; color:var(--gilt-deep); text-decoration:none; }
   .hero-version:hover{ color:var(--crimson); text-decoration:underline; }
-  .ghero .hero-caption{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt-deep); font-size:.95rem; letter-spacing:.02em; margin:.75rem auto 0; }
-  @media (max-width:520px){ .hero-banner{ position:static; transform:none; width:auto; margin:1rem auto 0; } .hero-scrim{ display:none; } }
+  @media (min-width:768px){
+    .hero-stage{ display:block; width:fit-content; max-width:100%; }
+    .hero-video{ width:auto; max-width:100%; max-height:calc(100dvh - 120px); margin:0 auto; }
+    .hero-plate{ position:absolute; left:50%; transform:translateX(-50%); z-index:2; width:min(82%,560px); margin:0; padding:.8rem 1.25rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.93),rgba(240,229,198,.93)); border:1px solid var(--gilt-lt); box-shadow:0 10px 26px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,247,224,.22); }
+    .hero-plate::before{ content:""; position:absolute; inset:4px; border:1px solid var(--rule); border-radius:2px; pointer-events:none; }
+    .hero-title-plate{ top:clamp(10px,2.4vh,24px); margin:0; }
+    .hero-cta-plate{ bottom:clamp(10px,2.4vh,24px); margin:0; }
+    .hero-title-plate h1{ font-size:clamp(1.8rem,4vw,2.9rem); margin:.1rem 0; -webkit-text-stroke-width:1.5px; text-stroke-width:1.5px; }
+    .hero-title-plate .subtitle{ font-size:clamp(.9rem,1.5vw,1.06rem); margin-top:.3rem; }
+    .hero-title-plate .hero-lede{ font-size:clamp(.82rem,1.2vw,.95rem); max-width:50ch; margin-top:.35rem; }
+  }
   .ghero .cta{ display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem; align-items:center; }
   .ghero .trust{ display:block; margin-top:.9rem; font-size:.86rem; color:var(--ink-soft); letter-spacing:.02em; }
 

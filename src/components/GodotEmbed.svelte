@@ -16,6 +16,7 @@
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
+  import GlassShatter from "./GlassShatter.svelte";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
   //
@@ -1111,6 +1112,27 @@
   let studioFading = $state(false);
   let manualCardShownAt = 0;
 
+  // Glass-shatter entrance — plays once when arriving from the homepage "Play"
+  // press (HeroPlay sets the flag). Read + cleared at init so it shows on the
+  // first paint (no flash) and never replays on a refresh. The game load runs
+  // underneath the whole time; the studio scene waits until the glass clears.
+  function readGlassFlag(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+      if (sessionStorage.getItem("ab_play_transition") === "1") {
+        sessionStorage.removeItem("ab_play_transition");
+        return true;
+      }
+    } catch {
+      /* private mode */
+    }
+    return false;
+  }
+  let showGlass = $state(readGlassFlag());
+  function onGlassDone() {
+    showGlass = false; // → the studio scene starts (gated on !showGlass below)
+  }
+
   // "All Byte" = 8 characters (the space included makes a Byte), one binary bit
   // over each. The bits flip 0/1 fast, slow exponentially, then STOP on random
   // values and hold before the scene fades. Mirrors the real in-game
@@ -1381,9 +1403,10 @@
       new URLSearchParams(window.location.search).has("debug"),
   );
 
-  // Kick the studio intro the moment a normal player load begins.
+  // Kick the studio intro the moment a normal player load begins — but hold it
+  // behind the glass-shatter entrance if that's playing (starts on onGlassDone).
   $effect(() => {
-    if (allowed && loading && !studioTimerStarted && isNormalPlayerLoad()) {
+    if (allowed && loading && !studioTimerStarted && !showGlass && isNormalPlayerLoad()) {
       studioTimerStarted = true;
       // Pick the first manual card to show after the studio scene.
       const pick = Math.floor(Math.random() * TOTAL_CARDS);
@@ -1773,6 +1796,9 @@
 </script>
 
 <div class="godot-container" bind:this={containerEl} style:cursor={letterboxCursor}>
+  {#if showGlass}
+    <GlassShatter ondone={onGlassDone} />
+  {/if}
   {#if mobileFs && allowed && !isFullscreen}
     <!-- Mobile fullscreen is parent-owned (the touch gamepad lives out here, not
          in the iframe). Default is auto-on; this button re-enters after the user

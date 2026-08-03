@@ -31,6 +31,14 @@
   const primaryLabel = "Play";
 
   function play(id: string) {
+    // Flag the glass-shatter entrance for /play (it reads + clears this). Set
+    // right before navigating so the transition is tied to the Play press; the
+    // game load starts the instant /play mounts.
+    try {
+      sessionStorage.setItem("ab_play_transition", "1");
+    } catch {
+      /* private mode — just skip the flourish */
+    }
     window.location.href = `/play/?v=${encodeURIComponent(id)}`;
   }
   function onDocClick(e: MouseEvent) {

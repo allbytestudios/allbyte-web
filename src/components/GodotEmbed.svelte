@@ -617,34 +617,24 @@
     // build here rather than the SSR default.
     gameUrl = resolveGameUrl();
 
-    // Decide the download gate now that localStorage is available. Already
-    // acknowledged (so cached) or an admin fixture load → straight through;
-    // otherwise hold the iframe behind the consent notice.
-    //
-    // DESKTOP: no download gate (owner 2026-08-03 — the data-cost warning isn't
-    // necessary and any gate loses players; desktop links aren't metered like
-    // cellular). Title audio: browsers block autoplay until a user gesture, and
-    // the homepage "Play" click can't carry it (window.location.href is a full
-    // navigation, which drops user-activation). With no gate the game's own
-    // audio simply resumes on the player's first click/keypress into it (Godot
-    // default) — a brief silent title, then music, no prompt. MOBILE keeps the
-    // fresh-load gate (real cellular data cost) plus its tap-to-fullscreen,
-    // which doubles as the audio-unlock gesture.
+    // No download gate anymore (owner 2026-08-03 — the ~75MB data-cost warning
+    // isn't necessary and any gate loses players). DESKTOP and MOBILE both go
+    // straight to the game; the new loading screen (studio intro + manual cards)
+    // covers the download. Title audio: browsers block autoplay until a user
+    // gesture, and the homepage "Play" click can't carry it (window.location.href
+    // is a full navigation, which drops user-activation).
+    //   • Desktop: the game's own audio resumes on the player's first
+    //     click/keypress into it (Godot default) — brief silent title, then music.
+    //   • Mobile: still needs a gesture to enter fullscreen (iOS rule) AND to
+    //     unlock audio, so it gets a *hovering* "tap for fullscreen" prompt OVER
+    //     the loading screen (not an opaque cover) — the whole area is tappable
+    //     and the loading art shows through.
     const proceedToGame = () => {
-      const dlState = downloadState();
       const hasScenario = new URLSearchParams(window.location.search).has("scenario");
-      const desktop = !isMobileViewport();
-      if (fixture || hasScenario || dlState === "ready" || desktop) {
-        allowed = true;
-        // Game brings its own music — pause the persistent site player.
-        window.dispatchEvent(new CustomEvent("music-player:pause"));
-        // No gate = no guaranteed parent gesture for fullscreen. Give mobile
-        // players a one-tap start layer to provide it (the game preloads behind).
-        if (!fixture && !hasScenario && isMobileViewport()) showStartTap = true;
-      } else {
-        gateMode = dlState; // "fresh" (first load) or "update" (version bumped)
-        showGate = true;
-      }
+      allowed = true;
+      // Game brings its own music — pause the persistent site player.
+      window.dispatchEvent(new CustomEvent("music-player:pause"));
+      if (!fixture && !hasScenario && isMobileViewport()) showStartTap = true;
     };
     // Beta is edge-gated (CloudFront signed cookies): obtain the grant BEFORE
     // the iframe mounts, or an entitled user's first load 403s at the edge.
@@ -1110,16 +1100,10 @@
   const EXPECTED_DOWNLOAD_BYTES = 36879516 + 24929996; // WASM + index.pck
   let bytesDownloaded = $state(0);
   let filesDownloaded = $state(0);
-  const dlPct = $derived(
-    Math.min(100, Math.round((bytesDownloaded / EXPECTED_DOWNLOAD_BYTES) * 100)),
-  );
-  // Warm cache (returning player): SW/memory cache hits don't cross the wire,
-  // so bytesDownloaded stays 0. Show an indeterminate bar + "Preparing" rather
-  // than a stuck "Downloading… 0%".
-  const dlKnown = $derived(bytesDownloaded > 0);
-  const loadStatusFriendly = $derived(
-    !dlKnown || dlPct >= 100 ? "Preparing the world…" : "Downloading the world…",
-  );
+  // (byte-based progress bar removed 2026-08-03 — it read choppy because
+  // transfer-size samples arrive in big lumps. Progress is now conveyed by the
+  // rotating cards + a steady 3-dot "still working" indicator. bytesDownloaded
+  // is still tracked for the game's own boot shell postMessage + ?debug panel.)
 
   // --- Two-phase loading splash (owner spec 2026-08-03) --------------------
   // Phase 1 "studio": the AllByte Studios animation, full-screen, for ~STUDIO_MS
@@ -1350,12 +1334,12 @@
     if (fixture) return false;
     return !new URLSearchParams(window.location.search).has("scenario");
   }
-  // Debug readout (log tail, phase heuristics, MB/file counts) — owner + ?debug
-  // only. Players never see it; it stays for diagnosing a load.
+  // Debug readout (log tail, phase heuristics, MB/file counts) — ?debug ONLY.
+  // Off by default even for admins (owner 2026-08-03: the raw panel read as
+  // stray dev info on the loading screen); add ?debug to a /play URL to see it.
   const showLoadDebug = $derived(
-    (typeof window !== "undefined" &&
-      new URLSearchParams(window.location.search).has("debug")) ||
-      isAdmin(auth.currentUser),
+    typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("debug"),
   );
 
   // Kick the studio intro the moment a normal player load begins.
@@ -1441,6 +1425,25 @@
       cancelled = true;
       timers.forEach(clearTimeout);
     };
+  });
+
+  // Rotate the manual card every ROTATE_MS during the manual phase — the steady
+  // turnover is itself the progression signal (owner 2026-08-03). Picks a
+  // different card each time (text or the sprite card). Stops on reveal.
+  const ROTATE_MS = 2600;
+  $effect(() => {
+    if (!(loading && loadPhase === "manual" && isNormalPlayerLoad())) return;
+    const id = setInterval(() => {
+      const prev = loadCardIsSprite ? MANUAL_CARDS.length : loadCard;
+      let next = prev;
+      if (TOTAL_CARDS > 1) {
+        next =
+          (prev + 1 + Math.floor(Math.random() * (TOTAL_CARDS - 1))) % TOTAL_CARDS;
+      }
+      loadCardIsSprite = HAS_SPRITE_CARD && next === MANUAL_CARDS.length;
+      loadCard = loadCardIsSprite ? 0 : next;
+    }, ROTATE_MS);
+    return () => clearInterval(id);
   });
 
   function pollLoadStatus() {
@@ -1807,37 +1810,32 @@
               {/if}
             </div>
           {/if}
-          <div class="manual-tracker" role="status" aria-live="polite">
-            <img
-              class="manual-spinner"
-              src="/loading-spinner.gif"
-              alt=""
-              width="28"
-              height="28"
-            />
-            <div class="manual-tracker-body">
-              <div class="manual-status">{loadStatusFriendly}</div>
-              {#if dlKnown}
-                <div class="manual-bar">
-                  <div class="manual-bar-fill" style="width: {dlPct}%"></div>
-                </div>
-              {:else}
-                <div class="manual-bar">
-                  <div class="manual-bar-fill manual-bar-indeterminate"></div>
-                </div>
-              {/if}
-            </div>
-            {#if dlKnown}
-              <div class="manual-pct">{dlPct}%</div>
-            {/if}
+          <div class="load-dots" role="status" aria-label="Loading">
+            <span class="load-dot"></span>
+            <span class="load-dot"></span>
+            <span class="load-dot"></span>
           </div>
         </div>
       {/if}
     {/if}
     {#if showStartTap}
-      <button class="start-tap" onclick={startTapPlay} aria-label="Tap to play fullscreen">
-        <span class="start-tap-title">The Chronicles of Nesis</span>
-        <span class="start-tap-cta">Tap to play</span>
+      <!-- Transparent, full-area tap catcher: the loading screen (studio +
+           manual cards) shows through, with a hovering prompt over it. The tap
+           enters fullscreen (iOS requires a gesture) and unlocks audio. -->
+      <button class="start-tap" onclick={startTapPlay} aria-label="Tap for fullscreen">
+        <span class="start-tap-pill">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path
+              d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          Tap for fullscreen
+        </span>
       </button>
     {/if}
     <iframe
@@ -2027,6 +2025,8 @@
   /* Mobile start layer — a guaranteed parent-page tap so fullscreen can enter
      (Android rejects fullscreen driven from inside the game iframe). Sits above
      the iframe + VirtualGamepad (z-index 5) while the game preloads behind it. */
+  /* Transparent tap catcher — the loading art shows through; only the pill
+     is visible. The whole area is tappable. */
   .start-tap {
     position: absolute;
     inset: 0;
@@ -2035,31 +2035,37 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 0.85rem;
+    justify-content: flex-start;
     border: none;
-    background: rgba(10, 14, 23, 0.72);
-    color: #e0e7ff;
+    background: transparent;
+    color: #f6eccf;
     cursor: pointer;
+    padding: 0;
     -webkit-tap-highlight-color: transparent;
   }
-  .start-tap-title {
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: clamp(1.4rem, 6vw, 2.4rem);
-    letter-spacing: 0.02em;
-    text-align: center;
-    padding: 0 1rem;
-  }
-  .start-tap-cta {
+  .start-tap-pill {
+    margin-top: clamp(14px, 5vh, 40px);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55em;
+    padding: 0.5rem 1.05rem;
+    border-radius: 999px;
+    background: rgba(10, 14, 23, 0.82);
+    border: 1px solid rgba(231, 184, 102, 0.5);
+    color: #f6eccf;
     font-family: "Courier New", monospace;
-    font-size: 0.9rem;
+    font-size: 0.76rem;
     text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: var(--engine-accent, #a7f3d0);
-    animation: startPulse 1.8s ease-in-out infinite;
+    letter-spacing: 0.14em;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    animation: startPulse 1.9s ease-in-out infinite;
+  }
+  .start-tap-pill svg {
+    flex: 0 0 auto;
+    color: #e7b866;
   }
   @keyframes startPulse {
-    0%, 100% { opacity: 0.45; }
+    0%, 100% { opacity: 0.62; }
     50% { opacity: 1; }
   }
 
@@ -2327,72 +2333,45 @@
     }
   }
 
-  .manual-tracker {
+  /* 3-dot "still working" indicator — three gilt dots brighten in sequence,
+     one per ~second (staggered CSS, no JS, no choppiness). Progression is also
+     carried by the card rotation above. */
+  .load-dots {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
-    width: 100%;
-    max-width: 30rem;
+    justify-content: center;
+    gap: 0.7rem;
     margin: 0 auto;
   }
-  .manual-spinner {
-    flex: 0 0 auto;
-    width: 28px;
-    height: 28px;
-    display: block;
+  .load-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #e7b866;
+    opacity: 0.22;
+    animation: loadDot 1.5s ease-in-out infinite;
   }
-  .manual-tracker-body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    min-width: 0;
+  .load-dot:nth-child(2) {
+    animation-delay: 0.5s;
   }
-  .manual-status {
-    font-family: "Courier New", monospace;
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
-    color: #cdbf9e;
+  .load-dot:nth-child(3) {
+    animation-delay: 1s;
   }
-  .manual-bar {
-    height: 5px;
-    border-radius: 3px;
-    background: rgba(198, 154, 76, 0.16);
-    overflow: hidden;
-  }
-  .manual-bar-fill {
-    height: 100%;
-    border-radius: 3px;
-    background: linear-gradient(90deg, #c69a4c, #e7b866);
-    transition: width 0.35s ease;
-  }
-  /* Warm-cache: no byte counter to drive width — sweep an amber comet L→R. */
-  .manual-bar-indeterminate {
-    width: 38% !important;
-    animation: manualSweep 1.15s ease-in-out infinite;
-  }
-  @keyframes manualSweep {
-    0% {
-      transform: translateX(-110%);
+  @keyframes loadDot {
+    0%, 70%, 100% {
+      opacity: 0.22;
+      transform: scale(0.85);
     }
-    100% {
-      transform: translateX(320%);
+    35% {
+      opacity: 1;
+      transform: scale(1.15);
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .manual-bar-indeterminate {
-      width: 100% !important;
+    .load-dot {
       animation: none;
+      opacity: 0.6;
     }
-  }
-  .manual-pct {
-    flex: 0 0 auto;
-    font-family: "Courier New", monospace;
-    font-size: 0.85rem;
-    font-variant-numeric: tabular-nums;
-    color: #e7b866;
-    min-width: 2.8rem;
-    text-align: right;
   }
 
   .game-frame {

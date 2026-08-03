@@ -114,7 +114,7 @@
 </span>
 
 {#if transitioning}
-  <PixelTransition mode="obscure" ondone={onObscureDone} />
+  <PixelTransition ondone={onObscureDone} />
 {/if}
 
 <style>

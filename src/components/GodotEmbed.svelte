@@ -16,7 +16,6 @@
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
-  import PixelTransition from "./PixelTransition.svelte";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
   //
@@ -1112,29 +1111,17 @@
   let studioFading = $state(false);
   let manualCardShownAt = 0;
 
-  // Glass-shatter entrance — plays once when arriving from the homepage "Play"
-  // press (HeroPlay sets the flag). Read + cleared at init so it shows on the
-  // first paint (no flash) and never replays on a refresh. The game load runs
-  // underneath the whole time; the studio scene waits until the glass clears.
-  let glassSeed = $state(1);
-  function readGlassFlag(): boolean {
-    if (typeof window === "undefined") return false;
+  // The Play entrance (pixel dissolve) runs entirely on the homepage and ends on
+  // an AllByte frame that matches this studio screen, so /play just loads its
+  // normal studio → cards → game flow; no /play-side transition is needed. The
+  // one-shot sessionStorage flag HeroPlay sets is cleared here to keep it tidy.
+  if (typeof window !== "undefined") {
     try {
-      if (sessionStorage.getItem("ab_play_transition") === "1") {
-        sessionStorage.removeItem("ab_play_transition");
-        const s = parseInt(sessionStorage.getItem("ab_play_seed") ?? "1", 10);
-        sessionStorage.removeItem("ab_play_seed");
-        glassSeed = Number.isFinite(s) ? s : 1;
-        return true;
-      }
+      sessionStorage.removeItem("ab_play_transition");
+      sessionStorage.removeItem("ab_play_seed");
     } catch {
       /* private mode */
     }
-    return false;
-  }
-  let showGlass = $state(readGlassFlag());
-  function onGlassDone() {
-    showGlass = false; // → the studio scene starts (gated on !showGlass below)
   }
 
   // "All Byte" = 8 characters (the space included makes a Byte), one binary bit
@@ -1407,10 +1394,9 @@
       new URLSearchParams(window.location.search).has("debug"),
   );
 
-  // Kick the studio intro the moment a normal player load begins — but hold it
-  // behind the glass-shatter entrance if that's playing (starts on onGlassDone).
+  // Kick the studio intro the moment a normal player load begins.
   $effect(() => {
-    if (allowed && loading && !studioTimerStarted && !showGlass && isNormalPlayerLoad()) {
+    if (allowed && loading && !studioTimerStarted && isNormalPlayerLoad()) {
       studioTimerStarted = true;
       // Pick the first manual card to show after the studio scene.
       const pick = Math.floor(Math.random() * TOTAL_CARDS);
@@ -1800,9 +1786,6 @@
 </script>
 
 <div class="godot-container" bind:this={containerEl} style:cursor={letterboxCursor}>
-  {#if showGlass}
-    <PixelTransition mode="reveal" ondone={onGlassDone} />
-  {/if}
   {#if mobileFs && allowed && !isFullscreen}
     <!-- Mobile fullscreen is parent-owned (the touch gamepad lives out here, not
          in the iframe). Default is auto-on; this button re-enters after the user

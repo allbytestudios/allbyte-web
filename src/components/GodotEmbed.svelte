@@ -620,10 +620,21 @@
     // Decide the download gate now that localStorage is available. Already
     // acknowledged (so cached) or an admin fixture load → straight through;
     // otherwise hold the iframe behind the consent notice.
+    //
+    // DESKTOP: no download gate (owner 2026-08-03 — the data-cost warning isn't
+    // necessary and any gate loses players; desktop links aren't metered like
+    // cellular). Title audio: browsers block autoplay until a user gesture, and
+    // the homepage "Play" click can't carry it (window.location.href is a full
+    // navigation, which drops user-activation). With no gate the game's own
+    // audio simply resumes on the player's first click/keypress into it (Godot
+    // default) — a brief silent title, then music, no prompt. MOBILE keeps the
+    // fresh-load gate (real cellular data cost) plus its tap-to-fullscreen,
+    // which doubles as the audio-unlock gesture.
     const proceedToGame = () => {
       const dlState = downloadState();
       const hasScenario = new URLSearchParams(window.location.search).has("scenario");
-      if (fixture || hasScenario || dlState === "ready") {
+      const desktop = !isMobileViewport();
+      if (fixture || hasScenario || dlState === "ready" || desktop) {
         allowed = true;
         // Game brings its own music — pause the persistent site player.
         window.dispatchEvent(new CustomEvent("music-player:pause"));

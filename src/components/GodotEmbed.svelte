@@ -1100,7 +1100,43 @@
   let studioDone = $state(false);
   let sceneReady = $state(false);
   let studioTimerStarted = false;
-  const STUDIO_MS = 2800;
+  // Studio scene ~1s (owner: don't let it sit long). Timeline: bits flip fast →
+  // slow exponentially → STOP on random values (STUDIO_SETTLE_MS) → hold briefly
+  // → the whole scene fades away (STUDIO_FADE_MS) → the first manual card.
+  const STUDIO_MS = 1000;
+  const STUDIO_SETTLE_MS = 620;
+  const STUDIO_FADE_MS = 220;
+  const CARD_MIN_MS = 1000; // every card shows ≥1s (even when the game is ready)
+  let studioFading = $state(false);
+  let manualCardShownAt = 0;
+  let dotsLit = $state(0); // 1–3 gilt dots, +1 per second — the card's own timer
+
+  // "All Byte" = 8 characters (the space included makes a Byte), one binary bit
+  // over each. The bits flip 0/1 fast, slow exponentially, then STOP on random
+  // values and hold before the scene fades. Mirrors the real in-game
+  // AllByteGames splash; all glyphs are ModernGoth.
+  const STUDIO_COLS = ["A", "l", "l", " ", "B", "y", "t", "e"];
+  let studioBits = $state<number[]>([1, 1, 1, 0, 1, 1, 0, 0]);
+  function startStudioScramble() {
+    const randomBits = () => studioBits.map(() => (Math.random() < 0.5 ? 0 : 1));
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      studioBits = randomBits();
+      return;
+    }
+    const start = performance.now();
+    let interval = 40; // fast initial flip
+    const growth = 1.36; // exponential slowdown
+    const tick = () => {
+      studioBits = randomBits();
+      if (performance.now() - start >= STUDIO_SETTLE_MS) return; // stop on final
+      interval *= growth;
+      setTimeout(tick, interval);
+    };
+    setTimeout(tick, interval);
+  }
 
   // All text is drawn from the in-game manual (public/manual/index.html) —
   // damage/status/terrain tables, raw vs battle stats, relics & the Anam,
@@ -1309,8 +1345,30 @@
   let spriteRole = $state(SPRITE_LORE[SPRITE_CAST[0]?.display ?? ""]?.role ?? "");
   let spriteBlurb = $state(SPRITE_LORE[SPRITE_CAST[0]?.display ?? ""]?.blurb ?? "");
 
+  // Reveal the game only once the studio has played AND a scene exists AND the
+  // current card has been up ≥CARD_MIN_MS — so a fast load still shows ~1s
+  // studio + ~1s card rather than flashing straight through.
   function maybeReveal() {
-    if (studioDone && sceneReady) loading = false;
+    if (!(studioDone && sceneReady && loadPhase === "manual")) return;
+    const shown = performance.now() - manualCardShownAt;
+    if (shown >= CARD_MIN_MS) loading = false;
+    else setTimeout(maybeReveal, CARD_MIN_MS - shown + 20);
+  }
+  function enterManual() {
+    loadPhase = "manual";
+    manualCardShownAt = performance.now();
+    dotsLit = 1;
+    maybeReveal();
+  }
+  function advanceCard() {
+    const prev = loadCardIsSprite ? MANUAL_CARDS.length : loadCard;
+    let next = prev;
+    if (TOTAL_CARDS > 1) {
+      next = (prev + 1 + Math.floor(Math.random() * (TOTAL_CARDS - 1))) % TOTAL_CARDS;
+    }
+    loadCardIsSprite = HAS_SPRITE_CARD && next === MANUAL_CARDS.length;
+    loadCard = loadCardIsSprite ? 0 : next;
+    manualCardShownAt = performance.now();
   }
   function isNormalPlayerLoad(): boolean {
     if (typeof window === "undefined") return false;
@@ -1329,13 +1387,15 @@
   $effect(() => {
     if (allowed && loading && !studioTimerStarted && isNormalPlayerLoad()) {
       studioTimerStarted = true;
+      // Pick the first manual card to show after the studio scene.
       const pick = Math.floor(Math.random() * TOTAL_CARDS);
       loadCardIsSprite = HAS_SPRITE_CARD && pick === MANUAL_CARDS.length;
       loadCard = loadCardIsSprite ? 0 : pick;
+      startStudioScramble();
+      setTimeout(() => (studioFading = true), STUDIO_MS - STUDIO_FADE_MS);
       setTimeout(() => {
         studioDone = true;
-        if (!sceneReady) loadPhase = "manual";
-        maybeReveal();
+        enterManual(); // ALWAYS land on a card ≥1s, even if the game is ready
       }, STUDIO_MS);
     }
   });
@@ -1410,22 +1470,19 @@
     };
   });
 
-  // Rotate the manual card every ROTATE_MS during the manual phase — the steady
-  // turnover is itself the progression signal (owner 2026-08-03). Picks a
-  // different card each time (text or the sprite card). Stops on reveal.
-  const ROTATE_MS = 2600;
+  // Manual phase: light one more gilt dot each second; once all three are lit
+  // (~3s on a card) rotate to a different card and start the dots over. Together
+  // with CARD_MIN_MS this gives "1s–3s per card, 1s per dot" (owner 2026-08-03).
   $effect(() => {
     if (!(loading && loadPhase === "manual" && isNormalPlayerLoad())) return;
     const id = setInterval(() => {
-      const prev = loadCardIsSprite ? MANUAL_CARDS.length : loadCard;
-      let next = prev;
-      if (TOTAL_CARDS > 1) {
-        next =
-          (prev + 1 + Math.floor(Math.random() * (TOTAL_CARDS - 1))) % TOTAL_CARDS;
+      if (dotsLit >= 3) {
+        advanceCard();
+        dotsLit = 1;
+      } else {
+        dotsLit += 1;
       }
-      loadCardIsSprite = HAS_SPRITE_CARD && next === MANUAL_CARDS.length;
-      loadCard = loadCardIsSprite ? 0 : next;
-    }, ROTATE_MS);
+    }, 1000);
     return () => clearInterval(id);
   });
 
@@ -1739,13 +1796,19 @@
   {:else if allowed}
     {#if loading}
       {#if loadPhase === "studio"}
-        <!-- Phase 1: AllByte Studios intro, full-screen ~STUDIO_MS. Placeholder
-             wordmark animation until Quinn's credit-animation video lands, then
-             this becomes a <video> element. -->
+        <!-- Phase 1: AllByte studio intro, full-screen ~STUDIO_MS. Eight bits
+             (one per char of "All Byte", the space included = a Byte) flip 0/1,
+             slow, stop, then fade — all ModernGoth. -->
         <div class="loading-screen studio-screen">
-          <div class="studio-mark">
-            <span class="studio-all">AllByte</span>
-            <span class="studio-studios">Studios</span>
+          <div class="studio-mark" class:fading={studioFading}>
+            <div class="studio-cols" aria-label="AllByte">
+              {#each STUDIO_COLS as ch, i}
+                <span class="studio-col" class:space={ch === " "}>
+                  <span class="studio-bit">{studioBits[i]}</span>
+                  <span class="studio-letter">{ch === " " ? " " : ch}</span>
+                </span>
+              {/each}
+            </div>
           </div>
         </div>
       {:else}
@@ -1794,9 +1857,9 @@
             </div>
           {/if}
           <div class="load-dots" role="status" aria-label="Loading">
-            <span class="load-dot"></span>
-            <span class="load-dot"></span>
-            <span class="load-dot"></span>
+            <span class="load-dot" class:lit={dotsLit >= 1}></span>
+            <span class="load-dot" class:lit={dotsLit >= 2}></span>
+            <span class="load-dot" class:lit={dotsLit >= 3}></span>
           </div>
         </div>
       {/if}
@@ -2062,50 +2125,58 @@
     color: #f87171;
   }
 
-  /* ---- Phase 1: AllByte Studios intro (placeholder wordmark) ------------- */
+  /* ---- Phase 1: AllByte studio intro — 8 bits over "All Byte" ------------ */
   .studio-screen {
-    background: #07090f;
+    background: #050608;
   }
   .studio-mark {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.35rem;
-    animation: studioIn 2.8s ease-out both;
+    animation: studioIn 0.35s ease-out both;
+    transition: opacity 0.22s ease-in;
   }
-  .studio-all {
+  .studio-mark.fading {
+    opacity: 0;
+  }
+  .studio-cols {
+    display: flex;
+    align-items: flex-end;
+  }
+  .studio-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.35rem, 1.6vw, 0.7rem);
+  }
+  /* the space between "All" and "Byte" — a bit floats over the byte gap */
+  .studio-col.space {
+    width: clamp(0.7rem, 2.2vw, 1.3rem);
+  }
+  .studio-bit {
+    font-family: "AllByteCustom", Georgia, serif;
+    font-size: clamp(0.95rem, 3vw, 1.7rem);
+    line-height: 1;
+    color: #f4ecd6;
+    /* fixed box so a 0↔1 flip never shifts the row */
+    min-width: 0.9em;
+    text-align: center;
+  }
+  .studio-letter {
     font-family: "AllByteCustom", Georgia, serif;
     font-size: clamp(2.6rem, 9vw, 5rem);
     line-height: 1;
-    letter-spacing: 0.01em;
     color: #f4ecd6;
     text-shadow: 0 2px 28px rgba(212, 175, 96, 0.28);
   }
-  .studio-studios {
-    font-family: "Courier New", monospace;
-    font-size: clamp(0.7rem, 2.4vw, 1.05rem);
-    text-transform: uppercase;
-    letter-spacing: 0.62em;
-    /* optical centering: the wide tracking pushes text right */
-    text-indent: 0.62em;
-    color: #d4af60;
-    opacity: 0.9;
-  }
-  /* Animate in, hold on the logo the last ~0.5s (owner spec). */
   @keyframes studioIn {
     0% {
       opacity: 0;
-      transform: translateY(14px) scale(0.965);
-      letter-spacing: 0;
+      transform: scale(0.98);
     }
-    46% {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-    82%,
     100% {
       opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: scale(1);
     }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -2128,6 +2199,21 @@
     justify-content: space-between;
     padding: clamp(1.5rem, 5vh, 3.5rem) 1.25rem clamp(1.1rem, 3vh, 2rem);
     gap: 1.5rem;
+    /* soft appearance as the studio scene fades out */
+    animation: screenFade 0.3s ease both;
+  }
+  @keyframes screenFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .manual-screen {
+      animation: none;
+    }
   }
   .manual-card {
     flex: 1;
@@ -2313,9 +2399,8 @@
     }
   }
 
-  /* 3-dot "still working" indicator — three gilt dots brighten in sequence,
-     one per ~second (staggered CSS, no JS, no choppiness). Progression is also
-     carried by the card rotation above. */
+  /* 3-dot progress — one gilt dot lights per second (driven by dotsLit); when
+     all three are lit the card rotates. It's the card's own 1s-per-dot timer. */
   .load-dots {
     display: flex;
     align-items: center;
@@ -2329,29 +2414,12 @@
     border-radius: 50%;
     background: #e7b866;
     opacity: 0.22;
-    animation: loadDot 1.5s ease-in-out infinite;
+    transform: scale(0.85);
+    transition: opacity 0.3s ease, transform 0.3s ease;
   }
-  .load-dot:nth-child(2) {
-    animation-delay: 0.5s;
-  }
-  .load-dot:nth-child(3) {
-    animation-delay: 1s;
-  }
-  @keyframes loadDot {
-    0%, 70%, 100% {
-      opacity: 0.22;
-      transform: scale(0.85);
-    }
-    35% {
-      opacity: 1;
-      transform: scale(1.15);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .load-dot {
-      animation: none;
-      opacity: 0.6;
-    }
+  .load-dot.lit {
+    opacity: 1;
+    transform: scale(1.12);
   }
 
   .game-frame {

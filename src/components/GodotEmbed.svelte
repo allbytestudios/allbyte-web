@@ -2253,6 +2253,68 @@
     line-height: 1.45;
     color: #d9cba9;
   }
+  .manual-card {
+    min-height: 0; /* let the card shrink inside the flex column, never push the tracker off */
+  }
+
+  /* Short viewports (landscape phones): a 6-row card + big title won't fit
+     390px tall, so compress everything and shrink the sprite so the card
+     never collides with the bottom tracker. Keyed on height so it also
+     covers a mid-load rotation into landscape. */
+  @media (max-height: 540px) {
+    .manual-screen {
+      padding: 0.9rem 1rem 0.8rem;
+      gap: 0.7rem;
+    }
+    .manual-kicker {
+      margin-bottom: 0.4rem;
+      font-size: 0.62rem;
+    }
+    .manual-card-title {
+      font-size: clamp(1.15rem, 3.4vw, 1.7rem);
+      margin-bottom: 0.55rem;
+    }
+    .manual-lines {
+      gap: 0.4rem;
+    }
+    .manual-line {
+      font-size: clamp(0.82rem, 1.9vw, 0.98rem);
+      line-height: 1.35;
+    }
+    .manual-rows {
+      gap: 0.28rem;
+    }
+    .manual-row {
+      padding-bottom: 0.28rem;
+    }
+    .manual-row dt {
+      font-size: clamp(0.8rem, 1.9vw, 0.95rem);
+    }
+    .manual-row dd {
+      font-size: clamp(0.78rem, 1.8vw, 0.92rem);
+      line-height: 1.25;
+    }
+    .manual-quote {
+      margin-top: 0.7rem;
+      font-size: clamp(0.92rem, 2vw, 1.05rem);
+    }
+    .sprite-stage {
+      height: clamp(96px, 24vh, 150px);
+      margin: 0.2rem 0 0.4rem;
+    }
+    .sprite-name {
+      font-size: clamp(1.2rem, 3.6vw, 1.7rem);
+    }
+    .sprite-role {
+      margin-top: 0.3rem;
+    }
+    .sprite-blurb {
+      margin-top: 0.4rem;
+      min-height: 0;
+      font-size: clamp(0.82rem, 1.9vw, 0.98rem);
+      line-height: 1.35;
+    }
+  }
 
   .manual-tracker {
     display: flex;

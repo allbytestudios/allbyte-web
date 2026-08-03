@@ -1115,7 +1115,6 @@
   // over each. The bits flip 0/1 fast, slow exponentially, then STOP on random
   // values and hold before the scene fades. Mirrors the real in-game
   // AllByteGames splash; all glyphs are ModernGoth.
-  const STUDIO_COLS = ["A", "l", "l", " ", "B", "y", "t", "e"];
   let studioBits = $state<number[]>([1, 1, 1, 0, 1, 1, 0, 0]);
   function startStudioScramble() {
     const randomBits = () => studioBits.map(() => (Math.random() < 0.5 ? 0 : 1));
@@ -1348,11 +1347,11 @@
   // Reveal the game only once the studio has played AND a scene exists AND the
   // current card has been up ≥CARD_MIN_MS — so a fast load still shows ~1s
   // studio + ~1s card rather than flashing straight through.
+  // Immediate-reveal check (a backstop to the manual-phase poll): reveal only
+  // once the studio played, a scene exists, and THIS card has had ≥CARD_MIN_MS.
   function maybeReveal() {
     if (!(studioDone && sceneReady && loadPhase === "manual")) return;
-    const shown = performance.now() - manualCardShownAt;
-    if (shown >= CARD_MIN_MS) loading = false;
-    else setTimeout(maybeReveal, CARD_MIN_MS - shown + 20);
+    if (performance.now() - manualCardShownAt >= CARD_MIN_MS) loading = false;
   }
   function enterManual() {
     loadPhase = "manual";
@@ -1369,6 +1368,7 @@
     loadCardIsSprite = HAS_SPRITE_CARD && next === MANUAL_CARDS.length;
     loadCard = loadCardIsSprite ? 0 : next;
     manualCardShownAt = performance.now();
+    dotsLit = 1;
   }
   function isNormalPlayerLoad(): boolean {
     if (typeof window === "undefined") return false;
@@ -1470,19 +1470,23 @@
     };
   });
 
-  // Manual phase: light one more gilt dot each second; once all three are lit
-  // (~3s on a card) rotate to a different card and start the dots over. Together
-  // with CARD_MIN_MS this gives "1s–3s per card, 1s per dot" (owner 2026-08-03).
+  // Manual phase — the single timing driver. Everything is derived from elapsed
+  // time (not an accumulating counter), so it can't drift or double-fire:
+  //   • dots light 1→2→3, one per second on the current card,
+  //   • at 3s the card rotates (fresh dots),
+  //   • the game is revealed the moment it's ready AND the card has had ≥1s.
+  // A short poll keeps the reveal responsive; math keeps the beats exactly 1s.
   $effect(() => {
     if (!(loading && loadPhase === "manual" && isNormalPlayerLoad())) return;
     const id = setInterval(() => {
-      if (dotsLit >= 3) {
-        advanceCard();
-        dotsLit = 1;
-      } else {
-        dotsLit += 1;
+      const onCard = performance.now() - manualCardShownAt;
+      dotsLit = Math.min(3, Math.floor(onCard / 1000) + 1);
+      if (studioDone && sceneReady && onCard >= CARD_MIN_MS) {
+        loading = false; // ready + this card has had its ≥1s → reveal
+        return;
       }
-    }, 1000);
+      if (onCard >= 3000) advanceCard(); // ~3s on this card → rotate (resets timer)
+    }, 150);
     return () => clearInterval(id);
   });
 
@@ -1801,14 +1805,10 @@
              slow, stop, then fade — all ModernGoth. -->
         <div class="loading-screen studio-screen">
           <div class="studio-mark" class:fading={studioFading}>
-            <div class="studio-cols" aria-label="AllByte">
-              {#each STUDIO_COLS as ch, i}
-                <span class="studio-col" class:space={ch === " "}>
-                  <span class="studio-bit">{studioBits[i]}</span>
-                  <span class="studio-letter">{ch === " " ? " " : ch}</span>
-                </span>
-              {/each}
+            <div class="studio-bits" aria-hidden="true">
+              {#each studioBits as b}<span class="studio-bit">{b}</span>{/each}
             </div>
+            <div class="studio-word">All&nbsp;Byte</div>
           </div>
         </div>
       {:else}
@@ -2130,43 +2130,35 @@
     background: #050608;
   }
   .studio-mark {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch; /* bits row + word share the same (word) width */
     animation: studioIn 0.35s ease-out both;
-    transition: opacity 0.22s ease-in;
+    transition: opacity 0.2s ease-in;
   }
   .studio-mark.fading {
     opacity: 0;
   }
-  .studio-cols {
+  /* 8 bits (a Byte) spread equidistantly across the exact width of "All Byte" */
+  .studio-bits {
     display: flex;
-    align-items: flex-end;
-  }
-  .studio-col {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: clamp(0.35rem, 1.6vw, 0.7rem);
-  }
-  /* the space between "All" and "Byte" — a bit floats over the byte gap */
-  .studio-col.space {
-    width: clamp(0.7rem, 2.2vw, 1.3rem);
+    justify-content: space-between;
+    margin-bottom: clamp(0.3rem, 1.4vw, 0.6rem);
+    padding: 0 0.08em;
   }
   .studio-bit {
     font-family: "AllByteCustom", Georgia, serif;
     font-size: clamp(0.95rem, 3vw, 1.7rem);
     line-height: 1;
     color: #f4ecd6;
-    /* fixed box so a 0↔1 flip never shifts the row */
-    min-width: 0.9em;
-    text-align: center;
   }
-  .studio-letter {
+  .studio-word {
     font-family: "AllByteCustom", Georgia, serif;
     font-size: clamp(2.6rem, 9vw, 5rem);
     line-height: 1;
     color: #f4ecd6;
+    text-align: center;
+    white-space: nowrap;
     text-shadow: 0 2px 28px rgba(212, 175, 96, 0.28);
   }
   @keyframes studioIn {

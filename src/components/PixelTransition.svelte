@@ -12,7 +12,9 @@
 
   let { mode = "obscure", ondone }: { mode?: "obscure" | "reveal"; ondone?: () => void } = $props();
 
-  const MAX_BLOCK = 60; // chunky — ~a handful of blocks across at peak
+  // Fine grain (high pixel count) + gentle — a very slight mosaic shimmer over a
+  // smooth fade, so it reads as an intentional dissolve, never a glitch.
+  const MAX_BLOCK = 5;
   const DARK = "#050608";
 
   let canvasEl: HTMLCanvasElement;
@@ -40,9 +42,10 @@
       ondone?.();
       return;
     }
-    // Low internal resolution + pixelated upscale = cheap AND chunky.
-    cv.width = Math.max(120, Math.round(window.innerWidth * 0.5));
-    cv.height = Math.max(80, Math.round(window.innerHeight * 0.5));
+    // Crisp-ish internal buffer (capped for perf) so the mosaic stays fine.
+    const scale = Math.min(1, 900 / window.innerWidth);
+    cv.width = Math.max(160, Math.round(window.innerWidth * scale));
+    cv.height = Math.max(100, Math.round(window.innerHeight * scale));
     const W = cv.width, H = cv.height;
     let raf = 0;
     let cancelled = false;
@@ -52,12 +55,12 @@
       const scratch = document.createElement("canvas");
       scratch.width = W; scratch.height = H;
       const sx = scratch.getContext("2d")!;
-      const t0 = performance.now(), DUR = 540;
+      const t0 = performance.now(), DUR = 440;
       const step = (now: number) => {
         if (cancelled) return;
         const t = Math.min(1, (now - t0) / DUR);
-        const pe = Math.min(1, t / 0.72); // pixelate up, then hold
-        const block = Math.max(1, Math.round(1 + pe * MAX_BLOCK));
+        const e = t * t; // easeIn
+        const block = Math.max(1, Math.round(1 + e * MAX_BLOCK));
         const dw = Math.max(1, Math.round(W / block)), dh = Math.max(1, Math.round(H / block));
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, W, H);
@@ -78,12 +81,11 @@
           /* video not drawable (rare) — fall through to a dark cover */
         }
         if (!drew) { ctx.fillStyle = "#0c1220"; ctx.fillRect(0, 0, W, H); }
-        if (t > 0.72) {
-          ctx.globalAlpha = (t - 0.72) / 0.28;
-          ctx.fillStyle = DARK;
-          ctx.fillRect(0, 0, W, H);
-          ctx.globalAlpha = 1;
-        }
+        // gentle continuous darken toward the /play ground — no hard cut
+        ctx.globalAlpha = e;
+        ctx.fillStyle = DARK;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 1;
         if (t < 1) raf = requestAnimationFrame(step);
         else { ctx.fillStyle = DARK; ctx.fillRect(0, 0, W, H); ondone?.(); }
       };
@@ -92,17 +94,29 @@
       const all = document.createElement("canvas");
       all.width = W; all.height = H;
       paintAllByte(all.getContext("2d")!, W, H);
-      const t0 = performance.now(), DUR = 560;
+      const scr = document.createElement("canvas");
+      scr.width = W; scr.height = H;
+      const sc = scr.getContext("2d")!;
+      const t0 = performance.now(), DUR = 460;
       const step = (now: number) => {
         if (cancelled) return;
         const t = Math.min(1, (now - t0) / DUR);
-        const pe = 1 - Math.min(1, t / 0.8); // de-pixelate: block big → 1
-        const block = Math.max(1, Math.round(1 + pe * MAX_BLOCK));
+        const de = (1 - t) * (1 - t); // subtle de-pixel, eased
+        const block = Math.max(1, Math.round(1 + de * MAX_BLOCK));
         const dw = Math.max(1, Math.round(W / block)), dh = Math.max(1, Math.round(H / block));
+        // fine-pixelate the AllByte frame into a scratch buffer
+        sc.imageSmoothingEnabled = false;
+        sc.clearRect(0, 0, W, H);
+        sc.drawImage(all, 0, 0, W, H, 0, 0, dw, dh);
+        sc.drawImage(scr, 0, 0, dw, dh, 0, 0, W, H);
+        // dark ground, then fade the frame in gently over it
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, W, H);
-        ctx.drawImage(all, 0, 0, W, H, 0, 0, dw, dh);
-        ctx.drawImage(cv, 0, 0, dw, dh, 0, 0, W, H);
+        ctx.fillStyle = DARK;
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = Math.min(1, t / 0.7);
+        ctx.drawImage(scr, 0, 0);
+        ctx.globalAlpha = 1;
         if (t > 0.82) cv.style.opacity = String(Math.max(0, 1 - (t - 0.82) / 0.18));
         if (t < 1) raf = requestAnimationFrame(step);
         else ondone?.();

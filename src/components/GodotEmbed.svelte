@@ -11,6 +11,7 @@
   import DownloadGate from "./DownloadGate.svelte";
   import { downloadState, ackDownload } from "../lib/downloadGate";
   import gameVersion from "../data/game-version.json";
+  import spriteGifs from "../data/sprite-gifs.json";
   import { versionById, isUnlocked } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
@@ -1176,6 +1177,74 @@
   ];
   let loadCard = $state(0);
 
+  // --- "Living manual" sprite card ----------------------------------------
+  // One of the manual cards is a random non-boss sprite that turns in place
+  // then swings an attack, then moves on to another character — built from the
+  // handcrafted sprite GIFs already in the webapp (owner idea 2026-08-03).
+  const NONBOSS_SPRITES = new Set([
+    "Elias",
+    "Falmri",
+    "eastwood",
+    "spiter",
+    "vepir",
+    "slime",
+  ]);
+  const SPRITE_DISPLAY: Record<string, string> = {
+    Elias: "Elias",
+    Falmri: "Falmri",
+    eastwood: "Eastwood",
+    spiter: "Spiter",
+    vepir: "Vepir",
+    slime: "Slime",
+  };
+  // Clockwise turn order; we keep only the directions a character actually has.
+  const DIR_ORDER = [
+    "Down",
+    "DownRight",
+    "Right",
+    "UpRight",
+    "Up",
+    "UpLeft",
+    "Left",
+    "DownLeft",
+  ];
+  type CastMember = { display: string; idles: string[]; attack: string | null };
+  function buildSpriteCast(): CastMember[] {
+    const byChar: Record<string, { animation: string; file: string }[]> = {};
+    for (const e of spriteGifs as { character: string; animation: string; file: string }[]) {
+      if (!NONBOSS_SPRITES.has(e.character)) continue;
+      (byChar[e.character] ??= []).push(e);
+    }
+    const cast: CastMember[] = [];
+    for (const [char, entries] of Object.entries(byChar)) {
+      const idleByDir: Record<string, string> = {};
+      for (const e of entries) {
+        const m = e.animation.match(/^Idle(.+)$/);
+        if (m) idleByDir[m[1]] = e.file;
+      }
+      const idles = DIR_ORDER.map((d) => idleByDir[d]).filter(Boolean);
+      // An "attack": prefer a plain Attack*, else a Slap/Acid strike, else Feeding.
+      // Skip gated flourish anims (Sweep/Casting) — keep it a clean swing.
+      const atk =
+        entries.find((e) => /^Attack/.test(e.animation)) ??
+        entries.find((e) => /Slap|AcidAttack/.test(e.animation)) ??
+        entries.find((e) => /Feeding/.test(e.animation));
+      cast.push({
+        display: SPRITE_DISPLAY[char] ?? char,
+        idles: idles.length ? idles : [entries[0].file],
+        attack: atk?.file ?? null,
+      });
+    }
+    return cast;
+  }
+  const SPRITE_CAST = buildSpriteCast();
+  const HAS_SPRITE_CARD = SPRITE_CAST.length > 0;
+  // The sprite card is one option alongside the text cards.
+  const TOTAL_CARDS = MANUAL_CARDS.length + (HAS_SPRITE_CARD ? 1 : 0);
+  let loadCardIsSprite = $state(false);
+  let spriteSrc = $state(SPRITE_CAST[0]?.idles[0] ?? "");
+  let spriteName = $state(SPRITE_CAST[0]?.display ?? "");
+
   function maybeReveal() {
     if (studioDone && sceneReady) loading = false;
   }
@@ -1196,13 +1265,83 @@
   $effect(() => {
     if (allowed && loading && !studioTimerStarted && isNormalPlayerLoad()) {
       studioTimerStarted = true;
-      loadCard = Math.floor(Math.random() * MANUAL_CARDS.length);
+      const pick = Math.floor(Math.random() * TOTAL_CARDS);
+      loadCardIsSprite = HAS_SPRITE_CARD && pick === MANUAL_CARDS.length;
+      loadCard = loadCardIsSprite ? 0 : pick;
       setTimeout(() => {
         studioDone = true;
         if (!sceneReady) loadPhase = "manual";
         maybeReveal();
       }, STUDIO_MS);
     }
+  });
+
+  // Drive the living-sprite card: turn in place, swing an attack, then move to
+  // another character — looping until the game is revealed. Cleans itself up
+  // when `loading` flips false. Honors prefers-reduced-motion (holds one idle).
+  $effect(() => {
+    if (!(loading && loadCardIsSprite && HAS_SPRITE_CARD)) return;
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    // Preload every frame so src swaps don't flash.
+    for (const c of SPRITE_CAST) {
+      for (const f of [...c.idles, c.attack]) {
+        if (f) {
+          const im = new Image();
+          im.src = f;
+        }
+      }
+    }
+
+    let cancelled = false;
+    let ci = Math.floor(Math.random() * SPRITE_CAST.length);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    function framesFor(c: CastMember): { file: string; ms: number }[] {
+      const seq: { file: string; ms: number }[] = [];
+      const multi = c.idles.length > 1;
+      const hold = multi ? 430 : 1100; // single-idle chars: the GIF itself bobs
+      for (const s of c.idles) seq.push({ file: s, ms: hold });
+      if (c.attack) seq.push({ file: c.attack, ms: 950 });
+      if (multi) {
+        for (const s of [...c.idles].reverse().slice(1)) seq.push({ file: s, ms: hold });
+      }
+      return seq;
+    }
+
+    function playCharacter() {
+      if (cancelled) return;
+      const c = SPRITE_CAST[ci];
+      spriteName = c.display;
+      if (reduce) {
+        spriteSrc = c.idles[0];
+        return; // no looping under reduced motion
+      }
+      const seq = framesFor(c);
+      let fi = 0;
+      const step = () => {
+        if (cancelled) return;
+        if (fi >= seq.length) {
+          // Move to a different character.
+          ci = (ci + 1 + Math.floor(Math.random() * (SPRITE_CAST.length - 1))) % SPRITE_CAST.length;
+          playCharacter();
+          return;
+        }
+        spriteSrc = seq[fi].file;
+        const ms = seq[fi].ms;
+        fi++;
+        timers.push(setTimeout(step, ms));
+      };
+      step();
+    }
+
+    playCharacter();
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
   });
 
   function pollLoadStatus() {
@@ -1526,32 +1665,43 @@
         </div>
       {:else}
         <!-- Phase 2: Chronicles-themed manual card + accurate progress tracker -->
-        {@const card = MANUAL_CARDS[loadCard]}
         <div class="loading-screen manual-screen">
-          <div class="manual-card">
-            <div class="manual-kicker">From the Manual</div>
-            <h2 class="manual-card-title">{card.title}</h2>
-            {#if card.lines}
-              <div class="manual-lines">
-                {#each card.lines as line}
-                  <p class="manual-line">{line}</p>
-                {/each}
+          {#if loadCardIsSprite}
+            <!-- Living-manual card: a handcrafted sprite turns + attacks -->
+            <div class="manual-card sprite-card">
+              <div class="manual-kicker">From the world of Nesis</div>
+              <div class="sprite-stage">
+                <img class="sprite-actor" src={spriteSrc} alt={spriteName} />
               </div>
-            {/if}
-            {#if card.rows}
-              <dl class="manual-rows">
-                {#each card.rows as [term, desc]}
-                  <div class="manual-row">
-                    <dt>{term}</dt>
-                    <dd>{desc}</dd>
-                  </div>
-                {/each}
-              </dl>
-            {/if}
-            {#if card.quote}
-              <p class="manual-quote">&ldquo;{card.quote}&rdquo;</p>
-            {/if}
-          </div>
+              <h2 class="sprite-name">{spriteName}</h2>
+            </div>
+          {:else}
+            {@const card = MANUAL_CARDS[loadCard]}
+            <div class="manual-card">
+              <div class="manual-kicker">From the Manual</div>
+              <h2 class="manual-card-title">{card.title}</h2>
+              {#if card.lines}
+                <div class="manual-lines">
+                  {#each card.lines as line}
+                    <p class="manual-line">{line}</p>
+                  {/each}
+                </div>
+              {/if}
+              {#if card.rows}
+                <dl class="manual-rows">
+                  {#each card.rows as [term, desc]}
+                    <div class="manual-row">
+                      <dt>{term}</dt>
+                      <dd>{desc}</dd>
+                    </div>
+                  {/each}
+                </dl>
+              {/if}
+              {#if card.quote}
+                <p class="manual-quote">&ldquo;{card.quote}&rdquo;</p>
+              {/if}
+            </div>
+          {/if}
           <div class="manual-tracker" role="status" aria-live="polite">
             <img
               class="manual-spinner"
@@ -1962,6 +2112,34 @@
     font-size: clamp(1.05rem, 2.6vw, 1.3rem);
     color: #e7b866;
     max-width: 34rem;
+  }
+
+  /* Living-manual sprite card */
+  .sprite-card {
+    gap: 0.4rem;
+  }
+  .sprite-stage {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: clamp(190px, 34vh, 300px);
+    margin: 0.6rem 0 0.9rem;
+  }
+  .sprite-actor {
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    /* Grounding shadow so the sprite reads as standing in the card. */
+    filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.45));
+  }
+  .sprite-name {
+    font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+    line-height: 1;
+    margin: 0;
+    color: #f6eccf;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.45);
   }
 
   .manual-tracker {

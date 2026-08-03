@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { subscribeToFile } from "../lib/testEvents";
-  import { initSaveBridge, teardownSaveBridge, saves } from "../lib/saves.svelte.ts";
+  import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
   import { auth } from "../lib/auth.svelte.ts";
-  import { isAdmin, isTierAtLeast, tierLabel } from "../lib/tier";
+  import { isAdmin, isTierAtLeast } from "../lib/tier";
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import ManualLetterboxPanel from "./ManualLetterboxPanel.svelte";
   import { initPlayAnalytics } from "../lib/playAnalytics";
@@ -850,26 +850,9 @@
   // absent from the hardened build). Optional persona is an AutoPlay overlay
   // after the load. Hooks exist only in debug builds; inert otherwise. See
   // CON_CLAUDE_SCENARIO_SAVE_DELIVERY.md.
-  // --- Account/cloud-saves status chip (owner ask 2026-07-16) --------------
-  // "It would be nice to know what account I'm in, the tier the game knows
-  // I'm in, and if I'm using cloud saves or not." Dim bottom-left chip;
-  // desktop only (mobile screen space belongs to the game).
-  const CLOUD_TIERS = new Set(["hero", "legend"]);
-  const acctCloudOn = $derived(
-    !!auth.currentUser && CLOUD_TIERS.has(String(auth.currentUser.tier)),
-  );
-  const acctLine = $derived(
-    auth.currentUser
-      ? `${auth.currentUser.username ?? auth.currentUser.email ?? "account"} · ${tierLabel(auth.currentUser.tier)} · cloud saves ${acctCloudOn ? "ON" : "OFF"}`
-      : "guest · local saves only",
-  );
-  const acctTooltip = $derived(
-    acctCloudOn
-      ? `Cloud saves sync for Hero/Legend. Status: ${saves.syncStatus}${saves.lastSyncedAt ? ", last synced " + new Date(saves.lastSyncedAt).toLocaleTimeString() : ""}`
-      : auth.currentUser
-        ? "Saves stay in this browser only (cloud sync is a Hero/Legend perk)."
-        : "Not signed in — saves stay in this browser only.",
-  );
+  // (Account/cloud-saves status chip removed 2026-08-03 — owner: that status
+  // belongs in-game, not as a web overlay. Save-sync itself (initSaveBridge)
+  // is unaffected; only the bottom-left indicator is gone.)
 
   // Scenario/tree jumps import + load through this scratch slot — outside the
   // player range (1..12; AUTO=0, QUICK=13 reserved game-side), excluded from
@@ -1849,9 +1832,6 @@
     ></iframe>
     <VirtualGamepad iframe={iframeEl} />
     <ManualLetterboxPanel />
-    <div class="acct-chip" title={acctTooltip}>
-      <span class="acct-dot" class:on={acctCloudOn}></span>{acctLine}
-    </div>
     {#if showKbHint}
       <div class="kb-hint-layer kb-hint-{kbHintPos}">
         <div
@@ -2384,47 +2364,6 @@
   /* Keyboard-suggestion nudge. A placement layer (covers the container,
      pointer-events: none) positions the bouncing pill per scene; the pill
      draws the eye via peripheral motion and never blocks the game. */
-  /* Account/cloud-saves chip — dim, bottom-left, above the game's own
-     DEV ADMIN badge. Hover to read the tooltip detail. Desktop only. */
-  .acct-chip {
-    position: absolute;
-    left: 0.5rem;
-    bottom: 2.6rem;
-    z-index: 4;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-family: "Courier New", monospace;
-    font-size: 0.7rem;
-    color: #9ca3af;
-    background: rgba(10, 14, 23, 0.7);
-    border: 1px solid rgba(167, 243, 208, 0.15);
-    border-radius: 3px;
-    padding: 0.18rem 0.45rem;
-    opacity: 0.55;
-    transition: opacity 0.15s;
-  }
-  .acct-chip:hover {
-    opacity: 1;
-    color: #d1d5db;
-  }
-  .acct-dot {
-    width: 0.45rem;
-    height: 0.45rem;
-    border-radius: 50%;
-    background: #6b7280;
-    flex-shrink: 0;
-  }
-  .acct-dot.on {
-    background: #a7f3d0;
-    box-shadow: 0 0 5px rgba(167, 243, 208, 0.7);
-  }
-  @media (pointer: coarse), (max-width: 767px) {
-    .acct-chip {
-      display: none;
-    }
-  }
-
   .kb-hint-layer {
     position: absolute;
     inset: 0;

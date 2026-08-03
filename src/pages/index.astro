@@ -179,8 +179,7 @@ import gameVersion from "../data/game-version.json";
   .hero-stage{ position:relative; width:100%; max-width:960px; margin:1.1rem auto 0; display:flex; flex-direction:column; align-items:center; }
   .hero-frame{ order:2; position:relative; width:100%; max-width:100%; padding:6px; background:var(--panel); box-shadow:0 12px 34px var(--shadow); }
   .hero-frame > .fl{ width:clamp(58px,9vw,104px); height:clamp(58px,9vw,104px); }
-  .hero-video{ display:block; width:100%; height:auto; aspect-ratio:1200/870; border-radius:2px; transition:transform 3.2s ease-out; }
-  .hero-stage:has(.play-main:hover) .hero-video{ transform:scale(1.03); }
+  .hero-video{ display:block; width:100%; height:auto; aspect-ratio:1200/870; border-radius:2px; }
   @media (prefers-reduced-motion:reduce){ .hero-video{ transition:none; } }
   .hero-title-plate{ order:1; margin-bottom:.55rem; }
   .hero-cta-plate{ order:3; width:min(94%,600px); margin-top:.9rem; display:flex; flex-direction:column; align-items:center; gap:.55rem; }

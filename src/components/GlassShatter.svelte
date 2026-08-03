@@ -21,62 +21,94 @@
     dx: number; // horizontal drift on fall (vw)
     rot: number; // rotation on fall (deg)
     delay: number; // fall delay (ms)
+    tint: number; // per-shard glass brightness (catches "light" differently)
   };
+  type Crack = { pts: string; w: number }; // polyline points + stroke weight
 
   function polar(a: number, r: number): [number, number] {
     return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
   }
+  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 
   let shards = $state<Shard[]>([]);
-  let cracks = $state<string[]>([]); // SVG polyline point strings
+  let cracks = $state<Crack[]>([]);
   let phase = $state<"crack" | "hold" | "light" | "fall">("crack");
   let reduce = false;
 
+  // Real glass from an impact: radial cracks shoot out (jagged, some die early)
+  // and irregular concentric cracks ring them — the rings are NOT circles, each
+  // spoke sits at a jittered radius, so the shards are irregular angular pieces.
   function build() {
-    const spokes = 10;
+    const spokes = 13;
     const ang: number[] = [];
     for (let i = 0; i < spokes; i++) {
-      ang.push((i / spokes) * Math.PI * 2 + (Math.random() - 0.5) * 0.3);
+      // uneven angular spacing — real cracks aren't evenly spread
+      ang.push((i / spokes) * Math.PI * 2 + rnd(-0.22, 0.22));
     }
-    const rings = [0, 9, 22, 44, 165]; // last ring overshoots the corners
+    const rings = [0, 6, 15, 30, 55, 175]; // 0 = impact; last overshoots corners
+    // A jittered point grid shared by shards AND cracks so they always align.
+    // grid[j][i] = the vertex on ring j along spoke i, at a per-vertex radius.
+    const grid: [number, number][][] = [];
+    for (let j = 0; j < rings.length; j++) {
+      const row: [number, number][] = [];
+      for (let i = 0; i < spokes; i++) {
+        if (rings[j] === 0) row.push([CX, CY]);
+        else row.push(polar(ang[i], rings[j] * rnd(0.78, 1.22)));
+      }
+      grid.push(row);
+    }
+    // Some radial cracks die before the edge (common in glass) — mark the
+    // outer ring each spoke reaches.
+    const reach: number[] = ang.map(() =>
+      Math.random() < 0.3 ? rings.length - 2 : rings.length - 1,
+    );
+
     const sh: Shard[] = [];
     for (let j = 0; j < rings.length - 1; j++) {
       for (let i = 0; i < spokes; i++) {
-        const a0 = ang[i];
-        const a1 = ang[(i + 1) % spokes] + (i === spokes - 1 ? Math.PI * 2 : 0);
-        const r0 = rings[j];
-        const r1 = rings[j + 1];
+        const i1 = (i + 1) % spokes;
         const pts: [number, number][] =
-          r0 === 0
-            ? [[CX, CY], polar(a0, r1), polar(a1, r1)]
-            : [polar(a0, r0), polar(a1, r0), polar(a1, r1), polar(a0, r1)];
+          j === 0
+            ? [grid[0][0], grid[1][i], grid[1][i1]]
+            : [grid[j][i], grid[j][i1], grid[j + 1][i1], grid[j + 1][i]];
         const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
         const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
         sh.push({
           pts: pts.map((p) => `${p[0]}% ${p[1]}%`).join(", "),
           ox: `${cx}%`,
           oy: `${cy}%`,
-          dx: (cx - CX) * 0.16 + (Math.random() - 0.5) * 10,
-          rot: (Math.random() - 0.5) * 70,
-          delay: Math.round((r0 / 165) * 150 + Math.random() * 140),
+          dx: (cx - CX) * 0.14 + rnd(-9, 9),
+          rot: rnd(-75, 75),
+          delay: Math.round((rings[j] / 175) * 140 + rnd(0, 150)),
+          tint: rnd(0.05, 0.2),
         });
       }
     }
     shards = sh;
 
-    // Crack network: radial spokes + the ring polylines (the shard edges).
-    const cr: string[] = [];
+    const cr: Crack[] = [];
+    // Radial cracks (jagged — they bend through the jittered ring vertices).
     for (let i = 0; i < spokes; i++) {
-      const [x, y] = polar(ang[i], 165);
-      cr.push(`${CX},${CY} ${x},${y}`);
+      const pl: string[] = [`${CX},${CY}`];
+      for (let j = 1; j <= reach[i]; j++) pl.push(`${grid[j][i][0]},${grid[j][i][1]}`);
+      cr.push({ pts: pl.join(" "), w: rnd(0.7, 1.4) });
     }
-    for (const r of [9, 22, 44]) {
-      const ringPts: string[] = [];
+    // Concentric cracks (irregular closed polylines — the ring edges).
+    for (let j = 1; j < rings.length - 1; j++) {
+      const pl: string[] = [];
       for (let i = 0; i <= spokes; i++) {
-        const [x, y] = polar(ang[i % spokes], r);
-        ringPts.push(`${x},${y}`);
+        const g = grid[j][i % spokes];
+        pl.push(`${g[0]},${g[1]}`);
       }
-      cr.push(ringPts.join(" "));
+      cr.push({ pts: pl.join(" "), w: rnd(0.6, 1.0) });
+    }
+    // Secondary dead-end cracks branching off a random radial vertex.
+    for (let k = 0; k < 6; k++) {
+      const i = Math.floor(Math.random() * spokes);
+      const j = 1 + Math.floor(Math.random() * (rings.length - 3));
+      const [bx, by] = grid[j][i];
+      const [ex, ey] = polar(ang[i] + rnd(-0.5, 0.5), rings[j] * rnd(1.15, 1.6));
+      cr.push({ pts: `${bx},${by} ${ex},${ey}`, w: rnd(0.4, 0.8) });
     }
     cracks = cr;
   }
@@ -110,13 +142,13 @@
         {#each shards as s}
           <div
             class="shard"
-            style="clip-path: polygon({s.pts}); transform-origin: {s.ox} {s.oy}; --dx:{s.dx}; --rot:{s.rot}deg; --delay:{s.delay}ms;"
+            style="clip-path: polygon({s.pts}); transform-origin: {s.ox} {s.oy}; --dx:{s.dx}; --rot:{s.rot}deg; --delay:{s.delay}ms; --tint:{s.tint};"
           ></div>
         {/each}
       </div>
       <svg class="glass-cracks" viewBox="0 0 100 100" preserveAspectRatio="none">
         {#each cracks as c}
-          <polyline points={c} />
+          <polyline points={c.pts} style="stroke-width:{c.w}" />
         {/each}
       </svg>
     </div>
@@ -182,9 +214,9 @@
     inset: 0;
     background: linear-gradient(
       135deg,
-      rgba(214, 228, 255, 0.16),
-      rgba(150, 180, 230, 0.05) 55%,
-      rgba(214, 228, 255, 0.13)
+      rgba(216, 230, 255, var(--tint, 0.14)),
+      rgba(150, 180, 230, 0.03) 55%,
+      rgba(200, 220, 255, calc(var(--tint, 0.14) * 0.7))
     );
     will-change: transform, opacity;
   }

@@ -1124,6 +1124,9 @@
   let studioTimerStarted = false;
   const STUDIO_MS = 2800;
 
+  // All text is drawn from the in-game manual (public/manual/index.html) —
+  // damage/status/terrain tables, raw vs battle stats, relics & the Anam,
+  // skill types, consumables. Kept short enough to fit one screen cleanly.
   const MANUAL_CARDS: {
     title: string;
     lines?: string[];
@@ -1131,46 +1134,104 @@
     quote?: string;
   }[] = [
     {
-      title: "Elias · Paladin",
-      lines: [
-        "Raised by Mayor Raeges in Laria — an elven child left in a human village, who never stopped believing the world is larger than the hills around him.",
-        "Lean into STR / CON, with WIS / INT unlocking the radiant (Smite) path.",
-      ],
-      quote: "The strong are meant to help the weak.",
-    },
-    {
       title: "Damage types",
       rows: [
         ["Physical", "blocked by physical defense"],
-        ["Poison", "Poisoned — damage every turn"],
-        ["Acid", "Acid Covered — deal less, take more"],
-        ["Radiant", "ignores physical defense AND resistance"],
-        ["Ice · Fire · Necrotic", "Chilled · Burning · Cursed"],
+        ["Poison", "leaves the target Poisoned"],
+        ["Acid", "leaves the target Acid Covered"],
+        ["Radiant (Smite)", "ignores physical defense AND resistance"],
+        ["Every element", "blocked only by Magic Defense"],
       ],
     },
     {
       title: "Status effects",
       rows: [
-        ["Poisoned", "damage each turn; worse accuracy + evasion"],
-        ["Acid Covered", "you deal less damage and take more"],
+        ["Poisoned", "damage every turn; worse aim, easier to hit"],
+        ["Acid Covered", "you deal less and take more"],
+        ["Blind", "hit chance cratered (from Radiant)"],
         ["Chilled", "movement reduced"],
-        ["Burning", "heavy damage every turn"],
-        ["Blind", "hit chance cratered"],
+        ["Burning", "significant damage every turn"],
+      ],
+    },
+    {
+      title: "The ground fights too",
+      rows: [
+        ["Poison tile", "a chance to Poison you each step"],
+        ["Acid tile", "moderate damage + Acid Covered"],
+        ["Icy tile", "double move cost; may fall prone"],
+        ["Aflame tile", "sets you Burning, and trails fire"],
+      ],
+    },
+    {
+      title: "Raw stats — the knobs you turn with JP",
+      rows: [
+        ["Strength", "physical attack, and HP"],
+        ["Constitution", "HP and physical defense"],
+        ["Dexterity", "accuracy, dodge, defense"],
+        ["Agility", "initiative and move range"],
+        ["Intelligence", "magic attack + defense (softens Smite)"],
+        ["Wisdom", "the off-stat that feeds everything"],
+      ],
+    },
+    {
+      title: "Battle stats — calculated from your build",
+      rows: [
+        ["HP", "← Constitution · what you can take"],
+        ["MP", "← Intelligence · fuels Smite & Cure"],
+        ["Initiative", "← Agility · who acts first"],
+        ["Physical Attack", "← Strength · your weapon damage"],
+        ["Magic Defense", "← Intelligence · the only softener of Radiant"],
+        ["AP", "← Speed · actions per turn, grows slowly"],
+      ],
+    },
+    {
+      title: "The shorthand",
+      rows: [
+        ["XP", "fills the bar → level up"],
+        ["JP", "spend on your raw stats"],
+        ["SP", "spend on the skill tree"],
+        ["MP", "fuels your skills"],
+        ["AP", "actions per turn"],
+        ["EP", "grows a skill through use"],
+      ],
+    },
+    {
+      title: "Relics & the Anam",
+      lines: [
+        "A relic is an item you own; slot it into a Relic Slot to turn on the skill it grants.",
+        "They say a relic carries an Anam — the imparted spirit of a past master — and to slot one is to receive their skill, which grows the more you wield it.",
+        "Episode One relics: Item, Scan, Move, Health, and Berserckounter (dropped by the Mother Slime).",
+      ],
+    },
+    {
+      title: "Skill types",
+      rows: [
+        ["Action (red)", "Smite · Cure · Push — spends AP/MP on your turn"],
+        ["Reaction (yellow)", "Counterattack · Parry — fires on its own"],
+        ["Passive (blue)", "Scan · Move-up — always on"],
+      ],
+    },
+    {
+      title: "Consumables — each does one thing",
+      rows: [
+        ["Mugwort", "heals HP (the only HP restore in Episode One)"],
+        ["Irid Liquor", "restores MP for skills"],
+        ["Valerian Powder", "cures Poison"],
       ],
     },
     {
       title: "In battle",
       lines: [
-        "No random encounters — every fight begins in the world around you, and where you engage groups the enemies.",
-        "Radiant damage (Smite) ignores physical defense AND resistance — the answer to a wall like the VSlime.",
-        "Skills grow with use: on Medium and Hard, leaning on one makes it far stronger over a run.",
+        "No random encounters — you see enemies on the field. Where you make contact groups them, and the ground you stand on becomes the grid.",
+        "Radiant damage (Smite) ignores physical defense AND resistance — the answer to a tanky wall like the Venom Slime.",
+        "Your crits swing fights your way — roughly 16% for you against a foe's 6%.",
       ],
     },
     {
       title: "Growing stronger",
       lines: [
-        "Win fights for XP, then level up — spend JP on your raw stats, SP on the Paladin skill tree.",
-        "Fill every Relic Slot the moment you unlock one; an empty slot does nothing.",
+        "Win fights for XP, then level up — each level grants JP for raw stats and SP for the Paladin skill tree.",
+        "Skills grow with use: lean on one and it earns Expertise, getting stronger over a run.",
         "Spend your JP and SP after every level. An unspent pile is wasted power.",
       ],
     },
@@ -1196,6 +1257,29 @@
     spiter: "Spiter",
     vepir: "Vepir",
     slime: "Slime",
+  };
+  // Role + one-line blurb per character, keyed by display name. Sourced from the
+  // manual's Characters + Bestiary chapters — blurbs only where the manual
+  // actually documents the entity (never invented).
+  const SPRITE_LORE: Record<string, { role: string; blurb: string }> = {
+    Elias: {
+      role: "Paladin · Elf of Laria",
+      blurb:
+        "The windmill mechanic of Laria who never stopped believing the world is larger than the hills around him.",
+    },
+    Falmri: {
+      role: "Warrior · Dwarf",
+      blurb:
+        "A gruff old dwarf who remembers when dwarves lived openly among humans and elves, and the great roads were still open.",
+    },
+    Slime: {
+      role: "Enemy · The Waterway",
+      blurb:
+        "The bread-and-butter Waterway foe — no resistances, no tricks. The danger is numbers, not any single Slime.",
+    },
+    Eastwood: { role: "Enemy · Episode One", blurb: "" },
+    Spiter: { role: "Enemy · Episode One", blurb: "" },
+    Vepir: { role: "Enemy · Episode One", blurb: "" },
   };
   // Clockwise turn order; we keep only the directions a character actually has.
   const DIR_ORDER = [
@@ -1244,6 +1328,8 @@
   let loadCardIsSprite = $state(false);
   let spriteSrc = $state(SPRITE_CAST[0]?.idles[0] ?? "");
   let spriteName = $state(SPRITE_CAST[0]?.display ?? "");
+  let spriteRole = $state(SPRITE_LORE[SPRITE_CAST[0]?.display ?? ""]?.role ?? "");
+  let spriteBlurb = $state(SPRITE_LORE[SPRITE_CAST[0]?.display ?? ""]?.blurb ?? "");
 
   function maybeReveal() {
     if (studioDone && sceneReady) loading = false;
@@ -1315,6 +1401,8 @@
       if (cancelled) return;
       const c = SPRITE_CAST[ci];
       spriteName = c.display;
+      spriteRole = SPRITE_LORE[c.display]?.role ?? "";
+      spriteBlurb = SPRITE_LORE[c.display]?.blurb ?? "";
       if (reduce) {
         spriteSrc = c.idles[0];
         return; // no looping under reduced motion
@@ -1674,6 +1762,12 @@
                 <img class="sprite-actor" src={spriteSrc} alt={spriteName} />
               </div>
               <h2 class="sprite-name">{spriteName}</h2>
+              {#if spriteRole}
+                <div class="sprite-role">{spriteRole}</div>
+              {/if}
+              {#if spriteBlurb}
+                <p class="sprite-blurb">{spriteBlurb}</p>
+              {/if}
             </div>
           {:else}
             {@const card = MANUAL_CARDS[loadCard]}
@@ -2140,6 +2234,24 @@
     margin: 0;
     color: #f6eccf;
     text-shadow: 0 2px 20px rgba(0, 0, 0, 0.45);
+  }
+  .sprite-role {
+    font-family: "Courier New", monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.24em;
+    text-indent: 0.24em;
+    color: #c69a4c;
+    margin-top: 0.5rem;
+  }
+  .sprite-blurb {
+    max-width: 30rem;
+    margin: 0.7rem auto 0;
+    /* Reserve ~2 lines so the card doesn't jump when the character changes. */
+    min-height: 2.9em;
+    font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+    line-height: 1.45;
+    color: #d9cba9;
   }
 
   .manual-tracker {

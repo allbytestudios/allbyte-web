@@ -1116,11 +1116,15 @@
   // press (HeroPlay sets the flag). Read + cleared at init so it shows on the
   // first paint (no flash) and never replays on a refresh. The game load runs
   // underneath the whole time; the studio scene waits until the glass clears.
+  let glassSeed = $state(1);
   function readGlassFlag(): boolean {
     if (typeof window === "undefined") return false;
     try {
       if (sessionStorage.getItem("ab_play_transition") === "1") {
         sessionStorage.removeItem("ab_play_transition");
+        const s = parseInt(sessionStorage.getItem("ab_play_seed") ?? "1", 10);
+        sessionStorage.removeItem("ab_play_seed");
+        glassSeed = Number.isFinite(s) ? s : 1;
         return true;
       }
     } catch {
@@ -1797,7 +1801,7 @@
 
 <div class="godot-container" bind:this={containerEl} style:cursor={letterboxCursor}>
   {#if showGlass}
-    <GlassShatter ondone={onGlassDone} />
+    <GlassShatter mode="reveal" seed={glassSeed} ondone={onGlassDone} />
   {/if}
   {#if mobileFs && allowed && !isFullscreen}
     <!-- Mobile fullscreen is parent-owned (the touch gamepad lives out here, not

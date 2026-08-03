@@ -1,67 +1,74 @@
 <script lang="ts">
-  // JRPG-style glass-fracture entrance for /play. Timeline (~1.8s total):
-  //   crack  (0–0.32s): fractures spider out from an impact point; behind the
-  //                     glass the scene is blurred + darkened (frost layer).
-  //   hold   (0.32–1.15s): sits fractured.
-  //   light  (1.15–1.35s): the fracture lines glow (light behind the glass).
-  //   fall   (1.35–1.8s): the shards drop away, revealing the scene; frost clears.
-  // Runs entirely on the compositor (transform/opacity), so it stays smooth even
-  // while the game's WASM is downloading/compiling underneath.
+  // JRPG glass-fracture transition that spans the homepage → /play navigation.
+  //   mode="obscure" (homepage): the fracture spiders out and the frost thickens
+  //     until the homepage is fully hidden, then ondone() fires → navigate.
+  //   mode="reveal"  (/play): the SAME fracture (matched by `seed`) is already
+  //     there; it lights up and the shards fall away, revealing the AllByte
+  //     screen behind. Then ondone().
+  // Everything animates on the compositor (transform/opacity), so it stays smooth
+  // while the game's WASM downloads/compiles underneath.
   import { onMount } from "svelte";
 
-  let { ondone }: { ondone?: () => void } = $props();
+  let {
+    seed = 1,
+    mode = "obscure",
+    ondone,
+  }: {
+    seed?: number;
+    mode?: "obscure" | "reveal";
+    ondone?: () => void;
+  } = $props();
 
   const CX = 50;
-  const CY = 45; // impact point, in viewBox/% units (slightly above center)
+  const CY = 45; // impact point
 
-  type Shard = {
-    pts: string; // clip-path polygon points, "x% y%, ..."
-    ox: string;
-    oy: string; // transform-origin (centroid)
-    dx: number; // horizontal drift on fall (vw)
-    rot: number; // rotation on fall (deg)
-    delay: number; // fall delay (ms)
-    tint: number; // per-shard glass brightness (catches "light" differently)
-  };
-  type Crack = { pts: string; w: number }; // polyline points + stroke weight
+  // Seeded PRNG (mulberry32) so obscure + reveal generate an identical fracture.
+  function makeRng(s: number) {
+    let a = s >>> 0 || 1;
+    return () => {
+      a |= 0;
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  type Shard = { pts: string; ox: string; oy: string; dx: number; rot: number; delay: number; tint: number };
+  type Crack = { pts: string; w: number };
+
+  let shards = $state<Shard[]>([]);
+  let cracks = $state<Crack[]>([]);
+  let phase = $state<"crack" | "hold" | "cover" | "light" | "fall">(
+    mode === "reveal" ? "cover" : "crack",
+  );
+  let reduce = false;
 
   function polar(a: number, r: number): [number, number] {
     return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
   }
-  const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 
-  let shards = $state<Shard[]>([]);
-  let cracks = $state<Crack[]>([]);
-  let phase = $state<"crack" | "hold" | "light" | "fall">("crack");
-  let reduce = false;
-
-  // Real glass from an impact: radial cracks shoot out (jagged, some die early)
-  // and irregular concentric cracks ring them — the rings are NOT circles, each
-  // spoke sits at a jittered radius, so the shards are irregular angular pieces.
   function build() {
-    const spokes = 13;
+    const rng = makeRng(seed);
+    const rnd = (a: number, b: number) => a + rng() * (b - a);
+    const spokes = 15;
     const ang: number[] = [];
     for (let i = 0; i < spokes; i++) {
-      // uneven angular spacing — real cracks aren't evenly spread
-      ang.push((i / spokes) * Math.PI * 2 + rnd(-0.22, 0.22));
+      ang.push((i / spokes) * Math.PI * 2 + rnd(-0.24, 0.24));
     }
-    const rings = [0, 6, 15, 30, 55, 175]; // 0 = impact; last overshoots corners
-    // A jittered point grid shared by shards AND cracks so they always align.
-    // grid[j][i] = the vertex on ring j along spoke i, at a per-vertex radius.
+    const rings = [0, 5, 13, 26, 46, 80, 185];
+    // Jittered vertex grid (radius AND angle jitter per vertex) shared by shards
+    // and cracks — irregular, angular pieces rather than clean concentric rings.
     const grid: [number, number][][] = [];
     for (let j = 0; j < rings.length; j++) {
       const row: [number, number][] = [];
       for (let i = 0; i < spokes; i++) {
         if (rings[j] === 0) row.push([CX, CY]);
-        else row.push(polar(ang[i], rings[j] * rnd(0.78, 1.22)));
+        else row.push(polar(ang[i] + rnd(-0.08, 0.08), rings[j] * rnd(0.62, 1.4)));
       }
       grid.push(row);
     }
-    // Some radial cracks die before the edge (common in glass) — mark the
-    // outer ring each spoke reaches.
-    const reach: number[] = ang.map(() =>
-      Math.random() < 0.3 ? rings.length - 2 : rings.length - 1,
-    );
+    const reach = ang.map(() => (rng() < 0.28 ? rings.length - 2 : rings.length - 1));
 
     const sh: Shard[] = [];
     for (let j = 0; j < rings.length - 1; j++) {
@@ -78,37 +85,42 @@
           ox: `${cx}%`,
           oy: `${cy}%`,
           dx: (cx - CX) * 0.14 + rnd(-9, 9),
-          rot: rnd(-75, 75),
-          delay: Math.round((rings[j] / 175) * 140 + rnd(0, 150)),
-          tint: rnd(0.05, 0.2),
+          rot: rnd(-80, 80),
+          delay: Math.round((rings[j] / 185) * 130 + rnd(0, 150)),
+          tint: rnd(0.1, 0.32),
         });
       }
     }
     shards = sh;
 
     const cr: Crack[] = [];
-    // Radial cracks (jagged — they bend through the jittered ring vertices).
     for (let i = 0; i < spokes; i++) {
       const pl: string[] = [`${CX},${CY}`];
       for (let j = 1; j <= reach[i]; j++) pl.push(`${grid[j][i][0]},${grid[j][i][1]}`);
-      cr.push({ pts: pl.join(" "), w: rnd(0.7, 1.4) });
+      cr.push({ pts: pl.join(" "), w: rnd(0.7, 1.5) });
     }
-    // Concentric cracks (irregular closed polylines — the ring edges).
     for (let j = 1; j < rings.length - 1; j++) {
       const pl: string[] = [];
       for (let i = 0; i <= spokes; i++) {
         const g = grid[j][i % spokes];
         pl.push(`${g[0]},${g[1]}`);
       }
-      cr.push({ pts: pl.join(" "), w: rnd(0.6, 1.0) });
+      cr.push({ pts: pl.join(" "), w: rnd(0.5, 1.0) });
     }
-    // Secondary dead-end cracks branching off a random radial vertex.
-    for (let k = 0; k < 6; k++) {
-      const i = Math.floor(Math.random() * spokes);
-      const j = 1 + Math.floor(Math.random() * (rings.length - 3));
+    // Extra irregularity: dead-end branch cracks + chords across a shard.
+    for (let k = 0; k < 9; k++) {
+      const i = Math.floor(rng() * spokes);
+      const j = 1 + Math.floor(rng() * (rings.length - 3));
       const [bx, by] = grid[j][i];
-      const [ex, ey] = polar(ang[i] + rnd(-0.5, 0.5), rings[j] * rnd(1.15, 1.6));
-      cr.push({ pts: `${bx},${by} ${ex},${ey}`, w: rnd(0.4, 0.8) });
+      const [ex, ey] = polar(ang[i] + rnd(-0.55, 0.55), rings[j] * rnd(1.12, 1.7));
+      cr.push({ pts: `${bx},${by} ${ex},${ey}`, w: rnd(0.4, 0.85) });
+    }
+    for (let k = 0; k < 5; k++) {
+      const j = 1 + Math.floor(rng() * (rings.length - 2));
+      const i = Math.floor(rng() * spokes);
+      const a = grid[j][i];
+      const b = grid[Math.min(j + 1, rings.length - 1)][(i + 2) % spokes];
+      cr.push({ pts: `${a[0]},${a[1]} ${b[0]},${b[1]}`, w: rnd(0.4, 0.7) });
     }
     cracks = cr;
   }
@@ -116,25 +128,24 @@
   onMount(() => {
     reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     build();
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    const t: number[] = [];
     if (reduce) {
-      // No shatter: a brief darken, then hand off.
-      timers.push(setTimeout(() => ondone?.(), 450));
+      t.push(setTimeout(() => ondone?.(), mode === "obscure" ? 380 : 380));
+    } else if (mode === "obscure") {
+      t.push(setTimeout(() => (phase = "hold"), 360));
+      t.push(setTimeout(() => (phase = "cover"), 820));
+      t.push(setTimeout(() => ondone?.(), 980)); // fully hidden → navigate
     } else {
-      timers.push(setTimeout(() => (phase = "hold"), 340));
-      timers.push(setTimeout(() => (phase = "light"), 1150));
-      timers.push(setTimeout(() => (phase = "fall"), 1350));
-      timers.push(setTimeout(() => ondone?.(), 1820));
+      // reveal: already fractured + covering → light → fall → done
+      t.push(setTimeout(() => (phase = "light"), 160));
+      t.push(setTimeout(() => (phase = "fall"), 400));
+      t.push(setTimeout(() => ondone?.(), 940));
     }
-    return () => timers.forEach(clearTimeout);
+    return () => t.forEach(clearTimeout);
   });
 </script>
 
-<div
-  class="glass glass-{phase}"
-  class:reduce
-  aria-hidden="true"
->
+<div class="glass glass-{phase} mode-{mode}" class:reduce aria-hidden="true">
   <div class="glass-frost"></div>
   {#if !reduce}
     <div class="glass-reveal">
@@ -164,15 +175,28 @@
     overflow: hidden;
   }
 
-  /* Blur + darken whatever is behind the glass. */
+  /* Frost — blur + slight darken while the glass forms, so you still read the
+     homepage behind the cracks. */
   .glass-frost {
     position: absolute;
     inset: 0;
-    background: rgba(6, 8, 14, 0.34);
-    backdrop-filter: blur(7px) brightness(0.55) saturate(0.85);
-    -webkit-backdrop-filter: blur(7px) brightness(0.55) saturate(0.85);
+    background: rgba(8, 10, 16, 0.32);
+    backdrop-filter: blur(7px) brightness(0.62) saturate(0.85);
+    -webkit-backdrop-filter: blur(7px) brightness(0.62) saturate(0.85);
     opacity: 0;
-    animation: frostIn 0.3s ease forwards;
+  }
+  .mode-obscure .glass-frost {
+    animation: frostIn 0.34s ease forwards;
+  }
+  /* Cover step + the whole reveal phase start NEAR-OPAQUE (not relying on the
+     backdrop filter), so the page swap underneath is invisible. */
+  .glass-cover .glass-frost,
+  .mode-reveal .glass-frost {
+    opacity: 1;
+    background: rgba(4, 6, 10, 0.93);
+    backdrop-filter: blur(11px) brightness(0.4) saturate(0.8);
+    -webkit-backdrop-filter: blur(11px) brightness(0.4) saturate(0.8);
+    transition: background 0.16s ease;
   }
   .glass-fall .glass-frost {
     animation: frostOut 0.42s ease forwards;
@@ -188,16 +212,18 @@
     }
   }
 
-  /* Spider reveal — clip the fracture in from the impact point outward. */
   .glass-reveal {
     position: absolute;
     inset: 0;
+  }
+  /* Spider the fracture in from the impact point (obscure only). */
+  .mode-obscure .glass-reveal {
     clip-path: circle(0% at 50% 45%);
-    animation: crackReveal 0.32s ease-out forwards;
+    animation: crackReveal 0.34s ease-out forwards;
   }
   @keyframes crackReveal {
     to {
-      clip-path: circle(160% at 50% 45%);
+      clip-path: circle(170% at 50% 45%);
     }
   }
 
@@ -233,17 +259,18 @@
 
   .glass-cracks polyline {
     fill: none;
-    stroke: rgba(222, 236, 255, 0.5);
-    stroke-width: 1.1;
+    stroke: rgba(228, 240, 255, 0.9);
     vector-effect: non-scaling-stroke;
     stroke-linejoin: round;
+    /* dark halo so the bright crack reads over light OR dark areas */
+    filter: drop-shadow(0 0 1.2px rgba(6, 12, 26, 0.95));
   }
-  /* Light behind the glass — the fractures glow. */
   .glass-light .glass-cracks polyline,
   .glass-fall .glass-cracks polyline {
-    stroke: rgba(190, 234, 255, 0.95);
-    filter: drop-shadow(0 0 2px rgba(150, 220, 255, 0.9));
-    transition: stroke 0.2s ease, filter 0.2s ease;
+    stroke: rgba(200, 240, 255, 1);
+    filter: drop-shadow(0 0 3px rgba(150, 220, 255, 0.95))
+      drop-shadow(0 0 1px rgba(6, 12, 26, 0.9));
+    transition: stroke 0.18s ease, filter 0.18s ease;
   }
   .glass-fall .glass-cracks {
     animation: cracksOut 0.42s ease forwards;
@@ -254,8 +281,9 @@
     }
   }
 
-  /* Reduced motion: just a brief frosted darken, no shatter. */
+  /* Reduced motion: just a brief opaque darken across the swap. */
   .glass.reduce .glass-frost {
-    animation: frostIn 0.25s ease forwards, frostOut 0.25s ease 0.2s forwards;
+    opacity: 1;
+    background: rgba(4, 6, 10, 0.9);
   }
 </style>

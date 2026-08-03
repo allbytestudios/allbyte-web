@@ -11,8 +11,10 @@
     GAME_VERSIONS,
     defaultVersion,
     isAvailable,
+    versionById,
     type RuntimeChannels,
   } from "../lib/gameVersions.ts";
+  import GlassShatter from "./GlassShatter.svelte";
 
   let runtime = $state<RuntimeChannels>(null);
   let open = $state(false);
@@ -30,16 +32,45 @@
   const admin = $derived(isAdmin(auth.currentUser));
   const primaryLabel = "Play";
 
+  // Glass-shatter entrance. Phase 1 (obscure) plays HERE over the homepage; when
+  // it has the page fully hidden we navigate to /play, which plays phase 2
+  // (reveal) with the SAME fracture (matched by seed) and drops the shards to
+  // reveal the AllByte screen. We prefetch the game on press so the load still
+  // starts immediately, behind the glass.
+  let transitioning = $state(false);
+  let transitionSeed = $state(1);
+  let pendingUrl = "";
+
+  function prefetchGame(id: string) {
+    try {
+      const v = versionById(id);
+      const dir = (v?.path ?? "/godot/public/index.html").replace(/index\.html$/, "");
+      for (const f of ["index.wasm", "index.pck"]) {
+        const l = document.createElement("link");
+        l.rel = "prefetch";
+        l.href = dir + f;
+        document.head.appendChild(l);
+      }
+    } catch {
+      /* best-effort warm-up */
+    }
+  }
+
   function play(id: string) {
-    // Flag the glass-shatter entrance for /play (it reads + clears this). Set
-    // right before navigating so the transition is tied to the Play press; the
-    // game load starts the instant /play mounts.
+    pendingUrl = `/play/?v=${encodeURIComponent(id)}`;
+    transitionSeed = Math.floor(Math.random() * 2_000_000_000) || 1;
     try {
       sessionStorage.setItem("ab_play_transition", "1");
+      sessionStorage.setItem("ab_play_seed", String(transitionSeed));
     } catch {
-      /* private mode — just skip the flourish */
+      /* private mode — /play just skips phase 2 and shows its own intro */
     }
-    window.location.href = `/play/?v=${encodeURIComponent(id)}`;
+    prefetchGame(id);
+    if (transitioning) return;
+    transitioning = true; // renders the obscure-phase glass over the homepage
+  }
+  function onObscureDone() {
+    window.location.href = pendingUrl;
   }
   function onDocClick(e: MouseEvent) {
     if (!(e.target as HTMLElement)?.closest(".heroplay")) open = false;
@@ -81,6 +112,10 @@
     {/if}
   {/if}
 </span>
+
+{#if transitioning}
+  <GlassShatter mode="obscure" seed={transitionSeed} ondone={onObscureDone} />
+{/if}
 
 <style>
   .heroplay {

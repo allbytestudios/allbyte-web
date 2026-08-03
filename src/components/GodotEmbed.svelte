@@ -1014,7 +1014,10 @@
     const scenarioLoad =
       new URLSearchParams(window.location.search).has("scenario") &&
       (isAdmin(auth.currentUser) || isTierAtLeast(auth.currentUser, "legend"));
-    if (!scenarioLoad) loading = false;
+    // Normal player loads HOLD the splash (studio intro + manual card) until
+    // studioDone && sceneReady (maybeReveal); fixture (admin) reveals now,
+    // scenario is managed by runScenario.
+    if (!isNormalPlayerLoad() && !scenarioLoad) loading = false;
     // Re-assert the parent mobile-context flag in case it was cleared; the
     // engine re-reads it at Title startup on every (re)load.
     pushMobileContext();
@@ -1095,6 +1098,112 @@
   const EXPECTED_DOWNLOAD_BYTES = 36879516 + 24929996; // WASM + index.pck
   let bytesDownloaded = $state(0);
   let filesDownloaded = $state(0);
+  const dlPct = $derived(
+    Math.min(100, Math.round((bytesDownloaded / EXPECTED_DOWNLOAD_BYTES) * 100)),
+  );
+  // Warm cache (returning player): SW/memory cache hits don't cross the wire,
+  // so bytesDownloaded stays 0. Show an indeterminate bar + "Preparing" rather
+  // than a stuck "Downloading… 0%".
+  const dlKnown = $derived(bytesDownloaded > 0);
+  const loadStatusFriendly = $derived(
+    !dlKnown || dlPct >= 100 ? "Preparing the world…" : "Downloading the world…",
+  );
+
+  // --- Two-phase loading splash (owner spec 2026-08-03) --------------------
+  // Phase 1 "studio": the AllByte Studios animation, full-screen, for ~STUDIO_MS
+  // (it plays its animation then holds on the logo the last ~0.5s).
+  // Phase 2 "manual": a Chronicles-themed full-screen manual card (Elias, damage
+  // types, statuses…) + spinner + real progress bar, until the game is ready.
+  // The game is revealed only once the studio intro has played AND a scene has
+  // appeared — so the studio always plays and the manual card fills the rest.
+  // Normal PLAYER loads only; scenario/fixture (admin) reveal as before.
+  let loadPhase = $state<"studio" | "manual">("studio");
+  let studioDone = $state(false);
+  let sceneReady = $state(false);
+  let studioTimerStarted = false;
+  const STUDIO_MS = 2800;
+
+  const MANUAL_CARDS: {
+    title: string;
+    lines?: string[];
+    rows?: [string, string][];
+    quote?: string;
+  }[] = [
+    {
+      title: "Elias · Paladin",
+      lines: [
+        "Raised by Mayor Raeges in Laria — an elven child left in a human village, who never stopped believing the world is larger than the hills around him.",
+        "Lean into STR / CON, with WIS / INT unlocking the radiant (Smite) path.",
+      ],
+      quote: "The strong are meant to help the weak.",
+    },
+    {
+      title: "Damage types",
+      rows: [
+        ["Physical", "blocked by physical defense"],
+        ["Poison", "Poisoned — damage every turn"],
+        ["Acid", "Acid Covered — deal less, take more"],
+        ["Radiant", "ignores physical defense AND resistance"],
+        ["Ice · Fire · Necrotic", "Chilled · Burning · Cursed"],
+      ],
+    },
+    {
+      title: "Status effects",
+      rows: [
+        ["Poisoned", "damage each turn; worse accuracy + evasion"],
+        ["Acid Covered", "you deal less damage and take more"],
+        ["Chilled", "movement reduced"],
+        ["Burning", "heavy damage every turn"],
+        ["Blind", "hit chance cratered"],
+      ],
+    },
+    {
+      title: "In battle",
+      lines: [
+        "No random encounters — every fight begins in the world around you, and where you engage groups the enemies.",
+        "Radiant damage (Smite) ignores physical defense AND resistance — the answer to a wall like the VSlime.",
+        "Skills grow with use: on Medium and Hard, leaning on one makes it far stronger over a run.",
+      ],
+    },
+    {
+      title: "Growing stronger",
+      lines: [
+        "Win fights for XP, then level up — spend JP on your raw stats, SP on the Paladin skill tree.",
+        "Fill every Relic Slot the moment you unlock one; an empty slot does nothing.",
+        "Spend your JP and SP after every level. An unspent pile is wasted power.",
+      ],
+    },
+  ];
+  let loadCard = $state(0);
+
+  function maybeReveal() {
+    if (studioDone && sceneReady) loading = false;
+  }
+  function isNormalPlayerLoad(): boolean {
+    if (typeof window === "undefined") return false;
+    if (fixture) return false;
+    return !new URLSearchParams(window.location.search).has("scenario");
+  }
+  // Debug readout (log tail, phase heuristics, MB/file counts) — owner + ?debug
+  // only. Players never see it; it stays for diagnosing a load.
+  const showLoadDebug = $derived(
+    (typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("debug")) ||
+      isAdmin(auth.currentUser),
+  );
+
+  // Kick the studio intro the moment a normal player load begins.
+  $effect(() => {
+    if (allowed && loading && !studioTimerStarted && isNormalPlayerLoad()) {
+      studioTimerStarted = true;
+      loadCard = Math.floor(Math.random() * MANUAL_CARDS.length);
+      setTimeout(() => {
+        studioDone = true;
+        if (!sceneReady) loadPhase = "manual";
+        maybeReveal();
+      }, STUDIO_MS);
+    }
+  });
 
   function pollLoadStatus() {
     loadElapsed = Math.floor((Date.now() - loadStart) / 1000);
@@ -1189,6 +1298,8 @@
       checkBuildFreshness((iframeEl?.contentWindow as any)?.gameState?.version);
       loadStatus = `Ready: ${scene}`;
       loadPanelVisible = false;
+      sceneReady = true;
+      maybeReveal(); // reveal once the studio intro has also played
       startKbNudge(scene);
       stopLoadPolling();
       return;
@@ -1403,13 +1514,70 @@
     />
   {:else if allowed}
     {#if loading}
-      <div class="loading-screen">
-        <div class="loading-title">AllByte Studios</div>
-        <div class="loading-subtitle">Loading game...</div>
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: 30%"></div>
+      {#if loadPhase === "studio"}
+        <!-- Phase 1: AllByte Studios intro, full-screen ~STUDIO_MS. Placeholder
+             wordmark animation until Quinn's credit-animation video lands, then
+             this becomes a <video> element. -->
+        <div class="loading-screen studio-screen">
+          <div class="studio-mark">
+            <span class="studio-all">AllByte</span>
+            <span class="studio-studios">Studios</span>
+          </div>
         </div>
-      </div>
+      {:else}
+        <!-- Phase 2: Chronicles-themed manual card + accurate progress tracker -->
+        {@const card = MANUAL_CARDS[loadCard]}
+        <div class="loading-screen manual-screen">
+          <div class="manual-card">
+            <div class="manual-kicker">From the Manual</div>
+            <h2 class="manual-card-title">{card.title}</h2>
+            {#if card.lines}
+              <div class="manual-lines">
+                {#each card.lines as line}
+                  <p class="manual-line">{line}</p>
+                {/each}
+              </div>
+            {/if}
+            {#if card.rows}
+              <dl class="manual-rows">
+                {#each card.rows as [term, desc]}
+                  <div class="manual-row">
+                    <dt>{term}</dt>
+                    <dd>{desc}</dd>
+                  </div>
+                {/each}
+              </dl>
+            {/if}
+            {#if card.quote}
+              <p class="manual-quote">&ldquo;{card.quote}&rdquo;</p>
+            {/if}
+          </div>
+          <div class="manual-tracker" role="status" aria-live="polite">
+            <img
+              class="manual-spinner"
+              src="/loading-spinner.gif"
+              alt=""
+              width="28"
+              height="28"
+            />
+            <div class="manual-tracker-body">
+              <div class="manual-status">{loadStatusFriendly}</div>
+              {#if dlKnown}
+                <div class="manual-bar">
+                  <div class="manual-bar-fill" style="width: {dlPct}%"></div>
+                </div>
+              {:else}
+                <div class="manual-bar">
+                  <div class="manual-bar-fill manual-bar-indeterminate"></div>
+                </div>
+              {/if}
+            </div>
+            {#if dlKnown}
+              <div class="manual-pct">{dlPct}%</div>
+            {/if}
+          </div>
+        </div>
+      {/if}
     {/if}
     {#if showStartTap}
       <button class="start-tap" onclick={startTapPlay} aria-label="Tap to play fullscreen">
@@ -1470,7 +1638,7 @@
         </div>
       </div>
     {/if}
-    {#if loadPanelVisible}
+    {#if loadPanelVisible && showLoadDebug}
       {@const pct = Math.min(100, Math.round((bytesDownloaded / EXPECTED_DOWNLOAD_BYTES) * 100))}
       {@const mbDl = (bytesDownloaded / (1024 * 1024)).toFixed(1)}
       {@const mbTotal = (EXPECTED_DOWNLOAD_BYTES / (1024 * 1024)).toFixed(0)}
@@ -1646,32 +1814,222 @@
     margin-bottom: 0.5rem;
   }
 
-  .loading-subtitle {
-    font-size: 0.875rem;
-    opacity: 0.6;
-    margin-bottom: 1.5rem;
-  }
-
-  .progress-bar {
-    width: 60%;
-    max-width: 300px;
-    height: 4px;
-    background: rgba(0, 255, 136, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: #a7f3d0;
-    transition: width 0.3s;
-  }
-
   .loading-note {
     margin-top: 2rem;
     font-size: 0.85rem;
     opacity: 0.6;
     color: #f87171;
+  }
+
+  /* ---- Phase 1: AllByte Studios intro (placeholder wordmark) ------------- */
+  .studio-screen {
+    background: #07090f;
+  }
+  .studio-mark {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    animation: studioIn 2.8s ease-out both;
+  }
+  .studio-all {
+    font-family: "AllByteCustom", Georgia, serif;
+    font-size: clamp(2.6rem, 9vw, 5rem);
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: #f4ecd6;
+    text-shadow: 0 2px 28px rgba(212, 175, 96, 0.28);
+  }
+  .studio-studios {
+    font-family: "Courier New", monospace;
+    font-size: clamp(0.7rem, 2.4vw, 1.05rem);
+    text-transform: uppercase;
+    letter-spacing: 0.62em;
+    /* optical centering: the wide tracking pushes text right */
+    text-indent: 0.62em;
+    color: #d4af60;
+    opacity: 0.9;
+  }
+  /* Animate in, hold on the logo the last ~0.5s (owner spec). */
+  @keyframes studioIn {
+    0% {
+      opacity: 0;
+      transform: translateY(14px) scale(0.965);
+      letter-spacing: 0;
+    }
+    46% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    82%,
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .studio-mark {
+      animation: none;
+    }
+  }
+
+  /* ---- Phase 2: Chronicles-themed manual card + tracker ------------------ */
+  .manual-screen {
+    background:
+      radial-gradient(
+        130% 120% at 50% 0%,
+        #201812 0%,
+        #17110c 55%,
+        #0e0a07 100%
+      );
+    color: #ece0c4;
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    justify-content: space-between;
+    padding: clamp(1.5rem, 5vh, 3.5rem) 1.25rem clamp(1.1rem, 3vh, 2rem);
+    gap: 1.5rem;
+  }
+  .manual-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    max-width: 44rem;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .manual-kicker {
+    font-family: "Courier New", monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;
+    color: #c69a4c;
+    opacity: 0.85;
+    margin-bottom: 0.85rem;
+  }
+  .manual-card-title {
+    font-size: clamp(1.8rem, 5.5vw, 3rem);
+    line-height: 1.05;
+    margin: 0 0 1.15rem;
+    color: #f6eccf;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.45);
+  }
+  .manual-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    max-width: 38rem;
+  }
+  .manual-line {
+    margin: 0;
+    font-size: clamp(1rem, 2.4vw, 1.2rem);
+    line-height: 1.5;
+    color: #d9cba9;
+  }
+  .manual-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin: 0;
+    width: 100%;
+    max-width: 34rem;
+  }
+  .manual-row {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 34%) 1fr;
+    gap: 0.9rem;
+    align-items: baseline;
+    text-align: left;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(198, 154, 76, 0.16);
+  }
+  .manual-row dt {
+    font-weight: 700;
+    color: #e7b866;
+    font-size: clamp(0.95rem, 2.2vw, 1.12rem);
+  }
+  .manual-row dd {
+    margin: 0;
+    color: #cdbf9e;
+    font-size: clamp(0.9rem, 2.1vw, 1.05rem);
+    line-height: 1.35;
+  }
+  .manual-quote {
+    margin: 1.3rem 0 0;
+    font-style: italic;
+    font-size: clamp(1.05rem, 2.6vw, 1.3rem);
+    color: #e7b866;
+    max-width: 34rem;
+  }
+
+  .manual-tracker {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+    max-width: 30rem;
+    margin: 0 auto;
+  }
+  .manual-spinner {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    display: block;
+  }
+  .manual-tracker-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+  .manual-status {
+    font-family: "Courier New", monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    color: #cdbf9e;
+  }
+  .manual-bar {
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(198, 154, 76, 0.16);
+    overflow: hidden;
+  }
+  .manual-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #c69a4c, #e7b866);
+    transition: width 0.35s ease;
+  }
+  /* Warm-cache: no byte counter to drive width — sweep an amber comet L→R. */
+  .manual-bar-indeterminate {
+    width: 38% !important;
+    animation: manualSweep 1.15s ease-in-out infinite;
+  }
+  @keyframes manualSweep {
+    0% {
+      transform: translateX(-110%);
+    }
+    100% {
+      transform: translateX(320%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .manual-bar-indeterminate {
+      width: 100% !important;
+      animation: none;
+    }
+  }
+  .manual-pct {
+    flex: 0 0 auto;
+    font-family: "Courier New", monospace;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    color: #e7b866;
+    min-width: 2.8rem;
+    text-align: right;
   }
 
   .game-frame {

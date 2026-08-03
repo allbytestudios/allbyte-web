@@ -1103,13 +1103,13 @@
   // Studio scene ~1s (owner: don't let it sit long). Timeline: bits flip fast →
   // slow exponentially → STOP on random values (STUDIO_SETTLE_MS) → hold briefly
   // → the whole scene fades away (STUDIO_FADE_MS) → the first manual card.
-  const STUDIO_MS = 1000;
-  const STUDIO_SETTLE_MS = 620;
-  const STUDIO_FADE_MS = 220;
-  const CARD_MIN_MS = 1000; // every card shows ≥1s (even when the game is ready)
+  const STUDIO_MS = 2000; // studio scene 2s (owner: 1s felt too short)
+  const STUDIO_SETTLE_MS = 1500; // bits stop here, then hold...
+  const STUDIO_FADE_MS = 220; // ...then the scene fades away over this
+  const CARD_MS = 3000; // each card gets a full 3s before it rotates
+  const CARD_MIN_MS = 1000; // a card still shows ≥1s if the game is already ready
   let studioFading = $state(false);
   let manualCardShownAt = 0;
-  let dotsLit = $state(0); // 1–3 gilt dots, +1 per second — the card's own timer
 
   // "All Byte" = 8 characters (the space included makes a Byte), one binary bit
   // over each. The bits flip 0/1 fast, slow exponentially, then STOP on random
@@ -1356,7 +1356,6 @@
   function enterManual() {
     loadPhase = "manual";
     manualCardShownAt = performance.now();
-    dotsLit = 1;
     maybeReveal();
   }
   function advanceCard() {
@@ -1368,7 +1367,6 @@
     loadCardIsSprite = HAS_SPRITE_CARD && next === MANUAL_CARDS.length;
     loadCard = loadCardIsSprite ? 0 : next;
     manualCardShownAt = performance.now();
-    dotsLit = 1;
   }
   function isNormalPlayerLoad(): boolean {
     if (typeof window === "undefined") return false;
@@ -1470,23 +1468,34 @@
     };
   });
 
-  // Manual phase — the single timing driver. Everything is derived from elapsed
-  // time (not an accumulating counter), so it can't drift or double-fire:
-  //   • dots light 1→2→3, one per second on the current card,
-  //   • at 3s the card rotates (fresh dots),
-  //   • the game is revealed the moment it's ready AND the card has had ≥1s.
-  // A short poll keeps the reveal responsive; math keeps the beats exactly 1s.
+  // Manual phase — card rotation + reveal, FREEZE-AWARE. The WASM compile blocks
+  // the main thread for a beat or two, freezing JS timers; when it unblocks a
+  // naive timer would "catch up" and flip several cards at once. So on any poll
+  // where the gap is much larger than the interval (a stall happened), we DON'T
+  // count that frozen time — we restart the current card's dwell. Result: every
+  // card gets a clean CARD_MS on screen, no post-stall burst. (The gilt dots are
+  // a pure-CSS compositor animation and keep moving through the stall — that's
+  // the "still working" signal while content is frozen.)
   $effect(() => {
     if (!(loading && loadPhase === "manual" && isNormalPlayerLoad())) return;
+    let lastTick = performance.now();
     const id = setInterval(() => {
-      const onCard = performance.now() - manualCardShownAt;
-      dotsLit = Math.min(3, Math.floor(onCard / 1000) + 1);
-      if (studioDone && sceneReady && onCard >= CARD_MIN_MS) {
-        loading = false; // ready + this card has had its ≥1s → reveal
+      const now = performance.now();
+      const gap = now - lastTick;
+      lastTick = now;
+      if (gap > 700) {
+        // Main thread was blocked (WASM compile) — give this card a fresh dwell
+        // instead of letting frozen time rotate or reveal early.
+        manualCardShownAt = now;
         return;
       }
-      if (onCard >= 3000) advanceCard(); // ~3s on this card → rotate (resets timer)
-    }, 150);
+      const onCard = now - manualCardShownAt;
+      if (studioDone && sceneReady && onCard >= CARD_MIN_MS) {
+        loading = false; // game ready + this card has had ≥1s → show the title
+        return;
+      }
+      if (onCard >= CARD_MS) advanceCard(); // a full 3s on this card → rotate
+    }, 200);
     return () => clearInterval(id);
   });
 
@@ -1857,9 +1866,9 @@
             </div>
           {/if}
           <div class="load-dots" role="status" aria-label="Loading">
-            <span class="load-dot" class:lit={dotsLit >= 1}></span>
-            <span class="load-dot" class:lit={dotsLit >= 2}></span>
-            <span class="load-dot" class:lit={dotsLit >= 3}></span>
+            <span class="load-dot"></span>
+            <span class="load-dot"></span>
+            <span class="load-dot"></span>
           </div>
         </div>
       {/if}
@@ -2391,8 +2400,10 @@
     }
   }
 
-  /* 3-dot progress — one gilt dot lights per second (driven by dotsLit); when
-     all three are lit the card rotates. It's the card's own 1s-per-dot timer. */
+  /* 3-dot "still working" pulse — three gilt dots brighten in sequence. It uses
+     ONLY opacity + transform (+ will-change) so it runs on the COMPOSITOR thread
+     and keeps animating even while the WASM compile blocks the main thread — the
+     one moving thing when the cards themselves are frozen. */
   .load-dots {
     display: flex;
     align-items: center;
@@ -2405,13 +2416,31 @@
     height: 9px;
     border-radius: 50%;
     background: #e7b866;
-    opacity: 0.22;
-    transform: scale(0.85);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0.25;
+    will-change: opacity, transform;
+    animation: loadDot 1.5s ease-in-out infinite;
   }
-  .load-dot.lit {
-    opacity: 1;
-    transform: scale(1.12);
+  .load-dot:nth-child(2) {
+    animation-delay: 0.25s;
+  }
+  .load-dot:nth-child(3) {
+    animation-delay: 0.5s;
+  }
+  @keyframes loadDot {
+    0%, 60%, 100% {
+      opacity: 0.25;
+      transform: scale(0.82);
+    }
+    30% {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .load-dot {
+      animation: none;
+      opacity: 0.55;
+    }
   }
 
   .game-frame {

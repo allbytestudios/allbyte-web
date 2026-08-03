@@ -46,7 +46,7 @@ import gameVersion from "../data/game-version.json";
       <div class="subtitle">A classic fantasy RPG, <br class="sub-br2">built in the spirit of 90s JRPGs, <br class="sub-br1">with the possibilities of modern technology.</div>
       <p class="hero-lede">Grid-based combat, a hand-built world, and the freedom to shape your journey. Playable in your browser, on desktop, tablet, or phone.</p>
     </div>
-    <video class="hero-video" src="/home/frontroad-hero.mp4" poster="/home/frontroad-hero-poster.jpg" autoplay loop muted playsinline preload="auto" aria-label="Elias runs the front road of Laria — a parallax landscape of windmill, distant mountains, and a reflecting stream"></video>
+    <div class="hero-frame frame"><img class="fl fl-tl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-tr" src="/home/95b8e10d61.png" alt=""><img class="fl fl-bl" src="/home/95b8e10d61.png" alt=""><img class="fl fl-br" src="/home/95b8e10d61.png" alt=""><video class="hero-video" src="/home/frontroad-hero.mp4" poster="/home/frontroad-hero-poster.jpg" autoplay loop muted playsinline preload="auto" aria-label="Elias runs the front road of Laria — a parallax landscape of windmill, distant mountains, and a reflecting stream"></video></div>
     <div class="hero-plate hero-cta-plate">
       <div class="hero-banner-cta"><HeroPlay client:load /><a class="btn btn-ghost btn-lg" href="/manual/">Read the Manual</a></div>
       <p class="hero-cta-caption">No install. No account. Works on desktop, tablet, and phone.</p>
@@ -129,7 +129,7 @@ import gameVersion from "../data/game-version.json";
   .wrap{ max-width:1080px; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.4rem); }
   .eyebrow{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.26em; font-size:.72rem; color:var(--gilt-deep); display:flex; align-items:center; gap:.7rem; justify-content:center; }
   .eyebrow::before,.eyebrow::after{ content:""; flex:1; max-width:3rem; height:1px; background:linear-gradient(90deg,transparent,var(--rule),transparent); }
-  .rule{ max-width:1080px; margin:1.6rem auto 0; height:0; border:0; border-top:1px solid var(--rule); position:relative; }
+  .rule{ max-width:1080px; margin:.7rem auto 0; height:0; border:0; border-top:1px solid var(--rule); position:relative; }
   .rule::after{ content:""; position:absolute; left:50%; top:-3px; width:7px; height:7px; transform:translateX(-50%) rotate(45deg); background:var(--gilt); box-shadow:0 0 0 3px var(--paperblend); }
 
   .btn{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.1em; font-size:.84rem; text-decoration:none; display:inline-flex; align-items:center; gap:.5em; padding:.78rem 1.5rem; border-radius:2px; border:1px solid var(--gilt); transition:transform .15s,box-shadow .2s,background .2s; cursor:pointer; }
@@ -160,7 +160,7 @@ import gameVersion from "../data/game-version.json";
   @media (max-width:880px){ nav.links a:not(.nav-play){ display:none; } }
 
   /* HERO — the game, front & center */
-  .ghero{ text-align:center; padding:clamp(2.4rem,5vw,3.8rem) 0 clamp(1.8rem,3vw,2.6rem); }
+  .ghero{ text-align:center; padding:clamp(.7rem,1.6vw,1.2rem) 0 clamp(.7rem,1.6vw,1.1rem); }
   .ghero .kick{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.22em; font-size:.8rem; color:var(--gilt-deep); }
   .ghero h1{ color:var(--crimson); text-wrap:balance; font-size:clamp(2.8rem,8vw,5rem); margin:.4rem 0 .12rem; line-height:1.02; -webkit-text-stroke:2px #45120d; text-stroke:2px #45120d; paint-order:stroke fill; text-shadow:0 1px 0 rgba(255,247,224,.32),0 3px 7px rgba(0,0,0,.22); }
   .ghero .subtitle{ font-family:"AllByteCustom",Georgia,serif; color:var(--ink); font-size:clamp(1.05rem,2.05vw,1.3rem); letter-spacing:.015em; line-height:1.5; margin:.5rem auto 0; text-shadow:0 1px 0 rgba(255,247,224,.5); }
@@ -177,7 +177,9 @@ import gameVersion from "../data/game-version.json";
      Desktop (>=768px): the video fills the viewport and the plates FLOAT over its
      top and bottom (overlapping it), always on top + visible. */
   .hero-stage{ position:relative; width:100%; max-width:960px; margin:1.1rem auto 0; display:flex; flex-direction:column; align-items:center; }
-  .hero-video{ order:2; display:block; width:100%; height:auto; aspect-ratio:1200/870; border-radius:6px; box-shadow:0 12px 34px var(--shadow); transition:transform 3.2s ease-out; will-change:transform; }
+  .hero-frame{ order:2; position:relative; width:100%; max-width:100%; padding:6px; background:var(--panel); box-shadow:0 12px 34px var(--shadow); }
+  .hero-frame > .fl{ width:clamp(58px,9vw,104px); height:clamp(58px,9vw,104px); }
+  .hero-video{ display:block; width:100%; height:auto; aspect-ratio:1200/870; border-radius:2px; transition:transform 3.2s ease-out; will-change:transform; }
   .hero-stage:has(.play-main:hover) .hero-video{ transform:scale(1.03); }
   @media (prefers-reduced-motion:reduce){ .hero-video{ transition:none; } }
   .hero-title-plate{ order:1; margin-bottom:.55rem; }
@@ -190,7 +192,8 @@ import gameVersion from "../data/game-version.json";
   .hero-version:hover{ color:var(--crimson); text-decoration:underline; }
   @media (min-width:768px){
     .hero-stage{ display:block; width:fit-content; max-width:100%; }
-    .hero-video{ width:auto; max-width:100%; max-height:calc(100dvh - 120px); margin:0 auto; }
+    .hero-frame{ width:fit-content; max-width:100%; margin:0 auto; }
+    .hero-video{ width:auto; max-width:100%; max-height:calc(100dvh - 250px); margin:0 auto; }
     .hero-plate{ position:absolute; left:50%; transform:translateX(-50%); z-index:2; width:min(82%,560px); margin:0; padding:.8rem 1.25rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.93),rgba(240,229,198,.93)); border:1px solid var(--gilt-lt); box-shadow:0 10px 26px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,247,224,.22); }
     .hero-plate::before{ content:""; position:absolute; inset:4px; border:1px solid var(--rule); border-radius:2px; pointer-events:none; }
     .hero-title-plate{ top:clamp(10px,2.4vh,24px); margin:0; }
@@ -202,7 +205,7 @@ import gameVersion from "../data/game-version.json";
   .ghero .cta{ display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem; align-items:center; }
   .ghero .trust{ display:block; margin-top:.9rem; font-size:.86rem; color:var(--ink-soft); letter-spacing:.02em; }
 
-  section{ padding:clamp(2.6rem,5vw,3.8rem) 0; position:relative; }
+  section{ padding:clamp(1.5rem,3.5vw,2.6rem) 0; position:relative; }
   .sec-head{ text-align:center; margin-bottom:2.2rem; }
   .sec-head h2{ font-size:clamp(1.9rem,4.5vw,2.9rem); margin:.5rem 0 .3rem; color:var(--crimson); }
   .sec-head .sec-sub{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt-deep); font-size:clamp(1rem,2vw,1.25rem); letter-spacing:.01em; margin:0 auto .7rem; max-width:36ch; }

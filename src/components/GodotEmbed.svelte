@@ -16,7 +16,7 @@
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
-  import GlassShatter from "./GlassShatter.svelte";
+  import PixelTransition from "./PixelTransition.svelte";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
   //
@@ -1801,7 +1801,7 @@
 
 <div class="godot-container" bind:this={containerEl} style:cursor={letterboxCursor}>
   {#if showGlass}
-    <GlassShatter mode="reveal" seed={glassSeed} ondone={onGlassDone} />
+    <PixelTransition mode="reveal" ondone={onGlassDone} />
   {/if}
   {#if mobileFs && allowed && !isFullscreen}
     <!-- Mobile fullscreen is parent-owned (the touch gamepad lives out here, not

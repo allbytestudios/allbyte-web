@@ -14,7 +14,7 @@
     versionById,
     type RuntimeChannels,
   } from "../lib/gameVersions.ts";
-  import GlassShatter from "./GlassShatter.svelte";
+  import PixelTransition from "./PixelTransition.svelte";
 
   let runtime = $state<RuntimeChannels>(null);
   let open = $state(false);
@@ -114,7 +114,7 @@
 </span>
 
 {#if transitioning}
-  <GlassShatter mode="obscure" seed={transitionSeed} ondone={onObscureDone} />
+  <PixelTransition mode="obscure" ondone={onObscureDone} />
 {/if}
 
 <style>

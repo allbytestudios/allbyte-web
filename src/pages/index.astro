@@ -179,7 +179,7 @@ import gameVersion from "../data/game-version.json";
   .hero-stage{ position:relative; width:100%; max-width:960px; margin:1.1rem auto 0; display:flex; flex-direction:column; align-items:center; }
   .hero-frame{ order:2; position:relative; width:100%; max-width:100%; padding:6px; background:var(--panel); box-shadow:0 12px 34px var(--shadow); }
   .hero-frame > .fl{ width:clamp(58px,9vw,104px); height:clamp(58px,9vw,104px); }
-  .hero-video{ display:block; width:100%; height:auto; aspect-ratio:1200/870; border-radius:2px; transition:transform 3.2s ease-out; will-change:transform; }
+  .hero-video{ display:block; width:100%; height:auto; aspect-ratio:1200/870; border-radius:2px; transition:transform 3.2s ease-out; }
   .hero-stage:has(.play-main:hover) .hero-video{ transform:scale(1.03); }
   @media (prefers-reduced-motion:reduce){ .hero-video{ transition:none; } }
   .hero-title-plate{ order:1; margin-bottom:.55rem; }
@@ -194,7 +194,9 @@ import gameVersion from "../data/game-version.json";
     .hero-stage{ display:block; width:fit-content; max-width:100%; }
     .hero-frame{ width:fit-content; max-width:100%; margin:0 auto; }
     .hero-video{ width:auto; max-width:100%; max-height:calc(100dvh - 250px); margin:0 auto; }
-    .hero-plate{ position:absolute; left:50%; transform:translateX(-50%); z-index:2; width:min(82%,560px); margin:0; padding:.8rem 1.25rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.93),rgba(240,229,198,.93)); border:1px solid var(--gilt-lt); box-shadow:0 10px 26px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,247,224,.22); }
+    /* plates are always LIGHT parchment, so force light-theme text/trim colors
+       (in dark mode the theme vars would be light-on-dark = illegible here) */
+    .hero-plate{ position:absolute; left:50%; transform:translateX(-50%); z-index:2; width:min(82%,560px); margin:0; padding:.8rem 1.25rem; border-radius:3px; background:linear-gradient(rgba(245,236,210,.93),rgba(240,229,198,.93)); border:1px solid var(--gilt-lt); box-shadow:0 10px 26px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,247,224,.22); --ink:#3a2c1b; --ink-soft:#6a5836; --crimson:#8a2b21; --crimson-lt:#a8412f; --gilt:#9a7736; --gilt-lt:#c8a24e; --gilt-deep:#7a5c22; --rule:rgba(122,92,34,.55); }
     .hero-plate::before{ content:""; position:absolute; inset:4px; border:1px solid var(--rule); border-radius:2px; pointer-events:none; }
     .hero-title-plate{ top:clamp(10px,2.4vh,24px); margin:0; }
     .hero-cta-plate{ bottom:clamp(10px,2.4vh,24px); margin:0; }

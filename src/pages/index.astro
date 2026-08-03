@@ -160,7 +160,10 @@ import gameVersion from "../data/game-version.json";
   @media (max-width:600px){ .ghero .subtitle .sub-br2{ display:inline; } }
   .ghero .hero-lede{ max-width:60ch; margin:.7rem auto 0; color:var(--ink-soft); font-size:clamp(.98rem,1.7vw,1.1rem); line-height:1.55; }
   .ghero .art{ max-width:960px; margin:1.6rem auto 0; padding:6px; background:var(--panel); }
-  .ghero .art{ position:relative; } .ghero .art img:not(.fl), .ghero .art video.hm-scene{ width:100%; display:block; height:clamp(340px,46vh,470px); object-fit:cover; object-position:50% 55%; }
+  .ghero .art{ position:relative; } .ghero .art img:not(.fl){ width:100%; display:block; height:clamp(340px,46vh,470px); object-fit:cover; object-position:50% 55%; }
+  /* hero video shows its FULL frame (natural aspect) so both the clouds (top)
+     and the water reflection (bottom) are visible — no cover-crop. */
+  .ghero .art video.hm-scene{ width:100%; height:auto; aspect-ratio:1200/870; display:block; }
   .hero-media{ position:relative; overflow:hidden; }
   .hm-scene{ transition:transform 3.2s ease-out; will-change:transform; }
   .hm-manual{ position:absolute; inset:0; opacity:0; pointer-events:none; background-image:url("/home/manual-strip.jpg"); background-size:100% auto; background-position:50% 0; background-color:#e9dcb2; transition:opacity .35s ease; }

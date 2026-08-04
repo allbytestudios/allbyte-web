@@ -72,7 +72,7 @@
   // so they must NOT fire for these — otherwise the expected version mismatch
   // triggers an endless "loads then reloads" cache-clear loop. alpha/alpha-debug
   // still get the self-heal (their version SHOULD match).
-  const SELF_VERSIONED = new Set(["develop", "beta", "beta-debug"]);
+  const SELF_VERSIONED = new Set(["develop", "staging"]);
   function isNonDefaultBuild(): boolean {
     if (typeof window === "undefined") return false;
     const q = new URLSearchParams(window.location.search);

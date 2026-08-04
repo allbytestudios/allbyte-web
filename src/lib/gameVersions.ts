@@ -1,28 +1,24 @@
 // Tier-gated game versions (the "which build do I play" model).
 //
-// Two dimensions:
-//   - content: Alpha (free) vs Beta+ (Initiate+, post-Alpha content)
-//   - debug:   off (everyone at their content tier) vs on (Legend+ — TestBridge
-//              hooks + debug HUD)
-// → four builds, PLUS a fifth `develop` channel: the bleeding-edge develop-branch
-// build (debug-only, Legend/admin), distinct from the *promoted* (staging) beta.
-// Today only the Alpha pair exists (the game is pre-Alpha); the Beta pair and
-// develop flip `available: true` once Arc/Port cut + deploy those exports.
-// beta-debug + develop deploy via the fast lane (scripts/push-channel.js, driven
-// by the game-side CI pipeline); alpha/beta go through the careful full deploy.
+// The whole game is free (Episode One = the public Alpha build). The remaining
+// dimension is debug: off (everyone) vs on (Legend/admin — TestBridge hooks +
+// debug HUD). So the player-facing list is just Episode One, plus the
+// debug/dev channels (alpha-debug, develop, staging) for Legend/admin. The
+// Beta / Beta (Debug) content channels were retired 2026-08-04 (the game is
+// free — no paid content tier of builds).
+// alpha-debug + develop + staging deploy via the fast lane
+// (scripts/push-channel.js, driven by the game-side CI pipeline); alpha goes
+// through the careful full deploy.
 //
-// IMPORTANT: the debug gate is client-side (low stakes — cheat/dev chrome only;
-// server data is JWT-gated). The Beta+ gate is PAID CONTENT and must NOT rely on
-// this alone — `/godot/*` is served openly on CloudFront, so a free user could
-// load a Beta path directly. Beta builds need server-side gating (signed URLs /
-// Lambda@Edge) before they go live. This module only decides what the UI offers.
+// The debug gate is client-side (low stakes — cheat/dev chrome only; server
+// data is JWT-gated). This module only decides what the UI offers.
 
 import { isAdmin, isTierAtLeast, type Tier } from "./tier";
 
 type AuthUser = { tier?: Tier | string | null } | null | undefined;
 
 export interface GameVersion {
-  id: "alpha" | "alpha-debug" | "beta" | "beta-debug" | "develop" | "staging";
+  id: "alpha" | "alpha-debug" | "develop" | "staging";
   label: string;
   /** iframe path for this build */
   path: string;
@@ -42,8 +38,6 @@ export const GAME_VERSIONS: GameVersion[] = [
   // until the demo-debug CodeBuild project ships to the new path (pending Arc's
   // buildspec.web.yml); the one-click promote button will publish it at runtime.
   { id: "alpha-debug", label: "Episode One (Debug)", path: "/godot/alpha-debug/index.html", minTier: "legend",   available: false },
-  { id: "beta",        label: "Beta",            path: "/godot/beta/index.html",       minTier: "initiate", available: false },
-  { id: "beta-debug",  label: "Beta (Debug)",    path: "/godot/beta-debug/index.html", minTier: "legend",   available: false },
   { id: "develop",     label: "Develop (Debug)", path: "/godot/develop/index.html",    minTier: "legend",   available: false },
   // Frozen tagged QA cut (0.8.x line) off origin/staging — Quinn re-baselines here.
   // Debug featureset (TestBridge hooks for her driver), Legend/admin-gated, runtime

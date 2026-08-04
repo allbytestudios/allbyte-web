@@ -37,6 +37,8 @@ let studioBits = [1, 1, 1, 0, 1, 1, 0, 0];
 let lastScramble = 0;
 let scrambleInterval = 40;
 let bitsSettled = false;
+let spinner: ImageBitmap | null = null; // in-game LoadingIcon.png (6× 32×32 strip)
+const SPIN_FPS = 5.6; // 5.0fps × speed_scale 1.125 (Arc)
 
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -66,6 +68,10 @@ self.onmessage = async (e: MessageEvent) => {
       self.fonts.add(face);
       fontReady = true;
     } catch { fontReady = false; }
+    try {
+      const r = await fetch("/loading-icon.png");
+      spinner = await createImageBitmap(await r.blob());
+    } catch { spinner = null; }
     started = performance.now();
     lastScramble = started;
     loop();
@@ -224,23 +230,39 @@ function drawManual(now: number, t: number) {
 
 function spaced(s: string): string { return s.split("").join(" "); }
 
-// Two counter-rotating ring arcs (stand-in for the in-game spinner; Arc to
-// supply the exact recipe to match). Time-driven, so it spins on the worker
-// thread regardless of the main-thread block.
+// The in-game loader: the 6-frame LoadingIcon strip (a ring flipping face→edge),
+// blitted at ~5.6fps, with two overlaid copies both Z-rotating clockwise (the
+// game's $LoadingIcon + child LoadingIcon2). Time-driven → spins on the worker
+// thread regardless of the main-thread block. (Arc's accel/decel + bob pulse is
+// subtle polish TODO.) Falls back to two procedural rings if the PNG failed.
 function drawSpinner(now: number, cx: number, cy: number, r: number) {
+  const size = r * 2.1;
+  const ang = (now / 1000) * 1.05; // steady CW stand-in for the pulsing spin
+  if (spinner) {
+    const frame = Math.floor((now / 1000) * SPIN_FPS) % 6;
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.translate(cx, cy);
+    ctx.rotate(ang); // outer ring
+    ctx.drawImage(spinner, frame * 32, 0, 32, 32, -size / 2, -size / 2, size, size);
+    ctx.rotate(0); // inner ring — same spin, smaller (the child node)
+    ctx.scale(0.68, 0.68);
+    ctx.globalAlpha = 0.85;
+    ctx.drawImage(spinner, frame * 32, 0, 32, 32, -size / 2, -size / 2, size, size);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.lineCap = "round";
-  const a1 = (now / 1000) * Math.PI * 1.4;
   ctx.strokeStyle = "#e7b866";
   ctx.lineWidth = Math.max(2, r * 0.14);
   ctx.beginPath();
-  ctx.arc(cx, cy, r, a1, a1 + Math.PI * 1.5);
+  ctx.arc(cx, cy, r, ang, ang + Math.PI * 1.5);
   ctx.stroke();
-  const a2 = -(now / 1000) * Math.PI * 2.1;
   ctx.strokeStyle = "rgba(231,184,102,0.55)";
   ctx.lineWidth = Math.max(1.5, r * 0.12);
   ctx.beginPath();
-  ctx.arc(cx, cy, r * 0.62, a2, a2 + Math.PI * 1.1);
+  ctx.arc(cx, cy, r * 0.62, ang, ang + Math.PI * 1.1);
   ctx.stroke();
   ctx.restore();
 }

@@ -1394,6 +1394,77 @@
       new URLSearchParams(window.location.search).has("debug"),
   );
 
+  // --- Worker-rendered load screen (the freeze-proof path) -----------------
+  // The whole load sequence is drawn by a Web Worker onto an OffscreenCanvas, so
+  // it keeps animating at 60fps even while the main thread is blocked by the
+  // WASM compile + Godot boot (which freezes any main-thread/DOM animation).
+  // Falls back to the DOM loader below if the browser lacks OffscreenCanvas/
+  // Worker (e.g. Safari < 16.4) or if worker setup throws.
+  const workerLoaderSupported =
+    typeof window !== "undefined" &&
+    typeof Worker !== "undefined" &&
+    typeof (globalThis as any).OffscreenCanvas !== "undefined" &&
+    typeof HTMLCanvasElement !== "undefined" &&
+    "transferControlToOffscreen" in HTMLCanvasElement.prototype;
+  const useWorkerLoader = $derived(workerLoaderSupported && isNormalPlayerLoad());
+  let loadCanvasEl = $state<HTMLCanvasElement | undefined>();
+  let loadWorker: Worker | null = null;
+  let workerFailed = $state(false);
+
+  function buildWorkerCards() {
+    const text = MANUAL_CARDS.map((c) => ({
+      kind: "text" as const,
+      title: c.title,
+      rows: c.rows,
+      lines: c.lines,
+      quote: c.quote,
+    }));
+    const sprite: any[] = [];
+    if (HAS_SPRITE_CARD) {
+      const c = SPRITE_CAST[Math.floor(Math.random() * SPRITE_CAST.length)];
+      const lore = SPRITE_LORE[c.display] ?? { role: "", blurb: "" };
+      sprite.push({ kind: "sprite" as const, name: c.display, role: lore.role, blurb: lore.blurb });
+    }
+    return [...text, ...sprite];
+  }
+
+  $effect(() => {
+    if (!(allowed && loading && useWorkerLoader && loadCanvasEl && !loadWorker && !workerFailed)) return;
+    try {
+      const worker = new Worker(new URL("../lib/loadScreenWorker.ts", import.meta.url), {
+        type: "module",
+      });
+      worker.onmessage = (ev) => {
+        if (ev.data?.type === "reveal") loading = false;
+      };
+      worker.onerror = () => { workerFailed = true; };
+      const off = loadCanvasEl.transferControlToOffscreen();
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      worker.postMessage(
+        {
+          type: "init",
+          canvas: off,
+          dpr,
+          cssW: loadCanvasEl.clientWidth || window.innerWidth,
+          cssH: loadCanvasEl.clientHeight || window.innerHeight,
+          cards: buildWorkerCards(),
+          fontUrl: "/fonts/ModernGoth.otf",
+          cfg: {
+            studioMs: STUDIO_MS,
+            studioSettleMs: STUDIO_SETTLE_MS,
+            studioFadeMs: STUDIO_FADE_MS,
+            cardMs: CARD_MS,
+            cardMinMs: CARD_MIN_MS,
+          },
+        },
+        [off],
+      );
+      loadWorker = worker;
+    } catch {
+      workerFailed = true; // fall back to the DOM loader
+    }
+  });
+
   // Kick the studio intro the moment a normal player load begins.
   $effect(() => {
     if (allowed && loading && !studioTimerStarted && isNormalPlayerLoad()) {
@@ -1606,7 +1677,8 @@
       loadStatus = `Ready: ${scene}`;
       loadPanelVisible = false;
       sceneReady = true;
-      maybeReveal(); // reveal once the studio intro has also played
+      loadWorker?.postMessage({ type: "scene" }); // worker decides when to reveal
+      maybeReveal(); // DOM-loader fallback path
       startKbNudge(scene);
       stopLoadPolling();
       return;
@@ -1820,7 +1892,11 @@
       oncancel={() => (window.location.href = "/")}
     />
   {:else if allowed}
-    {#if loading}
+    {#if loading && useWorkerLoader && !workerFailed}
+      <!-- Freeze-proof load screen: the whole sequence is drawn by a Web Worker
+           on this OffscreenCanvas, so it never stalls during the WASM boot. -->
+      <canvas class="worker-load" bind:this={loadCanvasEl}></canvas>
+    {:else if loading}
       {#if loadPhase === "studio"}
         <!-- Phase 1: AllByte studio intro, full-screen ~STUDIO_MS. Eight bits
              (one per char of "All Byte", the space included = a Byte) flip 0/1,
@@ -2073,6 +2149,16 @@
     -webkit-tap-highlight-color: transparent;
   }
   .fs-reenter:active { background: rgba(15, 23, 42, 0.9); }
+
+  .worker-load {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 2;
+    background: #050608;
+  }
 
   .loading-screen {
     position: absolute;

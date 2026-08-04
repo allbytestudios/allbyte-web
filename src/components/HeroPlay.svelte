@@ -28,6 +28,28 @@
     }
   });
 
+  // Robustness through Back. play() flips `transitioning` true and hard-navigates
+  // to /play. Pressing Back restores this page from bfcache with that state frozen
+  // true — so the next Play press hit `if (transitioning) return` and did nothing
+  // (and a stale obscure overlay could linger). Reset on every show/restore so
+  // Play always works again after Back. pageshow(persisted) = bfcache restore;
+  // astro:after-swap = ClientRouter nav back to home.
+  onMount(() => {
+    const reset = () => {
+      transitioning = false;
+      open = false;
+    };
+    const onShow = (e: PageTransitionEvent) => {
+      if (e.persisted) reset();
+    };
+    window.addEventListener("pageshow", onShow);
+    document.addEventListener("astro:after-swap", reset);
+    return () => {
+      window.removeEventListener("pageshow", onShow);
+      document.removeEventListener("astro:after-swap", reset);
+    };
+  });
+
   const def = $derived(defaultVersion(auth.currentUser, runtime));
   const admin = $derived(isAdmin(auth.currentUser));
   const primaryLabel = "Play";

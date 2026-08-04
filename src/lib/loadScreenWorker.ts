@@ -40,6 +40,14 @@ let scrambleInterval = 40;
 let bitsSettled = false;
 let spinner: ImageBitmap | null = null; // in-game LoadingIcon.png (6× 32×32 strip)
 const SPIN_FPS = 5.6; // 5.0fps × speed_scale 1.125 (Arc)
+// The in-game loader = TWO same-size rings: the sprite strip IS the tumble/spin
+// animation, and each ring additionally gets its own code Z-rotation (random
+// base + speed, opposite directions) so their edge-on lines cross and the whole
+// figure turns — matching the game's $LoadingIcon + LoadingIcon2.
+const spinBaseA = Math.random() * Math.PI * 2;
+const spinBaseB = Math.random() * Math.PI * 2;
+const spinSpdA = 0.75 + Math.random() * 0.5; // rad/s, CW
+const spinSpdB = -(0.75 + Math.random() * 0.5); // rad/s, CCW
 let spriteSeq: Frame[] = []; // living-sprite card frames (idle bob → attack → loop)
 let spriteSeqTotal = 1;
 
@@ -301,40 +309,40 @@ function currentSpriteFrame(elapsed: number): ImageBitmap | null {
   return spriteSeq[spriteSeq.length - 1].bmp;
 }
 
-// The in-game loader: the 6-frame LoadingIcon strip (a ring flipping face→edge),
-// blitted at ~5.6fps, with two overlaid copies both Z-rotating clockwise (the
-// game's $LoadingIcon + child LoadingIcon2). Time-driven → spins on the worker
-// thread regardless of the main-thread block. (Arc's accel/decel + bob pulse is
-// subtle polish TODO.) Falls back to two procedural rings if the PNG failed.
+// The in-game loader: the 6-frame LoadingIcon strip (one ring tumbling around
+// its vertical axis) is drawn TWICE at the SAME size — the strip supplies the
+// tumble; each copy adds its own code Z-rotation (opposite directions) so the
+// two rings cross like the game's $LoadingIcon + LoadingIcon2. Time-driven →
+// spins on the worker thread regardless of the main-thread block. Falls back to
+// two same-size procedural rings if the PNG hasn't arrived yet.
 function drawSpinner(now: number, cx: number, cy: number, r: number) {
   const size = r * 2.1;
-  const ang = (now / 1000) * 1.05; // steady CW stand-in for the pulsing spin
+  const tsec = now / 1000;
   if (spinner) {
-    const frame = Math.floor((now / 1000) * SPIN_FPS) % 6;
+    const frame = Math.floor(tsec * SPIN_FPS) % 6;
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.translate(cx, cy);
-    ctx.rotate(ang); // outer ring
-    ctx.drawImage(spinner, frame * 32, 0, 32, 32, -size / 2, -size / 2, size, size);
-    ctx.rotate(0); // inner ring — same spin, smaller (the child node)
-    ctx.scale(0.68, 0.68);
-    ctx.globalAlpha = 0.85;
-    ctx.drawImage(spinner, frame * 32, 0, 32, 32, -size / 2, -size / 2, size, size);
+    for (const [base, spd] of [[spinBaseA, spinSpdA], [spinBaseB, spinSpdB]]) {
+      ctx.save();
+      ctx.rotate(base + tsec * spd);
+      ctx.drawImage(spinner, frame * 32, 0, 32, 32, -size / 2, -size / 2, size, size);
+      ctx.restore();
+    }
     ctx.restore();
     return;
   }
+  // fallback: two SAME-size rings, opposite spins, crossing
   ctx.save();
   ctx.lineCap = "round";
-  ctx.strokeStyle = "#e7b866";
-  ctx.lineWidth = Math.max(2, r * 0.14);
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, ang, ang + Math.PI * 1.5);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(231,184,102,0.55)";
-  ctx.lineWidth = Math.max(1.5, r * 0.12);
-  ctx.beginPath();
-  ctx.arc(cx, cy, r * 0.62, ang, ang + Math.PI * 1.1);
-  ctx.stroke();
+  ctx.lineWidth = Math.max(2, r * 0.13);
+  for (const [base, spd, alpha] of [[spinBaseA, spinSpdA, 1], [spinBaseB, spinSpdB, 0.7]]) {
+    const a = base + tsec * spd;
+    ctx.strokeStyle = `rgba(231,184,102,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, a, a + Math.PI * 1.5);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 

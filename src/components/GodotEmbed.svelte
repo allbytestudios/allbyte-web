@@ -16,6 +16,11 @@
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
+  // Inline (blob) worker — NOT `?worker` (that loads from an /_astro/*.js URL,
+  // which fails under cross-origin isolation because those chunks carry no COEP
+  // header; the COI CloudFront policy only covers /play + /godot). A blob worker
+  // inherits the document's policy container, so it loads under COI.
+  import LoadScreenWorker from "../lib/loadScreenWorker.ts?worker&inline";
 
   // Build-freshness recovery — the "PWA stuck on an old version" fix.
   //
@@ -1436,21 +1441,13 @@
   }
 
   $effect(() => {
-    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("wdebug")) {
-      console.log("[loadworker] flags", { allowed, loading, useWorkerLoader, workerLoaderSupported, normal: isNormalPlayerLoad(), hasCanvas: !!loadCanvasEl, hasWorker: !!loadWorker, workerFailed });
-    }
     if (!(allowed && loading && useWorkerLoader && loadCanvasEl && !loadWorker && !workerFailed)) return;
     try {
-      const worker = new Worker(new URL("../lib/loadScreenWorker.ts", import.meta.url), {
-        type: "module",
-      });
+      const worker = new LoadScreenWorker();
       worker.onmessage = (ev) => {
         if (ev.data?.type === "reveal") loading = false;
       };
-      worker.onerror = (e: any) => {
-        console.warn("[loadworker] runtime error", e?.message || e?.filename || e);
-        workerFailed = true;
-      };
+      worker.onerror = () => { workerFailed = true; };
       const off = loadCanvasEl.transferControlToOffscreen();
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       worker.postMessage(
@@ -1473,8 +1470,7 @@
         [off],
       );
       loadWorker = worker;
-    } catch (e) {
-      console.warn("[loadworker] setup threw", e);
+    } catch {
       workerFailed = true; // fall back to the DOM loader
     }
   });

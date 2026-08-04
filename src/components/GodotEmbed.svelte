@@ -1450,6 +1450,7 @@
       worker.onerror = () => { workerFailed = true; };
       const off = loadCanvasEl.transferControlToOffscreen();
       const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const builtCards = buildWorkerCards();
       worker.postMessage(
         {
           type: "init",
@@ -1457,8 +1458,7 @@
           dpr,
           cssW: loadCanvasEl.clientWidth || window.innerWidth,
           cssH: loadCanvasEl.clientHeight || window.innerHeight,
-          cards: buildWorkerCards(),
-          fontUrl: "/fonts/ModernGoth.otf",
+          cards: builtCards,
           cfg: {
             studioMs: STUDIO_MS,
             studioSettleMs: STUDIO_SETTLE_MS,
@@ -1470,6 +1470,31 @@
         [off],
       );
       loadWorker = worker;
+
+      // The blob worker can't fetch its assets by URL under cross-origin
+      // isolation (no-CORP same-origin subresources NetworkError inside it), so
+      // fetch them here on the main thread and transfer the bytes/bitmap over.
+      // The worker renders immediately with fallbacks and upgrades in place.
+      fetch("/fonts/ModernGoth.otf")
+        .then((r) => r.arrayBuffer())
+        .then((buf) => worker.postMessage({ type: "font", buf }, [buf]))
+        .catch(() => {});
+      fetch("/loading-icon.png")
+        .then((r) => r.blob())
+        .then((b) => createImageBitmap(b))
+        .then((bmp) => worker.postMessage({ type: "spinner", bmp }, [bmp]))
+        .catch(() => {});
+      const spriteCard = builtCards.find((c: any) => c.kind === "sprite") as any;
+      if (spriteCard) {
+        const grab = (u: string | null) =>
+          u ? fetch(u).then((r) => r.arrayBuffer()).catch(() => null) : Promise.resolve(null);
+        Promise.all([grab(spriteCard.idleUrl), grab(spriteCard.attackUrl)])
+          .then(([idle, attack]) => {
+            const transfer = [idle, attack].filter(Boolean) as ArrayBuffer[];
+            worker.postMessage({ type: "sprite", idle, attack }, transfer);
+          })
+          .catch(() => {});
+      }
     } catch {
       workerFailed = true; // fall back to the DOM loader
     }

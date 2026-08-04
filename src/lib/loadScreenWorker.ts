@@ -18,7 +18,6 @@ interface InitMsg {
   cssW: number;
   cssH: number;
   cards: Card[];
-  fontUrl: string;
   cfg: { studioMs: number; studioSettleMs: number; studioFadeMs: number; cardMs: number; cardMinMs: number };
 }
 
@@ -64,23 +63,27 @@ self.onmessage = async (e: MessageEvent) => {
     ctx = cv.getContext("2d") as OffscreenCanvasRenderingContext2D;
     ctx.scale(dpr, dpr);
     cardIdx = Math.floor(Math.random() * cards.length);
+    // Assets (font, spinner, sprite gifs) can't be fetched by URL from inside a
+    // blob worker under cross-origin isolation — no-CORP same-origin subresource
+    // loads NetworkError there. The main thread fetches them and hands the bytes
+    // over via the messages below; until they arrive we render with the Georgia
+    // fallback + procedural spinner, then upgrade in place.
+    started = performance.now();
+    lastScramble = started;
+    loop();
+  } else if (m.type === "font") {
     try {
       // @ts-ignore — FontFace + self.fonts exist in worker scope
-      const face = new FontFace(FONT, `url(${msg.fontUrl})`);
+      const face = new FontFace(FONT, m.buf);
       await face.load();
       // @ts-ignore
       self.fonts.add(face);
       fontReady = true;
     } catch { fontReady = false; }
-    try {
-      const r = await fetch("/loading-icon.png");
-      spinner = await createImageBitmap(await r.blob());
-    } catch { spinner = null; }
-    const spriteCard = cards.find((c) => c.kind === "sprite") as any;
-    if (spriteCard) loadSprite(spriteCard); // decode in the background
-    started = performance.now();
-    lastScramble = started;
-    loop();
+  } else if (m.type === "spinner") {
+    spinner = (m.bmp as ImageBitmap) || null;
+  } else if (m.type === "sprite") {
+    loadSprite(m.idle as ArrayBuffer | null, m.attack as ArrayBuffer | null);
   } else if (m.type === "scene") {
     sceneReady = true;
   }
@@ -252,9 +255,8 @@ function spaced(s: string): string { return s.split("").join(" "); }
 // Decode an animated GIF to frames (ImageDecoder / WebCodecs, on the worker
 // thread). Falls back to a single static frame if ImageDecoder is unavailable
 // (e.g. Safari) or decoding fails.
-async function decodeGif(url: string): Promise<Frame[]> {
+async function decodeGif(buf: ArrayBuffer): Promise<Frame[]> {
   try {
-    const buf = await (await fetch(url)).arrayBuffer();
     const ID = (self as any).ImageDecoder;
     if (ID) {
       const dec = new ID({ data: buf, type: "image/gif" });
@@ -273,15 +275,15 @@ async function decodeGif(url: string): Promise<Frame[]> {
     /* fall through */
   }
   try {
-    return [{ bmp: await createImageBitmap(await (await fetch(url)).blob()), dur: 1000 }];
+    return [{ bmp: await createImageBitmap(new Blob([buf], { type: "image/gif" })), dur: 1000 }];
   } catch {
     return [];
   }
 }
 
-async function loadSprite(card: { idleUrl?: string | null; attackUrl?: string | null }) {
-  const idle = card.idleUrl ? await decodeGif(card.idleUrl) : [];
-  const attack = card.attackUrl ? await decodeGif(card.attackUrl) : [];
+async function loadSprite(idleBuf: ArrayBuffer | null, attackBuf: ArrayBuffer | null) {
+  const idle = idleBuf ? await decodeGif(idleBuf) : [];
+  const attack = attackBuf ? await decodeGif(attackBuf) : [];
   // idle a couple of cycles → one attack → back to idle, looped
   const seq: Frame[] = [...idle, ...idle, ...attack, ...idle];
   if (!seq.length) return;

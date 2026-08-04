@@ -1109,7 +1109,7 @@
   // slow exponentially → STOP on random values (STUDIO_SETTLE_MS) → hold briefly
   // → the whole scene fades away (STUDIO_FADE_MS) → the first manual card.
   const STUDIO_MS = 2000; // studio scene 2s (owner: 1s felt too short)
-  const STUDIO_SETTLE_MS = 1500; // bits stop here, then hold...
+  const STUDIO_SETTLE_MS = 850; // bits blur fast then stop early (~0.85s), then hold...
   const STUDIO_FADE_MS = 220; // ...then the scene fades away over this
   const CARD_MS = 3000; // each card gets a full 3s before it rotates
   const CARD_MIN_MS = 1000; // a card still shows ≥1s if the game is already ready

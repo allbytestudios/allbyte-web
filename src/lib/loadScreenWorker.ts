@@ -36,18 +36,20 @@ let cardIdx = 0;
 let cardShownAt = 0;
 let studioBits = [1, 1, 1, 0, 1, 1, 0, 0];
 let lastScramble = 0;
-let scrambleInterval = 40;
+let scrambleInterval = 15; // starts a near-60fps blur (barely legible), grows fast
 let bitsSettled = false;
 let spinner: ImageBitmap | null = null; // in-game LoadingIcon.png (6× 32×32 strip)
-const SPIN_FPS = 5.6; // 5.0fps × speed_scale 1.125 (Arc)
-// The in-game loader = TWO same-size rings: the sprite strip IS the tumble/spin
-// animation, and each ring additionally gets its own code Z-rotation (random
-// base + speed, opposite directions) so their edge-on lines cross and the whole
-// figure turns — matching the game's $LoadingIcon + LoadingIcon2.
-const spinBaseA = Math.random() * Math.PI * 2;
-const spinBaseB = Math.random() * Math.PI * 2;
-const spinSpdA = 0.75 + Math.random() * 0.5; // rad/s, CW
-const spinSpdB = -(0.75 + Math.random() * 0.5); // rad/s, CCW
+// Faithful to the in-game LoadingIcon (Arc, LoadingIcon.gd): TWO nested rings,
+// the sprite strip IS the tumble; both rings rotate CW; the inner ring is a
+// child so it spins ~2× the outer and sits at a 45° offset, and is slightly
+// larger (outer scale 0.75, inner effective ~0.81). Frames play synced.
+// The game blits at an oscillating ~5.6–11.25fps (avg ~7–8) and steps its
+// rotation every 0.25s; the owner wants it SMOOTHER, so we blit a steady ~8.5fps
+// (above the game's floor — 5.6 read as choppy) and rotate continuously.
+const SPIN_FPS = 8.5;
+const SPIN_W = 0.42; // rad/s, outer ring CW (~24°/s, mid of the game's 8–32°/s pulse)
+const INNER_SCALE = 1.083; // inner effective 0.8125 / outer 0.75 — barely larger
+const INNER_OFFSET = 0.785398; // 45° initial rotation on the inner ring
 let spriteSeq: Frame[] = []; // living-sprite card frames (idle bob → attack → loop)
 let spriteSeqTotal = 1;
 
@@ -128,7 +130,7 @@ function drawStudio(now: number, t: number) {
     if (now - lastScramble >= scrambleInterval) {
       lastScramble = now;
       studioBits = studioBits.map(() => (Math.random() < 0.5 ? 0 : 1));
-      scrambleInterval *= 1.36;
+      scrambleInterval *= 1.55; // steep decel — flips thin out fast, then stop
     }
     if (t >= cfg.studioSettleMs) bitsSettled = true;
   }
@@ -309,40 +311,45 @@ function currentSpriteFrame(elapsed: number): ImageBitmap | null {
   return spriteSeq[spriteSeq.length - 1].bmp;
 }
 
-// The in-game loader: the 6-frame LoadingIcon strip (one ring tumbling around
-// its vertical axis) is drawn TWICE at the SAME size — the strip supplies the
-// tumble; each copy adds its own code Z-rotation (opposite directions) so the
-// two rings cross like the game's $LoadingIcon + LoadingIcon2. Time-driven →
-// spins on the worker thread regardless of the main-thread block. Falls back to
-// two same-size procedural rings if the PNG hasn't arrived yet.
+// The in-game loader (Arc's LoadingIcon.gd): the 6-frame strip tumbles the ring;
+// two nested copies both turn CW, the inner one at ~2× the outer's rate with a
+// 45° offset and a hair larger — the depth cue. Time-driven → spins on the worker
+// thread regardless of the main-thread block. Falls back to two rings if the PNG
+// hasn't arrived yet.
 function drawSpinner(now: number, cx: number, cy: number, r: number) {
-  const size = r * 2.1;
   const tsec = now / 1000;
+  const outer = r * 2.1;
+  const inner = outer * INNER_SCALE;
   if (spinner) {
     const frame = Math.floor(tsec * SPIN_FPS) % 6;
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.translate(cx, cy);
-    for (const [base, spd] of [[spinBaseA, spinSpdA], [spinBaseB, spinSpdB]]) {
-      ctx.save();
-      ctx.rotate(base + tsec * spd);
-      ctx.drawImage(spinner, frame * 32, 0, 32, 32, -size / 2, -size / 2, size, size);
-      ctx.restore();
-    }
+    // outer ring
+    ctx.save();
+    ctx.rotate(tsec * SPIN_W);
+    ctx.drawImage(spinner, frame * 32, 0, 32, 32, -outer / 2, -outer / 2, outer, outer);
+    ctx.restore();
+    // inner ring — 2× spin (child inherits outer + own), +45°, slightly larger
+    ctx.save();
+    ctx.rotate(INNER_OFFSET + tsec * SPIN_W * 2);
+    ctx.drawImage(spinner, frame * 32, 0, 32, 32, -inner / 2, -inner / 2, inner, inner);
+    ctx.restore();
     ctx.restore();
     return;
   }
-  // fallback: two SAME-size rings, opposite spins, crossing
+  // fallback: two rings, both CW, inner faster + offset
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineWidth = Math.max(2, r * 0.13);
-  for (const [base, spd, alpha] of [[spinBaseA, spinSpdA, 1], [spinBaseB, spinSpdB, 0.7]]) {
-    const a = base + tsec * spd;
-    ctx.strokeStyle = `rgba(231,184,102,${alpha})`;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, a, a + Math.PI * 1.5);
-    ctx.stroke();
-  }
+  ctx.strokeStyle = "#e7b866";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, tsec * SPIN_W, tsec * SPIN_W + Math.PI * 1.5);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(231,184,102,0.7)";
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.92, INNER_OFFSET + tsec * SPIN_W * 2, INNER_OFFSET + tsec * SPIN_W * 2 + Math.PI * 1.5);
+  ctx.stroke();
   ctx.restore();
 }
 

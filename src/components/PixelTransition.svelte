@@ -1,11 +1,11 @@
 <script lang="ts">
   // Pixelate dissolve for the site → game "Play" moment. It runs ENTIRELY on the
-  // homepage (where both the home image and the AllByte frame are available to
-  // cross-blend, exactly like the tuning lab): the home screen dissolves into
-  // fat pixels, swaps to AllByte at the peak, and AllByte resolves back out — no
-  // zoom, no cut to black. It ends on a sharp AllByte frame; HeroPlay then
-  // navigates to /play, whose studio screen matches, so the swap is invisible.
-  // One canvas, GPU drawImage scaling — smooth on phones.
+  // homepage: the home screen dissolves into fat pixels and cross-fades to a plain
+  // dark screen at the peak, ending on black. HeroPlay then navigates to /play,
+  // whose studio screen is the same near-black (#050608), so the brief black
+  // bridges home → game with no templated splash and no flash. One canvas, GPU
+  // drawImage scaling — smooth on phones. (Owner 2026-08-04: drop to black
+  // briefly, not the templated "All Byte" studio frame.)
   import { onMount } from "svelte";
 
   let { ondone }: { ondone?: () => void } = $props();
@@ -13,24 +13,15 @@
   // Owner recipe (tuned in the pixelate lab 2026-08-03):
   const GRAIN = 12; // peak block size — a slight, high-count mosaic
   const DUR = 500; // ms
-  const SWAP = 0.7; // home hands over to AllByte at peak pixelation
+  const SWAP = 0.7; // home hands over to black at peak pixelation
 
   let canvasEl: HTMLCanvasElement;
 
-  function paintAllByte(x: CanvasRenderingContext2D, w: number, h: number) {
+  // The hand-off frame: a plain dark screen matching /play's studio bg (#050608),
+  // so the transition drops to black rather than a templated studio page.
+  function paintBlack(x: CanvasRenderingContext2D, w: number, h: number) {
     x.fillStyle = "#050608";
     x.fillRect(0, 0, w, h);
-    const g = x.createRadialGradient(w / 2, h * 0.4, 0, w / 2, h * 0.4, w * 0.6);
-    g.addColorStop(0, "#1b140c");
-    g.addColorStop(1, "#050608");
-    x.fillStyle = g;
-    x.fillRect(0, 0, w, h);
-    x.textAlign = "center";
-    x.fillStyle = "#f4ecd6";
-    x.font = `600 ${Math.round(h * 0.16)}px "AllByteCustom", Georgia, serif`;
-    x.fillText("All Byte", w / 2, h * 0.57);
-    x.font = `${Math.round(h * 0.052)}px monospace`;
-    x.fillText("1 0 1 0 1 1 0 0", w / 2, h * 0.4);
   }
 
   function drawHome(bx: CanvasRenderingContext2D, video: HTMLVideoElement | null, w: number, h: number) {
@@ -71,7 +62,7 @@
 
     const video = document.querySelector(".hero-video") as HTMLVideoElement | null;
     const allb = document.createElement("canvas"); allb.width = W; allb.height = H;
-    paintAllByte(allb.getContext("2d")!, W, H);
+    paintBlack(allb.getContext("2d")!, W, H);
     const buf = document.createElement("canvas"); buf.width = W; buf.height = H;
     const bx = buf.getContext("2d")!;
     const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));

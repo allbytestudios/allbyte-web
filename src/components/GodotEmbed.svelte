@@ -1423,7 +1423,14 @@
     if (HAS_SPRITE_CARD) {
       const c = SPRITE_CAST[Math.floor(Math.random() * SPRITE_CAST.length)];
       const lore = SPRITE_LORE[c.display] ?? { role: "", blurb: "" };
-      sprite.push({ kind: "sprite" as const, name: c.display, role: lore.role, blurb: lore.blurb });
+      sprite.push({
+        kind: "sprite" as const,
+        name: c.display,
+        role: lore.role,
+        blurb: lore.blurb,
+        idleUrl: c.idles[0] ?? null,
+        attackUrl: c.attack ?? null,
+      });
     }
     return [...text, ...sprite];
   }

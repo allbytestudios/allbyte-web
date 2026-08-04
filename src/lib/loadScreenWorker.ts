@@ -7,7 +7,9 @@
 
 type Card =
   | { kind: "text"; title: string; rows?: [string, string][]; lines?: string[]; quote?: string }
-  | { kind: "sprite"; name: string; role: string; blurb: string };
+  | { kind: "sprite"; name: string; role: string; blurb: string; idleUrl?: string | null; attackUrl?: string | null };
+
+type Frame = { bmp: ImageBitmap; dur: number };
 
 interface InitMsg {
   type: "init";
@@ -39,6 +41,8 @@ let scrambleInterval = 40;
 let bitsSettled = false;
 let spinner: ImageBitmap | null = null; // in-game LoadingIcon.png (6× 32×32 strip)
 const SPIN_FPS = 5.6; // 5.0fps × speed_scale 1.125 (Arc)
+let spriteSeq: Frame[] = []; // living-sprite card frames (idle bob → attack → loop)
+let spriteSeqTotal = 1;
 
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -72,6 +76,8 @@ self.onmessage = async (e: MessageEvent) => {
       const r = await fetch("/loading-icon.png");
       spinner = await createImageBitmap(await r.blob());
     } catch { spinner = null; }
+    const spriteCard = cards.find((c) => c.kind === "sprite") as any;
+    if (spriteCard) loadSprite(spriteCard); // decode in the background
     started = performance.now();
     lastScramble = started;
     loop();
@@ -157,7 +163,6 @@ function drawManual(now: number, t: number) {
   const card = cards[cardIdx];
   const cx = W / 2;
   const pad = Math.min(W * 0.09, 64);
-  let y = H * 0.2;
 
   // fade the card in as it changes
   const shown = now - cardShownAt;
@@ -168,8 +173,9 @@ function drawManual(now: number, t: number) {
   ctx.font = `${clamp(H * 0.028, 10, 13)}px ui-monospace, "Courier New", monospace`;
   ctx.fillStyle = "#c69a4c";
   const kicker = card.kind === "sprite" ? "FROM THE WORLD OF NESIS" : "FROM THE MANUAL";
-  ctx.fillText(spaced(kicker), cx, y);
-  y += H * 0.06;
+  const kickerY = card.kind === "sprite" ? H * 0.12 : H * 0.2;
+  ctx.fillText(spaced(kicker), cx, kickerY);
+  let y = kickerY + H * 0.06;
 
   if (card.kind === "text") {
     ctx.font = `700 ${clamp(H * 0.075, 24, 44)}px ${FONT}, Georgia, serif`;
@@ -196,17 +202,27 @@ function drawManual(now: number, t: number) {
       }
     }
   } else {
-    // sprite card — text form (image is added in a later pass)
-    ctx.font = `700 ${clamp(H * 0.09, 28, 52)}px ${FONT}, Georgia, serif`;
+    // living-sprite card — the animated character (turns, attacks) + lore
+    const frame = currentSpriteFrame(shown);
+    if (frame) {
+      const dh = clamp(H * 0.34, 90, 220);
+      const dw = frame.width * (dh / frame.height);
+      ctx.imageSmoothingEnabled = false; // pixel art
+      ctx.drawImage(frame, cx - dw / 2, y, dw, dh);
+      y += dh + H * 0.055;
+    } else {
+      y = H * 0.5;
+    }
+    ctx.font = `700 ${clamp(H * 0.075, 26, 46)}px ${FONT}, Georgia, serif`;
     ctx.fillStyle = "#f6eccf";
-    ctx.fillText(card.name, cx, H / 2);
-    ctx.font = `${clamp(H * 0.03, 11, 15)}px ui-monospace, monospace`;
+    ctx.fillText(card.name, cx, y); y += H * 0.05;
+    ctx.font = `${clamp(H * 0.028, 11, 15)}px ui-monospace, monospace`;
     ctx.fillStyle = "#c69a4c";
-    ctx.fillText(spaced(card.role.toUpperCase()), cx, H / 2 + H * 0.06);
+    ctx.fillText(spaced(card.role.toUpperCase()), cx, y); y += H * 0.048;
     if (card.blurb) {
-      ctx.font = `${clamp(H * 0.038, 14, 20)}px ${FONT}, Georgia, serif`;
+      ctx.font = `${clamp(H * 0.036, 14, 19)}px ${FONT}, Georgia, serif`;
       ctx.fillStyle = "#d9cba9";
-      wrapCenter(card.blurb, cx, H / 2 + H * 0.12, W * 0.7, clamp(H * 0.048, 17, 25));
+      wrapCenter(card.blurb, cx, y, W * 0.72, clamp(H * 0.046, 17, 24));
     }
   }
   ctx.globalAlpha = 1;
@@ -229,6 +245,56 @@ function drawManual(now: number, t: number) {
 }
 
 function spaced(s: string): string { return s.split("").join(" "); }
+
+// Decode an animated GIF to frames (ImageDecoder / WebCodecs, on the worker
+// thread). Falls back to a single static frame if ImageDecoder is unavailable
+// (e.g. Safari) or decoding fails.
+async function decodeGif(url: string): Promise<Frame[]> {
+  try {
+    const buf = await (await fetch(url)).arrayBuffer();
+    const ID = (self as any).ImageDecoder;
+    if (ID) {
+      const dec = new ID({ data: buf, type: "image/gif" });
+      await dec.tracks.ready;
+      const count = dec.tracks.selectedTrack?.frameCount ?? 1;
+      const out: Frame[] = [];
+      for (let i = 0; i < count; i++) {
+        const res = await dec.decode({ frameIndex: i });
+        const dur = (res.image.duration ?? 100000) / 1000;
+        out.push({ bmp: await createImageBitmap(res.image), dur });
+        res.image.close?.();
+      }
+      if (out.length) return out;
+    }
+  } catch {
+    /* fall through */
+  }
+  try {
+    return [{ bmp: await createImageBitmap(await (await fetch(url)).blob()), dur: 1000 }];
+  } catch {
+    return [];
+  }
+}
+
+async function loadSprite(card: { idleUrl?: string | null; attackUrl?: string | null }) {
+  const idle = card.idleUrl ? await decodeGif(card.idleUrl) : [];
+  const attack = card.attackUrl ? await decodeGif(card.attackUrl) : [];
+  // idle a couple of cycles → one attack → back to idle, looped
+  const seq: Frame[] = [...idle, ...idle, ...attack, ...idle];
+  if (!seq.length) return;
+  spriteSeq = seq;
+  spriteSeqTotal = seq.reduce((s, f) => s + f.dur, 0) || 1;
+}
+
+function currentSpriteFrame(elapsed: number): ImageBitmap | null {
+  if (!spriteSeq.length) return null;
+  let t = elapsed % spriteSeqTotal;
+  for (const f of spriteSeq) {
+    if (t < f.dur) return f.bmp;
+    t -= f.dur;
+  }
+  return spriteSeq[spriteSeq.length - 1].bmp;
+}
 
 // The in-game loader: the 6-frame LoadingIcon strip (a ring flipping face→edge),
 // blitted at ~5.6fps, with two overlaid copies both Z-rotating clockwise (the

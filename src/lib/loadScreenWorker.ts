@@ -151,6 +151,9 @@ function drawStudio(now: number, t: number) {
   ctx.fillStyle = "#f4ecd6";
   ctx.fillText(word, cx, wordY);
   ctx.globalAlpha = 1;
+
+  // spinner is present the whole load, studio included
+  drawSpinner(now, cx, H - H * 0.13, clamp(H * 0.04, 16, 28));
 }
 
 // ---------- manual ----------
@@ -227,13 +230,13 @@ function drawManual(now: number, t: number) {
   }
   ctx.globalAlpha = 1;
 
-  // spinning-rings icon (recreation of the in-game loader) above the dots
-  drawSpinner(now, cx, H - H * 0.16, clamp(H * 0.03, 12, 20));
+  // spinning-rings icon (the in-game loader) above the dots
+  drawSpinner(now, cx, H - H * 0.15, clamp(H * 0.04, 16, 28));
 
   // dots — one lights per second on the current card
   const lit = clamp(Math.floor((now - cardShownAt) / 1000) + 1, 1, 3);
   const dr = clamp(H * 0.012, 4, 6), dgap = dr * 3.2;
-  const dy = H - H * 0.09;
+  const dy = H - H * 0.075;
   for (let i = 0; i < 3; i++) {
     ctx.beginPath();
     ctx.arc(cx + (i - 1) * dgap, dy, dr, 0, 7);

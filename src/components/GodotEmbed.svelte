@@ -1436,6 +1436,9 @@
   }
 
   $effect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("wdebug")) {
+      console.log("[loadworker] flags", { allowed, loading, useWorkerLoader, workerLoaderSupported, normal: isNormalPlayerLoad(), hasCanvas: !!loadCanvasEl, hasWorker: !!loadWorker, workerFailed });
+    }
     if (!(allowed && loading && useWorkerLoader && loadCanvasEl && !loadWorker && !workerFailed)) return;
     try {
       const worker = new Worker(new URL("../lib/loadScreenWorker.ts", import.meta.url), {
@@ -1444,7 +1447,10 @@
       worker.onmessage = (ev) => {
         if (ev.data?.type === "reveal") loading = false;
       };
-      worker.onerror = () => { workerFailed = true; };
+      worker.onerror = (e: any) => {
+        console.warn("[loadworker] runtime error", e?.message || e?.filename || e);
+        workerFailed = true;
+      };
       const off = loadCanvasEl.transferControlToOffscreen();
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       worker.postMessage(
@@ -1467,7 +1473,8 @@
         [off],
       );
       loadWorker = worker;
-    } catch {
+    } catch (e) {
+      console.warn("[loadworker] setup threw", e);
       workerFailed = true; // fall back to the DOM loader
     }
   });

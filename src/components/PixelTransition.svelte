@@ -58,6 +58,10 @@
 
   onMount(() => {
     const cv = canvasEl;
+    // The Play button sits inside a CSS-transformed plate, which would trap a
+    // position:fixed element in the plate's box. Reparent to <body> so the
+    // canvas covers the whole viewport, not just a box under the button.
+    document.body.appendChild(cv);
     const ctx = cv.getContext("2d");
     if (!ctx) { ondone?.(); return; }
     const scale = Math.min(1, 900 / window.innerWidth);
@@ -103,7 +107,7 @@
     };
     raf = requestAnimationFrame(step);
 
-    return () => { cancelled = true; cancelAnimationFrame(raf); };
+    return () => { cancelled = true; cancelAnimationFrame(raf); cv.remove(); };
   });
 </script>
 

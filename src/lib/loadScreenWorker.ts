@@ -133,6 +133,20 @@ self.onmessage = async (e: MessageEvent) => {
     if (m.idle) { eIdle = await decodeGif(m.idle as ArrayBuffer); eIdleTotal = eIdle.reduce((s, f) => s + f.dur, 0) || 1; }
     if (m.attack) { eAttack = await decodeGif(m.attack as ArrayBuffer); eAttackTotal = eAttack.reduce((s, f) => s + f.dur, 0) || 1; }
     if (m.victory) { eVictory = await decodeGif(m.victory as ArrayBuffer); eVictoryTotal = eVictory.reduce((s, f) => s + f.dur, 0) || 1; }
+  } else if (m.type === "resize") {
+    // Viewport rotated/resized mid-load. Re-size the OffscreenCanvas backing
+    // store and re-apply the DPR scale so the frame fills the new box (fixes the
+    // "half screen" on a portrait→landscape flip), and update W/H/isMobile so
+    // the banner layout + poison grid re-lay-out. ensurePoisonGeo's geoW/geoH
+    // guard recomputes automatically once W/H change; drawManual reads W/H live.
+    if (!ctx) return;
+    W = m.cssW; H = m.cssH;
+    if (typeof m.dpr === "number" && m.dpr > 0) dpr = m.dpr;
+    if (typeof m.isMobile === "boolean") isMobile = !!m.isMobile;
+    const cv = ctx.canvas as OffscreenCanvas;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // width/height reset the transform
   } else if (m.type === "scene") {
     sceneReady = true;
   }

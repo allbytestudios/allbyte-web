@@ -1509,6 +1509,33 @@
           worker.postMessage({ type: "poisonElias", idle, attack, victory }, transfer);
         })
         .catch(() => {});
+
+      // Feed orientation/size changes to the worker. Without this the
+      // OffscreenCanvas keeps its init-time (portrait) backing store on a
+      // rotation → a stretched "half screen", and the banner layout never
+      // recomputes for landscape. Coalesced to one post per frame.
+      let rzPending = false;
+      const onLoadResize = () => {
+        if (rzPending) return;
+        rzPending = true;
+        requestAnimationFrame(() => {
+          rzPending = false;
+          if (!loadWorker || !loadCanvasEl) return;
+          loadWorker.postMessage({
+            type: "resize",
+            dpr: Math.min(2, window.devicePixelRatio || 1),
+            cssW: loadCanvasEl.clientWidth || window.innerWidth,
+            cssH: loadCanvasEl.clientHeight || window.innerHeight,
+            isMobile: isMobileViewport(),
+          });
+        });
+      };
+      window.addEventListener("orientationchange", onLoadResize);
+      window.addEventListener("resize", onLoadResize);
+      return () => {
+        window.removeEventListener("orientationchange", onLoadResize);
+        window.removeEventListener("resize", onLoadResize);
+      };
     } catch {
       workerFailed = true; // fall back to the DOM loader
     }

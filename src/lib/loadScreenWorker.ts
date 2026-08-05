@@ -53,6 +53,33 @@ const INNER_OFFSET = 0.785398; // 45° initial rotation on the inner ring
 let spriteSeq: Frame[] = []; // living-sprite card frames (idle bob → attack → loop)
 let spriteSeqTotal = 1;
 
+// ---- poison-trail card transition (owner-designed; see project_poison_loader) ----
+// A VSlime zig-zags an iso poison grid to Elias, who strikes; the slime runs the
+// real Dissolve shader; on load-complete Elias plays victory, then we cut over.
+// Runs in the bottom band of the load screen (replaces the spinner+dots).
+type PCell = { cx: number; cy: number; fill: number };
+let poisonTile: ImageBitmap | null = null;
+let emptyTile: ImageBitmap | null = null;
+let slimeFrames: Frame[] = [], slimeTotal = 1;
+let eIdle: Frame[] = [], eAttack: Frame[] = [], eVictory: Frame[] = [];
+let eIdleTotal = 1, eAttackTotal = 1, eVictoryTotal = 1;
+const PZ = { N: 6, RUN: 2500, WIDTH: 0.55, SCALE: 0.75, ATTACK: 680, DEATH: 1300, VICTORY: 1050, PAUSE: 360 };
+// Elias feet anchors (Arc-measured); idle/attack mirror to face down-left, victory front-facing.
+const EANCH = {
+  idle: { fx: 0.497, fy: 0.909, mirror: true, base: 132 },
+  attack: { fx: 0.451, fy: 0.733, mirror: true, base: 225 },
+  victory: { fx: 0.5, fy: 0.905, mirror: false, base: 132 },
+};
+let scenePhase: "run" | "attack" | "victory" | "pause" = "run";
+let sceneT0 = 0, sceneStarted = false;
+let eliasMode: "idle" | "attack" | "victory" = "idle";
+let cardsDone = 0;
+let pcells: PCell[] = [], pwalk: PCell[] = [], pbetween: PCell[] = [];
+let phw = 0, phh = 0, pElias = { fx: 0, fy: 0 };
+let deathBase: Uint8ClampedArray | null = null, deathW = 0, deathH = 0;
+let scratch: OffscreenCanvas | null = null, sctx: OffscreenCanvasRenderingContext2D | null = null;
+const hasPoison = () => !!(poisonTile && emptyTile && slimeFrames.length && eIdle.length);
+
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
@@ -94,6 +121,16 @@ self.onmessage = async (e: MessageEvent) => {
     spinner = (m.bmp as ImageBitmap) || null;
   } else if (m.type === "sprite") {
     loadSprite(m.idle as ArrayBuffer | null, m.attack as ArrayBuffer | null);
+  } else if (m.type === "poisonTiles") {
+    poisonTile = (m.poison as ImageBitmap) || null;
+    emptyTile = (m.empty as ImageBitmap) || null;
+  } else if (m.type === "poisonSlime") {
+    slimeFrames = await decodeGif(m.buf as ArrayBuffer);
+    slimeTotal = slimeFrames.reduce((s, f) => s + f.dur, 0) || 1;
+  } else if (m.type === "poisonElias") {
+    if (m.idle) { eIdle = await decodeGif(m.idle as ArrayBuffer); eIdleTotal = eIdle.reduce((s, f) => s + f.dur, 0) || 1; }
+    if (m.attack) { eAttack = await decodeGif(m.attack as ArrayBuffer); eAttackTotal = eAttack.reduce((s, f) => s + f.dur, 0) || 1; }
+    if (m.victory) { eVictory = await decodeGif(m.victory as ArrayBuffer); eVictoryTotal = eVictory.reduce((s, f) => s + f.dur, 0) || 1; }
   } else if (m.type === "scene") {
     sceneReady = true;
   }
@@ -107,13 +144,22 @@ function loop() {
   else {
     if (cardShownAt === 0) { cardShownAt = now; }
     drawManual(now, t);
-    // rotate
-    if (now - cardShownAt >= cfg.cardMs) { cardIdx = pickCard(cardIdx); cardShownAt = now; }
-    // reveal
-    if (sceneReady && now - cardShownAt >= Math.min(cfg.cardMinMs, cfg.cardMs)) {
-      revealed = true;
-      (self as any).postMessage({ type: "reveal" });
-      return;
+    if (hasPoison()) {
+      // poison-trail transition drives card flips + reveal (AllByte + ≥1 full
+      // card, cut over only at a card boundary after Elias' victory).
+      if (poisonScene(now)) {
+        revealed = true;
+        (self as any).postMessage({ type: "reveal" });
+        return;
+      }
+    } else {
+      // fallback (assets not yet arrived / unsupported): timer rotation + reveal
+      if (now - cardShownAt >= cfg.cardMs) { cardIdx = pickCard(cardIdx); cardShownAt = now; }
+      if (sceneReady && now - cardShownAt >= Math.min(cfg.cardMinMs, cfg.cardMs)) {
+        revealed = true;
+        (self as any).postMessage({ type: "reveal" });
+        return;
+      }
     }
   }
   setTimeout(loop, 16);
@@ -243,21 +289,22 @@ function drawManual(now: number, t: number) {
   }
   ctx.globalAlpha = 1;
 
-  // spinning-rings icon (the in-game loader) above the dots
-  drawSpinner(now, cx, H - H * 0.15, clamp(H * 0.04, 16, 28));
-
-  // dots — one lights per second on the current card
-  const lit = clamp(Math.floor((now - cardShownAt) / 1000) + 1, 1, 3);
-  const dr = clamp(H * 0.012, 4, 6), dgap = dr * 3.2;
-  const dy = H - H * 0.075;
-  for (let i = 0; i < 3; i++) {
-    ctx.beginPath();
-    ctx.arc(cx + (i - 1) * dgap, dy, dr, 0, 7);
-    ctx.fillStyle = "#e7b866";
-    ctx.globalAlpha = i < lit ? 1 : 0.25;
-    ctx.fill();
+  // Bottom indicator: the poison-trail scene (drawn by poisonScene) replaces the
+  // spinner+dots once its assets arrive; until then, the old spinner+dots.
+  if (!hasPoison()) {
+    drawSpinner(now, cx, H - H * 0.15, clamp(H * 0.04, 16, 28));
+    const lit = clamp(Math.floor((now - cardShownAt) / 1000) + 1, 1, 3);
+    const dr = clamp(H * 0.012, 4, 6), dgap = dr * 3.2;
+    const dy = H - H * 0.075;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(cx + (i - 1) * dgap, dy, dr, 0, 7);
+      ctx.fillStyle = "#e7b866";
+      ctx.globalAlpha = i < lit ? 1 : 0.25;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
   }
-  ctx.globalAlpha = 1;
 }
 
 function spaced(s: string): string { return s.split("").join(" "); }
@@ -351,6 +398,158 @@ function drawSpinner(now: number, cx: number, cy: number, r: number) {
   ctx.arc(cx, cy, r * 0.92, INNER_OFFSET + tsec * SPIN_W * 2, INNER_OFFSET + tsec * SPIN_W * 2 + Math.PI * 1.5);
   ctx.stroke();
   ctx.restore();
+}
+
+// ================= poison-trail card transition =================
+let geoW = -1, geoH = -1;
+function ensurePoisonGeo() {
+  if (geoW === W && geoH === H && pcells.length) return;
+  geoW = W; geoH = H;
+  const avail = (W - 40) * PZ.WIDTH;
+  const TW = avail / (PZ.N + 1.4);
+  phw = TW / 2; phh = phw * (74 / 120);
+  const eliasW = phh * 3.79;
+  const gridW = PZ.N * TW, overhangR = phw + eliasW * 0.42;
+  const startX = (W - (gridW + overhangR)) / 2;
+  const baseY = H - phh - H * 0.055;
+  pcells = []; pbetween = [];
+  for (let i = 0; i < PZ.N; i++) pcells.push({ cx: startX + phw + i * TW, cy: baseY, fill: 0 });
+  for (let i = 0; i < PZ.N; i++) pbetween.push({ cx: pcells[i].cx + phw, cy: baseY - phh, fill: 0 });
+  pwalk = [];
+  for (let i = 0; i < PZ.N; i++) { pwalk.push(pcells[i]); if (i < PZ.N - 1) pwalk.push(pbetween[i]); }
+  pElias = { fx: pbetween[PZ.N - 1].cx, fy: pbetween[PZ.N - 1].cy };
+}
+function frameAt(frames: Frame[], total: number, elapsed: number, loop = true): ImageBitmap | null {
+  if (!frames.length) return null;
+  let t = loop ? ((elapsed % total) + total) % total : Math.min(Math.max(elapsed, 0), total - 0.001);
+  for (const f of frames) { if (t < f.dur) return f.bmp; t -= f.dur; }
+  return frames[frames.length - 1].bmp;
+}
+function ensureScratch(w: number, h: number) {
+  if (!scratch || scratch.width < w || scratch.height < h) {
+    scratch = new OffscreenCanvas(Math.max(1, Math.ceil(w)), Math.max(1, Math.ceil(h)));
+    sctx = scratch.getContext("2d");
+  }
+}
+function setPoisonFills(prog: number) {
+  const seg = prog * (pwalk.length - 1), lead = Math.floor(seg);
+  for (const c of pcells) c.fill = 0; for (const c of pbetween) c.fill = 0;
+  for (let k = 0; k < pwalk.length; k++) pwalk[k].fill = k < lead ? 1 : (k === lead ? seg - lead : 0);
+}
+function drawPoisonCell(c: PCell, emptyAlpha: number) {
+  const dw = 2 * phw, dh = 2 * phh;
+  ctx.globalAlpha = emptyAlpha;
+  ctx.drawImage(emptyTile as ImageBitmap, c.cx - phw, c.cy - phh, dw, dh);
+  ctx.globalAlpha = 1;
+  if (c.fill > 0) {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(c.cx - phw, c.cy - phh, Math.ceil(dw * c.fill), dh); ctx.clip();
+    ctx.drawImage(poisonTile as ImageBitmap, c.cx - phw, c.cy - phh, dw, dh);
+    ctx.restore();
+  }
+}
+function drawPoisonGrid() {
+  ctx.imageSmoothingEnabled = false;
+  for (const c of pbetween) drawPoisonCell(c, 0.5);
+  for (const c of pcells) drawPoisonCell(c, 0.62);
+}
+function slimePx() { return phh * 2.73; }
+function drawTintedSlime(frame: ImageBitmap, dx: number, dy: number, size: number) {
+  ensureScratch(size, size);
+  const s = sctx!; s.clearRect(0, 0, size, size); s.imageSmoothingEnabled = false;
+  s.globalCompositeOperation = "source-over"; s.drawImage(frame, 0, 0, size, size);
+  s.globalCompositeOperation = "multiply"; s.fillStyle = "rgb(128,255,128)"; s.fillRect(0, 0, size, size);
+  s.globalCompositeOperation = "destination-in"; s.drawImage(frame, 0, 0, size, size);
+  s.globalCompositeOperation = "source-over";
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(scratch as OffscreenCanvas, 0, 0, size, size, dx, dy, size, size);
+}
+function drawSlimeWalking(now: number, prog: number) {
+  const frame = frameAt(slimeFrames, slimeTotal, now - sceneT0);
+  if (!frame) return;
+  const seg = prog * (pwalk.length - 1), ci = Math.min(pwalk.length - 2, Math.floor(seg)), frac = seg - ci;
+  const from = pwalk[ci], to = pwalk[ci + 1];
+  const x = from.cx + (to.cx - from.cx) * frac, y = from.cy + (to.cy - from.cy) * frac;
+  const px = slimePx(), bob = Math.sin(now / 1000 * 9) * px * 0.09, drop = phh * 0.62;
+  drawTintedSlime(frame, x - px / 2, (y + drop - bob) - px, px);
+}
+function captureDeathSlime(now: number) {
+  const frame = frameAt(slimeFrames, slimeTotal, now - sceneT0) || slimeFrames[0].bmp;
+  const size = Math.ceil(slimePx());
+  ensureScratch(size, size);
+  const s = sctx!; s.clearRect(0, 0, size, size); s.imageSmoothingEnabled = false; s.drawImage(frame, 0, 0, size, size);
+  deathW = size; deathH = size; deathBase = s.getImageData(0, 0, size, size).data.slice();
+}
+function drawDissolveSlime(dt: number) {
+  if (!deathBase) return;
+  const w = deathW, h = deathH;
+  const out = sctx!.createImageData(w, h), od = out.data, src = deathBase;
+  const state = 1 - 2 * Math.min(1, dt / PZ.DEATH), flashF = Math.max(0, 1 - dt / 170);
+  for (let yy = 0; yy < h; yy++) {
+    const v = yy / h, thr = state + v;
+    for (let xx = 0; xx < w; xx++) {
+      const i = (yy * w + xx) << 2;
+      if (src[i + 3] === 0) { od[i + 3] = 0; continue; }
+      const cfx = (xx / w * 10) % 1 - 0.5, cfy = (v * 10) % 1 - 0.5;
+      if (Math.sqrt(cfx * cfx + cfy * cfy) <= thr) {
+        let r = 128, g = src[i + 1], b = src[i + 2] * 0.5;
+        if (flashF > 0) { r += (255 - r) * flashF; g += (255 - g) * flashF; b += (255 - b) * flashF; }
+        od[i] = r; od[i + 1] = g; od[i + 2] = b; od[i + 3] = src[i + 3];
+      } else od[i + 3] = 0;
+    }
+  }
+  sctx!.putImageData(out, 0, 0);
+  const p = pcells[PZ.N - 1], px = slimePx(), drop = phh * 0.62;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(scratch as OffscreenCanvas, 0, 0, w, h, p.cx - px / 2, (p.cy + drop) - px, w, h);
+}
+function drawElias(now: number) {
+  const a = (EANCH as any)[eliasMode] as { fx: number; fy: number; mirror: boolean; base: number };
+  const frames = eliasMode === "attack" ? eAttack : eliasMode === "victory" ? eVictory : eIdle;
+  const total = eliasMode === "attack" ? eAttackTotal : eliasMode === "victory" ? eVictoryTotal : eIdleTotal;
+  if (!frames.length) return;
+  const frame = frameAt(frames, total, now - sceneT0, eliasMode === "idle");
+  if (!frame) return;
+  const px = phh * 3.79 * (a.base / 132);
+  const feetX = pElias.fx, feetY = pElias.fy + 4;
+  const fx = a.mirror ? 1 - a.fx : a.fx;
+  const left = feetX - fx * px, top = feetY - a.fy * px;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  if (a.mirror) { ctx.translate(left + px, top); ctx.scale(-1, 1); ctx.drawImage(frame, 0, 0, px, px); }
+  else ctx.drawImage(frame, left, top, px, px);
+  ctx.restore();
+}
+// One scene tick: advance the state machine + draw grid/slime/Elias. Returns true
+// when it's time to reveal (after victory on a load-complete card boundary).
+function poisonScene(now: number): boolean {
+  ensurePoisonGeo();
+  if (!sceneStarted) { sceneStarted = true; sceneT0 = now; scenePhase = "run"; eliasMode = "idle"; }
+  const dt = now - sceneT0;
+  if (scenePhase === "run") {
+    const prog = clamp(dt / PZ.RUN, 0, 1);
+    setPoisonFills(prog); drawPoisonGrid(); drawSlimeWalking(now, prog); drawElias(now);
+    if (prog >= 1) { scenePhase = "attack"; sceneT0 = now; eliasMode = "attack"; deathBase = null; }
+  } else if (scenePhase === "attack") {
+    for (const c of pwalk) c.fill = 1; drawPoisonGrid();
+    if (!deathBase) captureDeathSlime(now);
+    if (dt > PZ.ATTACK && eliasMode === "attack") eliasMode = "idle"; // swing once, then watch
+    drawDissolveSlime(dt); drawElias(now);
+    if (dt >= PZ.DEATH) {
+      cardsDone++;
+      deathBase = null;
+      if (sceneReady && cardsDone >= 1) { scenePhase = "victory"; sceneT0 = now; eliasMode = "victory"; }
+      else { cardIdx = pickCard(cardIdx); cardShownAt = now; scenePhase = "pause"; sceneT0 = now; eliasMode = "idle"; }
+    }
+  } else if (scenePhase === "victory") {
+    for (const c of pwalk) c.fill = 1; drawPoisonGrid(); drawElias(now);
+    if (dt >= PZ.VICTORY) return true; // load complete → cut to title
+  } else if (scenePhase === "pause") {
+    for (const c of pcells) c.fill = 0; for (const c of pbetween) c.fill = 0;
+    drawPoisonGrid(); drawElias(now);
+    if (dt >= PZ.PAUSE) { scenePhase = "run"; sceneT0 = now; }
+  }
+  return false;
 }
 
 function wrapCenter(text: string, cx: number, y: number, maxW: number, lineH: number): number {

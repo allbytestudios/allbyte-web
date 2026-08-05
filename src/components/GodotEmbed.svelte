@@ -1227,27 +1227,11 @@
       ],
     },
     {
-      title: "Relics & the Anam",
-      lines: [
-        "A relic is an item you own; slot it into a Relic Slot to turn on the skill it grants.",
-        "They say a relic carries an Anam — the imparted spirit of a past master — and to slot one is to receive their skill, which grows the more you wield it.",
-        "Episode One relics: Item, Scan, Move, Health, and Berserckounter (dropped by the Mother Slime).",
-      ],
-    },
-    {
       title: "Skill types",
       rows: [
         ["Action (red)", "Smite · Cure · Push — spends AP/MP on your turn"],
         ["Reaction (yellow)", "Counterattack · Parry — fires on its own"],
         ["Passive (blue)", "Scan · Move-up — always on"],
-      ],
-    },
-    {
-      title: "Consumables — each does one thing",
-      rows: [
-        ["Mugwort", "heals HP (the only HP restore in Episode One)"],
-        ["Irid Liquor", "restores MP for skills"],
-        ["Valerian Powder", "cures Poison"],
       ],
     },
     {
@@ -1368,6 +1352,11 @@
   // Immediate-reveal check (a backstop to the manual-phase poll): reveal only
   // once the studio played, a scene exists, and THIS card has had ≥CARD_MIN_MS.
   function maybeReveal() {
+    // On the worker path the WORKER owns the reveal — it cuts over only at a card
+    // boundary after Elias' victory (AllByte + ≥1 full card). Deferring to it here
+    // prevents this DOM-path timer from revealing early mid-card. The boot
+    // watchdog (BOOT_ABSOLUTE_MS) remains the backstop for both paths.
+    if (useWorkerLoader && !workerFailed) return;
     if (!(studioDone && sceneReady && loadPhase === "manual")) return;
     if (performance.now() - manualCardShownAt >= CARD_MIN_MS) loading = false;
   }
@@ -1495,6 +1484,30 @@
           })
           .catch(() => {});
       }
+
+      // Poison-trail card-transition assets (fetched here on the main thread —
+      // the blob worker can't fetch same-origin subresources under COI).
+      Promise.all([
+        fetch("/assets/sprites/poison_tile.png").then((r) => r.blob()).then(createImageBitmap),
+        fetch("/assets/sprites/poison_tile_empty.png").then((r) => r.blob()).then(createImageBitmap),
+      ])
+        .then(([poison, empty]) => worker.postMessage({ type: "poisonTiles", poison, empty }, [poison, empty]))
+        .catch(() => {});
+      fetch("/assets/sprites/slime_IdleDown.gif")
+        .then((r) => r.arrayBuffer())
+        .then((buf) => worker.postMessage({ type: "poisonSlime", buf }, [buf]))
+        .catch(() => {});
+      const grabBuf = (u: string) => fetch(u).then((r) => r.arrayBuffer()).catch(() => null);
+      Promise.all([
+        grabBuf("/assets/sprites/Elias_BattleIdleDownRight.gif"),
+        grabBuf("/assets/sprites/Elias_AttackDownRight.gif"),
+        grabBuf("/assets/sprites/Elias_Victory.gif"),
+      ])
+        .then(([idle, attack, victory]) => {
+          const transfer = [idle, attack, victory].filter(Boolean) as ArrayBuffer[];
+          worker.postMessage({ type: "poisonElias", idle, attack, victory }, transfer);
+        })
+        .catch(() => {});
     } catch {
       workerFailed = true; // fall back to the DOM loader
     }

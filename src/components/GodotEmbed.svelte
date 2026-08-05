@@ -734,6 +734,7 @@
           moving: !!g.isMoving,
           newGame: !!g.newGameStarted,
           dialogue: !!g.inDialogue,
+          touch: touchAcceptSeen,
         };
       } catch {
         return null;
@@ -809,6 +810,10 @@
       if (ev.data?.type === "allbyte:reload-ready" && reloadReadyResolve) {
         reloadReadyResolve();
         reloadReadyResolve = null;
+      } else if (ev.data?.type === "allbyte_title_ready") {
+        titleReadySignal = true; // title is interactive → OK to hide the loader
+      } else if (ev.data?.type === "allbyte_touch_accept") {
+        touchAcceptSeen = true; // mobile tap registered as ui_accept → funnel
       }
     };
     window.addEventListener("message", onMessage);
@@ -1105,6 +1110,17 @@
   let studioDone = $state(false);
   let sceneReady = $state(false);
   let studioTimerStarted = false;
+  // Set by the game's `allbyte_title_ready` postMessage — the title is fully
+  // INTERACTIVE, not merely "its scene node exists". We hold the loader up until
+  // this so the title-music (Arc gates Anthem4 on our loader_reveal) starts in
+  // sync with a usable title, fixing "music starts before the title is shown".
+  // Old builds never send it → a fallback reveals shortly after the scene shows.
+  let titleReadySignal = false;
+  let sceneFirstSeenAt = 0;
+  const TITLE_READY_FALLBACK_MS = 5000;
+  // Set by the game's `allbyte_touch_accept` postMessage (mobile tap = ui_accept,
+  // from the touch fix). Feeds the funnel so we can measure taps vs New Game.
+  let touchAcceptSeen = false;
   // Studio scene ~1s (owner: don't let it sit long). Timeline: bits flip fast →
   // slow exponentially → STOP on random values (STUDIO_SETTLE_MS) → hold briefly
   // → the whole scene fades away (STUDIO_FADE_MS) → the first manual card.
@@ -1764,11 +1780,24 @@
       /* iframe still booting / not accessible yet */
     }
 
-    // Game has reported a scene -> engine is up and rendering. Hide the
-    // panel for good.
+    // Game has reported a scene. The scene NODE existing isn't the same as the
+    // title being interactive — the fixed build sends `allbyte_title_ready` when
+    // it truly is, and we hold the loader up until then so the title-music
+    // (Arc gates it on our loader_reveal) starts in sync with a usable title.
+    // Old builds never send it, so a fallback reveals shortly after the scene
+    // appears, preserving the previous behavior for cached returning users.
     if (scene) {
-      // Verify the SW served the CURRENT build, not a stale cached one.
-      checkBuildFreshness((iframeEl?.contentWindow as any)?.gameState?.version);
+      if (sceneFirstSeenAt === 0) {
+        sceneFirstSeenAt = Date.now();
+        // Verify the SW served the CURRENT build, not a stale cached one.
+        checkBuildFreshness((iframeEl?.contentWindow as any)?.gameState?.version);
+      }
+      const titleInteractive =
+        titleReadySignal || Date.now() - sceneFirstSeenAt >= TITLE_READY_FALLBACK_MS;
+      if (!titleInteractive) {
+        loadStatus = `Loading ${scene}…`;
+        return; // engine up but title not interactive yet — keep the loader up
+      }
       loadStatus = `Ready: ${scene}`;
       loadPanelVisible = false;
       sceneReady = true;

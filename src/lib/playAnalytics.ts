@@ -78,6 +78,14 @@ export interface PlayState {
   newGame?: boolean;
   /** `gameState.inDialogue` — talked to someone; the first real interaction. */
   dialogue?: boolean;
+  /**
+   * The game's `allbyte_touch_accept` fired — a mobile tap registered as
+   * ui_accept (tap-anywhere-to-confirm, added in the touch fix). Recorded as
+   * "m:touch" so the funnel can separate "tapped to start" from "actually
+   * started" (m:newgame): taps-without-newgame is the signature of the tap path
+   * being broken, which is exactly the mobile drop-off we're chasing.
+   */
+  touch?: boolean;
 }
 
 function sessionId(): string {
@@ -194,6 +202,7 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
       lastScene = st.scene; // furthest location scene, sent on "end"
       stage(st.scene);
     }
+    if (st.touch) stage("m:touch");
     if (st.newGame) stage("m:newgame");
     if (st.moving) stage("m:moved");
     if (st.dialogue) stage("m:dialogue");

@@ -77,7 +77,7 @@ let sceneT0 = 0, sceneStarted = false;
 let eliasMode: "idle" | "attack" | "victory" = "idle";
 let cardsDone = 0;
 let pcells: PCell[] = [], pwalk: PCell[] = [], pbetween: PCell[] = [];
-let phw = 0, phh = 0, pElias = { fx: 0, fy: 0 };
+let phw = 0, phh = 0, pElias = { fx: 0, fy: 0 }, pGridTop = 0;
 let deathBase: Uint8ClampedArray | null = null, deathW = 0, deathH = 0;
 let scratch: OffscreenCanvas | null = null, sctx: OffscreenCanvasRenderingContext2D | null = null;
 const hasPoison = () => !!(poisonTile && emptyTile && slimeFrames.length && eIdle.length);
@@ -237,32 +237,38 @@ function drawManual(now: number, t: number) {
   ctx.font = `${clamp(H * 0.028, 10, 13)}px ui-monospace, "Courier New", monospace`;
   ctx.fillStyle = "#c69a4c";
   const kicker = card.kind === "sprite" ? "FROM THE WORLD OF NESIS" : "FROM THE MANUAL";
-  const kickerY = card.kind === "sprite" ? H * 0.12 : H * 0.2;
+  // Raise the text when the poison scene occupies the bottom, and cap it above
+  // the grid so long cards can't overlap the load image.
+  if (hasPoison()) ensurePoisonGeo();
+  const textLimit = hasPoison() ? pGridTop : H * 0.92;
+  const kickerY = card.kind === "sprite" ? H * 0.11 : (hasPoison() ? H * 0.135 : H * 0.2);
   ctx.fillText(spaced(kicker), cx, kickerY);
-  let y = kickerY + H * 0.06;
+  let y = kickerY + H * 0.055;
 
   if (card.kind === "text") {
-    ctx.font = `700 ${clamp(H * 0.075, 24, 44)}px ${FONT}, Georgia, serif`;
+    ctx.font = `700 ${clamp(H * 0.072, 22, 44)}px ${FONT}, Georgia, serif`;
     ctx.fillStyle = "#f6eccf";
-    y = wrapCenter(card.title, cx, y, W - pad * 2, clamp(H * 0.082, 26, 48)) + H * 0.03;
+    y = wrapCenter(card.title, cx, y, W - pad * 2, clamp(H * 0.08, 24, 48)) + H * 0.025;
     if (card.rows) {
-      const rowH = clamp(H * 0.062, 26, 40);
+      const rowH = Math.max(16, Math.min(clamp(H * 0.062, 26, 40), (textLimit - y) / card.rows.length));
+      const rowFont = Math.min(clamp(H * 0.036, 14, 19), rowH * 0.5);
       const colX = cx - (W - pad * 2) / 2;
       const dtW = (W - pad * 2) * 0.34;
       ctx.textAlign = "left";
       for (const [dt, dd] of card.rows) {
-        ctx.font = `700 ${clamp(H * 0.036, 14, 19)}px ${FONT}, Georgia, serif`;
+        ctx.font = `700 ${rowFont}px ${FONT}, Georgia, serif`;
         ctx.fillStyle = "#e7b866"; ctx.fillText(dt, colX, y);
-        ctx.font = `${clamp(H * 0.034, 13, 18)}px ${FONT}, Georgia, serif`;
+        ctx.font = `${rowFont * 0.95}px ${FONT}, Georgia, serif`;
         ctx.fillStyle = "#cdbf9e"; ctx.fillText(dd, colX + dtW + 12, y);
         y += rowH;
       }
       ctx.textAlign = "center";
     } else if (card.lines) {
-      ctx.font = `${clamp(H * 0.04, 15, 21)}px ${FONT}, Georgia, serif`;
+      const lineH = Math.max(15, Math.min(clamp(H * 0.05, 18, 26), (textLimit - y) / (card.lines.length * 1.7)));
+      ctx.font = `${Math.min(clamp(H * 0.04, 15, 21), lineH * 0.82)}px ${FONT}, Georgia, serif`;
       ctx.fillStyle = "#d9cba9";
       for (const line of card.lines) {
-        y = wrapCenter(line, cx, y, W - pad * 2, clamp(H * 0.05, 18, 26)) + H * 0.02;
+        y = wrapCenter(line, cx, y, W - pad * 2, lineH) + lineH * 0.35;
       }
     }
   } else {
@@ -427,6 +433,9 @@ function ensurePoisonGeo() {
   pwalk = [];
   for (let i = 0; i < PZ.N; i++) { pwalk.push(pcells[i]); if (i < PZ.N - 1) pwalk.push(pbetween[i]); }
   pElias = { fx: pbetween[PZ.N - 1].cx, fy: pbetween[PZ.N - 1].cy };
+  // the y above which the card text must stay: Elias' head (tallest element) with margin
+  const eliasHeadY = (baseY - phh + 4) - EANCH.idle.fy * eliasW;
+  pGridTop = Math.min(baseY - 2 * phh, eliasHeadY) - H * 0.02;
 }
 function frameAt(frames: Frame[], total: number, elapsed: number, loop = true): ImageBitmap | null {
   if (!frames.length) return null;

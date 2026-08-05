@@ -178,7 +178,21 @@ function loop() {
       }
     }
   }
+  // JRPG-style "processing" indicator: the spinner is pinned to the bottom-right
+  // corner across BOTH the AllByte studio scene AND the card scene, spinning the
+  // whole load as a thematically-consistent "still working" cue. Drawn last so
+  // it sits on top of whatever the scene rendered (cards, poison trail, Elias).
+  drawCornerSpinner(now);
   setTimeout(loop, 16);
+}
+
+// Bottom-right corner spinner — small, fixed to the screen edge (not part of the
+// scene composition), present the entire load.
+function drawCornerSpinner(now: number) {
+  // 25% smaller than the first pass (owner) — a discreet corner cue, not a focal point.
+  const r = clamp(Math.min(W, H) * 0.021, 9, 15);
+  const margin = clamp(Math.min(W, H) * 0.045, 16, 30);
+  drawSpinner(now, W - margin - r, H - margin - r, r);
 }
 
 // ---------- studio ----------
@@ -226,9 +240,7 @@ function drawStudio(now: number, t: number) {
   ctx.fillStyle = "#f4ecd6";
   ctx.fillText(word, cx, wordY);
   ctx.globalAlpha = 1;
-
-  // spinner is present the whole load, studio included
-  drawSpinner(now, cx, H - H * 0.13, clamp(H * 0.04, 16, 28));
+  // (spinner now drawn once per frame in loop(), pinned bottom-right)
 }
 
 // ---------- manual ----------
@@ -311,10 +323,10 @@ function drawManual(now: number, t: number) {
   }
   ctx.globalAlpha = 1;
 
-  // Bottom indicator: the poison-trail scene (drawn by poisonScene) replaces the
-  // spinner+dots once its assets arrive; until then, the old spinner+dots.
+  // Bottom progress dots (fallback path only — the poison-trail scene replaces
+  // them once its assets arrive). The spinner is no longer drawn here; it's the
+  // persistent bottom-right corner indicator from loop().
   if (!hasPoison()) {
-    drawSpinner(now, cx, H - H * 0.15, clamp(H * 0.04, 16, 28));
     const lit = clamp(Math.floor((now - cardShownAt) / 1000) + 1, 1, 3);
     const dr = clamp(H * 0.012, 4, 6), dgap = dr * 3.2;
     const dy = H - H * 0.075;

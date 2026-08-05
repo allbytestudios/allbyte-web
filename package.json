@@ -53,6 +53,7 @@
   "dependencies": {
     "@astrojs/svelte": "^8.0.4",
     "@tailwindcss/vite": "^4.2.2",
+    "@zumer/snapdom": "^2.23.2",
     "astro": "^6.1.4",
     "remark-directive": "^4.0.0",
     "svelte": "^5.55.1",

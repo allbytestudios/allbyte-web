@@ -414,18 +414,21 @@ function ensurePoisonGeo() {
   if (geoW === W && geoH === H && pcells.length) return;
   geoW = W; geoH = H;
   const landscape = W > H;
-  // Tile width from the horizontal budget, but CAPPED by height so it can't blow
-  // up on short / landscape viewports (that was the mobile-landscape distortion).
-  let TW = (W - 40) * PZ.WIDTH / (PZ.N + 1.4);
-  const maxTW = H * (landscape ? 0.17 : 0.22);
-  if (TW > maxTW) TW = maxTW;
+  const margin = 20;
+  // Reserve space at the bottom for the mobile touch pads (grid sits ABOVE them on
+  // portrait, between them on landscape); small margin on desktop.
+  const inset = isMobile ? (landscape ? H * 0.05 : H * 0.24) : H * 0.055;
+  // The load bar TARGETS a ~150px-tall scene (scene ≈ 1.68·TW), and only shrinks to
+  // fit the viewport WIDTH or the vertical band left above the reserved card-text
+  // area + the touch pads — so it fills the space rather than sitting tiny.
+  const targetTW = 150 / 1.68;
+  const widthTW = (W - 2 * margin) / (PZ.N + 1.6) * 0.98;
+  const heightTW = Math.max(24, ((H - inset) - H * 0.34) / 1.68);
+  let TW = Math.max(20, Math.min(targetTW, widthTW, heightTW));
   phw = TW / 2; phh = phw * (74 / 120);
   const eliasW = phh * 3.79;
   const gridW = PZ.N * TW, overhangR = phw + eliasW * 0.42;
   const startX = (W - (gridW + overhangR)) / 2;
-  // Reserve space at the bottom for the mobile touch pads so the grid sits ABOVE
-  // them (portrait) rather than behind them; small margin on desktop.
-  const inset = isMobile ? (landscape ? H * 0.06 : H * 0.26) : H * 0.055;
   const baseY = H - phh - inset;
   pcells = []; pbetween = [];
   for (let i = 0; i < PZ.N; i++) pcells.push({ cx: startX + phw + i * TW, cy: baseY, fill: 0 });

@@ -1514,6 +1514,21 @@
     }
   });
 
+  // The instant the load screen hides, tell the game so it can start the title
+  // music IN SYNC with the visible title (Arc: Title defers Anthem4 until this,
+  // with a ~5s fallback). Fires once, on the loading→false transition.
+  let loaderRevealSent = false;
+  $effect(() => {
+    if (!loading && !loaderRevealSent && iframeEl?.contentWindow) {
+      loaderRevealSent = true;
+      try {
+        iframeEl.contentWindow.postMessage({ type: "allbyte_loader_reveal" }, "*");
+      } catch {
+        /* iframe not ready / cross-origin — the game's fallback covers it */
+      }
+    }
+  });
+
   // Kick the studio intro the moment a normal player load begins.
   $effect(() => {
     if (allowed && loading && !studioTimerStarted && isNormalPlayerLoad()) {

@@ -1448,6 +1448,7 @@
           cssW: loadCanvasEl.clientWidth || window.innerWidth,
           cssH: loadCanvasEl.clientHeight || window.innerHeight,
           cards: builtCards,
+          isMobile: isMobileViewport(),
           cfg: {
             studioMs: STUDIO_MS,
             studioSettleMs: STUDIO_SETTLE_MS,

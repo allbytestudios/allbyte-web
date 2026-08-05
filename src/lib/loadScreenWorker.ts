@@ -18,6 +18,7 @@ interface InitMsg {
   cssW: number;
   cssH: number;
   cards: Card[];
+  isMobile?: boolean;
   cfg: { studioMs: number; studioSettleMs: number; studioFadeMs: number; cardMs: number; cardMinMs: number };
 }
 
@@ -70,6 +71,7 @@ const EANCH = {
   attack: { fx: 0.451, fy: 0.733, mirror: true, base: 225 },
   victory: { fx: 0.5, fy: 0.905, mirror: false, base: 132 },
 };
+let isMobile = false;
 let scenePhase: "run" | "attack" | "victory" | "pause" = "run";
 let sceneT0 = 0, sceneStarted = false;
 let eliasMode: "idle" | "attack" | "victory" = "idle";
@@ -93,7 +95,7 @@ self.onmessage = async (e: MessageEvent) => {
   if (m.type === "init") {
     const msg = m as InitMsg;
     dpr = msg.dpr; W = msg.cssW; H = msg.cssH;
-    cards = msg.cards; cfg = msg.cfg;
+    cards = msg.cards; cfg = msg.cfg; isMobile = !!msg.isMobile;
     const cv = msg.canvas;
     cv.width = Math.round(W * dpr);
     cv.height = Math.round(H * dpr);
@@ -405,13 +407,20 @@ let geoW = -1, geoH = -1;
 function ensurePoisonGeo() {
   if (geoW === W && geoH === H && pcells.length) return;
   geoW = W; geoH = H;
-  const avail = (W - 40) * PZ.WIDTH;
-  const TW = avail / (PZ.N + 1.4);
+  const landscape = W > H;
+  // Tile width from the horizontal budget, but CAPPED by height so it can't blow
+  // up on short / landscape viewports (that was the mobile-landscape distortion).
+  let TW = (W - 40) * PZ.WIDTH / (PZ.N + 1.4);
+  const maxTW = H * (landscape ? 0.13 : 0.17);
+  if (TW > maxTW) TW = maxTW;
   phw = TW / 2; phh = phw * (74 / 120);
   const eliasW = phh * 3.79;
   const gridW = PZ.N * TW, overhangR = phw + eliasW * 0.42;
   const startX = (W - (gridW + overhangR)) / 2;
-  const baseY = H - phh - H * 0.055;
+  // Reserve space at the bottom for the mobile touch pads so the grid sits ABOVE
+  // them (portrait) rather than behind them; small margin on desktop.
+  const inset = isMobile ? (landscape ? H * 0.06 : H * 0.26) : H * 0.055;
+  const baseY = H - phh - inset;
   pcells = []; pbetween = [];
   for (let i = 0; i < PZ.N; i++) pcells.push({ cx: startX + phw + i * TW, cy: baseY, fill: 0 });
   for (let i = 0; i < PZ.N; i++) pbetween.push({ cx: pcells[i].cx + phw, cy: baseY - phh, fill: 0 });

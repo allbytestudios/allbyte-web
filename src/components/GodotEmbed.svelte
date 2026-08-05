@@ -1610,6 +1610,10 @@
   // the "still working" signal while content is frozen.)
   $effect(() => {
     if (!(loading && loadPhase === "manual" && isNormalPlayerLoad())) return;
+    // On the worker path the WORKER owns card rotation AND the reveal (cut over
+    // only at a card boundary after Elias' victory) — this DOM poll would reveal
+    // early mid-card, so skip it entirely. Boot watchdog stays the backstop.
+    if (useWorkerLoader && !workerFailed) return;
     let lastTick = performance.now();
     const id = setInterval(() => {
       const now = performance.now();

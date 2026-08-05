@@ -411,7 +411,7 @@ function ensurePoisonGeo() {
   // Tile width from the horizontal budget, but CAPPED by height so it can't blow
   // up on short / landscape viewports (that was the mobile-landscape distortion).
   let TW = (W - 40) * PZ.WIDTH / (PZ.N + 1.4);
-  const maxTW = H * (landscape ? 0.13 : 0.17);
+  const maxTW = H * (landscape ? 0.17 : 0.22);
   if (TW > maxTW) TW = maxTW;
   phw = TW / 2; phh = phw * (74 / 120);
   const eliasW = phh * 3.79;

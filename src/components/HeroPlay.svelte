@@ -15,6 +15,7 @@
     type RuntimeChannels,
   } from "../lib/gameVersions.ts";
   import PixelTransition from "./PixelTransition.svelte";
+  import { primeHeroSnapshot, invalidateHeroSnapshot } from "../lib/heroSnapshot.ts";
 
   let runtime = $state<RuntimeChannels>(null);
   let open = $state(false);
@@ -26,6 +27,28 @@
     } catch {
       /* dev / not published yet → only the always-on builds are offered */
     }
+  });
+
+  // Warm the Play pixel-transition: pre-capture the viewport (and pre-load the
+  // snapdom chunk) on an idle beat so pressing Play is instant, not lagged by the
+  // ~300ms DOM rasterization. Re-primed on Play hover/press (below); dropped on
+  // resize so a wrong-sized snapshot is never reused.
+  onMount(() => {
+    const idle = (window as any).requestIdleCallback || ((f: () => void) => setTimeout(f, 1200));
+    const cancelIdle = (window as any).cancelIdleCallback || clearTimeout;
+    const handle = idle(() => primeHeroSnapshot());
+    let rz: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      invalidateHeroSnapshot();
+      clearTimeout(rz);
+      rz = setTimeout(() => primeHeroSnapshot(), 400);
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      try { cancelIdle(handle); } catch { /* setTimeout fallback */ }
+      clearTimeout(rz);
+      window.removeEventListener("resize", onResize);
+    };
   });
 
   // Robustness through Back. play() flips `transitioning` true and hard-navigates
@@ -102,7 +125,13 @@
 <svelte:document onclick={onDocClick} />
 
 <span class="heroplay">
-  <button class="btn btn-primary btn-lg play-main" class:split={admin} onclick={() => play(def.id)}>
+  <button
+    class="btn btn-primary btn-lg play-main"
+    class:split={admin}
+    onclick={() => play(def.id)}
+    onpointerenter={() => primeHeroSnapshot()}
+    onpointerdown={() => primeHeroSnapshot()}
+  >
     {primaryLabel}
   </button>
 

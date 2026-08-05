@@ -13,6 +13,7 @@
   // toDataURL), so canvas taint can't break it. If the snapshot fails or is slow,
   // we fall back to the previous video-only effect — Play is never blocked.
   import { onMount } from "svelte";
+  import { takeHeroSnapshot } from "../lib/heroSnapshot.ts";
 
   let { ondone }: { ondone?: () => void } = $props();
 
@@ -155,11 +156,19 @@
       raf = requestAnimationFrame(step);
     };
 
-    // Wait for the snapshot (capped) so frame 1 already has the whole page; if it
-    // times out we start on the video fallback and never block Play.
-    const snapDone = capture().catch(() => {});
-    const timer = new Promise<void>((res) => setTimeout(res, SNAP_WAIT_MS));
-    Promise.race([snapDone, timer]).then(() => { if (!cancelled) start(); });
+    // Fast path: a snapshot was primed on load / Play hover-press (heroSnapshot.ts)
+    // → start the dissolve instantly, no capture on the click. Otherwise capture
+    // on the fly (capped) so frame 1 still has the whole page, falling back to the
+    // video if it times out — Play is never blocked.
+    const primed = takeHeroSnapshot();
+    if (primed) {
+      pageSnap = primed;
+      start();
+    } else {
+      const snapDone = capture().catch(() => {});
+      const timer = new Promise<void>((res) => setTimeout(res, SNAP_WAIT_MS));
+      Promise.race([snapDone, timer]).then(() => { if (!cancelled) start(); });
+    }
 
     return () => { cancelled = true; cancelAnimationFrame(raf); cv.remove(); };
   });

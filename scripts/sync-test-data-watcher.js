@@ -68,6 +68,11 @@ const WATCH_FILES = [
   "test_results/test_run_status.json",
   "tickets/owner_questions.json",
   "test_fixtures/manifest.json",
+  // A local staging cut appends a record here. The dev container has no aws
+  // CLI, so this host watcher is the only thing that can mirror those records
+  // to S3 — without it the mirror holds CI-cut records only and a CI-side
+  // changelog regen misses every staging cut.
+  "tickets/deploy_manifest.ndjson",
 ];
 
 // --- pure helpers (testable) ----------------------------------------------
@@ -96,6 +101,7 @@ export function buildSyncCommands({
   const ownerAnswers = toPosix(join(chroniclesDir, "tickets", "owner_answers.ndjson"));
   const daemonHeartbeat = toPosix(join(chroniclesDir, "tickets", ".answer_daemon_heartbeat.json"));
   const relicVignettes = toPosix(join(chroniclesDir, "tools", "relic_vignettes.json"));
+  const deployManifest = toPosix(join(chroniclesDir, "tickets", "deploy_manifest.ndjson"));
   const cmds = [];
   cmds.push({
     label: "test_index.json",
@@ -194,6 +200,26 @@ export function buildSyncCommands({
       `s3://${bucket}/test-snapshot/test_fixtures`,
       "--region", region,
       "--cache-control", cacheCtrl,
+    ],
+  });
+  // NOT an `aws s3 cp` — deliberately. The S3 copy is the UNION of records from
+  // two writers that can't see each other (local staging cuts append here; CI
+  // cuts publish straight to S3 with no git write-back to Chronicles). A plain
+  // upload of the local file would clobber every CI-published record. The
+  // publisher merges instead, so pushing the whole file is idempotent and
+  // self-healing — it also backfills anything the mirror is missing.
+  cmds.push({
+    label: "tickets/deploy_manifest.ndjson",
+    localPath: deployManifest,
+    // Only republish when the manifest itself changed: a full sync fires on any
+    // watched file, and this one is ~220 KB of GET+PUT we don't want on every
+    // unrelated test_index tick.
+    onlyIfChanged: true,
+    argv: [
+      process.execPath, toPosix(join(ROOT, "scripts", "publish-deploy-manifest.js")),
+      "--records", deployManifest,
+      "--bucket", bucket,
+      "--region", region,
     ],
   });
   return cmds;
@@ -441,6 +467,23 @@ async function uploadHeartbeat({ state, dryRun, bucket, region }) {
 
 // --- sync runner ----------------------------------------------------------
 
+// mtime bookkeeping for commands flagged `onlyIfChanged`. Process-local by
+// design: on restart everything republishes once, which is harmless because the
+// only such command (the deploy-manifest mirror) is an idempotent union merge.
+const lastRunMtimes = new Map();
+function hasChangedSinceLastRun(key, path) {
+  try {
+    return lastRunMtimes.get(key) !== statSync(path).mtimeMs;
+  } catch {
+    return true; // can't stat -> don't suppress; let the command run and report
+  }
+}
+function markRan(key, path) {
+  try {
+    lastRunMtimes.set(key, statSync(path).mtimeMs);
+  } catch { /* best-effort */ }
+}
+
 async function runSync({ dryRun, chroniclesDir, bucket, region, breaker }) {
   if (breaker && breaker.isOpen()) {
     log(
@@ -452,7 +495,7 @@ async function runSync({ dryRun, chroniclesDir, bucket, region, breaker }) {
 
   const cmds = buildSyncCommands({ chroniclesDir, bucket, region });
   let allOk = true;
-  for (const { label, argv, localPath } of cmds) {
+  for (const { label, argv, localPath, onlyIfChanged } of cmds) {
     if (dryRun) {
       log("..", `[dry-run] ${label}: ${argv.slice(0, 4).join(" ")} …`);
       continue;
@@ -461,10 +504,16 @@ async function runSync({ dryRun, chroniclesDir, bucket, region, breaker }) {
       log("warn", `${label}: source ${localPath} does not exist — skipping`);
       continue;
     }
+    if (onlyIfChanged && localPath && !hasChangedSinceLastRun(label, localPath)) {
+      continue;
+    }
     const display = label;
     log("..", `uploading ${display}`);
     const result = await runCommand(argv);
     if (result.ok) {
+      // Record the mtime only on SUCCESS, so a failed publish retries on the
+      // next sync instead of being skipped as "already done".
+      if (onlyIfChanged && localPath) markRan(label, localPath);
       log("ok", `${display}`);
     } else {
       allOk = false;
@@ -522,13 +571,13 @@ async function runSelfTest() {
 
   console.log("buildSyncCommands");
   ok =
-    t("returns 8 commands", () => {
+    t("returns 10 commands", () => {
       const cmds = buildSyncCommands({
         chroniclesDir: "/tmp/chr",
         bucket: "b",
         region: "r",
       });
-      if (cmds.length !== 8)
+      if (cmds.length !== 10)
         throw new Error(`expected 8, got ${cmds.length}`);
     }) && ok;
   ok =
@@ -566,6 +615,21 @@ async function runSelfTest() {
         throw new Error("missing .gdignore exclude");
       if (!args.includes("*.import"))
         throw new Error("missing *.import exclude");
+    }) && ok;
+  ok =
+    t("deploy manifest MERGES via the publisher, never a raw cp", () => {
+      const cmds = buildSyncCommands({ chroniclesDir: "/tmp/chr", bucket: "b", region: "r" });
+      const m = cmds.find((c) => c.label === "tickets/deploy_manifest.ndjson");
+      if (!m) throw new Error("no deploy_manifest command");
+      // A raw `aws s3 cp` here would clobber every CI-published record, since
+      // the S3 copy is the union of two writers that can't see each other.
+      if (m.argv.includes("cp") || m.argv[0] === "aws")
+        throw new Error(`must not use aws cp: ${m.argv.join(" ")}`);
+      if (!m.argv.some((a) => a.endsWith("publish-deploy-manifest.js")))
+        throw new Error("must invoke publish-deploy-manifest.js");
+      if (!m.onlyIfChanged) throw new Error("must be gated on mtime change");
+      if (m.argv.indexOf("--bucket") === -1 || m.argv[m.argv.indexOf("--bucket") + 1] !== "b")
+        throw new Error("must forward the resolved bucket");
     }) && ok;
   ok =
     t("uploads .beads/issues.jsonl", () => {

@@ -42,8 +42,15 @@ import { existsSync, readFileSync, writeFileSync, unlinkSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 
-const bucket = process.env.AWS_S3_BUCKET || "allbyte.studio-site";
-const region = process.env.AWS_REGION || "us-east-1";
+// --bucket/--region override the env defaults so a caller that already resolved
+// them (the sync watcher) can pass its own values explicitly instead of relying
+// on the two processes happening to read the same environment.
+const flag = (name, fallback) => {
+  const i = process.argv.indexOf(name);
+  return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
+};
+const bucket = flag("--bucket", process.env.AWS_S3_BUCKET || "allbyte.studio-site");
+const region = flag("--region", process.env.AWS_REGION || "us-east-1");
 const KEY = "test-snapshot/tickets/deploy_manifest.ndjson";
 const dryRun = process.argv.includes("--dry-run");
 

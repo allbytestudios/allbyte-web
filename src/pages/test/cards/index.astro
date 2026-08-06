@@ -1,0 +1,244 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import PageHeader from "../../../components/PageHeader.astro";
+import Footer from "../../../components/Footer.astro";
+import TestNav from "../../../components/TestNav.svelte";
+import { MANUAL_CARDS, SPRITE_LORE } from "../../../lib/manualCards.ts";
+
+// Order the sprite lore the same way the display names read.
+const spriteEntries = Object.entries(SPRITE_LORE);
+const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.length ?? 0), 0);
+---
+
+<BaseLayout
+  title="Loading Cards — Dev Console — AllByte Studios"
+  description="Every /play load-screen manual card, rendered from the same source the loader uses."
+>
+  <PageHeader
+    theme="engine"
+    title="Dev Console"
+    backHref="/"
+    backLabel="Home"
+    breadcrumbs={[{ href: "/", label: "Home" }]}
+  />
+  <main class="cards-shell">
+    <TestNav active="cards" client:load />
+
+    <div class="cards-wrap">
+      <header class="cards-head">
+        <h1>Loading Cards</h1>
+        <p>
+          Every manual card shown on the <code>/play</code> load screen, rendered from
+          <code>src/lib/manualCards.ts</code> — the exact source the loader draws, so
+          this can't drift from what players see.
+        </p>
+        <div class="tally">
+          <span>{MANUAL_CARDS.length} text cards</span>
+          <span>·</span>
+          <span>{rowCount} lines</span>
+          <span>·</span>
+          <span>1 living-sprite card ({spriteEntries.length} possible characters)</span>
+        </div>
+      </header>
+
+      <section class="grid">
+        {MANUAL_CARDS.map((card, i) => (
+          <article class="card">
+            <div class="card-idx">{String(i + 1).padStart(2, "0")}</div>
+            <h2>{card.title}</h2>
+            {card.rows && (
+              <dl class="rows">
+                {card.rows.map(([term, desc]) => (
+                  <div class="row">
+                    <dt>{term}</dt>
+                    <dd>{desc}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {card.lines && (
+              <ul class="lines">
+                {card.lines.map((line) => (
+                  <li>{line}</li>
+                ))}
+              </ul>
+            )}
+            {card.quote && <blockquote>{card.quote}</blockquote>}
+          </article>
+        ))}
+
+        <article class="card sprite-card">
+          <div class="card-idx">★</div>
+          <h2>Living-sprite card</h2>
+          <p class="sprite-note">
+            A random handcrafted sprite turns and swings, captioned with its role and blurb.
+            Any of these can appear:
+          </p>
+          <dl class="rows sprite-rows">
+            {spriteEntries.map(([name, lore]) => (
+              <div class="row sprite-row">
+                <dt>
+                  {name}
+                  <span class="sprite-role">{lore.role}</span>
+                </dt>
+                <dd>{lore.blurb || <em class="empty">— no blurb (name + role only)</em>}</dd>
+              </div>
+            ))}
+          </dl>
+        </article>
+      </section>
+    </div>
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .cards-shell {
+    background: #0a0e17;
+    min-height: calc(100vh - 160px);
+  }
+  .cards-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 3rem;
+    color: #d1d5db;
+    font-family: "Courier New", monospace;
+  }
+  .cards-head h1 {
+    color: #a7f3d0;
+    font-size: 1.35rem;
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.02em;
+  }
+  .cards-head p {
+    color: #9ca3af;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    max-width: 70ch;
+    margin: 0 0 0.75rem;
+  }
+  .cards-head code {
+    color: #a7f3d0;
+    background: rgba(167, 243, 208, 0.08);
+    padding: 0.05rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .tally {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    color: #6b7280;
+    font-size: 0.8rem;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .card {
+    position: relative;
+    background: #0e1420;
+    border: 1px solid rgba(167, 243, 208, 0.14);
+    border-radius: 8px;
+    padding: 1rem 1.1rem 1.1rem;
+  }
+  .card-idx {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.9rem;
+    color: rgba(167, 243, 208, 0.35);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .card h2 {
+    color: #e0e7ff;
+    font-size: 1rem;
+    margin: 0 0 0.75rem;
+    padding-right: 2rem;
+    letter-spacing: 0.01em;
+  }
+
+  .rows {
+    margin: 0;
+    display: grid;
+    gap: 0.4rem;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+    gap: 0.75rem;
+    align-items: baseline;
+  }
+  .row dt {
+    color: #a7f3d0;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin: 0;
+  }
+  .row dd {
+    color: #c3cad6;
+    font-size: 0.85rem;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .lines {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+  .lines li {
+    color: #c3cad6;
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+  blockquote {
+    margin: 0.75rem 0 0;
+    padding-left: 0.75rem;
+    border-left: 2px solid rgba(167, 243, 208, 0.3);
+    color: #9ca3af;
+    font-style: italic;
+    font-size: 0.85rem;
+  }
+
+  .sprite-card {
+    grid-column: 1 / -1;
+    border-color: rgba(251, 191, 36, 0.28);
+  }
+  .sprite-card .card-idx {
+    color: rgba(251, 191, 36, 0.55);
+  }
+  .sprite-note {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin: 0 0 0.85rem;
+  }
+  .sprite-rows {
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 700px) {
+    .sprite-rows {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem 1.5rem;
+    }
+  }
+  .sprite-row dt {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .sprite-role {
+    color: #6b7280;
+    font-weight: 400;
+    font-size: 0.75rem;
+  }
+  .empty {
+    color: #6b7280;
+    font-style: italic;
+  }
+</style>

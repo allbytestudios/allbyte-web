@@ -304,6 +304,30 @@ if (isLive) {
   }
 }
 
+// --- mirror the deploy manifest record to S3 (--deploy-record) ---------------
+// Arc's emitter (emit_deploy_manifest.sh --dry-run) prints one ndjson record for
+// this cut; release_channel.sh hands it here. The CI cut path has NO git
+// write-back to the Chronicles repo, so S3 is the only way that record reaches
+// deploy-history.js — without it, a cloud-finalized release ships with an empty
+// "what's new" (the 2026-07 changelog gap). Best-effort by design: a failed
+// mirror costs changelog freshness, never the deploy.
+{
+  const dri = process.argv.indexOf("--deploy-record");
+  const recordPath = dri !== -1 ? process.argv[dri + 1] : null;
+  if (!recordPath) {
+    console.log("[push-channel] no --deploy-record — skipping deploy-manifest mirror.");
+  } else if (!existsSync(recordPath)) {
+    console.warn(`[push-channel] ⚠ --deploy-record '${recordPath}' not found — changelog will miss ${version}.`);
+  } else {
+    const publisher = join(__dirname, "publish-deploy-manifest.js");
+    try {
+      run(`node "${publisher}" --records "${recordPath}"${dryRun ? " --dry-run" : ""}`);
+    } catch (e) {
+      console.warn(`[push-channel] ⚠ deploy-manifest mirror failed (${e.message}) — deploy continues; /changelog/ may miss ${version}.`);
+    }
+  }
+}
+
 // --- AutoReload version marker (test_results/current_version.txt) -------------
 // The Godot export shell polls this every 3s and reloads an open tab when it
 // changes (picks up a new build without a manual refresh). If the file is ABSENT,

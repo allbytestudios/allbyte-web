@@ -91,7 +91,7 @@ if (dryRun) {
   console.log(`[finalize] [dry-run] would write ${VERSION_REL}:\n${JSON.stringify(next, null, 2)}`);
   console.log("[finalize] [dry-run] would regenerate changelog, then commit + push. Diff of what changed vs committed:");
   writeFileSync(VERSION_FILE, JSON.stringify(next, null, 2) + "\n");
-  run(`node scripts/deploy-history.js`);
+  run(`node scripts/deploy-history.js --require-manifest`);
   process.stdout.write(run(`git --no-pager diff -- ${VERSION_REL} ${CHANGELOG}`) + "\n");
   run(`git checkout -- ${VERSION_REL} ${CHANGELOG}`); // restore working tree
   console.log("[finalize] [dry-run] working tree restored — nothing committed or pushed.");
@@ -118,7 +118,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"`);
 }
 
 // --- 3. regenerate the changelog (now sees the committed version) ------------
-run(`node scripts/deploy-history.js`);
+run(`node scripts/deploy-history.js --require-manifest`);
 
 let pushNeeded = releaseCommitted;
 if (porcelain(CHANGELOG)) {

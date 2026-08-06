@@ -12,10 +12,18 @@
  * (previousPublicRelease, thisRelease]. So dev iterations between public ships
  * roll up into the release that actually carried them.
  *
- * The manifest lives in the Chronicles repo (dev-only). Like the other asset
- * syncs, this runs locally and commits changelog.json; CI builds from the
- * committed file. If the manifest isn't reachable, it leaves the existing
- * changelog.json untouched and exits 0 (so CI never depends on it).
+ * The manifest lives in the Chronicles repo (dev-only), so it is ALSO mirrored
+ * to S3 by publish-deploy-manifest.js. Resolution order:
+ *   1. CHRONICLES_DIR — authoritative, and a superset on a dev machine.
+ *   2. the S3 mirror over HTTPS — the only copy a CI runner can see.
+ * Without (2) this silently produced empty releases: finalize-demo.yml runs on a
+ * GitHub runner with no Chronicles checkout, so every live promote from
+ * 2026-07-06 to 08-06 shipped a release with zero changes and exit 0.
+ *
+ * Reaching NEITHER source leaves changelog.json untouched and exits 0, so an
+ * ordinary build never depends on the manifest. Pass --require-manifest to make
+ * that a hard error instead — the release path (finalize-web-deploy.js) does,
+ * because silence there is what loses changelog entries.
  *
  *   npm run changelog
  */
@@ -30,6 +38,9 @@ const REPO = join(__dirname, "..");
 const OUT = join(REPO, "src", "data", "changelog.json");
 const CHRONICLES = process.env.CHRONICLES_DIR || "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis";
 const MANIFEST = join(CHRONICLES, "tickets", "deploy_manifest.ndjson");
+const MANIFEST_URL =
+  process.env.DEPLOY_MANIFEST_URL || "https://allbyte.studio/test-snapshot/tickets/deploy_manifest.ndjson";
+const REQUIRE_MANIFEST = process.argv.includes("--require-manifest");
 
 // Build number = the last dotted component of vX.Y.Z (a global monotonic counter).
 const buildNum = (v) => parseInt(String(v).replace(/^v/, "").split(".").pop(), 10);
@@ -65,12 +76,47 @@ function publicReleases() {
   return out;
 }
 
-function main() {
-  if (!existsSync(MANIFEST)) {
-    console.warn(`Manifest not found at ${MANIFEST} — leaving changelog.json untouched.`);
-    process.exit(0);
+// Local checkout first (superset on a dev box), else the S3 mirror (the only
+// copy CI can see). Returns null when neither is reachable.
+async function loadManifest() {
+  if (existsSync(MANIFEST)) {
+    console.log(`manifest: ${MANIFEST} (local)`);
+    return readFileSync(MANIFEST, "utf8");
   }
-  const records = readFileSync(MANIFEST, "utf8")
+  try {
+    const res = await fetch(MANIFEST_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const body = await res.text();
+    // CloudFront rewrites 403/404 -> /index.html and serves it with HTTP 200, so
+    // "ok" proves nothing. An absent mirror arrives as a page of site HTML;
+    // sniff the first line rather than letting JSON.parse throw downstream.
+    const first = body.split(/\r?\n/).find((l) => l.trim());
+    let probe;
+    try { probe = JSON.parse(first ?? ""); } catch { probe = null; }
+    if (!probe?.version) throw new Error("mirror did not return ndjson (likely the CloudFront 404->index.html rewrite)");
+    console.log(`manifest: ${MANIFEST_URL} (S3 mirror)`);
+    return body;
+  } catch (e) {
+    console.warn(`Manifest unreachable — local '${MANIFEST}' absent and mirror failed: ${e.message}`);
+    return null;
+  }
+}
+
+async function main() {
+  const raw = await loadManifest();
+  if (raw === null) {
+    if (REQUIRE_MANIFEST) {
+      console.error(
+        "--require-manifest: refusing to ship a release with no manifest. Regenerating now would " +
+          "publish a version with an empty 'what's new'. Fix the manifest source, then re-run.",
+      );
+      process.exitCode = 1;
+      return;
+    }
+    console.warn("Leaving changelog.json untouched.");
+    return; // exit 0 — an ordinary build must never depend on the manifest
+  }
+  const records = raw
     .split(/\r?\n/).filter(Boolean)
     .map((l) => JSON.parse(l))
     .map((r) => ({ ...r, num: buildNum(r.version) }))
@@ -99,4 +145,4 @@ function main() {
   console.log(`changelog.json: ${out.length} releases with changes (${skipped} empty releases skipped), from ${records.length} manifest records.`);
 }
 
-main();
+main().catch((e) => { console.error(`deploy-history failed: ${e.message}`); process.exit(1); });

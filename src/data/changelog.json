@@ -1,6 +1,3840 @@
 {
-  "generatedAt": "2026-07-06T23:46:58.863Z",
+  "generatedAt": "2026-08-06T18:36:18.849Z",
   "releases": [
+    {
+      "version": "v0.8.2347",
+      "date": "2026-08-05",
+      "changes": [
+        {
+          "type": "release",
+          "subject": "deploy manifest v0.8.2342 (mobile touch + title-ready/loader-reveal build)",
+          "sha": "1042c7be"
+        },
+        {
+          "type": "fix",
+          "subject": "interactable on scene-entry spawn overlap (fix left-of-bed sleep)",
+          "sha": "c131b7f2"
+        },
+        {
+          "type": "fix",
+          "subject": "filter area_entered/exited to the player interaction area (fix walk-edge dead bug)",
+          "sha": "b985ea5d"
+        },
+        {
+          "type": "chore",
+          "subject": "extend interaction zone y 40->85 to cover full head+foot of the left edge",
+          "sha": "fda667b3"
+        },
+        {
+          "type": "fix",
+          "subject": "fix intermittent upside-down thumbnails (single canonical capture)",
+          "sha": "3a310e9a"
+        },
+        {
+          "type": "fix",
+          "subject": "tighten zone to down-only (fix top overshoot, keep foot)",
+          "sha": "00e1bcbb"
+        },
+        {
+          "type": "release",
+          "subject": "WEB_VERSION 0.8.2347 — bed left-edge interaction fix + screenshot double-flip fix",
+          "sha": "018d27e4"
+        },
+        {
+          "type": "fix",
+          "subject": "[deploy-develop] public cut (owner): bed left-edge interaction fix (Quinn 3/3 PASS) + screenshot double-flip fix, v0.8.2347",
+          "sha": "7b53aa08"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-staging] cut v0.8.2347 — staging = develop (forward-only)",
+          "sha": "c722ec70"
+        }
+      ]
+    },
+    {
+      "version": "v0.8.2342",
+      "date": "2026-08-05",
+      "changes": [
+        {
+          "type": "chore",
+          "subject": "emit allbyte_title_ready signal when title is painted + interactive",
+          "sha": "2d083117"
+        },
+        {
+          "type": "release",
+          "subject": "deploy manifest v0.8.2341 (backfill live public build cf260e59)",
+          "sha": "3bf1f14e"
+        },
+        {
+          "type": "chore",
+          "subject": "defer intro music until web loader reveals the title",
+          "sha": "9b3aa2a3"
+        },
+        {
+          "type": "chore",
+          "subject": "mobile touch = ui_accept dispatch (Nix sandbox/nix-fv3l 67d0e8f6)",
+          "sha": "9ae5a321"
+        },
+        {
+          "type": "refactor",
+          "subject": "touch-accept: suppress in combat + rename beacon to allbyte_touch_accept",
+          "sha": "226bad14"
+        },
+        {
+          "type": "release",
+          "subject": "touch=X in all conditions (owner override) + WEB_VERSION 0.8.2342",
+          "sha": "7be616fb"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] full public deploy (owner): mobile touch=X + title-ready + loader-reveal signals, v0.8.2342",
+          "sha": "9a521e28"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-staging] cut v0.8.2342 — staging = develop (forward-only)",
+          "sha": "8e3efe26"
+        }
+      ]
+    },
+    {
+      "version": "v0.8.2341",
+      "date": "2026-08-04",
+      "changes": [
+        {
+          "type": "combat",
+          "subject": "18ba PHASE-RELAY — replace fixed delays with signal-driven phase queue",
+          "sha": "bef18140"
+        },
+        {
+          "type": "beads",
+          "subject": "g3-guard bead + phase-relay/combat-batch note updates",
+          "sha": "2b123730"
+        },
+        {
+          "type": "beads",
+          "subject": "queue phase-relay (18ba) for verify",
+          "sha": "ba8675fe"
+        },
+        {
+          "type": "autoplay",
+          "subject": "fix DEFAULT persona combat stall at ChurchSquare (cond 7→8)",
+          "sha": "d698840c"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "fix Vector2i size type bug that prevented all combat moves",
+          "sha": "2098ae9b"
+        },
+        {
+          "type": "test",
+          "subject": "AutoPlay ChurchSquare combat diagnostic (_diag, not collected)",
+          "sha": "ed4745c4"
+        },
+        {
+          "type": "beads",
+          "subject": "AutoPlay ChurchSquare combat win (needs-verify per difficulty)",
+          "sha": "1e26d7eb"
+        },
+        {
+          "type": "autoplay",
+          "subject": "fix attack-gate cursor reliability via FACE orientation + diagonal routing",
+          "sha": "63af7eff"
+        },
+        {
+          "type": "autoplay",
+          "subject": "remove dead _face_dir_sent local var (cleanup)",
+          "sha": "43e0e1ed"
+        },
+        {
+          "type": "beads",
+          "subject": "AutoPlay combat win verified Easy+Hard (Quinn); Tier 2 heal roadmap",
+          "sha": "d175bc0f"
+        },
+        {
+          "type": "combat",
+          "subject": "floating color-coded hit-chance % labels during player targeting",
+          "sha": "329bcb3f"
+        },
+        {
+          "type": "fix",
+          "subject": "close stale _pending_door_scene leaks causing intermittent transition skip (bd-cn4r)",
+          "sha": "4b5f2d91"
+        },
+        {
+          "type": "sync",
+          "subject": "propagate cn4r nav-flag fix to Laria+Overworld PlayerCharacter.gd pack copies",
+          "sha": "0f9ef396"
+        },
+        {
+          "type": "beads",
+          "subject": "scene-transition + traversal#1 fixed (cn4r, Quinn-verified); hit-chance shipped+verified",
+          "sha": "750ef2aa"
+        },
+        {
+          "type": "beads",
+          "subject": "create + verify scene-transition fix bead (was lost to shell-quoting)",
+          "sha": "c3e99b04"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "fix LeaveArea walk-through crossing + PAUSED-after-reenable resume (5ucd + ta1k)",
+          "sha": "7193d864"
+        },
+        {
+          "type": "combat",
+          "subject": "route hit-chance label through DamageQueue.spawn_preview()",
+          "sha": "e80f2f9a"
+        },
+        {
+          "type": "combat",
+          "subject": "drop per-spawn_preview debug print (fires per cursor-move via hit-chance preview; no-per-frame-prints)",
+          "sha": "93f8a6e6"
+        },
+        {
+          "type": "beads",
+          "subject": "AutoPlay traversal #1+#2 verified LIVE + hit-chance restyle confirmed (Quinn, :8060 02:49)",
+          "sha": "b35dcb35"
+        },
+        {
+          "type": "beads",
+          "subject": "AutoPlay story-beat dispatch gaps (EliasHouse sleep cond 9)",
+          "sha": "8f2d633a"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "EliasHouse cond=9 sleep dispatch + DEFAULT Mugwort heal threshold",
+          "sha": "4540b671"
+        },
+        {
+          "type": "CombatUnit",
+          "subject": "QB-014 — player max_hp now sourced from party growth model",
+          "sha": "cd8ddb8c"
+        },
+        {
+          "type": "chore",
+          "subject": "QB-014: fix Elias max_hp=13 in Overworld combat via BattleSnapshot party capture",
+          "sha": "a05d1b3c"
+        },
+        {
+          "type": "SceneTemplate",
+          "subject": "sync bootstrap copy with QB-014 party-stat capture (dual-copy fix)",
+          "sha": "8720fed8"
+        },
+        {
+          "type": "CombatVFXBench",
+          "subject": "tabbed shader tuner (Attack | Lightning Bolt) + freeze/scrub row",
+          "sha": "036625b2"
+        },
+        {
+          "type": "fixtures",
+          "subject": "SluiceGate boss-arrival matrix (Easy/Hard x low/high) + fix leveled stats",
+          "sha": "204cf67c"
+        },
+        {
+          "type": "fixtures",
+          "subject": "fix SluiceGate boss saves — HIGH water (cond3 1->0) so bridge-jump egress works",
+          "sha": "aa3f953a"
+        },
+        {
+          "type": "chore",
+          "subject": "combat benches: play combat music at gameplay-default volume + default VFX bench to Animation mode",
+          "sha": "a598f9c6"
+        },
+        {
+          "type": "combat",
+          "subject": "VictorySFX on level-up + victory fanfare held for the SFX duration",
+          "sha": "6f0ea93e"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: wire the Medium spine + boss leaves (11 nodes) into the manifest",
+          "sha": "547085bb"
+        },
+        {
+          "type": "chore",
+          "subject": "smite bolt: bake owner-tuned params + canvas_pad headroom, single controllable bolt, dump-to-clipboard",
+          "sha": "39c011c3"
+        },
+        {
+          "type": "redeploy",
+          "subject": ":8061 iteration lane — divert here when :8060 is held instead of aborting",
+          "sha": "f3fb3b40"
+        },
+        {
+          "type": "chore",
+          "subject": "smite bolt: sky-column geometry — bottom-anchored pixel-height rect (screen-tall strike)",
+          "sha": "77ef95d3"
+        },
+        {
+          "type": "chore",
+          "subject": "smite bolt: bake owner sky-column tune + port geometry into real combat",
+          "sha": "efcdefd2"
+        },
+        {
+          "type": "chore",
+          "subject": "QB-022 / ChroniclesOfNesis-303r: fix Move Relic visibility + nav reachability in waterwayChannel",
+          "sha": "b55153fb"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: wire Hard spine (QB tree-build) — 2 fixtures + 4 manifest nodes",
+          "sha": "f0f4bc38"
+        },
+        {
+          "type": "chore",
+          "subject": "[SKDIAG] instrument skill-tree load/read for skill-tree-not-loading diag",
+          "sha": "0872e4c0"
+        },
+        {
+          "type": "web",
+          "subject": "bump WEB_VERSION 0.7.2208 (monotonic forward; SKDIAG diag build cache-bust)",
+          "sha": "f4a3aa72"
+        },
+        {
+          "type": "fix",
+          "scope": "skilltree",
+          "subject": "invalidate cached grid on save-load so learned nodes render",
+          "sha": "63b4d584"
+        },
+        {
+          "type": "skilltree",
+          "subject": "strip [SKDIAG] diagnostic prints (root cause fixed in 63b4d584)",
+          "sha": "b723df0c"
+        },
+        {
+          "type": "fix",
+          "scope": "uyzz",
+          "subject": "WASD-accept fires stale mouse button, not focused one",
+          "sha": "97341768"
+        },
+        {
+          "type": "web",
+          "subject": "WEB_VERSION 0.7.2212 (menu WASD-accept fix live for verify)",
+          "sha": "601fe573"
+        },
+        {
+          "type": "testbridge",
+          "subject": "add _testInjectMouseMotion hook for uyzz menu-mode regression pin",
+          "sha": "6db1a895"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: wire Easy PARTIAL spine — 2 fixtures + 4 manifest nodes",
+          "sha": "8ccfd042"
+        },
+        {
+          "type": "beads",
+          "subject": "resync issues.jsonl (keno reopened — erroneous auto-close in 8ccfd042)",
+          "sha": "a0361e62"
+        },
+        {
+          "type": "chore",
+          "subject": "QB-022 / ChroniclesOfNesis-303r p2: fix relic grab + canal drain visibility",
+          "sha": "3abafcef"
+        },
+        {
+          "type": "chore",
+          "subject": "QB-022 pass3: disable relic StaticBody2D per-instance in waterwayChannel (player X-block fix)",
+          "sha": "63cf4273"
+        },
+        {
+          "type": "chore",
+          "subject": "TEST tier2: pin battle-stat derivation formula for wqzs regression gate",
+          "sha": "445085ef"
+        },
+        {
+          "type": "chore",
+          "subject": "QB-022 pass 4: fix relic pickup shadowed by WaterHint lore triggers",
+          "sha": "d31d5c21"
+        },
+        {
+          "type": "vera",
+          "subject": "Tier-3 regression pin for 303r Move Relic Hard grab",
+          "sha": "b83c344d"
+        },
+        {
+          "type": "chore",
+          "subject": "waterway relic: low-water re-enable must respect difficulty gate",
+          "sha": "720f6679"
+        },
+        {
+          "type": "beads",
+          "subject": "sync issues.jsonl (Move Relic QB-022 closed, all Tier-3 tests green)",
+          "sha": "b79fa878"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "add STORY persona + skill-heal survivability for boss fight",
+          "sha": "bbb889c9"
+        },
+        {
+          "type": "web",
+          "subject": "WEB_VERSION 0.7.2215 (AutoPlay STORY persona + Cure/Cleanse heal for boss re-QA)",
+          "sha": "79c25633"
+        },
+        {
+          "type": "autoplay",
+          "subject": "WaterwayChannel bridge-jump crossing + gameState persona mirror",
+          "sha": "adcfc235"
+        },
+        {
+          "type": "web",
+          "subject": "WEB_VERSION 0.7.2216 (AutoPlay bridge-jump nav + persona mirror)",
+          "sha": "56490c23"
+        },
+        {
+          "type": "autoplay",
+          "subject": "cond-11 WaterwayChannel drop-in objective (route to SluiceGate regardless of wc_visited)",
+          "sha": "311318bf"
+        },
+        {
+          "type": "fix",
+          "scope": "sluicegate",
+          "subject": "clear isInEvent so Mother Slime boss charge engages combat",
+          "sha": "4f98a139"
+        },
+        {
+          "type": "fix",
+          "scope": "save",
+          "subject": "nudge save position out of transition triggers before serializing",
+          "sha": "b1c452d2"
+        },
+        {
+          "type": "test",
+          "scope": "t4",
+          "subject": "pin TRANSITION-SAFE-SAVE-POS regression (v0.7.2219)",
+          "sha": "e98c2da9"
+        },
+        {
+          "type": "chore",
+          "subject": "AutoPlay STORY auto-equip v1: AVG_STAT gear + Item Relic default + override hook + equipped mirror",
+          "sha": "de019fc7"
+        },
+        {
+          "type": "chore",
+          "subject": "AutoPlay STORY auto-equip v1.1: gear-only trigger + Phase-7 done-latch + empty-slot fill",
+          "sha": "e060ee12"
+        },
+        {
+          "type": "fixtures",
+          "subject": "synthetic full-gear boss save (easy_high + Leather Chestpiece + Quick Boots)",
+          "sha": "255b18f6"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "STORY casts Smite in melee (radiant vs physical-resist boss) [QB-021 combat-competence]",
+          "sha": "ef0aaa04"
+        },
+        {
+          "type": "chore",
+          "subject": "AutoPlay STORY: reserve MP for Cure — don't Smite a wounded Elias into empty MP (QB-021)",
+          "sha": "82d95cdb"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "fix after-boss-death combat stall + add armed-idle STUCK watchdog (QB-021)",
+          "sha": "6f2f4b1d"
+        },
+        {
+          "type": "chore",
+          "subject": "AutoPlay STORY: heal-FIRST with AP reservation so wounded Elias actually casts Cure (QB-021)",
+          "sha": "6a71a4ef"
+        },
+        {
+          "type": "chore",
+          "subject": "AutoPlay STORY: Mugwort MP-out sustain + MP-reservation deactivation + watchdog flicker-proofing (QB-021 2nd-wound freeze)",
+          "sha": "02e4c320"
+        },
+        {
+          "type": "chore",
+          "subject": "AutoPlay QB-021: signature-based unified no-progress combat watchdog",
+          "sha": "1088cfef"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "fix skill-picker infinite-loop freeze (2227) — bail + convergent nav",
+          "sha": "c8d7d3e1"
+        },
+        {
+          "type": "chore",
+          "subject": "AutoPlay combat: escape open skills-picker + turn-flicker-proof no-progress watchdog (2228 SluiceGate trap)",
+          "sha": "7c663cd6"
+        },
+        {
+          "type": "fix",
+          "scope": "autoplay",
+          "subject": "Mugwort heal never fired — check relic-SLOT binding not item.isEquipped",
+          "sha": "e05c4608"
+        },
+        {
+          "type": "fix",
+          "scope": "autoplay",
+          "subject": "Mugwort never CONSUMES — item pick left SKILL-confirm with no target",
+          "sha": "9fd20684"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "ItemsMenu two-axis nav convergence + STORY relic mandatory-collect gate",
+          "sha": "7ee50893"
+        },
+        {
+          "type": "fixtures",
+          "subject": "HARD synthetic full-gear boss save (hard_high + Leather Chestpiece + Quick Boots)",
+          "sha": "9e2fd212"
+        },
+        {
+          "type": "fixtures",
+          "subject": "canonical SluiceGate post_boss save (Hard, win + Berserckounter relic)",
+          "sha": "6b4fb6ca"
+        },
+        {
+          "type": "DebugMenu",
+          "subject": "in-game Demo/Alpha ending toggle (GlobalWorld.demo)",
+          "sha": "d3a94b4e"
+        },
+        {
+          "type": "fixtures",
+          "subject": "promote Quinn's Save A (side-branch, equipped) pre-boss saves ×3",
+          "sha": "ada5ec5d"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "add reset() + progress tracker; reset run-state on save-inject",
+          "sha": "e0e7f65b"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "publish window._testAutoplayVerdict at run-end (verdict object)",
+          "sha": "872b67e5"
+        },
+        {
+          "type": "TestBridge",
+          "subject": "add SP-gated learn-skill hook (chain-legal, no free-grant)",
+          "sha": "80082861"
+        },
+        {
+          "type": "fix",
+          "scope": "load",
+          "subject": "keep inLoadGameState set through deferred scene load so backward saves don't re-fire scene-entry events",
+          "sha": "be92fbde"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "promote sustained silent-stall to a verdict-publishing run-end",
+          "sha": "3a19f4ea"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "guard ChurchSquare cond-8 route so Event-1 forced-fight engages",
+          "sha": "42d10485"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "exclude active-event time from silent-stall clock",
+          "sha": "a0e9c6d3"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "grind-to-level goal-mode — seek + cycle + adaptive-kit engage + halt",
+          "sha": "da322e5c"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "grind-survival heal tuning + learned-state skill gate",
+          "sha": "80d00be4"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "auto-equip owned gear on grind ARM (fixes bare-handed grind wipe)",
+          "sha": "9b8f1668"
+        },
+        {
+          "type": "fixtures",
+          "subject": "promote Waterway1 grind-start (Save-B grind seed, med)",
+          "sha": "7cf0049e"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "grind SP-spend down central line (Cure-first survival -> Relic Slot -> Smite)",
+          "sha": "94f02e55"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "grind SP-spend = natural topology tree-walk (parents-before-children)",
+          "sha": "73a098ea"
+        },
+        {
+          "type": "SluiceGate",
+          "subject": "fix stuck return-to-WaterwayChannel (spawn-into-EntryArea)",
+          "sha": "eb1c9da7"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "QB-031 forward-play halt-at-target (stop_at_scene / stop_at_cond)",
+          "sha": "90cce6e1"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "QB-031 halt-gate v2 — check every tick, not just _decide (fixes missed brief arrival)",
+          "sha": "42c6a213"
+        },
+        {
+          "type": "chore",
+          "subject": "scene-graph: register Bed (cond-9 sleep beat) so App's walkthrough FK-validates",
+          "sha": "7871d470"
+        },
+        {
+          "type": "chore",
+          "subject": "QB-030: new-game REQUEST API (Title→EliasHouse) — request, don't hand-drive menus",
+          "sha": "83c2d8b6"
+        },
+        {
+          "type": "chore",
+          "subject": "dialogue-review: Arc data layer for the webapp dialogue editor (read + write halves)",
+          "sha": "9633a11d"
+        },
+        {
+          "type": "diag",
+          "subject": "fast cond-5 Mayor-leg repro for the FrontRoad nav-mesh stall (ypui)",
+          "sha": "35aed74b"
+        },
+        {
+          "type": "DifficultySelectMenu",
+          "subject": "reframe taglines by focus (Easy=story, Hard=combat, Med=blend)",
+          "sha": "cfecefcd"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "dismiss modal treasure popup before menu-detour phases (event_10 order-40 hang fix)",
+          "sha": "e73cae84"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "STORY auto-equip story-granted gear before forced fight (QB-035, generalize grind helper)",
+          "sha": "8f514da6"
+        },
+        {
+          "type": "Combat",
+          "subject": "apply equipped gear on the snapshot-sourced stat roll (QB-014/QB-035 propagation)",
+          "sha": "583b5135"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "suppress menu-detour phases during locked events + strip EQ-DIAG",
+          "sha": "3b38bd02"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "commit packs_src Laria copy — complete the dual-copy sync 3b38bd02 only half-staged (bootstrap committed, Laria left in tree)",
+          "sha": "dfb24ba7"
+        },
+        {
+          "type": "SkillsMenu",
+          "subject": "inline relic-slotting mode replaces popup picker (owner 2026-07-21)",
+          "sha": "0b383a6a"
+        },
+        {
+          "type": "Combat",
+          "subject": "source equipped gear from inventory isEquipped flags, not just live slot pointers (QB-035 desync)",
+          "sha": "e6e2f888"
+        },
+        {
+          "type": "Combat",
+          "subject": "QB-035 DIAG — dump equip_unit + party.party keys + full inventory flags in the equip pass",
+          "sha": "78893343"
+        },
+        {
+          "type": "Combat",
+          "subject": "apply equipped gear from the combat-ENTRY snapshot, not the live combat-context party lookup (QB-035 fix)",
+          "sha": "9e6cf2d5"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "remove poison_attack from combat AI — out of demo scope (owner 2026-07-22, QB-037)",
+          "sha": "80db4a6a"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "QB-037 move DIAG — dump move-to-engage inputs (why no move at dist=2)",
+          "sha": "6789f0ce"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "path-aware MOVE cursor — route around occupied cells (QB-038 deliverable 1)",
+          "sha": "e17e4a74"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree manifest: mark 12 owner-confirmed nodes approval=unapproved",
+          "sha": "b7fa9953"
+        },
+        {
+          "type": "DAL",
+          "subject": "persist equipped gear to save — reconcile item flags from unit slot pointers (ppqk)",
+          "sha": "094f7249"
+        },
+        {
+          "type": "chore",
+          "subject": "dialogue-review: emit origin + ingest arc-generated ambient dialogue (owner ask)",
+          "sha": "403a3a86"
+        },
+        {
+          "type": "chore",
+          "subject": "dialogue-review: apply_ambient_overrides.py — write half for arc/ambient edits",
+          "sha": "d072a24c"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "multi-hop routing + wrong-scene recovery (zhoj)",
+          "sha": "a06ea546"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "BED-DIAG instrumentation for cond-9 silent stall (zhoj, temporary)",
+          "sha": "113577bf"
+        },
+        {
+          "type": "chore",
+          "subject": "ItemsMenu/Consume: fix WASD mode (1ljq) + consume-all auto-close/remove (rkh0) — demo bugs",
+          "sha": "99a837c4"
+        },
+        {
+          "type": "chore",
+          "subject": "ppqk-2 robust equip reconcile + zhoj cond-9 flow DIAG (instrument two save-tree blockers)",
+          "sha": "39ffacb4"
+        },
+        {
+          "type": "AutoPlay",
+          "subject": "Bed interact walk-to-overlap (zhoj cond-9 fix) — walk_target approach point",
+          "sha": "22c87ec0"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: promote medium full-prep BEFORE-DUNGEON node (supersedes med_before_dungeon) — approved",
+          "sha": "2047345e"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: re-promote med before-dungeon node — add 3 Mugwort (owner review)",
+          "sha": "373a4f9c"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: re-promote med before-dungeon node — final Mugwort fix (1 collected + 2 shop)",
+          "sha": "dee998a0"
+        },
+        {
+          "type": "chore",
+          "subject": "autoplay-mcp Phase 1: save_summary derivation (playtester state model)",
+          "sha": "8cd594ef"
+        },
+        {
+          "type": "chore",
+          "subject": "autoplay-mcp: Phase 2 skilltree_state — SP frontier + cost-to-reach (t0b9)",
+          "sha": "5fd01d4e"
+        },
+        {
+          "type": "combat",
+          "subject": "medium XP rebalance + difficulty XP multiplier (Quinn balance, owner-approved)",
+          "sha": "eaf6bb94"
+        },
+        {
+          "type": "chore",
+          "subject": "autoplay-mcp: equipment_state — equippable gear + stat swing (t0b9)",
+          "sha": "245b0c89"
+        },
+        {
+          "type": "chore",
+          "subject": "autoplay-mcp: document derivation layer + the missing live-export bridge (t0b9)",
+          "sha": "3fb06355"
+        },
+        {
+          "type": "combat",
+          "subject": "MEDIUM Slime XP 5->6 (owner tune, bias toward 20min target)",
+          "sha": "c4985a7d"
+        },
+        {
+          "type": "TestBridgeDev",
+          "subject": "add _testExportCurrentSave hook (epic t0b9)",
+          "sha": "108b0811"
+        },
+        {
+          "type": "combat",
+          "subject": "refine difficulty XP mult to x1.5/x1.0/x0.67 (owner, extremes pulled in)",
+          "sha": "5909096c"
+        },
+        {
+          "type": "combat",
+          "subject": "fix L1 XP curve on web runtime — WebUnitStub mirror 25->40 (Quinn gap)",
+          "sha": "0896ce74"
+        },
+        {
+          "type": "chore",
+          "subject": "combat snapshot: add unit_type/move_range/attack_range/status_effects (t0b9)",
+          "sha": "d83c1994"
+        },
+        {
+          "type": "menu",
+          "subject": "fix ConsumeItemMenu WASD feather+accept — skip OS-cursor warp in WASD (nb7)",
+          "sha": "c7fc477f"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: additive spine tags (chapter/section/seq) + schema v1.1",
+          "sha": "2bf50d45"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: move dungeon-prep nodes to into-the-waterways (spine rev 2)",
+          "sha": "4ebf594b"
+        },
+        {
+          "type": "menu",
+          "subject": "fix the systemic WASD-menu regression root — stack-owner cursor authority",
+          "sha": "81965d8e"
+        },
+        {
+          "type": "test",
+          "subject": "Tier-3 pins for the osf0 mouse-entry WASD regression + facade blindness",
+          "sha": "489a8a04"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: document the tag-by-beat rule in the manifest _doc",
+          "sha": "db3e27d9"
+        },
+        {
+          "type": "tools",
+          "subject": "add deploy_develop.sh — one-command develop->prod deploy trigger",
+          "sha": "6f873bcf"
+        },
+        {
+          "type": "menu",
+          "subject": "consume submenu — WASD highlight + non-silent accept (owner video repro)",
+          "sha": "9932fe9e"
+        },
+        {
+          "type": "menu",
+          "subject": "consume submenu — WASD click activates (was swallowed by dead pressed-signal)",
+          "sha": "fbbe8334"
+        },
+        {
+          "type": "docs",
+          "subject": "MENU_WASD_BUG_CLASS.md — the osf0 menu bug-class runbook",
+          "sha": "7cb9c849"
+        },
+        {
+          "type": "menu",
+          "subject": "ShopOverlay de-facade + nav-control override — fixes QB-020 shop mis-buy",
+          "sha": "701c0f7a"
+        },
+        {
+          "type": "menu",
+          "subject": "MenuOverlay (pause Main Menu) de-facade + nav-control override; doc corrections",
+          "sha": "165809e0"
+        },
+        {
+          "type": "test",
+          "subject": "pin consume-menu highlight/click/Enter + Main Menu addressability (osf0)",
+          "sha": "8d984989"
+        },
+        {
+          "type": "autoplay",
+          "subject": "fix cond-9 bed-dialogue hang — forward path now resolves option prompts (zhoj/QB-036)",
+          "sha": "a6955e98"
+        },
+        {
+          "type": "combat",
+          "subject": "authored XP-per-kill per enemy × difficulty — remove =1 hardcode (ueuk/QB-032)",
+          "sha": "770f6501"
+        },
+        {
+          "type": "menu",
+          "subject": "MainMenu — stationary mouse no longer overrides WASD selection (t84s)",
+          "sha": "0e5d32c6"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: med_grind_start build-neutral label (owner, no build name before A/B split)",
+          "sha": "21a1b886"
+        },
+        {
+          "type": "combat",
+          "subject": "gate enemy contact-trigger on player-lock — fixes load-settle combat hang (hlj7/QB-041)",
+          "sha": "a88dffd6"
+        },
+        {
+          "type": "autoplay",
+          "subject": "grind push-vs-farm danger gate — stop out-running level into deep water (np1j)",
+          "sha": "e312c859"
+        },
+        {
+          "type": "menu",
+          "subject": "relic/skill picker — suppress MP/AP on cost-less rows, drop Back, Clear to top (yp99)",
+          "sha": "e33e9f6b"
+        },
+        {
+          "type": "combat",
+          "subject": "structured per-attack combat log — attacks finally visible (QB-042 data layer)",
+          "sha": "451d34d0"
+        },
+        {
+          "type": "combat",
+          "subject": "View A in-game combat-log overlay (QB-042)",
+          "sha": "06bd18b5"
+        },
+        {
+          "type": "combat",
+          "subject": "View A polish — ModernGoth font, HUD-style button, △ glyph, controller toggle (QB-042)",
+          "sha": "2d81195d"
+        },
+        {
+          "type": "combat",
+          "subject": "View A — scroll icon replaces \"Log\" text on the combat-log button (QB-042)",
+          "sha": "1bc10860"
+        },
+        {
+          "type": "spawns",
+          "subject": "weighted-count spawn model + Waterway1/2/5 configs (Quinn, owner-approved)",
+          "sha": "6f09b5b7"
+        },
+        {
+          "type": "dialogue",
+          "subject": "apply owner's 54 ambient edits + fold his voice rules into regen guidance",
+          "sha": "cfd90d1c"
+        },
+        {
+          "type": "dialogue",
+          "subject": "fix the 4 stray em-dashes in owner's applied ambient edits (owner OK'd)",
+          "sha": "90c07535"
+        },
+        {
+          "type": "feature",
+          "subject": "WalkIndicators — animated exit markers over scene transitions (owner 2026-07-24)",
+          "sha": "988a4bfa"
+        },
+        {
+          "type": "combat",
+          "subject": "expose cursor_cell in the combat snapshot (QB-040 enabler)",
+          "sha": "54b3d5b4"
+        },
+        {
+          "type": "autoplay",
+          "subject": "deprecate np1j auto room-navigation — orchestrator drives rooms (owner 2026-07-24)",
+          "sha": "aad9e5bc"
+        },
+        {
+          "type": "combat",
+          "subject": "poison fog fade-in + kill the opaque backing square (owner 2026-07-25)",
+          "sha": "22f8c68c"
+        },
+        {
+          "type": "combat",
+          "subject": "size poison fog to the damage range (owner 2026-07-25)",
+          "sha": "18523416"
+        },
+        {
+          "type": "combat",
+          "subject": "fix grind drops armed fight (QB-044) + boss-approach lock deadlock (QB-045)",
+          "sha": "594c806c"
+        },
+        {
+          "type": "autoplay",
+          "subject": "fix grind self-paralysis (QB-044) — don't reserve MP for an unlearned/away Cure",
+          "sha": "f566d7c6"
+        },
+        {
+          "type": "autoplay",
+          "subject": "QB-044 combat-routing diagnostic (log-on-change)",
+          "sha": "ca6b287e"
+        },
+        {
+          "type": "autoplay",
+          "subject": "land the combat attack press after a debug-load (QB-044 candidate #3)",
+          "sha": "c343cb73"
+        },
+        {
+          "type": "autoplay",
+          "subject": "QB-044 press-path instrumentation (mode / clear / press)",
+          "sha": "d8744858"
+        },
+        {
+          "type": "autoplay",
+          "subject": "gate combat cursor-confirm on a live red target (QB-044 candidate #4)",
+          "sha": "88578f5e"
+        },
+        {
+          "type": "autoplay",
+          "subject": "release action-button focus in targeting mode (QB-044 candidate #5)",
+          "sha": "487e4327"
+        },
+        {
+          "type": "autoplay",
+          "subject": "confirm combat attack via a REAL key event (QB-044 candidate #6)",
+          "sha": "e327d5d1"
+        },
+        {
+          "type": "autoplay",
+          "subject": "fix root cause of grind-never-attacks — cursor null_hover latch (QB-044 c#7)",
+          "sha": "93d66f70"
+        },
+        {
+          "type": "chore",
+          "subject": "combat cursor: top-of-input key trace to isolate swallowed confirm (QB-044 diag)",
+          "sha": "994e9309"
+        },
+        {
+          "type": "chore",
+          "subject": "combat cursor: remove QB-044 diagnostic prints (root cause resolved)",
+          "sha": "e1afe47f"
+        },
+        {
+          "type": "combat",
+          "subject": "engagement-angle initiative — scaled surprise boost (qf1z)",
+          "sha": "85717297"
+        },
+        {
+          "type": "autoplay",
+          "subject": "count fights once-per-battle on observed inBattle, not the edge (P3)",
+          "sha": "57610b48"
+        },
+        {
+          "type": "combat",
+          "subject": "Scan Relic — gated enemy stats + hit chance, EP by unique monsters (qf1z-adjacent)",
+          "sha": "d33f7307"
+        },
+        {
+          "type": "combat",
+          "subject": "apply target physical_resist to physical damage (QB-047)",
+          "sha": "8bbd87f9"
+        },
+        {
+          "type": "chore",
+          "subject": "Revert \"combat: apply target physical_resist to physical damage (QB-047)\"",
+          "sha": "8408e6d9"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] catch develop channel up from v2236 → HEAD",
+          "sha": "ff679e20"
+        },
+        {
+          "type": "combat",
+          "subject": "derive max_ap from Speed, not Stamina (QB-048)",
+          "sha": "ef0db594"
+        },
+        {
+          "type": "testbridge",
+          "subject": "gate dev-server POSTs (/tab_state.json, /event) to localhost only",
+          "sha": "236a4605"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] ship testbridge dev-POST host-guard (channel flood + per-frame fetch drag fix)",
+          "sha": "8f2c5968"
+        },
+        {
+          "type": "testbridge",
+          "subject": "gate dev network feeds on dev-host (live_mutations poll + tab_state)",
+          "sha": "ba2fc5f0"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] gate dev network feeds (stop channel console flood)",
+          "sha": "f687456b"
+        },
+        {
+          "type": "chore",
+          "subject": "ci/cloud_export: wipe .godot before import — hermetic re-encryption (channel decrypt fix)",
+          "sha": "89b0cde5"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] clean hermetic cloud export (fix channel pck decrypt failures)",
+          "sha": "7d9540c4"
+        },
+        {
+          "type": "testbridge",
+          "subject": "gameState.menuShown tracks MenuOverlay via isInMenu(), not isShown()",
+          "sha": "d5cd8056"
+        },
+        {
+          "type": "menu",
+          "subject": "MenuOverlay implements _mb_nav_to_label (pause menu was unreachable by label)",
+          "sha": "921616af"
+        },
+        {
+          "type": "combat",
+          "subject": "refuse on_StartCombat during load / with no player (QB-051 corrupt-load)",
+          "sha": "03777181"
+        },
+        {
+          "type": "menu",
+          "subject": "publish ItemsMenu + SkillTreeMenu grids to JS (QB-052 dead _testBridgeNode)",
+          "sha": "63dcf30a"
+        },
+        {
+          "type": "combat",
+          "subject": "publish action-menu + skills-picker state in combat snapshot (QB-052)",
+          "sha": "2f5a83ef"
+        },
+        {
+          "type": "combat",
+          "subject": "abort on_StartCombat if player freed during handover yield (QB-051 grind path)",
+          "sha": "3f3b4968"
+        },
+        {
+          "type": "combat",
+          "subject": "fix Unit.gd parse error (speed→spd) that broke ALL combat (QB-048 regression)",
+          "sha": "7457afb0"
+        },
+        {
+          "type": "deploy",
+          "subject": "fire develop channel with combat parse-error fix [deploy-develop]",
+          "sha": "e0b75be9"
+        },
+        {
+          "type": "chore",
+          "subject": "walk-indicators: constant on-screen exit-marker size under any zoom (QB-053)",
+          "sha": "c5142639"
+        },
+        {
+          "type": "fix",
+          "subject": "refresh develop channel to HEAD (adds QB-053 exit-indicator fix) [deploy-develop]",
+          "sha": "2c2413e6"
+        },
+        {
+          "type": "chore",
+          "subject": "re-arm scene EnemyTriggers + clear triggeredSpawns on load (boss-nav retry)",
+          "sha": "6a526eb8"
+        },
+        {
+          "type": "tools",
+          "subject": "allow 'staging' channel in build_manifest.py (unblocks staging deploy)",
+          "sha": "777c9c66"
+        },
+        {
+          "type": "tools",
+          "subject": "allow 'staging' channel in build_manifest.py (unblocks staging deploy)",
+          "sha": "8a5f04f2"
+        },
+        {
+          "type": "chore",
+          "subject": "Cut staging at v0.8.2314 (from develop@777c9c66) [deploy-staging]",
+          "sha": "1c8d2e00"
+        },
+        {
+          "type": "tools",
+          "subject": "staging channel is permanently DEBUG (Quinn QA target, not public)",
+          "sha": "cf3366a9"
+        },
+        {
+          "type": "fix",
+          "subject": "[deploy-staging] rebuild v0.8.2314 as DEBUG (include TestBridgeDev hooks for Quinn QA)",
+          "sha": "e6ccd2e8"
+        },
+        {
+          "type": "tools",
+          "subject": "staging channel is permanently DEBUG (Quinn QA target, not public)",
+          "sha": "2370dd9d"
+        },
+        {
+          "type": "chore",
+          "subject": "deploy-history: record staging v0.8.2314 (hooked QA build)",
+          "sha": "e46feeed"
+        },
+        {
+          "type": "chore",
+          "subject": "align demo-scope dialogue with lore framing + store lore reference",
+          "sha": "190dc959"
+        },
+        {
+          "type": "chore",
+          "subject": "Raeges as Morpheus — confident conviction; others frame it as 'Raeges says'",
+          "sha": "1bfbe7b2"
+        },
+        {
+          "type": "chore",
+          "subject": "Raeges confidence is faith-from-recognition, not foreknowledge",
+          "sha": "8655d453"
+        },
+        {
+          "type": "chore",
+          "subject": "Raeges confident but doesn't understand WHY — bravery->chosen stays hidden",
+          "sha": "8372b4e2"
+        },
+        {
+          "type": "chore",
+          "subject": "Raeges quiet + simple — 'you must be an Anam', not selling a theory",
+          "sha": "187f7a45"
+        },
+        {
+          "type": "chore",
+          "subject": "Raeges lines — beast -> slime(s) (the village enemy)",
+          "sha": "f0700d99"
+        },
+        {
+          "type": "chore",
+          "subject": "Raeges ending speech (pre-credits demo closer) — departure + faded-world + come-home hook",
+          "sha": "b4c5f937"
+        },
+        {
+          "type": "feat",
+          "subject": "capture approved Laria-foundations dialogue additions (wiring-ready handoff)",
+          "sha": "cd8b9255"
+        },
+        {
+          "type": "chore",
+          "subject": "QB-057 — player combat units start at full HP (drop shadowed-party saved-HP carry)",
+          "sha": "e3b53a69"
+        },
+        {
+          "type": "test",
+          "subject": "Anam vignette lock + trigger-sequencing contract (Tier 3)",
+          "sha": "eea85933"
+        },
+        {
+          "type": "tools",
+          "subject": "refresh dialogue_review.json for App review (latest narrative rewrites)",
+          "sha": "cc927831"
+        },
+        {
+          "type": "tools",
+          "subject": "relic-vignette (Anam) review pipeline for App /test/vignettes/",
+          "sha": "914c0f9b"
+        },
+        {
+          "type": "test",
+          "subject": "QB-062 _testExportCurrentSave — fall back to slot 1 when no slot assigned",
+          "sha": "ffa64ec7"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: promote Quinn's walked Easy spine (root→ev1→ev2→ev3)",
+          "sha": "0ad8a2f4"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: promote 3 more walked Easy nodes (post-intake → before-dungeon)",
+          "sha": "1b3ce588"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: promote easy_grind_start (Waterway1) — Easy walked spine complete",
+          "sha": "6616e4b9"
+        },
+        {
+          "type": "tools",
+          "subject": "expand relic-vignette review data (owner authoring pass)",
+          "sha": "c2be7652"
+        },
+        {
+          "type": "chore",
+          "subject": "half-size markers, cover doors, + keyboard toggle (owner 2026-07-29)",
+          "sha": "756a64d3"
+        },
+        {
+          "type": "chore",
+          "subject": "clamp mobile background time out of the play-time clock",
+          "sha": "d0bc006e"
+        },
+        {
+          "type": "docs",
+          "scope": "Nix CLAUDE.md",
+          "subject": "correct stale Godot-3.6 note — WebBootstrap is Godot 4 (mid-port)",
+          "sha": "8ad1442b"
+        },
+        {
+          "type": "docs",
+          "scope": "Nix CLAUDE.md",
+          "subject": "Enemy.gd extends CharacterBody2D (G4), not KinematicBody2D (G3)",
+          "sha": "4201ffbb"
+        },
+        {
+          "type": "chore",
+          "subject": "-10% size, web-robust T toggle, position at Elias-height+40px over event bottom (owner 2026-07-29)",
+          "sha": "76179901"
+        },
+        {
+          "type": "chore",
+          "subject": "toggle on ui_secondary (E/O/triangle), not T (owner 2026-07-29)",
+          "sha": "4bb55ad3"
+        },
+        {
+          "type": "chore",
+          "subject": "Anam relic vignette: parchment cutscene on relic acquisition (owner 2026-07-28/29)",
+          "sha": "61cab883"
+        },
+        {
+          "type": "chore",
+          "subject": "hide exit triangles during events/dialogue/transitions (owner 2026-07-29)",
+          "sha": "f2f63335"
+        },
+        {
+          "type": "tools",
+          "subject": "dialogue export/apply round-trip + guide for prose iteration (owner 2026-07-29)",
+          "sha": "64298596"
+        },
+        {
+          "type": "chore",
+          "subject": "adopt DIALOGUE_PATCH_v2 — de-paladin-ify Mayor/villager lines, refine Kein's legend (owner 2026-07-29)",
+          "sha": "7ffe7516"
+        },
+        {
+          "type": "chore",
+          "subject": "delete 38 dead entries — cut paladin ceremony + old intro thread (owner 2026-07-30)",
+          "sha": "76738841"
+        },
+        {
+          "type": "chore",
+          "subject": "screen-edge directional arrows for on-screen exits (owner 2026-07-30)",
+          "sha": "a73acc27"
+        },
+        {
+          "type": "chore",
+          "subject": "integrate Item Relic (The Cart) + Scan Relic (The Miren) prose; mobile-responsive paper (owner 2026-07-30)",
+          "sha": "e51314e0"
+        },
+        {
+          "type": "chore",
+          "subject": "dialogue-style per-line reveal + blurred 'in Elias's mind' background (owner 2026-07-30)",
+          "sha": "0b7bb1f1"
+        },
+        {
+          "type": "chore",
+          "subject": "revert screen-edge arrows — back to stationary world-anchored, always-down markers (owner 2026-07-30)",
+          "sha": "c631b2c6"
+        },
+        {
+          "type": "chore",
+          "subject": "clamp marker inside viewport when its exit is on-screen (owner 2026-07-30)",
+          "sha": "adf0cdd6"
+        },
+        {
+          "type": "chore",
+          "subject": "small screen-lift at the exit instead of Elias-height float — bottom exits hug the bottom (owner 2026-07-30)",
+          "sha": "e251ce0d"
+        },
+        {
+          "type": "chore",
+          "subject": "stack floaters off _pending_fade_count so status appears in place of damage (owner 2026-07-30)",
+          "sha": "81b781d2"
+        },
+        {
+          "type": "feat",
+          "subject": "add Move / Health / Berserckounter Tier 1 prose from updated doc (owner 2026-07-30)",
+          "sha": "ee3f0fb8"
+        },
+        {
+          "type": "chore",
+          "subject": "glowing relic icon, 1s line fade, pen SFX on text + click SFX on click, quiet GameOver music (owner 2026-07-30)",
+          "sha": "91656fc1"
+        },
+        {
+          "type": "fix",
+          "subject": "relic name title, fixed icon/title position, quieter music, 1.5s fade, pen SFX stops on fade end (owner 2026-07-30)",
+          "sha": "2e9a96fe"
+        },
+        {
+          "type": "chore",
+          "subject": "Pen SFX: audible via playSFX + unified across dialogue writing and vignette fade-in (owner 2026-07-30)",
+          "sha": "88b858cd"
+        },
+        {
+          "type": "chore",
+          "subject": "relic title ABOVE the icon; sync DialogueHandler pen-SFX into Laria/Overworld pack copies (owner 2026-07-30)",
+          "sha": "7c144472"
+        },
+        {
+          "type": "chore",
+          "subject": "wild-relic vignette-first flow — intro/header/story reveal + treasure overlay after",
+          "sha": "14696b0b"
+        },
+        {
+          "type": "chore",
+          "subject": "reserve icon/title slots (no jump) + per-line click-snap",
+          "sha": "3b35d16f"
+        },
+        {
+          "type": "chore",
+          "subject": "cinematic relic open — static relic + silence, radial light-flash burst",
+          "sha": "8d8d6da8"
+        },
+        {
+          "type": "chore",
+          "subject": "play magic-accent SFX on the relic light-flash burst",
+          "sha": "e45cfe5a"
+        },
+        {
+          "type": "chore",
+          "subject": "Scan vignette: em-dash -> comma in 'Let me study it, it may still be part of this'",
+          "sha": "8cf0b3e0"
+        },
+        {
+          "type": "chore",
+          "subject": "downconvert FlashBurst.wav to 44.1k/16-bit/mono (2.27MB->342KB)",
+          "sha": "df8eb2f6"
+        },
+        {
+          "type": "chore",
+          "subject": "shrink FlashBurst + PenWriting to fit bootstrap PCK budget (unblock deploy)",
+          "sha": "535743f4"
+        },
+        {
+          "type": "test",
+          "subject": "Event 13 (Raeges relic handoff): rebuild per v3 spec — conversation not lecture",
+          "sha": "b7c58316"
+        },
+        {
+          "type": "chore",
+          "subject": "Combat/movement batch (Nix sandbox/nix-67220 d3dcafae): walk-anim in events, enemy stat mask, easy intro slime",
+          "sha": "431e0153"
+        },
+        {
+          "type": "chore",
+          "subject": "Dialogue reframe step 1: cut dead paladin-ceremony thread + de-paladin ambient labels",
+          "sha": "ea473888"
+        },
+        {
+          "type": "chore",
+          "subject": "Dialogue reframe step 2: villager gratitude + Aor-abstract rewrites (owner-approved)",
+          "sha": "8256241d"
+        },
+        {
+          "type": "docs",
+          "subject": "BRANCHING_DIALOGUE_GUIDE — dialogue engine schema, conditionType ops, inline commands, choice->state, one-time pattern, @emote bug",
+          "sha": "ca38b388"
+        },
+        {
+          "type": "test",
+          "subject": "dialogue-engine suite (Vera sandbox/vera-dlg1 803aac47) — branching, conditions, @emote bug pin",
+          "sha": "43f84876"
+        },
+        {
+          "type": "chore",
+          "subject": "relic vignette reads in a black memory-space with drifting motes",
+          "sha": "b87096e7"
+        },
+        {
+          "type": "chore",
+          "subject": "Dialogue-engine expansion 1-4 (Nix sandbox/nix-17879 fea5e49f)",
+          "sha": "8dbbcaad"
+        },
+        {
+          "type": "fix",
+          "subject": "acquisition vignette fully releases the player on close (fix NPCs un-clickable after Event 13 relic)",
+          "sha": "e9cb4abb"
+        },
+        {
+          "type": "chore",
+          "subject": "Event 13 music resume + choreography + emote timing (Nix sandbox/nix-e13mus f2b17e7f)",
+          "sha": "f88ca333"
+        },
+        {
+          "type": "chore",
+          "subject": "play gear SFX on equip + unequip (was silent)",
+          "sha": "13aa58ea"
+        },
+        {
+          "type": "docs",
+          "subject": "COMBAT_AP_MODEL — canonical AP/movement bucket model (player = reference)",
+          "sha": "5ee5e38f"
+        },
+        {
+          "type": "fix",
+          "subject": "charge enemy movement AP like the player (fix slime move-full-range + attack)",
+          "sha": "446e8eb7"
+        },
+        {
+          "type": "fix",
+          "subject": "Fix Event-13 hang after Item relic (event grant must skip vignette-first) + pen SFX loops while writing",
+          "sha": "03b272c7"
+        },
+        {
+          "type": "chore",
+          "subject": "Event 13 timing (Nix sandbox/nix-25052 bfe1f69e): flat 1s emote hold + 0.5s face pauses",
+          "sha": "8241f503"
+        },
+        {
+          "type": "fix",
+          "subject": "[deploy-develop] relic vignette (flash+void+particles, wild-first), Event 13 rebuild+choreography+timing+hang-fix, dialogue engine (branching/@emote/@setCond/choice-persistence), combat enemy-AP parity, equip SFX",
+          "sha": "6ebdb561"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] Restore bed-prompt dialogue 10034 (was wrongly cut with the paladin thread)",
+          "sha": "03dfe3cf"
+        },
+        {
+          "type": "fix",
+          "subject": "dialogue/vignette SFX + post-vignette NPC responsiveness fixes",
+          "sha": "7a3bc656"
+        },
+        {
+          "type": "feat",
+          "scope": "save",
+          "subject": "single auto-save alongside manual saves + on-screen indicator",
+          "sha": "5f0b379a"
+        },
+        {
+          "type": "fix",
+          "scope": "tools",
+          "subject": "promote_to_staging reads/writes WEB_VERSION for both := and = (walrus-ban broke the regex)",
+          "sha": "0fac5e18"
+        },
+        {
+          "type": "fix",
+          "scope": "spawn",
+          "subject": "defer EnemyTrigger enemy-spawn out of the physics query-flush",
+          "sha": "0a57e252"
+        },
+        {
+          "type": "fix",
+          "scope": "QB-066",
+          "subject": "release enemy `encountered` flag when on_StartCombat bails",
+          "sha": "abb9c885"
+        },
+        {
+          "type": "chore",
+          "scope": "QB-066",
+          "subject": "log _release_encounter_flag when it undoes a strand (observability)",
+          "sha": "76f7af70"
+        },
+        {
+          "type": "test",
+          "scope": "QB-066",
+          "subject": "Tier-2 regression pin for enemy `encountered` release on on_StartCombat bail",
+          "sha": "9435c38a"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] deploy develop channel to 0.7.2327 (channel was stale at 0.7.2319, pre-autosave)",
+          "sha": "5b5a8100"
+        },
+        {
+          "type": "fix",
+          "subject": "[deploy-develop] fix(autosave): trigger on EVERY scene transition + fresh, right-side-up screenshot",
+          "sha": "bb39e77a"
+        },
+        {
+          "type": "fix",
+          "subject": "log 4 owner-reported bugs (scene-return, SFX regression, item-vignette music+NPC)",
+          "sha": "e288b3ab"
+        },
+        {
+          "type": "fix",
+          "subject": "[deploy-develop] fix batch: SFX regression (393w) + item-vignette state (8awt/gsj5) + immediate scene-return (jcye)",
+          "sha": "22fd4c3e"
+        },
+        {
+          "type": "fix",
+          "subject": "[deploy-develop] fix(combat): QB-068 poison tick shows damage-type icon+number (+ QB-067 stacking)",
+          "sha": "9308e526"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] perf(QB-069 step 1): prewarm combat music + enemy-type battle sprites at scene load",
+          "sha": "ed14f660"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] feat(capture): teleport-complete EventDirector moveTo under capture flag (QB-069 Movie Maker unblock)",
+          "sha": "194ffb05"
+        },
+        {
+          "type": "fix",
+          "subject": "[deploy-develop] fix: QB-067 tighten floater stack gap + QB-070 reveal church intro slimes",
+          "sha": "a56fcbfe"
+        },
+        {
+          "type": "fix",
+          "subject": "[deploy-develop] fix(QB-070): force-reveal church intro slimes (opacity + sprite + idle) + diagnostic",
+          "sha": "ea2c9407"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] chore(QB-070): diagnostic uses print() not web-only JS-eval (shows in desktop Movie Maker stdout too)",
+          "sha": "e2e739c5"
+        },
+        {
+          "type": "fix",
+          "subject": "event-initiated combat: contact-triggered handshake (church/MotherSlime fix)",
+          "sha": "8dd34306"
+        },
+        {
+          "type": "chore",
+          "subject": "post-combat expertise vignette (Part C) + difficulty-pinned-to-Medium note",
+          "sha": "e99c2642"
+        },
+        {
+          "type": "chore",
+          "subject": "pin to Medium + all rewards/items findable (difficulty track dormant)",
+          "sha": "a3a29078"
+        },
+        {
+          "type": "fix",
+          "subject": "fix HUD-mount abort — details_panel/skills_picker typed Panel vs CanvasLayer root",
+          "sha": "83e09d20"
+        },
+        {
+          "type": "fix",
+          "subject": "AllByteGames splash: fix cold-load layout (G3 ProjectSettings key + size.x timing)",
+          "sha": "653ecd7c"
+        },
+        {
+          "type": "chore",
+          "subject": "EliasHouse bed: widen interaction zone to the floor left of the bed",
+          "sha": "eb829645"
+        },
+        {
+          "type": "release",
+          "subject": "unify WEB_VERSION to 0.8.2338 on develop (reconcile 0.7/0.8 split)",
+          "sha": "1c6af331"
+        },
+        {
+          "type": "chore",
+          "subject": "lift Relic.gd _is_hidden_on_difficulty too (missed 3rd copy)",
+          "sha": "95e58874"
+        },
+        {
+          "type": "chore",
+          "subject": "victory jingle plays fully before zone music resumes",
+          "sha": "79d5c974"
+        },
+        {
+          "type": "chore",
+          "subject": "ellipsis + frustrated play 2x slower (owner)",
+          "sha": "fda53bea"
+        },
+        {
+          "type": "chore",
+          "subject": "enemy HP/MP/AP bars show the RATIO without Scan (numbers still masked)",
+          "sha": "c204e7c4"
+        },
+        {
+          "type": "chore",
+          "subject": "emote command waits for emoteComplete (not a flat timer)",
+          "sha": "93ad2f41"
+        },
+        {
+          "type": "fix",
+          "subject": "player ignores world input while relic vignette is up (NPCs un-clickable after)",
+          "sha": "8c76584a"
+        },
+        {
+          "type": "fix",
+          "subject": "sync bootstrap EventDirector copy with emote-wait fix (dual-copy)",
+          "sha": "39a4adbf"
+        },
+        {
+          "type": "fix",
+          "subject": "fade-in waits for the deferred swap to mount (fix bed black-flash)",
+          "sha": "c580f115"
+        },
+        {
+          "type": "release",
+          "subject": "WEB_VERSION 0.8.2341 + commit stranded StatusMenu work",
+          "sha": "6d66bc77"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-develop] full deploy (owner): ship QA'd 0.8.2341 to all channels — develop preview + staging + public",
+          "sha": "ae57122e"
+        },
+        {
+          "type": "chore",
+          "subject": "[deploy-staging] cut v0.8.2341 — staging = develop (forward-only)",
+          "sha": "cf260e59"
+        }
+      ]
+    },
+    {
+      "version": "v0.7.2201",
+      "date": "2026-07-15",
+      "changes": [
+        {
+          "type": "tools",
+          "scope": "deploy",
+          "subject": "emit deploy manifest for v0.7.2109",
+          "sha": "65e50b10"
+        },
+        {
+          "type": "docs",
+          "scope": "waterway",
+          "subject": "spec for water-channel puzzle (verify+polish) + confirm G3 dialogue-trigger port complete",
+          "sha": "0ac3e794"
+        },
+        {
+          "type": "docs",
+          "scope": "waterway",
+          "subject": "log live-verify findings — water shader G4 breakage (P7), triggers healthy",
+          "sha": "ed2630dd"
+        },
+        {
+          "type": "test",
+          "scope": "waterway",
+          "subject": "close V2/V3 relic-loop + shader-guard coverage gaps",
+          "sha": "a0391c12"
+        },
+        {
+          "type": "fix",
+          "scope": "app_deploy",
+          "subject": "inject GODOT_SCRIPT_ENCRYPTION_KEY to prevent PCK/WASM key mismatch",
+          "sha": "d01bd4e3"
+        },
+        {
+          "type": "fix",
+          "scope": "water-shader",
+          "subject": "G3->G4 hint_color->source_color + declare SCREEN_TEXTURE; add SKIP_APPC_SYNC",
+          "sha": "809f1ea5"
+        },
+        {
+          "type": "fix",
+          "scope": "water",
+          "subject": "get_node_or_null for player ref in Water.gd",
+          "sha": "93af795d"
+        },
+        {
+          "type": "fix",
+          "scope": "menu",
+          "subject": "framework bug fixes for mode-switch highlight clear + WASD popup clickability; 2.5x ControlsMenu glyph-action buttons",
+          "sha": "93613de1"
+        },
+        {
+          "type": "test",
+          "scope": "menu",
+          "subject": "regression coverage for MenuBase input-mode fixes (Bug 1 + Bug 2)",
+          "sha": "628cdb02"
+        },
+        {
+          "type": "feat",
+          "scope": "sluicegate",
+          "subject": "add Mother Slime sprites + drop vestigial iso_poison.tres ref",
+          "sha": "e2cd7072"
+        },
+        {
+          "type": "test",
+          "scope": "tier4",
+          "subject": "SluiceGate/Mother Slime boss encounter e2e regression",
+          "sha": "bb3704f4"
+        },
+        {
+          "type": "feat",
+          "scope": "combat/autoplay",
+          "subject": "poison_attack skill + AutoPlay trailer-minimum behavior",
+          "sha": "ae5593eb"
+        },
+        {
+          "type": "test",
+          "scope": "tier4",
+          "subject": "pin AutoPlay trailer poison beat (A2/bd-trailer) — xfail pending exec fix",
+          "sha": "06a75133"
+        },
+        {
+          "type": "fix",
+          "scope": "menu-input",
+          "subject": "holistic WASD stale-click fix — auto-discover all BaseButtons in MenuBase",
+          "sha": "8b73e745"
+        },
+        {
+          "type": "fix",
+          "scope": "MenuOverlay",
+          "subject": "persist DEBUG MENU button across scene transitions",
+          "sha": "01e2f397"
+        },
+        {
+          "type": "fix",
+          "scope": "title",
+          "subject": "gate Debug launcher button on GlobalWorld.debug — was leaking onto public build",
+          "sha": "69802765"
+        },
+        {
+          "type": "fix",
+          "scope": "StatusMenu",
+          "subject": "STATUS-STATS-RACE — null stat panels + CharacterSubpanel \"null\"",
+          "sha": "7705ad0c"
+        },
+        {
+          "type": "feat",
+          "scope": "CombatVFXBench",
+          "subject": "slash shader live slider panel in animation mode",
+          "sha": "01f5106f"
+        },
+        {
+          "type": "test",
+          "scope": "menu",
+          "subject": "pin holistic WASD stale-click + Status stats-race + debug-button persistence",
+          "sha": "6c8e39b1"
+        },
+        {
+          "type": "refactor",
+          "scope": "menus",
+          "subject": "MenuBase party-readiness API; migrate StatusMenu+EquipmentMenu",
+          "sha": "002cf391"
+        },
+        {
+          "type": "feat",
+          "scope": "CombatVFXBench",
+          "subject": "slash clip fix + per-orientation target selector",
+          "sha": "43499987"
+        },
+        {
+          "type": "feat",
+          "scope": "tools",
+          "subject": "gotcha-#60 packs_src integrity guard in redeploy + G3-syntax pre-commit hook",
+          "sha": "a91ea522"
+        },
+        {
+          "type": "test",
+          "scope": "tier5",
+          "subject": "rewrite playthrough_to_event_9 as AutoPlay observer",
+          "sha": "a30ae957"
+        },
+        {
+          "type": "test",
+          "scope": "tiers",
+          "subject": "add tier markers to 159 untagged WebTests + regen test_index",
+          "sha": "909fbb26"
+        },
+        {
+          "type": "test",
+          "scope": "menu",
+          "subject": "matrix mode-swap contract for Options/Status/SaveLoad + coverage inventory",
+          "sha": "db29eb3d"
+        },
+        {
+          "type": "chore",
+          "scope": "tests",
+          "subject": "regenerate test_index/spine post tier-marker + menu-matrix merges",
+          "sha": "3cfddd71"
+        },
+        {
+          "type": "fix",
+          "scope": "tier5",
+          "subject": "fail fast on cond regression (page reload/crash) + crash-safe teardown in playthrough observer",
+          "sha": "25c8e2e6"
+        },
+        {
+          "type": "fix",
+          "scope": "menu-matrix",
+          "subject": "WASD trigger key from documented set; xfail status/saveload swap rows on MENU-MATRIX-INPUT-ROUTING gap",
+          "sha": "a86af69e"
+        },
+        {
+          "type": "test",
+          "scope": "combat",
+          "subject": "pin treasure-drop award path (closes PIN_COMBAT_DROPS)",
+          "sha": "4a693655"
+        },
+        {
+          "type": "feat",
+          "scope": "slash",
+          "subject": "true facing mirror, bench/combat frame unification, crescent covers attack streaks",
+          "sha": "2859bc2e"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "port Mother Slime G3 boss behaviors to G4 combat",
+          "sha": "79966df5"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "Mother Slime boss verify — stats spelling, bootstrap ArenaBench sync, force-cloud hook + 4 pin tests",
+          "sha": "0a77aebb"
+        },
+        {
+          "type": "test",
+          "scope": "probes",
+          "subject": "Mother Slime journey + real-scene combat stall diagnostics",
+          "sha": "5bf36c42"
+        },
+        {
+          "type": "test",
+          "scope": "probes",
+          "subject": "Mother Slime journey init-race escape + no-autoplay init-race repro",
+          "sha": "f44e54e9"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "bd-9oo — cold-boot init race + AutoPlay watchdog + trace gate",
+          "sha": "b4c19ff1"
+        },
+        {
+          "type": "test",
+          "scope": "probe",
+          "subject": "traced-fight diagnostic for 9oo layer 3",
+          "sha": "8b48be7b"
+        },
+        {
+          "type": "fix",
+          "scope": "bd-9oo-r2",
+          "subject": "three combat-init stall fixes for with-input race",
+          "sha": "35ed1cf6"
+        },
+        {
+          "type": "fix",
+          "scope": "9oo-r2",
+          "subject": "sync cancel_nav_following fix into bootstrap SceneTemplate copy",
+          "sha": "c747b423"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "bd-9oo r3 — gate turn_queue.start() on HUD mount completion",
+          "sha": "94a2b83e"
+        },
+        {
+          "type": "fix",
+          "scope": "autoplay",
+          "subject": "bd-9oo layer 3 — reset per-turn combat state on turn boundary",
+          "sha": "620dab4d"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "Roan boss-QA findings — targeting focus theft + boss AI routing",
+          "sha": "309f3d0e"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "tick-death at turn start no longer freezes combat (Roan F4)",
+          "sha": "24413387"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "route to Mother Slime boss + post-boss return to Mayor (Event 15)",
+          "sha": "deb12373"
+        },
+        {
+          "type": "fix",
+          "scope": "story",
+          "subject": "Mother Slime win advances cond 12→13 on the live combat path",
+          "sha": "d6d4e376"
+        },
+        {
+          "type": "feat",
+          "scope": "credits",
+          "subject": "port G3 Credits scene to G4 + alpha end-of-game gate",
+          "sha": "0b8e68bf"
+        },
+        {
+          "type": "feat",
+          "scope": "export",
+          "subject": "expand web export matrix 2→4 — {alpha,beta}×{debug,public}",
+          "sha": "22095aa0"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "Mother Slime drops the Berserckounter Relic (item 24)",
+          "sha": "f5543693"
+        },
+        {
+          "type": "feat",
+          "scope": "overworld",
+          "subject": "G3->G4 zone pack port, beta-gated FrontRoad exit",
+          "sha": "160408d8"
+        },
+        {
+          "type": "revert",
+          "scope": "combat",
+          "subject": "drops are fully missable — no auto-collect (owner)",
+          "sha": "a99dddc2"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "COMPLETIONIST persona — treasure pickup + boss loot discipline",
+          "sha": "d0b11f3d"
+        },
+        {
+          "type": "fix",
+          "scope": "autoplay",
+          "subject": "drain open dialogue before cond-13 scripted routing",
+          "sha": "e2bbf40d"
+        },
+        {
+          "type": "fix",
+          "scope": "autoplay",
+          "subject": "dialogue detection by DialogueBox visibility, not flag",
+          "sha": "36498550"
+        },
+        {
+          "type": "chore",
+          "subject": "sync LeaveArea pack copy byte-identical; rebaseline deferred Overworld audit findings",
+          "sha": "91a20507"
+        },
+        {
+          "type": "chore",
+          "scope": "probes",
+          "subject": "c13-return trap capture + alpha-final boss scaffold tweaks",
+          "sha": "8aed446e"
+        },
+        {
+          "type": "perf",
+          "scope": "overworld",
+          "subject": "bake decor variants into the .tscn — kill the _ready RNG storm",
+          "sha": "7ad64f35"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "wire size-2 footprint throughout combat stack (Mother Slime)",
+          "sha": "31e67c12"
+        },
+        {
+          "type": "test",
+          "scope": "contract",
+          "subject": "10% jitter allowance on transition duration floor",
+          "sha": "7de8ca2a"
+        },
+        {
+          "type": "feat",
+          "scope": "tests",
+          "subject": "Tier-3 boss footprint pins — 4-cell occupancy, BFS blocking, perimeter attack, split spawn",
+          "sha": "3dc9eaa2"
+        },
+        {
+          "type": "fix",
+          "scope": "test",
+          "subject": "footprint perimeter pin targets unit_name Elias, not type Player",
+          "sha": "32c623d5"
+        },
+        {
+          "type": "fix",
+          "scope": "menu",
+          "subject": "first-open layout flash + null-texture crash in CharacterSubpanel",
+          "sha": "76727189"
+        },
+        {
+          "type": "fix",
+          "scope": "test",
+          "subject": "menu pins — Esc-close (Space toggle is lock-gated) + mode-aware Status nav",
+          "sha": "b59823c0"
+        },
+        {
+          "type": "balance",
+          "scope": "boss",
+          "subject": "Mother Slime CON 25 → 12 (owner-approved L3 floor)",
+          "sha": "6910df1b"
+        },
+        {
+          "type": "fix",
+          "scope": "world",
+          "subject": "port G3 difficulty-dependent respawn stack (bounded clearedSceneStack)",
+          "sha": "3ae4221e"
+        },
+        {
+          "type": "fix",
+          "scope": "items-menu",
+          "subject": "disable non-consumables, fix highlight bleed, add T3 pins",
+          "sha": "18bf8822"
+        },
+        {
+          "type": "balance",
+          "scope": "boss",
+          "subject": "explicit max_hp=38 override — decouple boss HP from the CON dial",
+          "sha": "ccdcb2a3"
+        },
+        {
+          "type": "balance",
+          "scope": "spawns",
+          "subject": "waterway density + VSlime depth gradient (owner-approved)",
+          "sha": "b8dd4c7b"
+        },
+        {
+          "type": "fix",
+          "scope": "QB-011",
+          "subject": "uncollected combat drops persist as overworld pickups after battle",
+          "sha": "2e650be7"
+        },
+        {
+          "type": "fix",
+          "scope": "bench",
+          "subject": "wire drops_to_overworld in ArenaBench + parse fix in drop pin",
+          "sha": "052b741e"
+        },
+        {
+          "type": "fix",
+          "scope": "items+drops",
+          "subject": "open-hover seats on first ENABLED button; robust pickup approach in pin",
+          "sha": "bb6e878d"
+        },
+        {
+          "type": "fix",
+          "scope": "drops",
+          "subject": "forgiving pickup radius (30px) + bench-safe player identity",
+          "sha": "78773cf4"
+        },
+        {
+          "type": "feat",
+          "scope": "skilltree",
+          "subject": "fog-of-war progressive reveal + frontier-only interactivity",
+          "sha": "9969d734"
+        },
+        {
+          "type": "fix",
+          "scope": "test",
+          "subject": "drop pin (b) asserts grant outcomes — pickup can collect instantly at spawn",
+          "sha": "fea1195f"
+        },
+        {
+          "type": "test",
+          "scope": "skilltree",
+          "subject": "fog-of-war T3 regression pins (a-d)",
+          "sha": "ac234db2"
+        },
+        {
+          "type": "fix",
+          "scope": "test",
+          "subject": "fog pins — SkillTree button shares a ROW with Skills (down x3 + right)",
+          "sha": "d01d5475"
+        },
+        {
+          "type": "fix",
+          "scope": "skilltree",
+          "subject": "recompute fog depths in the tree_skill_learned handler",
+          "sha": "118ddb26"
+        },
+        {
+          "type": "feat",
+          "scope": "pack",
+          "subject": "Overworld zone pack exportability — bead ChroniclesOfNesis-lty",
+          "sha": "f29611be"
+        },
+        {
+          "type": "fix",
+          "scope": "world",
+          "subject": "Overworld pack wiring in the LIVE bootstrap World.gd + kill stale Laria copy",
+          "sha": "9950a983"
+        },
+        {
+          "type": "chore",
+          "subject": "baseline Overworld-synced PlayerCharacter.tscn Battle/Grid ref",
+          "sha": "c535219a"
+        },
+        {
+          "type": "fix",
+          "scope": "redeploy",
+          "subject": "hoist apply_cache_bust above the beta deploy block",
+          "sha": "6ce455ba"
+        },
+        {
+          "type": "feat",
+          "scope": "tests",
+          "subject": "Tier 3 vision ring pins + chest/enemy coverage findings",
+          "sha": "b7be8e8f"
+        },
+        {
+          "type": "fix",
+          "scope": "tests",
+          "subject": "add missing _RING_RADIUS_PX constant in vision ring test",
+          "sha": "24ca5594"
+        },
+        {
+          "type": "feat",
+          "scope": "tests",
+          "subject": "Tier 3 vision ring regression pins + F1/F2 coverage gap findings",
+          "sha": "fc183421"
+        },
+        {
+          "type": "feat",
+          "scope": "tests",
+          "subject": "Tier 3 vision ring pins + chest/enemy coverage findings",
+          "sha": "6a580aba"
+        },
+        {
+          "type": "fix",
+          "scope": "tests",
+          "subject": "add missing _RING_RADIUS_PX constant in vision ring test",
+          "sha": "5d99e09e"
+        },
+        {
+          "type": "fix",
+          "scope": "loadscreen",
+          "subject": "raise LoadingScreen.tscn layer 100→129 above ScreenFade (layer 128)",
+          "sha": "e25cf81e"
+        },
+        {
+          "type": "chore",
+          "scope": "packs_src",
+          "subject": "sync packs_src/Laria/Autoload/TestBridge.gd with bootstrap",
+          "sha": "93a727ba"
+        },
+        {
+          "type": "feat",
+          "scope": "overworld",
+          "subject": "vision ring reveals enemies and treasure chests",
+          "sha": "243e3596"
+        },
+        {
+          "type": "fix",
+          "scope": "redeploy",
+          "subject": "WEB_VERSION parser accepts plain = (walrus-hook conflict)",
+          "sha": "68a52f36"
+        },
+        {
+          "type": "fixtures",
+          "subject": "sluicegate_pre_boss (Quinn) + manifest hygiene per save-coverage audit",
+          "sha": "17a1150a"
+        },
+        {
+          "type": "fix",
+          "scope": "vision-ring",
+          "subject": "G4 directional area pairing — detection layer=256, player vision mask=256",
+          "sha": "307351fc"
+        },
+        {
+          "type": "docs",
+          "scope": "migration-guide",
+          "subject": "§4.7 Area2D pairing directional in G4 (symmetric in G3)",
+          "sha": "aed7871e"
+        },
+        {
+          "type": "feat",
+          "scope": "overworld-combat",
+          "subject": "world-fitting arena clip via BoundingGrid (G3 port)",
+          "sha": "11186f05"
+        },
+        {
+          "type": "feat",
+          "scope": "overworld-combat",
+          "subject": "2x intro zoom + unwind, reusing ChurchSquare cinematic path",
+          "sha": "bab2ac58"
+        },
+        {
+          "type": "fix",
+          "scope": "overworld-combat",
+          "subject": "flip Grid.visible at clip time — fight rendered invisible",
+          "sha": "0f09da4b"
+        },
+        {
+          "type": "feat",
+          "scope": "overworld",
+          "subject": "location discovery — vision-circle reveal, name panels, save persistence",
+          "sha": "fd55ad9b"
+        },
+        {
+          "type": "style",
+          "scope": "overworld",
+          "subject": "location panels use standard non-interactive asset + Modern Goth",
+          "sha": "976a1531"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "player units source live party stats + equipment (beads ij8, 5fp)",
+          "sha": "e4135693"
+        },
+        {
+          "type": "feat",
+          "scope": "ci",
+          "subject": "develop-channel deploy pipeline — every local build stages a test-gated deploy",
+          "sha": "e6711102"
+        },
+        {
+          "type": "fix",
+          "scope": "autoplay",
+          "subject": "bd-3ng — basement dungeon entry + silent-stall contract",
+          "sha": "0707eeb4"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "JP-policy override hook — grind-and-invest runs (Quinn unlock)",
+          "sha": "ca101a2c"
+        },
+        {
+          "type": "fix",
+          "scope": "testbridge",
+          "subject": "_testSetUnitStat raw writes recompute derived stats (Quinn LB-2)",
+          "sha": "a67e1074"
+        },
+        {
+          "type": "chore",
+          "subject": "commit two untracked pack assets found by hermetic-export audit",
+          "sha": "bd0c6795"
+        },
+        {
+          "type": "feat",
+          "scope": "ci",
+          "subject": "cloud exporter — hermetic export, T2 gate, image, buildspec (bd-yp5 fixed)",
+          "sha": "418c4d7f"
+        },
+        {
+          "type": "fix",
+          "scope": "ci",
+          "subject": "cloud_export.sh defaults to godot4, refuses non-4.x binary",
+          "sha": "f1ddcb72"
+        },
+        {
+          "type": "fix",
+          "scope": "export",
+          "subject": "exclude pack-owned Laria zone scenes from bootstrap (bd-r41d)",
+          "sha": "07bca760"
+        },
+        {
+          "type": "chore",
+          "scope": "beads",
+          "subject": "close yp5 + r41d",
+          "sha": "83c2de24"
+        },
+        {
+          "type": "revert",
+          "scope": "export",
+          "subject": "undo r41d Laria exclude_filter — it was too broad",
+          "sha": "293e73b1"
+        },
+        {
+          "type": "fix",
+          "scope": "items-menu",
+          "subject": "non-consumables navigable but not clickable (owner 2026-07-05)",
+          "sha": "01e53f2b"
+        },
+        {
+          "type": "fix",
+          "scope": "skills-menu",
+          "subject": "relic picker — feather jumps to first relic, normal highlight (owner 2026-07-05)",
+          "sha": "286c5b08"
+        },
+        {
+          "type": "fix",
+          "scope": "title",
+          "subject": "move Debug button left of the mode-icon HUD (owner 2026-07-05)",
+          "sha": "cb3d3e2a"
+        },
+        {
+          "type": "fix",
+          "scope": "r41d",
+          "subject": "runtime-safe pack-class refs so cold bootstrap parses (correct fix)",
+          "sha": "c3a0558d"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-vfx",
+          "subject": "extend slash canvas so the crescent stops clipping (owner 2026-07-05)",
+          "sha": "3044a9cc"
+        },
+        {
+          "type": "feat",
+          "scope": "combat-vfx",
+          "subject": "place slash by moving the rect, not shifting the shape (owner 2026-07-05)",
+          "sha": "84d17c01"
+        },
+        {
+          "type": "fix",
+          "scope": "ci",
+          "subject": "T2 runner honors $GODOT_BIN (App can drop the image symlink)",
+          "sha": "afe05966"
+        },
+        {
+          "type": "chore",
+          "scope": "gitignore",
+          "subject": "protect .secure_templates (key-baked export templates)",
+          "sha": "69baedf0"
+        },
+        {
+          "type": "feat",
+          "scope": "ci",
+          "subject": "boot_check.py — verify an exported build boots + decrypts",
+          "sha": "31b316ea"
+        },
+        {
+          "type": "ci",
+          "scope": "buildspec",
+          "subject": "pre_build installs the custom key-baked web template (encryption fix)",
+          "sha": "5023e36a"
+        },
+        {
+          "type": "fix",
+          "scope": "cursor",
+          "subject": "P0 bd-ril — restore OS cursor when a menu opens over a hover icon",
+          "sha": "444b28a7"
+        },
+        {
+          "type": "fixtures",
+          "scope": "saves",
+          "subject": "add sluicegate_boss_leveled (L5) scenario save",
+          "sha": "f76bc940"
+        },
+        {
+          "type": "fix",
+          "scope": "combat/slash",
+          "subject": "widen crop range to -2..2 so it no longer clips",
+          "sha": "4de22164"
+        },
+        {
+          "type": "feat",
+          "scope": "redeploy",
+          "subject": "BUMP_ONLY mode — cache-bust local :8060 without AppC sync",
+          "sha": "5be16326"
+        },
+        {
+          "type": "fix",
+          "scope": "vfxbench",
+          "subject": "add crop sliders + sync SLASH_PARAMS to combat",
+          "sha": "41c55510"
+        },
+        {
+          "type": "feat",
+          "scope": "combat/slash",
+          "subject": "persist owner per-facing tuning; render in-shader (revert rect-move)",
+          "sha": "508c52d7"
+        },
+        {
+          "type": "feat",
+          "scope": "security+build",
+          "subject": "disable _test* backdoors in public builds; plaintext local builds",
+          "sha": "1d6c4e98"
+        },
+        {
+          "type": "fix",
+          "scope": "combat/slash",
+          "subject": "flash at the strike beat, spawn-synced (was too early)",
+          "sha": "255c8741"
+        },
+        {
+          "type": "docs",
+          "subject": "pin New Game Options redesign stub (parked, owner 2026-07-06)",
+          "sha": "f8db8895"
+        },
+        {
+          "type": "fix",
+          "scope": "combat+menu",
+          "subject": "rk9l attacker idle at swing-end; y5ia no hover-highlight on disabled items",
+          "sha": "7850be91"
+        },
+        {
+          "type": "fix",
+          "scope": "status/jp",
+          "subject": "8n6a Save enabled only when JP spent this session",
+          "sha": "f50a8290"
+        },
+        {
+          "type": "fix",
+          "scope": "menu",
+          "subject": "bitz — ConsumeItem no longer frees shared PartyHeader buttons (null CharacterSubpanel)",
+          "sha": "c51656af"
+        },
+        {
+          "type": "test",
+          "scope": "menu",
+          "subject": "bitz ConsumeItem CharSub null regression pin (Vera)",
+          "sha": "9f40b060"
+        },
+        {
+          "type": "fix",
+          "scope": "controls",
+          "subject": "WASD-mode left-click activates the feather-focused glyph-action button",
+          "sha": "10704837"
+        },
+        {
+          "type": "spec",
+          "scope": "new-game",
+          "subject": "difficulty-select screen — owner-confirmed (ybyz)",
+          "sha": "c535caad"
+        },
+        {
+          "type": "feat",
+          "scope": "ybyz",
+          "subject": "DifficultySelectMenu — new game difficulty-select screen",
+          "sha": "3ad188b6"
+        },
+        {
+          "type": "chore",
+          "subject": "baseline WEB_VERSION 0.7.2125 (stop BUMP_ONLY version regression)",
+          "sha": "c90aef00"
+        },
+        {
+          "type": "polish",
+          "scope": "difficulty",
+          "subject": "enlarge fonts (~1.4x) for readability",
+          "sha": "b9c4a6c8"
+        },
+        {
+          "type": "polish",
+          "scope": "difficulty",
+          "subject": "tagline + hint text; confirm starts game directly; Main Menu difficulty label",
+          "sha": "795a6022"
+        },
+        {
+          "type": "fix",
+          "scope": "combat+difficulty",
+          "subject": "transition 1.0s; difficulty feather positions on first open",
+          "sha": "4e0d9e82"
+        },
+        {
+          "type": "fix",
+          "scope": "difficulty",
+          "subject": "arrow-key hint tofu — font lacks ← → glyphs, use text",
+          "sha": "ebf5e17f"
+        },
+        {
+          "type": "fix",
+          "scope": "difficulty",
+          "subject": "axis 2 is respawn frequency, not enemy count",
+          "sha": "17d97b06"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "zjh2 Move/Attack gated on AP; kcpz item skill opens ItemsMenu directly",
+          "sha": "df354845"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "qdmd hide horizontal sword when action overlay hides",
+          "sha": "ca8acdfb"
+        },
+        {
+          "type": "fix",
+          "scope": "ui",
+          "subject": "difficulty select larger fonts (owner: text should be larger)",
+          "sha": "8f1e6a5d"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "8nh0 enlarge facing-picker arrows 1.6x",
+          "sha": "0ba2615e"
+        },
+        {
+          "type": "feat",
+          "scope": "combat-bench",
+          "subject": "2qi5 pin any floater type for live damage-label tuning",
+          "sha": "a7c1fc39"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "aaq VSlime poison terrain persists entire fight",
+          "sha": "e3e2ff73"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "8icf part 1 — enemy walking onto a drop tramples/destroys it",
+          "sha": "404fc939"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "8icf part 2 — uncollected drops vanish at combat end (owner: missable)",
+          "sha": "fef17fb3"
+        },
+        {
+          "type": "feat",
+          "scope": "vfx-bench",
+          "subject": "right-side floater panel + full level-up cascade",
+          "sha": "6c989ec2"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "Run button actually flees — emit run resolution (was a stub)",
+          "sha": "7467d63a"
+        },
+        {
+          "type": "fix",
+          "scope": "vfx-bench",
+          "subject": "right-side floater panel was invisible (degenerate anchor rect)",
+          "sha": "1db2d532"
+        },
+        {
+          "type": "fix",
+          "scope": "options",
+          "subject": "mobile web — engine yields fullscreen to parent /play page",
+          "sha": "2487d960"
+        },
+        {
+          "type": "feat",
+          "scope": "vfx-bench",
+          "subject": "URL ?benchMode=combat / window._benchMode picks initial mode",
+          "sha": "8dd8c8a3"
+        },
+        {
+          "type": "fix",
+          "scope": "vfx-bench",
+          "subject": "default to combat mode; drop harmful URL benchMode param",
+          "sha": "9673deb9"
+        },
+        {
+          "type": "tune",
+          "scope": "combat",
+          "subject": "2qi5 crisper floater text — 2x supersample via bake+counter-scale",
+          "sha": "92b35b2a"
+        },
+        {
+          "type": "tune",
+          "scope": "combat",
+          "subject": "2qi5 floater colors + sizes per owner policy",
+          "sha": "3239fc3b"
+        },
+        {
+          "type": "tune",
+          "scope": "combat",
+          "subject": "2qi5 crit stays RED — colors encode damage type",
+          "sha": "f5098981"
+        },
+        {
+          "type": "tune",
+          "scope": "combat",
+          "subject": "2qi5 baseline-align damage row + compact level-up",
+          "sha": "a05ac51a"
+        },
+        {
+          "type": "tune",
+          "scope": "combat",
+          "subject": "2qi5 tighter floater stacking — half a row between queued rows",
+          "sha": "8138af82"
+        },
+        {
+          "type": "fix",
+          "scope": "menus",
+          "subject": "WASD->MOUSE flip re-applies hover to button under cursor (MenuBase)",
+          "sha": "676436cd"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "2qi5 baseline align by descent-comp — number no longer floats high",
+          "sha": "d308b2c2"
+        },
+        {
+          "type": "fix",
+          "scope": "ui",
+          "subject": "wwfi ConsumeItem item name gets black outline (font policy)",
+          "sha": "a9a9ae57"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "item skill → pick item then grid-target any unit (range=1)",
+          "sha": "d3581d70"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "2c8l wire AoE execution for sweep_attack + line_smite (Elias)",
+          "sha": "88869d95"
+        },
+        {
+          "type": "fix",
+          "scope": "menu",
+          "subject": "mwsy debug button to full-screen Control + z_index 200 (top-right, un-occluded)",
+          "sha": "6e02bb83"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "item skill SELF-only range 0 + heal floater (owner clarified)",
+          "sha": "ec652e29"
+        },
+        {
+          "type": "feat",
+          "scope": "vfxbench",
+          "subject": "Slash/Bolt shader-target selector in animation-mode tuner panel",
+          "sha": "40495c83"
+        },
+        {
+          "type": "fix",
+          "scope": "menu",
+          "subject": "wwfi ConsumeItem shows true qty 0 + disables Use on last item",
+          "sha": "7c20781e"
+        },
+        {
+          "type": "fix",
+          "scope": "menus",
+          "subject": "WASD->MOUSE hover re-pick via synthetic motion (emit didn't drive native :hover)",
+          "sha": "55e3fa02"
+        },
+        {
+          "type": "feat",
+          "scope": "save",
+          "subject": "a92n wire Export/Import save bridge (WebBridge + DAL)",
+          "sha": "02c4b395"
+        },
+        {
+          "type": "fix",
+          "scope": "player",
+          "subject": "x6yq force idle when locked mid-walk (Elias no longer 'runs' during events)",
+          "sha": "e4427b6d"
+        },
+        {
+          "type": "chore",
+          "subject": "sync x6yq PlayerCharacter idle-lock fix to Laria pack copy",
+          "sha": "615e5bba"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "eupd Mother Slime wrong sprite + cscv Elias vanish at SluiceGate",
+          "sha": "6dc9707b"
+        },
+        {
+          "type": "feat",
+          "scope": "waterway",
+          "subject": "add y_flip uniform to water reflection shader (owner tune relic position)",
+          "sha": "804cf794"
+        },
+        {
+          "type": "chore",
+          "subject": "re-sync PlayerCharacter dual copies after nix-eupd-cscv merge (x6yq + cscv in all)",
+          "sha": "5cf4fdb7"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "ykb2 clear textureOverride post-combat — Elias no longer invisible after boss",
+          "sha": "d96527c0"
+        },
+        {
+          "type": "fix",
+          "scope": "waterway",
+          "subject": "waj7 waterway hint dialogues re-trigger (activateMultiplePerScene)",
+          "sha": "fd62cc65"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "Mother Slime cluster — ovtt/wbub/ms8q/lffu/epdm (5 bugs)",
+          "sha": "1997877a"
+        },
+        {
+          "type": "feat",
+          "scope": "bd/mkjm",
+          "subject": "port AllByteGames splash to G4; wire credits→AllByte→Title",
+          "sha": "a0eecdc4"
+        },
+        {
+          "type": "chore",
+          "subject": "sync ovtt Enemy.tscn collision_mask fix to dual-copies (bootstrap/Overworld)",
+          "sha": "e47aac2f"
+        },
+        {
+          "type": "chore",
+          "subject": "sync all dual-copy files (PlayerCharacter/SceneTemplate/Enemy/Credits) across bootstrap+Laria+Overworld",
+          "sha": "4b962b58"
+        },
+        {
+          "type": "chore",
+          "subject": "baseline WEB_VERSION 0.7.2153 (stop BUMP_ONLY regression below last real deploy 2152)",
+          "sha": "a6722830"
+        },
+        {
+          "type": "feat",
+          "scope": "pl7g",
+          "subject": "Mother Slime overworld landing tween + camera shake in SluiceGate",
+          "sha": "fd53cd35"
+        },
+        {
+          "type": "fix",
+          "scope": "ck0t",
+          "subject": "skip Mother Slime split-spawn on miss",
+          "sha": "c13d3e91"
+        },
+        {
+          "type": "feat",
+          "scope": "yskz",
+          "subject": "poison immunity for Slime, VSlime, Mother Slime",
+          "sha": "827d1a6a"
+        },
+        {
+          "type": "feat",
+          "scope": "w91l",
+          "subject": "2x2 hover highlight — footprint white, aimed cell red",
+          "sha": "70d589a8"
+        },
+        {
+          "type": "fix",
+          "scope": "csrs",
+          "subject": "2x2 nav — pass unit size to BFS in AI policy walkable calc",
+          "sha": "c1793185"
+        },
+        {
+          "type": "fix",
+          "scope": "751p",
+          "subject": "route Item skill through SKILL-mode grid targeting",
+          "sha": "0ad3d2eb"
+        },
+        {
+          "type": "fix",
+          "subject": "wipe combat targeting overlays on combat end",
+          "sha": "0c850bb4"
+        },
+        {
+          "type": "fix",
+          "scope": "278z",
+          "subject": "Cure uses G3 HeavenlyLight (blue column) + heal number + idle",
+          "sha": "39b43d9f"
+        },
+        {
+          "type": "waterway",
+          "subject": "lock water shader params + fix RelicHint firing + enlarge relic pickup",
+          "sha": "31aab279"
+        },
+        {
+          "type": "fix",
+          "scope": "65c5",
+          "subject": "Cleanse uses G3 Aura (golden->blue burst) + poison removal + idle",
+          "sha": "6ad6a6a2"
+        },
+        {
+          "type": "fix",
+          "scope": "65c5",
+          "subject": "Valerian Powder / Barbados Extract clear combat poison/acid",
+          "sha": "47763bcf"
+        },
+        {
+          "type": "test",
+          "scope": "wrg0",
+          "subject": "combat item effects regression — Mugwort heal + Valerian poison cure",
+          "sha": "5b5284c8"
+        },
+        {
+          "type": "fix",
+          "subject": "Line Smite deals radiant alongside physical (was physical-only)",
+          "sha": "80fe1ad9"
+        },
+        {
+          "type": "fix",
+          "subject": "VSlime enemy attack applies poison alongside physical",
+          "sha": "2db15515"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "wra9+eiwj — legible status turns label + poison immunity/absorb passives",
+          "sha": "1a0ac9e5"
+        },
+        {
+          "type": "test",
+          "scope": "combat",
+          "subject": "bd-wq7s regression gates — turns label fix + immunity/absorb passives",
+          "sha": "efa13bfd"
+        },
+        {
+          "type": "chore",
+          "subject": "StatusPanel.png import metadata (regenerated on v2165 export)",
+          "sha": "b1ea7c4a"
+        },
+        {
+          "type": "feat",
+          "scope": "vx1x",
+          "subject": "VSlime absorbs poison — heals instead of taking poison damage",
+          "sha": "0ab28ea3"
+        },
+        {
+          "type": "feat",
+          "scope": "hxf3",
+          "subject": "generalize combat unit footprint from N×N scalar to W×H Vector2i",
+          "sha": "e020c19c"
+        },
+        {
+          "type": "fix",
+          "scope": "hxf3",
+          "subject": "CombatAIDriver unit_sz must be Vector2i, not int(unit.size)",
+          "sha": "ab677b3e"
+        },
+        {
+          "type": "feat",
+          "scope": "ur21",
+          "subject": "TestBridge hooks for runtime status-display + details-panel tests",
+          "sha": "22ffd19b"
+        },
+        {
+          "type": "fix",
+          "subject": "lock user pan/zoom on ChurchSquare combat (parallax breaks on camera move)",
+          "sha": "e6848ce9"
+        },
+        {
+          "type": "chore",
+          "subject": "combat mini-batch: music loops + item-menu back + skill/item cancel → SELECTED",
+          "sha": "75a0af74"
+        },
+        {
+          "type": "fix",
+          "subject": "victory plays on cinematic wins too (ChurchSquare), then silence",
+          "sha": "3ce9a544"
+        },
+        {
+          "type": "feat",
+          "scope": "Batch A",
+          "subject": "in-combat debug menu — backtick toggle + number-key state pokes",
+          "sha": "3dbbe089"
+        },
+        {
+          "type": "feat",
+          "scope": "ms-cinematic",
+          "subject": "Batch B — MS drop, Elias charge assets, relic drop sprite (#6/#7/#8)",
+          "sha": "6c98073a"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "Batch C+D — 6 combat fixes (#1 #4 #9 #10 #12 #16)",
+          "sha": "e8516282"
+        },
+        {
+          "type": "chore",
+          "subject": "cloud-deploy: one env-driven buildspec — DEBUG/ALPHA booleans select preset",
+          "sha": "fb07418a"
+        },
+        {
+          "type": "docs",
+          "scope": "branch-convention",
+          "subject": "flag sandbox half as stale (superseded by worktrees)",
+          "sha": "95b81e1e"
+        },
+        {
+          "type": "fix",
+          "scope": "ny2c #15",
+          "subject": "VSlime terrain-poison finite 3-turn countdown (was -1/permanent)",
+          "sha": "6b366e91"
+        },
+        {
+          "type": "audio",
+          "subject": "combat/dungeon SFX + VictoryShort + volume + zone music resume (8 beads)",
+          "sha": "0861febc"
+        },
+        {
+          "type": "fix",
+          "scope": "oll1",
+          "subject": "sync SceneTemplate.gd dual-copies (Laria+Overworld) with bootstrap",
+          "sha": "9bd273e9"
+        },
+        {
+          "type": "chore",
+          "subject": "cloud-deploy: rename buildspec.develop.yml → buildspec.web.yml (all channels)",
+          "sha": "cc780900"
+        },
+        {
+          "type": "chore",
+          "subject": "G1 batch: kcd7/43cy/03tz — skill-tree depth-2 hint, feather on Controls+Consume, Mugwort heal",
+          "sha": "d929db71"
+        },
+        {
+          "type": "chore",
+          "subject": "cloud-deploy: buildspec.web.yml generic header + channel-agnostic artifact",
+          "sha": "d6c13c3e"
+        },
+        {
+          "type": "fix",
+          "scope": "redeploy",
+          "subject": "release export flock (fd 7) before spawning HTTP daemon",
+          "sha": "2f4611ac"
+        },
+        {
+          "type": "fix",
+          "scope": "zjh2",
+          "subject": "don't force-enable AP-cost buttons on return to SELECT — keeps 0-AP Move/Attack disabled",
+          "sha": "24386267"
+        },
+        {
+          "type": "fix",
+          "scope": "7c5b",
+          "subject": "range-0 skills default-hover the caster's own cell, not the facing cell",
+          "sha": "7c6ed9ca"
+        },
+        {
+          "type": "fix",
+          "scope": "ysz0 P0",
+          "subject": "in-game Items-menu Cancel returns to MainMenu instead of hard-locking",
+          "sha": "4b777e8e"
+        },
+        {
+          "type": "feat",
+          "scope": "vfx-bench",
+          "subject": "port real G3 poison-fog shader + MotherSlime + PoisonFog trigger",
+          "sha": "968a8d5a"
+        },
+        {
+          "type": "fix",
+          "scope": "ysz0,7c5b v2",
+          "subject": "correct Items-cancel + range-0 hover regressions",
+          "sha": "6fc27f4b"
+        },
+        {
+          "type": "feat",
+          "scope": "vfx-bench",
+          "subject": "fog alpha slider + Dump Fog params button (+ JS mirror)",
+          "sha": "d232edc8"
+        },
+        {
+          "type": "feat",
+          "scope": "4rok",
+          "subject": "wire real poison-fog shader into combat _execute_poison_cloud",
+          "sha": "d37877aa"
+        },
+        {
+          "type": "feat",
+          "scope": "vfx-bench",
+          "subject": "fog fade-in/hold/fade-out sliders (replace no-op alpha) + owner-tuned defaults",
+          "sha": "95be1c02"
+        },
+        {
+          "type": "feat",
+          "scope": "4rok",
+          "subject": "port G3 PoisonCloud SFX (cloud hiss) + play on Mother Slime fog cast",
+          "sha": "5d7273fa"
+        },
+        {
+          "type": "feat",
+          "scope": "vfx-bench",
+          "subject": "SFX panel — per-SFX play + volume + timing sliders, auto-fire on anim",
+          "sha": "72ed4bb9"
+        },
+        {
+          "type": "feat",
+          "scope": "vfx-bench",
+          "subject": "per-unit ability panels — Player/Enemy dropdowns, active-unit anim+ability list, cross-unit floaters, inline SFX, Text show-on toggle",
+          "sha": "00589846"
+        },
+        {
+          "type": "fix",
+          "scope": "vfx-bench",
+          "subject": "raise UI above debug overlays (layer 50->250) + hide pack overlay",
+          "sha": "0c801f25"
+        },
+        {
+          "type": "fix",
+          "scope": "vfx-bench",
+          "subject": "attack returns to idle (action_id guard) + Text panel cutoff",
+          "sha": "8d8d046a"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R-step1",
+          "subject": "combat-ready no-HUD mount — CombatOverlay.mount_ready_no_hud + ArenaBench VFX mode",
+          "sha": "1fa38991"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R3",
+          "subject": "CombatOverlay debug_fire_* hooks + arena turn-advance guard",
+          "sha": "d178d2c8"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R3",
+          "subject": "VFX arena debug panel — fire real combat actions",
+          "sha": "21c771e2"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R3",
+          "subject": "DebugMenu 'ArenaBench (VFX tuning)' button — launch VFX arena, no console",
+          "sha": "14d2d339"
+        },
+        {
+          "type": "fix",
+          "scope": "pnze R3",
+          "subject": "arena adjacency + skills need AP + enemy attack uses real enemy path",
+          "sha": "6b61dc6a"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R3",
+          "subject": "arena immortal (no HP/death) + deterministic hit/miss/crit + Die button",
+          "sha": "fa0b09e1"
+        },
+        {
+          "type": "fix",
+          "scope": "pnze R3",
+          "subject": "enemy Kill (dissolve+SFX) + attack hframes reset + arena battle music",
+          "sha": "b1d685df"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R2",
+          "subject": "CombatOverlay.debug_fire_text — real damageQueue floaters for arena text panel",
+          "sha": "d3ec3d68"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R2",
+          "subject": "arena UI — enemy swap, focus toggle, text-floater panel",
+          "sha": "baf2d7fb"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R2",
+          "subject": "debug_fire_enemy_attack slap variant (BATTLE_SLAP_MAP)",
+          "sha": "3f962f7a"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R2",
+          "subject": "arena split panels — animations follow focus, no scroll",
+          "sha": "31043709"
+        },
+        {
+          "type": "polish",
+          "scope": "pnze",
+          "subject": "arena hides pack-status overlay + trims panel titles",
+          "sha": "a14bdd10"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R1",
+          "subject": "CombatVFXConfig — config-driven fog params (single source combat+arena)",
+          "sha": "8740c19d"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R2",
+          "subject": "arena fog sliders write CombatVFXConfig -> real combat reads live",
+          "sha": "75c0b30a"
+        },
+        {
+          "type": "fix",
+          "scope": "eupd",
+          "subject": "arena Mother Slime uses real motherSlime sprite (was placeholder)",
+          "sha": "173c5686"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R2",
+          "subject": "combat SFX volumes read CombatVFXConfig + audition/set hooks",
+          "sha": "a0b62bb7"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R2",
+          "subject": "arena SFX volume sliders (audition + write config) + hide Title label",
+          "sha": "a19698af"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R2",
+          "subject": "SFX timing — config-driven delay from natural fire point",
+          "sha": "3ca8dedb"
+        },
+        {
+          "type": "feat",
+          "scope": "pnze R2",
+          "subject": "arena SFX rows get a timing slider (vol + t) writing config",
+          "sha": "2e8d1b9c"
+        },
+        {
+          "type": "polish",
+          "scope": "pnze",
+          "subject": "clear bench names in DebugMenu",
+          "sha": "2a12552f"
+        },
+        {
+          "type": "polish",
+          "scope": "pnze",
+          "subject": "hide 'Walk Elias into the Slime' Subtitle label in VFX arena",
+          "sha": "de10e54e"
+        },
+        {
+          "type": "fix",
+          "scope": "pnze",
+          "subject": "move SFX vol/timing sliders to own bottom panel (were cut off under text)",
+          "sha": "6b4b1638"
+        },
+        {
+          "type": "chore",
+          "subject": "combat vfx batch: poison damage icon, smite sfx timing, mouse deadzone fix",
+          "sha": "1ee77388"
+        },
+        {
+          "type": "beads",
+          "subject": "bopn + 1qmi -> needs-verify (fixed v0.7.2201)",
+          "sha": "af0ca302"
+        },
+        {
+          "type": "chore",
+          "subject": "pnze R1: migrate slash/bolt/cloud VFX params to CombatVFXConfig",
+          "sha": "24487994"
+        },
+        {
+          "type": "chore",
+          "subject": "pnze arena: real status-effect firing + SFX dump button + earlier attack SFX",
+          "sha": "488cb4e2"
+        },
+        {
+          "type": "chore",
+          "scope": "packs_src",
+          "subject": "sync Laria/Autoload/TestBridge.gd with bootstrap (_public_build gating)",
+          "sha": "d073973c"
+        },
+        {
+          "type": "chore",
+          "subject": "pnze R5: wire CombatVFXBench to CombatVFXConfig as single source",
+          "sha": "4b9aeaf0"
+        },
+        {
+          "type": "chore",
+          "subject": "pnze R5 fix: seed _overrides directly from CombatVFXConfig (ClassDB guard was dead)",
+          "sha": "cff89d6e"
+        },
+        {
+          "type": "va1p",
+          "subject": "add in-game \"Report a Bug\" feature (Options → BugReportMenu)",
+          "sha": "556fc3c7"
+        },
+        {
+          "type": "chore",
+          "subject": "e0es B0: combat-math overhaul recon + eject-seat tag reference",
+          "sha": "cbadee59"
+        },
+        {
+          "type": "chore",
+          "subject": "e0es B1: ratio damage mitigation via CombatMath.mitigate()",
+          "sha": "ec25c9b7"
+        },
+        {
+          "type": "COMBAT_MATH_B2",
+          "subject": "ratio hit_chance() for physical + all magic apply-chance sites",
+          "sha": "1f2a8a64"
+        },
+        {
+          "type": "chore",
+          "subject": "e0es B3: table-driven status->hit modifier hook (poison now, blind later)",
+          "sha": "7f96ed3e"
+        },
+        {
+          "type": "chore",
+          "subject": "e0es B4: Mother Slime INT buff + WIS-heal + fog cooldown/prob + absorb cap",
+          "sha": "5140cd1c"
+        },
+        {
+          "type": "chore",
+          "subject": "B5 (e0es.6): difficulty = enemy offense only; Easy 0.5→0.6; fog cooldown wired to difficulty",
+          "sha": "30930d8d"
+        },
+        {
+          "type": "chore",
+          "subject": "e0es B6: combat-math overhaul regression tests (Vera)",
+          "sha": "651c12d2"
+        },
+        {
+          "type": "fbrk",
+          "subject": "fix charge-run frames static — ResourceLoader.exists + startChargeAnimation()",
+          "sha": "a08a96ff"
+        },
+        {
+          "type": "ej12",
+          "subject": "hide HUD immediately on run/flee so no combat UI bleeds into overworld",
+          "sha": "30c46ff2"
+        },
+        {
+          "type": "fbrk",
+          "subject": "sync PlayerCharacter.gd pack copies (Laria+Overworld) with bootstrap fix",
+          "sha": "d7c74fb3"
+        },
+        {
+          "type": "chore",
+          "subject": "u0xr/wwfi: MenuBase WASD-click helper + ConsumeItemMenu feather focus fix",
+          "sha": "6f446e35"
+        },
+        {
+          "type": "chore",
+          "subject": "6jt (WC-21): get_tree()->get_viewport().set_input_as_handled() x7",
+          "sha": "efe40b37"
+        },
+        {
+          "type": "chore",
+          "subject": "va1p-addendum: wire allbyte:bug_report_open for mobile DOM overlay",
+          "sha": "fb9ce153"
+        },
+        {
+          "type": "FIX",
+          "subject": "OptionsMenu tap-routing in WASD mode — hit-test before handleClick (mobile)",
+          "sha": "d34e2b50"
+        },
+        {
+          "type": "chore",
+          "subject": "6pjv v2: mobile Options tap hit-test — use canvas transform (v1 off by one row)",
+          "sha": "9eaff259"
+        },
+        {
+          "type": "6pjv",
+          "subject": "TAPDBG instrumentation for mobile Options tap-routing (temporary)",
+          "sha": "9c6b30e3"
+        },
+        {
+          "type": "lv9q",
+          "subject": "authoritative post-deploy :8060 health assert (HTTP-fetch packs)",
+          "sha": "69637a5c"
+        },
+        {
+          "type": "csrs",
+          "subject": "fix 2x2 footprint pathfinding — wrong end cell + add T2 regression tests",
+          "sha": "f6ceac64"
+        },
+        {
+          "type": "chore",
+          "subject": "combat status: 'Poisoned'/'Cleansed' floaters + live-tunable icon pos & turns font",
+          "sha": "f5459b62"
+        },
+        {
+          "type": "chore",
+          "subject": "6pjv v3: mobile Options tap — snap to nearest button row + remove TAPDBG",
+          "sha": "595e1a9e"
+        },
+        {
+          "type": "6pjv",
+          "subject": "TAPDBG2 mobile-capture instrumentation (v3 still mis-routes on mobile)",
+          "sha": "dc5214bf"
+        },
+        {
+          "type": "chore",
+          "subject": "6pjv ROOT CAUSE FIX: OptionsMenu dispatch by button node, not hardcoded index",
+          "sha": "f76f9feb"
+        },
+        {
+          "type": "6pjv",
+          "subject": "strip TAPDBG2 debug logging (mobile tap fix confirmed on device)",
+          "sha": "49e984f0"
+        },
+        {
+          "type": "r2gt",
+          "subject": "split victory player-release from zone-music-resume",
+          "sha": "f6d37abf"
+        },
+        {
+          "type": "chore",
+          "subject": "r2gt fix: move victory zone-music-resume delay to SceneTemplate (survives teardown)",
+          "sha": "c3096154"
+        },
+        {
+          "type": "chore",
+          "subject": "anlf/1qmi/2yu4 combat VFX/SFX batch: kill volume, VSlime combo button, poison colors",
+          "sha": "2d39b730"
+        },
+        {
+          "type": "chore",
+          "scope": "packs_src",
+          "subject": "sync Laria/TestScenes/ArenaBench.gd (1qmi combo button)",
+          "sha": "ee1da321"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "universal 2x2 footprint-white hover for all skills (a3cm)",
+          "sha": "3aafee28"
+        },
+        {
+          "type": "chore",
+          "subject": "status display: live-tunable StatusPanel position + size (independent of icon)",
+          "sha": "f3530334"
+        },
+        {
+          "type": "chore",
+          "subject": "bd ovtt: route Enemy forceWalkToPosition through move_and_slide to fix wall clipping",
+          "sha": "3df5835e"
+        },
+        {
+          "type": "5pb8",
+          "subject": "move difficulty cards row down 20px so title is no longer covered",
+          "sha": "62b4eeab"
+        },
+        {
+          "type": "ljjz",
+          "subject": "skip Berserckounter Relic (item 24) drop from Mother Slime on Easy",
+          "sha": "4265ac75"
+        },
+        {
+          "type": "mphs",
+          "subject": "hide Move Relic (id 17) and Health Relic (id 15) on Medium difficulty",
+          "sha": "8824d428"
+        },
+        {
+          "type": "09gr",
+          "subject": "confirm expertise EP→tier pipeline is incomplete (display only)",
+          "sha": "03f37f78"
+        },
+        {
+          "type": "c2at",
+          "subject": "hide expertise tier nodes on Easy mode in skill tree UI",
+          "sha": "c20535c9"
+        },
+        {
+          "type": "chore",
+          "subject": "bd ChroniclesOfNesis-3txi: fix GameOver skill-leak — clear treeSkills+skills before load",
+          "sha": "2665d68a"
+        },
+        {
+          "type": "test",
+          "scope": "e0uy",
+          "subject": "pin SP badge stale-after-buy regression",
+          "sha": "2d6a3cfd"
+        },
+        {
+          "type": "fix",
+          "scope": "e0uy",
+          "subject": "SP badge stays stale after learning a skill — refresh overlay",
+          "sha": "fa3a8a81"
+        },
+        {
+          "type": "mphs",
+          "subject": "rework difficulty gate — delete Mayor's-office Health Relic, gate Easy+Medium",
+          "sha": "d6e80ffc"
+        },
+        {
+          "type": "test",
+          "scope": "i4nq",
+          "subject": "Tier-4 regression for difficulty-gated treasures",
+          "sha": "b77cf0c5"
+        },
+        {
+          "type": "mphs",
+          "subject": "gate Move Relic (iid 17) and Old Pendant (iid 18) by difficulty in Relic.gd",
+          "sha": "0b5f37e4"
+        },
+        {
+          "type": "chore",
+          "subject": "q0cf Phase 1: EXPERTISE_DESIGN.md — increment audit + tier-effect proposal + wiring sketch",
+          "sha": "eaf64131"
+        },
+        {
+          "type": "chore",
+          "subject": "bd goxv: Enemy event-move bypasses wall collision; roaming keeps move_and_slide",
+          "sha": "68e32061"
+        },
+        {
+          "type": "EXPERTISE_DESIGN",
+          "subject": "Phase 2 — category-calibrated thresholds (q0cf)",
+          "sha": "2d7eded3"
+        },
+        {
+          "type": "EXPERTISE_DESIGN",
+          "subject": "Phase 2 FINAL owner decisions (EP-on-hit, HealthUp per-damage-absorbed, Sweep L2=PhysDmg+, Phase3 scope=Elias+combat relics, Web deferred)",
+          "sha": "bdc090a0"
+        },
+        {
+          "type": "q0cf",
+          "subject": "Phase-3 expertise-lifecycle test framework (TEST-FIRST) + TestBridge seams",
+          "sha": "b4d33af8"
+        },
+        {
+          "type": "chore",
+          "subject": "sync Laria TestBridge.gd copy with new expertise seams (q0cf test infra)",
+          "sha": "76a2b7cf"
+        },
+        {
+          "type": "chore",
+          "subject": "hv2d (q0cf Phase 3A): EP increment sites + calibrated thresholds + MoveUp tree node",
+          "sha": "28c6b0e6"
+        },
+        {
+          "type": "chore",
+          "subject": "hv2d (q0cf Phase 3A): fix Smite EP + wire Berserckounter/HealthUp EP sites",
+          "sha": "002b1fec"
+        },
+        {
+          "type": "fix",
+          "scope": "test",
+          "subject": "cure lifecycle tests — grant Cure before arena + HP polling",
+          "sha": "8baf852e"
+        },
+        {
+          "type": "test",
+          "scope": "q0cf",
+          "subject": "grant Smite in smite lifecycle tests (empty default PartySkills) — fixes stage2, isolates stage1 to the per-use EP wiring",
+          "sha": "6f29bf53"
+        },
+        {
+          "type": "fix",
+          "scope": "hv2d",
+          "subject": "wire _award_per_use_ep on Smite hit — two-root-cause fix",
+          "sha": "6880dbfb"
+        },
+        {
+          "type": "chore",
+          "subject": "sync Laria TestBridge.gd (hv2c Shape-2 skill branch)",
+          "sha": "f0316190"
+        },
+        {
+          "type": "fix",
+          "scope": "q0cf-reconcile",
+          "subject": "belt-and-suspenders explicit flag for skill-shape TestBridge injection (hv2c/q0cf)",
+          "sha": "1b1b1b8a"
+        },
+        {
+          "type": "revert",
+          "scope": "q0cf",
+          "subject": "remove _pending_skill_id_explicit; fix skill bypass for smite (refs q0cf)",
+          "sha": "f16f03f3"
+        },
+        {
+          "type": "p0ee",
+          "subject": "add +N EP floater in combat when EP is granted",
+          "sha": "c5781c79"
+        },
+        {
+          "type": "p0ee",
+          "subject": "pin EP floater regression — seam + test",
+          "sha": "387f2e02"
+        },
+        {
+          "type": "fix",
+          "scope": "test",
+          "subject": "align p0ee EP floater cast timing with proven lifecycle sequence (p0ee)",
+          "sha": "be462671"
+        },
+        {
+          "type": "chore",
+          "subject": "d2jl (Phase 3B): wire Smite tier effects — general level-effect mechanism",
+          "sha": "75929b2f"
+        },
+        {
+          "type": "combat",
+          "subject": "register radiant as magic-defended type; independent magic_attack roll (d2jl/93kc)",
+          "sha": "ce6fb204"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "skill+relic damage/tier/EP audit for Quinn (93kc)",
+          "sha": "01537bef"
+        },
+        {
+          "type": "tests",
+          "scope": "smite",
+          "subject": "fix stage-6 level seam + add radiant structural pin (d2jl/93kc)",
+          "sha": "07444adc"
+        },
+        {
+          "type": "chore",
+          "subject": "av72+jp3u: AoE/Cleanse EP wiring + Berserckounter damage trade-off",
+          "sha": "2f70621d"
+        },
+        {
+          "type": "docs",
+          "subject": "correct Berserckounter from counter-attack to trade-off mechanic",
+          "sha": "e84ebca8"
+        },
+        {
+          "type": "test",
+          "scope": "av72+jp3u",
+          "subject": "regression pin — AoE/Cleanse EP + Berserckounter physical trade-off",
+          "sha": "864dcf78"
+        },
+        {
+          "type": "yhgj",
+          "subject": "fog retune (Quinn 93kc) — Mother Slime INT 20->13, Hard fog cooldown 1->2, VSlime poison-absorb heal ->50% (minor)",
+          "sha": "c650dd98"
+        },
+        {
+          "type": "beads",
+          "subject": "resync issues.jsonl to live DB (5-day drift + today's needs-verify sweep)",
+          "sha": "7486ae58"
+        },
+        {
+          "type": "chore",
+          "subject": "git-hooks: auto-sync beads DB -> git on every commit (fix recurring drift)",
+          "sha": "6ffb1735"
+        },
+        {
+          "type": "redeploy",
+          "subject": "hard-abort when :8060 is held (LOCALHOST_HOLD.md)",
+          "sha": "debeea2a"
+        },
+        {
+          "type": "chore",
+          "subject": "WC batch (szj + d86): G4 web-compat fixes in Unit.gd + PlayerCharacter.gd",
+          "sha": "75a35a7c"
+        },
+        {
+          "type": "xnpx",
+          "subject": "MenuOverlay mobile-touch tap routing — port OptionsMenu _touch_hit_test",
+          "sha": "593a3fd2"
+        },
+        {
+          "type": "chore",
+          "subject": "QB-016 (0o8l): MotherSlime fog AI range-gate + AOE dedupe",
+          "sha": "ab6224ab"
+        },
+        {
+          "type": "yhgj",
+          "subject": "Mother Slime co-tune — Quinn 4-dial owner-approved (winnable both floors)",
+          "sha": "12e8304b"
+        },
+        {
+          "type": "chore",
+          "subject": "Q2 debug-compile-out: extract dev/mutation surface into excludable TestBridgeDev.gd",
+          "sha": "3b7f7549"
+        },
+        {
+          "type": "beads",
+          "subject": "pin Q2 debug-compile-out (k5g6) + ArenaBench status-tune (2qdf)",
+          "sha": "14085269"
+        },
+        {
+          "type": "beads",
+          "subject": "auto-close post-commit hook + reconcile 28 resolved-but-open beads",
+          "sha": "e9b2c12e"
+        },
+        {
+          "type": "boot_check",
+          "subject": "match smoke_prod launch (drop --no-sandbox default) + log console errors",
+          "sha": "6c70d12e"
+        },
+        {
+          "type": "hooks",
+          "subject": "broaden beads_autoclose to prefix + merge + conventional styles",
+          "sha": "fcace6d4"
+        },
+        {
+          "type": "fix",
+          "scope": "q0r7",
+          "subject": "JP badge stale on MenuOverlay after StatusMenu Save",
+          "sha": "18534d5d"
+        },
+        {
+          "type": "1kid",
+          "subject": "Title WASD-mode click activates focused option (motion deadzone)",
+          "sha": "bac6556e"
+        },
+        {
+          "type": "iup5",
+          "subject": "play menu-nav SFX on skill-tree focus change in mouse mode",
+          "sha": "9205e2a9"
+        },
+        {
+          "type": "1kid",
+          "subject": "contract-guard test — Title WASD click activates focused option",
+          "sha": "1e6911ee"
+        },
+        {
+          "type": "q0r7",
+          "subject": "fix test instance_null default + mark NON-GATING (vacuous)",
+          "sha": "66fa985e"
+        },
+        {
+          "type": "ci",
+          "subject": "fix os shadowing in boot_check.py main() (UnboundLocalError)",
+          "sha": "f1e3b090"
+        },
+        {
+          "type": "ci",
+          "subject": "boot_check.py names failing request URLs (404 diagnostics)",
+          "sha": "0262f5f7"
+        },
+        {
+          "type": "ci",
+          "subject": "boot_check.py — 180s timeout + de-noised console tail + gameState probe",
+          "sha": "97a10125"
+        },
+        {
+          "type": "ci",
+          "subject": "boot_check.py — force software WebGL2 + capture full boot-abort error",
+          "sha": "4a43b6b6"
+        },
+        {
+          "type": "ci",
+          "subject": "add unconditional artifact-integrity gate to cloud_export.sh",
+          "sha": "b7b2e032"
+        },
+        {
+          "type": "ci",
+          "subject": "revert boot_check SwiftShader/ANGLE flags — plain launch (App proof)",
+          "sha": "510c1f6d"
+        },
+        {
+          "type": "ci",
+          "subject": "boot_check probes crossOriginIsolated + WebGL2 context on failure",
+          "sha": "c1a59af0"
+        },
+        {
+          "type": "2qdf",
+          "subject": "status-icon head-anchor + crisp turns-number + damage-pause coupling (owner live-tune)",
+          "sha": "9ce9516f"
+        },
+        {
+          "type": "bqam",
+          "subject": "port Eastwood + Spiter sprites G3→G4, wire into ArenaBench",
+          "sha": "51e6e707"
+        },
+        {
+          "type": "beads",
+          "subject": "p2da (acid+rotation), bqam (Eastwood/Spiter port), 98qs (letterbox cursor), name-tag split from 2qdf",
+          "sha": "aeaeb311"
+        },
+        {
+          "type": "chore",
+          "subject": "bqam-2: fix Eastwood/Spiter mounting as Slime in VFX arena",
+          "sha": "1e04bd2f"
+        },
+        {
+          "type": "beads",
+          "subject": "sync",
+          "sha": "00ac0e95"
+        },
+        {
+          "type": "ArenaBench",
+          "subject": "Enemy picker as OptionButton dropdown, left above action panel (owner)",
+          "sha": "164a628f"
+        },
+        {
+          "type": "ArenaBench",
+          "subject": "sync Laria copy with bootstrap (dropdown + bqam2 ability fix)",
+          "sha": "139484d2"
+        },
+        {
+          "type": "bqam",
+          "subject": "guard attack/slap slime-sheet fallback (Eastwood/Spiter did slime attack)",
+          "sha": "66a73df8"
+        },
+        {
+          "type": "2k4p",
+          "subject": "enemy art pipeline — G3 art backfill + kill cross-enemy fallback (C1) + generic special-attack hook (C2)",
+          "sha": "bfb6a418"
+        },
+        {
+          "type": "beads",
+          "subject": "sync (2k4p, 98qs scope)",
+          "sha": "8920f1fc"
+        },
+        {
+          "type": "chore",
+          "subject": "port G3 GameOver floating-particle effect to G4 (CPUParticles2D)",
+          "sha": "06e10530"
+        },
+        {
+          "type": "chore",
+          "subject": "clean up fake UIDs from GameOver.tscn and offset_glow import",
+          "sha": "4642ea59"
+        },
+        {
+          "type": "beads",
+          "subject": "sync (gameover particles bead)",
+          "sha": "6667e41f"
+        },
+        {
+          "type": "wdlz",
+          "subject": "Immune/Absorb feedback floater when poison cast on a resistant unit",
+          "sha": "dc07a2ed"
+        },
+        {
+          "type": "wdlz",
+          "subject": "absorb floater = heal green (_HEAL_COLOR), immune = resist grey (_RESIST_COLOR)",
+          "sha": "e4a4ff68"
+        },
+        {
+          "type": "yj0l",
+          "subject": "physical resistance — VSlime + Mother Slime take HALF physical damage (grey floater)",
+          "sha": "1d994b37"
+        },
+        {
+          "type": "chore",
+          "subject": "beads sync",
+          "sha": "b7b5b5ce"
+        },
+        {
+          "type": "doc",
+          "subject": "physical-resistance rebalance brief for Quinn (VSlime + Mother Slime)",
+          "sha": "5921df92"
+        },
+        {
+          "type": "combat",
+          "subject": "floater sequencing rule — damage rows no-overlap, status text+icon +0.75s (uaxb)",
+          "sha": "6c2446e2"
+        },
+        {
+          "type": "chore",
+          "subject": "beads sync",
+          "sha": "abf9e2ab"
+        },
+        {
+          "type": "chore",
+          "subject": "wdlz/uaxb/yj0l: immune/absorb/resist render ON the damage row (type icon + sub-label)",
+          "sha": "dbbb9f3b"
+        },
+        {
+          "type": "kx5p",
+          "subject": "spawn smite radiant floater — radiant damage was applied (HP) but invisible",
+          "sha": "9be48358"
+        },
+        {
+          "type": "aj58",
+          "subject": "VSlime poison terrain persists whole fight (_VSLIME_POISON_DURATION 3 -> -1)",
+          "sha": "8395a01d"
+        },
+        {
+          "type": "p2da",
+          "subject": "ACID full status effect + rotating status panels",
+          "sha": "b6fd02ed"
+        },
+        {
+          "type": "chore",
+          "subject": "beads sync",
+          "sha": "20d91861"
+        },
+        {
+          "type": "combat",
+          "subject": "numeric physical_resist multiplier + Poisona Pendant poison-resistance + QB-018 HP load clamp (x0bh)",
+          "sha": "2f5b7fa7"
+        },
+        {
+          "type": "chore",
+          "subject": "beads sync",
+          "sha": "1f1170f3"
+        },
+        {
+          "type": "TestBridge",
+          "subject": "generic _testInjectAction hook (roan ui_select save-menu enabler, Quinn save-tree)",
+          "sha": "da313b3c"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: land hard_root node + save_tree_manifest.json (web scenario launcher)",
+          "sha": "8d530ae1"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: hard_root packs correction []->[\"Laria\"]",
+          "sha": "43a6795d"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: add hard_town + hard_windmill1 nodes (pauper spine)",
+          "sha": "8877b0da"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: add hard_root_looted node (maximal-branch start)",
+          "sha": "0423e723"
+        },
+        {
+          "type": "CombatVFXBench",
+          "subject": "add Immune + Absorbed to universal text panel",
+          "sha": "4073122c"
+        },
+        {
+          "type": "chore",
+          "subject": "save-tree: add hard_shop_maximal + hard_town_maximal_items (maximal branch)",
+          "sha": "c3fde2c3"
+        },
+        {
+          "type": "beads",
+          "subject": "seed verify-loop dry-run bead (needs-verify)",
+          "sha": "6913c4bc"
+        },
+        {
+          "type": "beads",
+          "subject": "close 8 owner-verified issues (verify-loop first live run)",
+          "sha": "23c1a2a6"
+        },
+        {
+          "type": "beads",
+          "subject": "close throwaway verify-loop dry-run bead (gqsc)",
+          "sha": "0f4f69a8"
+        }
+      ]
+    },
     {
       "version": "v0.7.2109",
       "date": "2026-07-01",

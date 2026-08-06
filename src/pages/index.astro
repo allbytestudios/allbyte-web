@@ -4,6 +4,10 @@ import NavAuth from "../components/NavAuth.svelte";
 import HeroPlay from "../components/HeroPlay.svelte";
 import RelicDeck from "../components/RelicDeck.svelte";
 import gameVersion from "../data/game-version.json";
+// The shared manual system (tokens, base type, nav, footer) — extracted from
+// this file so /changelog/, /devlog/, /walkthrough/ and /artwork/ can use the
+// same one. Homepage-only rules stay in the <style> block below.
+import "../styles/manual.css";
 ---
 
 <BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A world that has forgotten its heroes. Play The Chronicles of Nesis free in your browser, a handcrafted tactical RPG from AllByte Studios.">
@@ -108,58 +112,6 @@ import gameVersion from "../data/game-version.json";
 
 <style is:global>
 
-  :root { --paper-tex:url("/home/1f41ebc796.jpg"); --fl-bright:1;
-    --ink:#3a2c1b; --ink-soft:#6a5836; --crimson:#8a2b21; --crimson-lt:#a8412f; --gilt:#9a7736; --gilt-lt:#c8a24e; --gilt-deep:#7a5c22; --relic:#2f8f7a;
-    --rule:rgba(122,92,34,.55); --shadow:rgba(58,44,27,.28); --panel:rgba(247,238,214,.55); --paperblend:rgba(231,217,184,.22); }
-  @media (prefers-color-scheme:dark){ :root{ --paper-tex:url("/home/aed76c48b4.jpg"); --fl-bright:1.75; --ink:#ecdcbd; --ink-soft:#bda87f; --crimson:#e0715a; --crimson-lt:#eb886d; --gilt:#c8a24e; --gilt-lt:#e6c877; --gilt-deep:#a07e34; --relic:#5fd0b3; --rule:rgba(200,162,78,.42); --shadow:rgba(0,0,0,.55); --panel:rgba(38,29,18,.5); --paperblend:rgba(18,13,7,.28); --paper-fallback:#1a130b; } }
-  :root[data-theme="dark"]{ --paper-tex:url("/home/aed76c48b4.jpg"); --fl-bright:1.75; --ink:#ecdcbd; --ink-soft:#bda87f; --crimson:#e0715a; --crimson-lt:#eb886d; --gilt:#c8a24e; --gilt-lt:#e6c877; --gilt-deep:#a07e34; --relic:#5fd0b3; --rule:rgba(200,162,78,.42); --shadow:rgba(0,0,0,.55); --panel:rgba(38,29,18,.5); --paperblend:rgba(18,13,7,.28); --paper-fallback:#1a130b; }
-  :root[data-theme="light"]{ --paper-tex:url("/home/1f41ebc796.jpg"); --fl-bright:1; --ink:#3a2c1b; --ink-soft:#6a5836; --crimson:#8a2b21; --crimson-lt:#a8412f; --gilt:#9a7736; --gilt-lt:#c8a24e; --gilt-deep:#7a5c22; --relic:#2f8f7a; --rule:rgba(122,92,34,.55); --shadow:rgba(58,44,27,.28); --panel:rgba(247,238,214,.55); --paperblend:rgba(231,217,184,.22); }
-
-  *{box-sizing:border-box;}
-  /* The parchment backdrop lives on <body> (the viewport canvas), NOT on .home.
-     A background-image on .home — which contains the autoplay hero <video> —
-     gets blanked to white across all of .home by Chrome's GPU compositing of
-     the video (the hero shows the video on top; everything below shows the
-     blanked-white div). The root canvas background is immune to this, so we put
-     it there and keep .home transparent. */
-  .home{ min-height:100vh; color:var(--ink); line-height:1.64; font-family:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif; -webkit-font-smoothing:antialiased; overflow-x:clip; }
-  body{ background-color:var(--paper-fallback,#e7dcbd); background-image:linear-gradient(var(--paperblend),var(--paperblend)),var(--paper-tex); background-size:cover; background-attachment:fixed; }
-  h1,h2,h3,.display{ font-family:"AllByteCustom","Trajan Pro",Georgia,serif; font-weight:400; text-wrap:balance; }
-  img{ max-width:100%; display:block; } a{ color:inherit; }
-  .wrap{ max-width:1080px; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.4rem); }
-  .eyebrow{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.26em; font-size:.72rem; color:var(--gilt-deep); display:flex; align-items:center; gap:.7rem; justify-content:center; }
-  .eyebrow::before,.eyebrow::after{ content:""; flex:1; max-width:3rem; height:1px; background:linear-gradient(90deg,transparent,var(--rule),transparent); }
-  .rule{ max-width:1080px; margin:.7rem auto 0; height:0; border:0; border-top:1px solid var(--rule); position:relative; }
-  .rule::after{ content:""; position:absolute; left:50%; top:-3px; width:7px; height:7px; transform:translateX(-50%) rotate(45deg); background:var(--gilt); box-shadow:0 0 0 3px var(--paperblend); }
-
-  .btn{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.1em; font-size:.84rem; text-decoration:none; display:inline-flex; align-items:center; gap:.5em; padding:.78rem 1.5rem; border-radius:2px; border:1px solid var(--gilt); transition:transform .15s,box-shadow .2s,background .2s; cursor:pointer; }
-  .btn-primary{ background:var(--crimson); color:#f6eccf; border-color:var(--gilt-deep); box-shadow:0 2px 0 rgba(0,0,0,.18),inset 0 0 0 1px rgba(200,162,78,.35); }
-  .btn-primary:hover{ background:var(--crimson-lt); transform:translateY(-1px); box-shadow:0 5px 16px var(--shadow); }
-  /* Cream ghost button — text is a fixed deep crimson so it stays legible on the
-     light fill in BOTH themes (var(--crimson) turns light in dark mode = illegible). */
-  .btn-ghost{ background:rgba(250,242,224,.72); color:#7a1f17; border-color:#9a7736; font-weight:600; } .btn-ghost:hover{ background:rgba(250,242,224,.92); transform:translateY(-1px); }
-  .btn-lg{ font-size:.98rem; padding:.95rem 1.9rem; }
-
-  .frame{ position:relative; border:1px solid var(--gilt); box-shadow:inset 0 0 0 3px var(--paperblend),inset 0 0 0 4px var(--rule); border-radius:2px; }
-  .frame > .fl{ position:absolute; width:54px; height:54px; z-index:3; pointer-events:none; opacity:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
-  .fl-tl{ top:-14px; left:-14px; transform:rotate(0);} .fl-tr{ top:-14px; right:-14px; transform:rotate(90deg);} .fl-br{ bottom:-14px; right:-14px; transform:rotate(180deg);} .fl-bl{ bottom:-14px; left:-14px; transform:rotate(270deg);}
-  .ghero .art > .fl{ width:112px; height:112px; }
-
-  /* minimal game nav + sticky Play */
-  header.nav{ position:sticky; top:0; z-index:40; background:linear-gradient(var(--paperblend),var(--paperblend)),var(--paper-tex); background-size:cover; border-bottom:2px solid var(--rule); box-shadow:0 1px 0 var(--gilt-lt),0 3px 10px var(--shadow); }
-  .nav-in{ display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.5rem clamp(1.1rem,4vw,2.4rem); max-width:1200px; margin:0 auto; }
-  .brand{ display:inline-flex; align-items:center; gap:.5rem; font-family:"AllByteCustom",Georgia,serif; font-size:1.15rem; letter-spacing:.03em; text-decoration:none; color:var(--crimson); white-space:nowrap; }
-  .brand-icon{ width:28px; height:28px; display:block; }
-  .navgroup{ display:flex; align-items:center; }
-  nav.links .navgroup a{ padding:.2rem 1.4rem; }
-  nav.links .navgroup a:first-child{ padding-left:0; }
-  .navgroup a + a{ border-left:1px solid var(--rule); }
-  nav.links{ display:flex; gap:1.3rem; align-items:center; }
-  nav.links a{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.09em; font-size:.72rem; color:var(--ink-soft); text-decoration:none; border-bottom:2px solid transparent; padding:.2rem 0; transition:.18s; }
-  nav.links a:hover{ color:var(--crimson); border-color:var(--gilt); }
-  .nav-play{ font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.08em; font-size:.74rem; background:var(--crimson); color:#f6eccf; padding:.4rem .9rem; border-radius:2px; text-decoration:none; border:1px solid var(--gilt-deep); }
-  .theme-toggle{ background:none; border:1px solid var(--rule); color:var(--ink-soft); border-radius:2px; padding:.28rem .5rem; cursor:pointer; font-size:.9rem; line-height:1; }
-  @media (max-width:880px){ nav.links a:not(.nav-play){ display:none; } }
 
   /* HERO — the game, front & center */
   .ghero{ text-align:center; padding:clamp(.7rem,1.6vw,1.2rem) 0 clamp(.7rem,1.6vw,1.1rem); }
@@ -272,10 +224,6 @@ import gameVersion from "../data/game-version.json";
   @keyframes pulse{ 0%{ box-shadow:0 0 0 0 color-mix(in srgb,var(--relic) 60%,transparent);} 70%{ box-shadow:0 0 0 9px transparent;} 100%{ box-shadow:0 0 0 0 transparent;} }
   @media (max-width:760px){ .bts{ grid-template-columns:1fr; } }
 
-  footer{ padding:1.8rem 0 2.6rem; border-top:2px solid var(--rule); text-align:center; color:var(--ink-soft); }
-  footer .fnav{ display:flex; gap:1.2rem; justify-content:center; flex-wrap:wrap; font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.08em; font-size:.72rem; }
-  footer .fnav a{ color:var(--ink-soft); text-decoration:none; } footer .fnav a:hover{ color:var(--crimson); }
-  footer .cr{ font-size:.8rem; margin-top:.9rem; opacity:.75; }
   .note{ max-width:1080px; margin:1.4rem auto 0; padding:.9rem 1.1rem; border:1px dashed var(--rule); border-radius:2px; font-size:.86rem; color:var(--ink-soft); background:var(--panel); }
   @media (prefers-reduced-motion:reduce){ *{ animation:none!important; transition:none!important; } }
 

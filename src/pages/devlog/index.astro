@@ -1,7 +1,5 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import Footer from "../../components/Footer.astro";
-import PageHeader from "../../components/PageHeader.astro";
+import ManualLayout from "../../layouts/ManualLayout.astro";
 import "../../styles/devlog.css";
 import { getCollection } from "astro:content";
 
@@ -16,18 +14,17 @@ const posts = (await getCollection("devlogs"))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
-<BaseLayout
+<ManualLayout
   title="Devlog — AllByte Studios"
   description="All devlog posts from AllByte Studios — engineering, workflow, strategy, narrative, and craft."
+  active="/devlog/"
 >
-  <PageHeader
-    theme="engine"
-    title="Devlog"
-    backHref="/"
-    backLabel="Home"
-    breadcrumbs={[{ href: "/", label: "Home" }]}
-  />
   <main class="devlog-page">
+    <header class="page-head">
+      <p class="eyebrow">From the Workshop</p>
+      <h1>Devlog</h1>
+      <hr class="rule" />
+    </header>
     <div class="devlog-list">
       <div class="devlog-filters" data-filters>
         <button type="button" class="filter-chip active" data-filter="all">All</button>
@@ -70,8 +67,7 @@ const posts = (await getCollection("devlogs"))
       ))}
     </div>
   </main>
-  <Footer theme="engine" />
-</BaseLayout>
+</ManualLayout>
 
 <script>
   // Tag-chip filter + ?tag= query-string preselect. Pure client-side, no
@@ -117,49 +113,59 @@ const posts = (await getCollection("devlogs"))
     max-width: 760px;
     margin: 0 auto 1.5rem;
     padding: 0.25rem 0 1rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.08);
+    border-bottom: 1px solid var(--rule);
   }
   .filter-sep {
-    font-family: "Courier New", monospace;
-    font-size: 0.75rem;
-    color: #4b5563;
+    font-family: "AllByteCustom", Georgia, serif;
+    font-size: 0.72rem;
+    color: var(--gilt-deep);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.14em;
     margin-left: 0.3rem;
   }
   .filter-chip {
-    font-family: "Courier New", monospace;
-    font-size: 0.78rem;
+    font-family: "AllByteCustom", Georgia, serif;
+    font-size: 0.74rem;
     padding: 0.3rem 0.7rem;
     background: transparent;
-    color: #9ca3af;
-    border: 1px solid rgba(167, 243, 208, 0.2);
-    border-radius: 3px;
+    color: var(--ink-soft);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
     cursor: pointer;
-    text-transform: lowercase;
-    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
   }
   .filter-chip:hover {
-    color: #a7f3d0;
-    border-color: rgba(167, 243, 208, 0.45);
+    color: var(--crimson);
+    border-color: var(--gilt);
   }
+  /* Active chip is the crimson plate — same treatment as .btn-primary. */
   .filter-chip.active {
-    color: #0a0e17;
-    background: #a7f3d0;
-    border-color: #a7f3d0;
+    color: #f6eccf;
+    background: var(--crimson);
+    border-color: var(--gilt-deep);
   }
   .devlog-card.filter-hidden {
     display: none;
   }
   .series-tag {
-    font-family: "Courier New", monospace;
-    font-size: 0.75rem;
+    font-family: "AllByteCustom", Georgia, serif;
+    font-size: 0.72rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6b7280;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
     padding: 0.15rem 0.45rem;
-    border: 1px solid rgba(156, 163, 175, 0.25);
+    border: 1px solid var(--rule);
     border-radius: 2px;
+  }
+
+  /* Shared page heading treatment (matches /changelog/). */
+  .page-head { text-align: center; padding-top: clamp(1.6rem, 4vw, 2.4rem); }
+  .page-head h1 {
+    color: var(--crimson);
+    font-size: clamp(2.1rem, 5.5vw, 3.1rem);
+    margin: 0.45rem 0 0;
+    line-height: 1.05;
   }
 </style>

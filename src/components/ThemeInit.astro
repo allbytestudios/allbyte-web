@@ -1,0 +1,36 @@
+---
+/**
+ * ThemeInit.astro — sets data-theme on <html> BEFORE first paint.
+ *
+ * Lifted verbatim from index.astro, where it lived inline and so only ever ran
+ * on the homepage. Any page that imports manual.css needs it too: without it a
+ * deep-linked page ignores the saved `abtheme` cookie and renders in the OS
+ * theme, so following a link from a dark homepage flashed a light page.
+ *
+ * MUST stay `is:inline` and MUST render before the content — a bundled/deferred
+ * version applies the attribute after paint, which is the FOUC we're avoiding.
+ */
+---
+
+<script is:inline>
+    (function () {
+      var r = document.documentElement;
+      var read = function () { var m = document.cookie.match(/(?:^|; )abtheme=(light|dark)/); return m ? m[1] : null; };
+      var stored = read();
+      if (stored) r.setAttribute("data-theme", stored);
+      var cur = function () { var t = r.getAttribute("data-theme"); return t || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light"); };
+      window.__abTheme = {
+        icon: function () { return cur() === "dark" ? "☀" : "☾"; },
+        toggle: function (btn) {
+          var next = cur() === "dark" ? "light" : "dark";
+          r.setAttribute("data-theme", next);
+          document.cookie = "abtheme=" + next + ";path=/;max-age=31536000;SameSite=Lax";
+          if (btn) btn.textContent = next === "dark" ? "☀" : "☾";
+        },
+      };
+      var syncIcon = function () { var b = document.querySelector(".theme-toggle"); if (b) b.textContent = window.__abTheme.icon(); };
+      if (document.readyState !== "loading") syncIcon(); else document.addEventListener("DOMContentLoaded", syncIcon);
+      document.addEventListener("astro:page-load", function () { var s = read(); if (s) r.setAttribute("data-theme", s); syncIcon(); });
+    })();
+  </script>
+<header class="nav"><div class="nav-in">

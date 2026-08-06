@@ -1,0 +1,64 @@
+---
+/**
+ * ManualLayout.astro — one wrapper for every "illuminated manual" page that
+ * isn't the homepage: /changelog/, /devlog/, /walkthrough/, /artwork/.
+ *
+ * Before this, those pages used BaseLayout + PageHeader and picked up none of
+ * the redesign — no parchment, no ink palette, no serif display type, no theme
+ * toggle — so landing on one directly looked like a different site than the
+ * homepage that linked to it.
+ *
+ * Deliberately NOT folded into BaseLayout: /test/ (engine/terminal) and /play/
+ * must keep their own aesthetic, and BaseLayout is what they share. Parchment
+ * is opt-in, one import at a time.
+ *
+ * Page-specific CSS still belongs in the page. This owns the chrome only:
+ * tokens (manual.css), pre-paint theme (ThemeInit), nav (ManualHeader), footer.
+ */
+import BaseLayout from "./BaseLayout.astro";
+import ThemeInit from "../components/ThemeInit.astro";
+import ManualHeader from "../components/ManualHeader.astro";
+import "../styles/manual.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Route to mark current in the nav, e.g. "/changelog/". */
+  active?: string;
+}
+const { title, description, active } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="manual-page">
+    <ThemeInit />
+    <ManualHeader active={active} />
+
+    <slot />
+
+    <footer><div class="wrap">
+      <div class="fnav">
+        <a href="/play/">Play</a>
+        <a href="/#pitch">Gameplay</a>
+        <a href="/#creation">Characters</a>
+        <a href="/manual/">Manual</a>
+        <a href="/walkthrough/">Strategy Guide</a>
+        <a href="/#studio">Studio</a>
+      </div>
+      <div class="cr">The Chronicles of Nesis · © AllByte Studios · Made and shared in the open.</div>
+    </div></footer>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  /* Mirrors .home on the homepage: the parchment itself is painted on <body>
+     (see manual.css) so it survives compositing; this only carries type + ink. */
+  .manual-page {
+    min-height: 100vh;
+    color: var(--ink);
+    line-height: 1.64;
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+</style>

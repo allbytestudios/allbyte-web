@@ -1,6 +1,5 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
-import Footer from "../components/Footer.astro";
+import ManualLayout from "../layouts/ManualLayout.astro";
 import spriteGifs from "../data/sprite-gifs.json";
 import manifest from "../../scripts/asset-manifest.json";
 import screenshotsData from "../data/screenshots.json";
@@ -119,12 +118,11 @@ function animationGateFor(character: string, animation: string): {
 }
 ---
 
-<BaseLayout title={title} description={description}>
+<ManualLayout title={title} description={description} active="/artwork/">
   <div class="page">
     <header class="page-header">
       <img src="/Flourish.png" alt="" class="flourish flourish-left" />
       <img src="/Flourish.png" alt="" class="flourish flourish-right" />
-      <a href="/" class="back-link">&larr; Back</a>
       <div class="header-text">
         <h1 class="page-title">Artwork</h1>
         <p class="page-sub">Hand-crafted sprites, animations, screenshots, and recordings</p>
@@ -469,8 +467,6 @@ function animationGateFor(character: string, animation: string): {
       </section>
       </div><!-- /typography panel -->
     </main>
-
-    <Footer theme="heart" />
   </div>
   <script>
     import assetIndex from "../data/asset-index.json";
@@ -607,64 +603,64 @@ function animationGateFor(character: string, animation: string): {
     window.addEventListener("music-player:track-changed", ((e: CustomEvent) => highlightTrack(e.detail.index)) as EventListener);
     if (window.__musicPlayerPlaying && window.__musicPlayerIndex != null) highlightTrack(window.__musicPlayerIndex);
   </script>
-</BaseLayout>
+</ManualLayout>
 
 <style is:global>
   /* --- Artwork SPA tabs --- */
   .art-tabs {
     display: flex; flex-wrap: wrap; gap: 0.4rem;
-    border-bottom: 2px solid #7a6e52; margin-bottom: 1.75rem;
+    border-bottom: 2px solid var(--rule); margin-bottom: 1.75rem;
   }
   .art-tab {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
-    font-size: 1.2rem; color: #5a4d38;
+    font-size: 1.2rem; color: var(--ink-soft);
     background: none; border: none; border-bottom: 3px solid transparent;
     padding: 0.5rem 1rem; cursor: pointer; transition: color 0.15s, border-color 0.15s;
     margin-bottom: -2px; min-height: 44px;
   }
-  .art-tab:hover { color: #2a2218; }
-  .art-tab.active { color: #2a2218; border-bottom-color: #5a4d38; font-weight: 600; }
+  .art-tab:hover { color: var(--ink); }
+  .art-tab.active { color: var(--ink); border-bottom-color: var(--ink-soft); font-weight: 600; }
   .tab-panel[hidden] { display: none; }
 
   /* --- Music track list (folded in from /music) --- */
   .track-list { display: flex; flex-direction: column; gap: 0.75rem; max-width: 760px; }
   .track-card {
-    background: #dbd0a0; border: 2px solid #7a6e52; border-radius: 4px;
+    background: var(--panel); border: 2px solid var(--rule); border-radius: 4px;
     padding: 1rem 1.25rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 8px rgba(0,0,0,0.15);
     display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
   }
   .track-info { display: flex; align-items: baseline; gap: 0.75rem; flex: 1; min-width: 180px; }
-  .track-number { font-family: "Courier New", monospace; font-size: 0.9rem; color: #3a3020; flex-shrink: 0; }
-  .track-name { font-family: "AllByteCustom", Georgia, serif; font-size: 1.25rem; color: #2a2218; }
+  .track-number { font-family: "AllByteCustom", Georgia, serif; font-size: 0.9rem; color: var(--ink); flex-shrink: 0; }
+  .track-name { font-family: "AllByteCustom", Georgia, serif; font-size: 1.25rem; color: var(--ink); }
   .track-btn { cursor: pointer; transition: background 0.15s, border-color 0.15s; width: 100%; text-align: left; font: inherit; }
-  .track-btn:hover { background: #cec08a; border-color: #5a4d38; }
-  .track-btn.active { background: #cec08a; border-color: #5a4d38; box-shadow: inset 3px 0 0 #5a4d38; }
+  .track-btn:hover { background: transparent; border-color: var(--ink-soft); }
+  .track-btn.active { background: transparent; border-color: var(--ink-soft); box-shadow: inset 3px 0 0 var(--ink-soft); }
   .hint-active { display: none; }
   .track-btn.active .hint-play { display: none; }
   .track-btn.active .hint-active { display: inline; }
-  .play-hint { font-family: "AllByteCustom", Georgia, serif; font-size: 0.9rem; color: #3a3020; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+  .play-hint { font-family: "AllByteCustom", Georgia, serif; font-size: 0.9rem; color: var(--ink); flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
   .track-btn:hover .play-hint, .track-btn.active .play-hint { opacity: 1; }
   .locked-card { opacity: 0.6; border-style: dashed; }
-  .locked-name { color: #3a3020; font-style: italic; }
-  .track-btn.gated { background: #c5b67e; border-style: dashed; cursor: not-allowed; }
-  .track-btn.gated:hover { background: #b8a872; }
-  .track-btn.gated .track-name { color: #5a4d38; font-style: italic; }
+  .locked-name { color: var(--ink); font-style: italic; }
+  .track-btn.gated { background: var(--paperblend); border-style: dashed; cursor: not-allowed; }
+  .track-btn.gated:hover { background: var(--rule); }
+  .track-btn.gated .track-name { color: var(--ink-soft); font-style: italic; }
   .track-btn .gate-badge {
-    font-family: "Courier New", monospace; font-size: 0.75rem; color: #5a4d38;
-    background: rgba(58,48,32,0.12); border: 1px solid rgba(58,48,32,0.35);
+    font-family: "AllByteCustom", Georgia, serif; font-size: 0.75rem; color: var(--ink-soft);
+    background: var(--paperblend); border: 1px solid var(--rule);
     padding: 0.15rem 0.45rem; border-radius: 3px; margin-left: 0.6rem; letter-spacing: 0.05em; font-weight: 700;
   }
 </style>
 <style is:global>
   .page {
     min-height: 100dvh;
-    background: #ddd5b8;
+    background: var(--panel);
     display: flex;
     flex-direction: column;
   }
 
   .page-header {
-    background: #cec08a;
+    background: transparent;
     padding: 0.4rem 1rem;
     position: sticky;
     top: 0;
@@ -698,10 +694,10 @@ function animationGateFor(character: string, animation: string): {
   .back-link {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.1rem;
-    color: #2a2218;
+    color: var(--ink);
     text-decoration: none;
     background: rgba(255, 255, 255, 0.35);
-    border: 1px solid #7a6e52;
+    border: 1px solid var(--rule);
     border-radius: 4px;
     padding: 0.5rem 0.9rem;
     min-height: 44px;
@@ -715,7 +711,7 @@ function animationGateFor(character: string, animation: string): {
   }
 
   .back-link:hover {
-    color: #2a2218;
+    color: var(--ink);
     background: rgba(255, 255, 255, 0.5);
   }
 
@@ -730,14 +726,14 @@ function animationGateFor(character: string, animation: string): {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.75rem;
     font-weight: 600;
-    color: #2a2218;
+    color: var(--ink);
     margin: 0;
   }
 
   .page-sub {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 0.9rem;
-    color: #2a2218;
+    color: var(--ink);
     margin: 0;
     line-height: 1.2;
   }
@@ -758,21 +754,21 @@ function animationGateFor(character: string, animation: string): {
   .category-title {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 2rem;
-    color: #2a2218;
+    color: var(--ink);
     margin: 0 0 1.25rem;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid #8a7d60;
+    border-bottom: 2px solid var(--ink-soft);
   }
 
   .section-note {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1rem;
-    color: #3a3020;
+    color: var(--ink);
     font-style: italic;
     margin: -0.75rem 0 1.25rem;
   }
   .font-link {
-    color: #2a2218;
+    color: var(--ink);
     text-decoration: underline;
     font-style: normal;
     margin-left: 0.3rem;
@@ -785,8 +781,8 @@ function animationGateFor(character: string, animation: string): {
      and styling as the /fonts/ page's Character Map card so the
      specimen reads consistently across both pages. */
   .character-map {
-    background: #dbd0a0;
-    border: 2px solid #7a6e52;
+    background: var(--panel);
+    border: 2px solid var(--rule);
     border-radius: 4px;
     padding: 1.5rem;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -794,7 +790,7 @@ function animationGateFor(character: string, animation: string): {
   .char-row {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.5rem;
-    color: #2a2218;
+    color: var(--ink);
     margin: 0.5rem 0;
     letter-spacing: 0.15em;
     line-height: 1.6;
@@ -817,8 +813,8 @@ function animationGateFor(character: string, animation: string): {
   }
 
   .character-card {
-    background: #dbd0a0;
-    border: 2px solid #7a6e52;
+    background: var(--panel);
+    border: 2px solid var(--rule);
     border-radius: 4px;
     padding: 1.25rem;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -830,7 +826,7 @@ function animationGateFor(character: string, animation: string): {
   .character-name {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.5rem;
-    color: #2a2218;
+    color: var(--ink);
     margin: 0 0 0.75rem;
     text-transform: capitalize;
   }
@@ -887,7 +883,7 @@ function animationGateFor(character: string, animation: string): {
     display: block;
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 0.8rem;
-    color: #3a3020;
+    color: var(--ink);
     margin-top: 0.25rem;
     line-height: 1.2;
   }
@@ -909,7 +905,7 @@ function animationGateFor(character: string, animation: string): {
 
   .locked-cell {
     opacity: 0.5;
-    border: 1px dashed #8a7d60;
+    border: 1px dashed var(--ink-soft);
   }
 
   .locked-sprite-small {
@@ -930,7 +926,7 @@ function animationGateFor(character: string, animation: string): {
   .mystery-sprite {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 4rem;
-    color: #3a3020;
+    color: var(--ink);
     height: 128px;
     display: flex;
     align-items: center;
@@ -940,7 +936,7 @@ function animationGateFor(character: string, animation: string): {
   .mystery-text {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 0.95rem;
-    color: #3a3020;
+    color: var(--ink);
     text-align: center;
     margin: 0;
     font-style: italic;
@@ -964,7 +960,7 @@ function animationGateFor(character: string, animation: string): {
   .locked-text {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 0.95rem;
-    color: #3a3020;
+    color: var(--ink);
     text-align: center;
     margin: 0;
     font-style: italic;
@@ -991,19 +987,19 @@ function animationGateFor(character: string, animation: string): {
   .character-card.gated .mystery-text {
     text-align: center;
     justify-content: center;
-    font-family: "Courier New", monospace;
+    font-family: "AllByteCustom", Georgia, serif;
     font-size: 0.85rem;
-    color: #5a4d38;
+    color: var(--ink-soft);
     margin: 0;
   }
   .gate-badge {
     display: inline-block;
     margin-left: 0.6rem;
-    font-family: "Courier New", monospace;
+    font-family: "AllByteCustom", Georgia, serif;
     font-size: 0.75rem;
-    color: #5a4d38;
-    background: rgba(58, 48, 32, 0.12);
-    border: 1px solid rgba(58, 48, 32, 0.4);
+    color: var(--ink-soft);
+    background: var(--paperblend);
+    border: 1px solid var(--rule);
     padding: 0.18rem 0.5rem;
     border-radius: 3px;
     letter-spacing: 0.05em;
@@ -1029,11 +1025,11 @@ function animationGateFor(character: string, animation: string): {
     display: flex;
   }
   .cell-gate-badge {
-    font-family: "Courier New", monospace;
+    font-family: "AllByteCustom", Georgia, serif;
     font-size: 0.75rem;
-    color: #5a4d38;
-    background: rgba(58, 48, 32, 0.12);
-    border: 1px solid rgba(58, 48, 32, 0.35);
+    color: var(--ink-soft);
+    background: var(--paperblend);
+    border: 1px solid var(--rule);
     padding: 0.1rem 0.35rem;
     border-radius: 2px;
     letter-spacing: 0.05em;
@@ -1053,8 +1049,8 @@ function animationGateFor(character: string, animation: string): {
   }
 
   .bg-card, .recording-card {
-    background: #dbd0a0;
-    border: 2px solid #7a6e52;
+    background: var(--panel);
+    border: 2px solid var(--rule);
     border-radius: 4px;
     overflow: hidden;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -1070,7 +1066,7 @@ function animationGateFor(character: string, animation: string): {
     width: 100%;
     height: auto;
     display: block;
-    background: #c5b67e;
+    background: var(--paperblend);
   }
 
   .recording-media {
@@ -1092,17 +1088,17 @@ function animationGateFor(character: string, animation: string): {
     align-items: center;
     justify-content: center;
     height: 200px;
-    background: #c5b67e;
-    color: #5a4d38;
+    background: var(--paperblend);
+    color: var(--ink-soft);
     gap: 0.5rem;
   }
   .proposed-icon {
     font-size: 2.5rem;
   }
   .proposed-label {
-    font-family: "Courier New", monospace;
+    font-family: "AllByteCustom", Georgia, serif;
     font-size: 0.7rem;
-    color: #5a4d38;
+    color: var(--ink-soft);
     letter-spacing: 0.15em;
     font-weight: 700;
   }
@@ -1118,14 +1114,14 @@ function animationGateFor(character: string, animation: string): {
     display: block;
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.1rem;
-    color: #2a2218;
+    color: var(--ink);
     text-align: left;
   }
 
   .bg-description {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 0.9rem;
-    color: #3a3020;
+    color: var(--ink);
     margin: 0;
     line-height: 1.35;
     font-style: italic;
@@ -1137,18 +1133,18 @@ function animationGateFor(character: string, animation: string): {
     gap: 0.3rem;
   }
   .bg-tag {
-    font-family: "Courier New", monospace;
+    font-family: "AllByteCustom", Georgia, serif;
     font-size: 0.65rem;
-    color: #5a4d38;
-    background: rgba(58, 48, 32, 0.1);
-    border: 1px solid rgba(58, 48, 32, 0.25);
+    color: var(--ink-soft);
+    background: var(--paperblend);
+    border: 1px solid var(--rule);
     padding: 0.1rem 0.4rem;
     border-radius: 2px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
   .bg-tag-cat {
-    background: rgba(58, 48, 32, 0.18);
+    background: var(--paperblend);
   }
   .bg-tag-dur {
     background: rgba(34, 197, 94, 0.18);
@@ -1156,9 +1152,9 @@ function animationGateFor(character: string, animation: string): {
   }
 
   .draft-badge {
-    font-family: "Courier New", monospace;
+    font-family: "AllByteCustom", Georgia, serif;
     font-size: 0.65rem;
-    color: #92400e;
+    color: var(--crimson);
     background: rgba(252, 211, 77, 0.5);
     border: 1px solid rgba(146, 64, 14, 0.4);
     padding: 0.15rem 0.45rem;
@@ -1169,9 +1165,9 @@ function animationGateFor(character: string, animation: string): {
   }
 
   .blocked-badge {
-    font-family: "Courier New", monospace;
+    font-family: "AllByteCustom", Georgia, serif;
     font-size: 0.65rem;
-    color: #7c2d12;
+    color: var(--crimson);
     background: rgba(252, 165, 165, 0.4);
     border: 1px solid rgba(124, 45, 18, 0.3);
     padding: 0.15rem 0.45rem;
@@ -1190,7 +1186,7 @@ function animationGateFor(character: string, animation: string): {
   }
 
   .page-footer {
-    background: #cec08a;
+    background: transparent;
     text-align: center;
     padding: 1.5rem 1rem;
   }

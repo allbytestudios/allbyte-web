@@ -1,5 +1,17 @@
+/* devlog.css — shared by the devlog hub, the three sub-blogs, and every post.
+ *
+ * Repainted from the engine/terminal look (dark slate, monospace, cyan) into
+ * the illuminated-manual system so a post reached directly from a link matches
+ * the site that linked to it. Colors come from manual.css tokens, which flip
+ * with the theme — so this file must not hardcode light-mode values.
+ *
+ * The `body.is-hero-plus` draft rules are unchanged: draft posts still render
+ * in prod but stay hidden until BaseLayout's auth check sets that class.
+ */
+
 .devlog-page {
-  background: #1a1e26;
+  /* Parchment is painted on <body> by manual.css — a background here would sit
+     on top of it and flatten the texture. */
   min-height: 100dvh;
   padding: 0 1rem 2rem;
 }
@@ -15,12 +27,13 @@
 
 .devlog-card {
   display: block;
-  background: #12161c;
-  border: 1px solid rgba(167, 243, 208, 0.12);
-  border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
   padding: 1.25rem 1.5rem;
   text-decoration: none;
-  transition: border-color 0.15s, background 0.15s;
+  box-shadow: inset 0 0 0 1px var(--paperblend);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.2s, transform 0.15s;
 }
 
 /* Draft posts render in prod so subscribers can preview upcoming entries;
@@ -29,8 +42,8 @@
 .devlog-card.draft {
   display: none;
   border-style: dashed;
-  border-color: rgba(251, 191, 36, 0.4);
-  background: rgba(251, 191, 36, 0.04);
+  border-color: var(--gilt);
+  background: var(--paperblend);
 }
 body.is-hero-plus .devlog-card.draft {
   display: block;
@@ -39,13 +52,13 @@ body.is-hero-plus .devlog-card.draft {
   display: inline-block;
   margin-left: 0.5rem;
   padding: 0.1rem 0.45rem;
-  font-family: "Courier New", monospace;
+  font-family: "AllByteCustom", Georgia, serif;
   font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #fcd34d;
-  background: rgba(251, 191, 36, 0.15);
-  border: 1px solid rgba(251, 191, 36, 0.45);
+  letter-spacing: 0.1em;
+  color: var(--gilt-deep);
+  background: var(--panel);
+  border: 1px solid var(--gilt);
   border-radius: 2px;
 }
 
@@ -56,12 +69,13 @@ body.is-hero-plus .devlog-card.draft {
   max-width: 720px;
   margin: 0 auto 1rem;
   padding: 0.65rem 1rem;
-  color: #fcd34d;
-  background: rgba(251, 191, 36, 0.08);
-  border: 1px solid rgba(251, 191, 36, 0.45);
-  border-radius: 4px;
-  font-family: "Courier New", monospace;
+  color: var(--gilt-deep);
+  background: var(--panel);
+  border: 1px solid var(--gilt);
+  border-radius: 2px;
+  font-family: "AllByteCustom", Georgia, serif;
   font-size: 0.85rem;
+  letter-spacing: 0.03em;
 }
 body.is-hero-plus .draft-banner { display: block; }
 
@@ -77,78 +91,80 @@ body.is-hero-plus .draft-post-content {
   margin: 3rem auto;
   padding: 2rem 1.5rem;
   text-align: center;
-  color: #9ca3af;
-  border: 1px dashed rgba(167, 243, 208, 0.25);
-  border-radius: 4px;
+  color: var(--ink-soft);
+  border: 1px dashed var(--rule);
+  border-radius: 2px;
 }
 body.is-hero-plus .draft-gate {
   display: none;
 }
 
 .devlog-card:hover {
-  border-color: rgba(167, 243, 208, 0.3);
-  background: #161c24;
+  border-color: var(--gilt);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px var(--shadow), inset 0 0 0 1px var(--paperblend);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
   margin-bottom: 0.5rem;
 }
 
+/* Category accents. --relic/--crimson/--gilt-deep already flip with the theme;
+   workflow + strategy have no token equivalent, so they get theme-aware vars of
+   their own rather than a hardcoded value that would go muddy in one mode. */
+:root {
+  --cat-workflow: #6b4fa8;
+  --cat-strategy: #2f6ba8;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --cat-workflow: #c4b5fd; --cat-strategy: #93c5fd; }
+}
+:root[data-theme="dark"] { --cat-workflow: #c4b5fd; --cat-strategy: #93c5fd; }
+:root[data-theme="light"] { --cat-workflow: #6b4fa8; --cat-strategy: #2f6ba8; }
+
 .category-tag {
-  font-family: "Courier New", monospace;
-  font-size: 0.8rem;
+  font-family: "AllByteCustom", Georgia, serif;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
   padding: 0.2rem 0.55rem;
   border-radius: 2px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
 }
 
-.category-tag.engineering {
-  background: rgba(167, 243, 208, 0.15);
-  color: #a7f3d0;
-}
-
-.category-tag.workflow {
-  background: rgba(167, 139, 250, 0.18);
-  color: #c4b5fd;
-}
-
-.category-tag.strategy {
-  background: rgba(96, 165, 250, 0.18);
-  color: #93c5fd;
-}
-
-.category-tag.narrative {
-  background: rgba(251, 191, 36, 0.18);
-  color: #fcd34d;
-}
-
-.category-tag.craft {
-  background: rgba(206, 192, 138, 0.2);
-  color: #d4c595;
-}
+.category-tag.engineering { color: var(--relic); }
+.category-tag.workflow    { color: var(--cat-workflow); }
+.category-tag.strategy    { color: var(--cat-strategy); }
+.category-tag.narrative   { color: var(--crimson); }
+.category-tag.craft       { color: var(--gilt-deep); }
 
 .card-header time {
-  font-family: "Courier New", monospace;
-  font-size: 0.875rem;
-  color: rgba(224, 231, 255, 0.75);
+  font-family: "AllByteCustom", Georgia, serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
 }
 
 .devlog-card h2 {
-  font-family: "Courier New", monospace;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: #e0e7ff;
+  font-family: "AllByteCustom", "Trajan Pro", Georgia, serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--crimson);
   margin: 0 0 0.4rem;
+  line-height: 1.2;
 }
 
 .devlog-card p {
-  font-family: "Courier New", monospace;
-  font-size: 0.9rem;
-  color: rgba(224, 231, 255, 0.6);
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: 0.96rem;
+  color: var(--ink-soft);
   line-height: 1.6;
   margin: 0;
 }
@@ -161,10 +177,11 @@ body.is-hero-plus .draft-gate {
 }
 
 .tag {
-  font-family: "Courier New", monospace;
-  font-size: 0.8rem;
-  color: rgba(167, 243, 208, 0.8);
-  border: 1px solid rgba(167, 243, 208, 0.25);
+  font-family: "AllByteCustom", Georgia, serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--gilt-deep);
+  border: 1px solid var(--rule);
   padding: 0.15rem 0.5rem;
   border-radius: 2px;
 }
@@ -172,15 +189,15 @@ body.is-hero-plus .draft-gate {
 .more-coming {
   font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
   font-size: 1rem;
-  color: rgba(224, 231, 255, 0.65);
+  color: var(--ink-soft);
   text-align: center;
   margin-top: 2rem;
 }
 
 .empty-state {
-  font-family: "Courier New", monospace;
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   font-size: 1rem;
-  color: rgba(224, 231, 255, 0.65);
+  color: var(--ink-soft);
   text-align: center;
   padding: 2rem 0;
 }
@@ -197,31 +214,33 @@ body.is-hero-plus .draft-gate {
 
 .hub-card {
   display: block;
-  background: #12161c;
-  border: 1px solid rgba(167, 243, 208, 0.12);
-  border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
   padding: 1.5rem 1.75rem;
   text-decoration: none;
-  transition: border-color 0.15s, background 0.15s;
+  box-shadow: inset 0 0 0 1px var(--paperblend);
+  transition: border-color 0.15s, box-shadow 0.2s, transform 0.15s;
 }
 
 .hub-card:hover {
-  border-color: rgba(167, 243, 208, 0.3);
-  background: #161c24;
+  border-color: var(--gilt);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px var(--shadow), inset 0 0 0 1px var(--paperblend);
 }
 
 .hub-card h2 {
-  font-family: "Courier New", monospace;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #a7f3d0;
+  font-family: "AllByteCustom", "Trajan Pro", Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--crimson);
   margin: 0 0 0.4rem;
 }
 
 .hub-card p {
-  font-family: "Courier New", monospace;
-  font-size: 0.9rem;
-  color: rgba(224, 231, 255, 0.6);
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: 0.96rem;
+  color: var(--ink-soft);
   line-height: 1.6;
   margin: 0;
 }
@@ -230,7 +249,9 @@ body.is-hero-plus .draft-gate {
   display: block;
   text-align: right;
   margin-top: 0.75rem;
-  font-family: "Courier New", monospace;
-  font-size: 1rem;
-  color: rgba(167, 243, 208, 0.5);
+  font-family: "AllByteCustom", Georgia, serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gilt-deep);
 }

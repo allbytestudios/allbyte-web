@@ -1,7 +1,5 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import PageHeader from "../../components/PageHeader.astro";
-import Footer from "../../components/Footer.astro";
+import ManualLayout from "../../layouts/ManualLayout.astro";
 import WalkthroughChrome from "../../components/WalkthroughChrome.svelte";
 import WalkthroughChecklist from "../../components/WalkthroughChecklist.svelte";
 import WalkthroughShot from "../../components/WalkthroughShot.svelte";
@@ -100,18 +98,11 @@ const navSections = chapters.flatMap((ch: any) =>
 );
 ---
 
-<BaseLayout
+<ManualLayout
   title="Walkthrough: Laria — The Chronicles of Nesis — AllByte Studios"
   description="A complete guided playthrough of Laria Village in The Chronicles of Nesis — step-by-step directions, annotated screenshots, every findable item, and the Mother Slime boss fight."
+  active="/walkthrough/"
 >
-  <PageHeader
-    theme="heart"
-    title="Walkthrough"
-    backHref="/"
-    backLabel="Home"
-    breadcrumbs={[{ href: "/", label: "Home" }]}
-  />
-
   <main class="wt-page">
     <div class="wt-intro">
       <h1>{chapterLabel}</h1>
@@ -236,25 +227,27 @@ const navSections = chapters.flatMap((ch: any) =>
     <WalkthroughEditor client:load />
   </main>
 
-  <Footer theme="heart" />
-</BaseLayout>
+</ManualLayout>
 
 <style>
   .wt-page {
-    background: var(--heart-bg, #cec08a);
+    /* parchment comes from <body> (manual.css) */
     min-height: calc(100vh - 160px);
-    color: var(--heart-text, #2a2218);
-    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    color: var(--ink);
+    /* Body prose takes the reading serif; the h2/h3 heads keep AllByteCustom
+       via manual.css. The page previously set the display face on everything,
+       which is heavy over a walkthrough's worth of running text. */
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   }
   .wt-intro {
     max-width: 1180px; margin: 0 auto; padding: 2rem 1.5rem 1rem;
   }
   .wt-intro h1 {
     margin: 0 0 0.4rem; font-size: clamp(1.8rem, 4vw, 2.6rem);
-    color: var(--heart-accent, #3a3020); letter-spacing: 0.01em;
+    color: var(--crimson); letter-spacing: 0.01em;
   }
   .lede { margin: 0 0 0.5rem; font-size: 1rem; line-height: 1.6; max-width: 62ch; }
-  .meta { margin: 0; font-size: 0.8rem; color: var(--heart-accent-dim, #5a4d38); }
+  .meta { margin: 0; font-size: 0.8rem; color: var(--ink-soft); }
 
   .wt-layout {
     max-width: 1180px; margin: 0 auto; padding: 1rem 1.5rem 3rem;
@@ -262,45 +255,45 @@ const navSections = chapters.flatMap((ch: any) =>
   }
 
   .chapter-head {
-    font-size: clamp(1.6rem, 3.5vw, 2.2rem); color: var(--heart-accent, #3a3020);
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem); color: var(--crimson);
     margin: 2.5rem 0 1.2rem; letter-spacing: 0.01em;
   }
   .wt-section { margin-bottom: 2.5rem; }
   /* Section — the mid-level band (Exploring Laria / Into the Waterways / …). */
   .section-head {
-    font-size: 1.35rem; color: var(--heart-accent, #3a3020); margin: 0 0 1.2rem;
-    padding-bottom: 0.4rem; border-bottom: 2px solid var(--heart-card-border, #7a6e52);
+    font-size: 1.35rem; color: var(--crimson); margin: 0 0 1.2rem;
+    padding-bottom: 0.4rem; border-bottom: 2px solid var(--rule);
     letter-spacing: 0.02em; scroll-margin-top: 1rem;
   }
   /* Step — the ONLY real heading a reader navigates by ("Waking Up", …). */
   .wt-step { margin-bottom: 1.8rem; scroll-margin-top: 1rem; }
   .step-head {
-    font-size: 1.08rem; color: var(--heart-accent, #3a3020); margin: 0 0 0.8rem;
+    font-size: 1.08rem; color: var(--crimson); margin: 0 0 0.8rem;
     letter-spacing: 0.01em; display: flex; align-items: baseline; gap: 0.5rem;
   }
   .step-head::before {
     content: ""; flex: none; width: 0.5rem; height: 0.5rem; border-radius: 50%;
-    background: var(--heart-card-border, #7a6e52); transform: translateY(-0.15em);
+    background: var(--rule); transform: translateY(-0.15em);
   }
 
   .wt-scene {
-    background: rgba(253, 246, 227, 0.42);
-    border: 1.5px solid rgba(122, 110, 82, 0.5); border-radius: 6px;
+    background: var(--panel);
+    border: 1.5px solid var(--rule); border-radius: 6px;
     padding: 1.1rem 1.3rem 1.3rem; margin-bottom: 1.1rem; scroll-margin-top: 1rem;
   }
   .scene-head { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
   /* Location label — de-emphasized "you are here", NOT a heading. */
   .scene-loc {
-    font-size: 0.82rem; color: var(--heart-accent-dim, #5a4d38); font-style: italic;
+    font-size: 0.82rem; color: var(--ink-soft); font-style: italic;
     letter-spacing: 0.01em;
   }
   .scene-kind {
     font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em;
-    color: var(--heart-accent-dim, #5a4d38); border: 1px solid rgba(58, 48, 32, 0.3);
+    color: var(--ink-soft); border: 1px solid var(--rule);
     padding: 0.08rem 0.4rem; border-radius: 999px;
   }
-  .revisit { margin: 0 0 0.7rem; font-size: 0.78rem; color: var(--heart-accent-dim, #5a4d38); font-style: italic; }
-  .revisit a { color: var(--heart-accent, #3a3020); }
+  .revisit { margin: 0 0 0.7rem; font-size: 0.78rem; color: var(--ink-soft); font-style: italic; }
+  .revisit a { color: var(--crimson); }
 
   /* Transit — connective tissue between stops. One muted route line, no card. */
   .wt-transit {
@@ -309,73 +302,73 @@ const navSections = chapters.flatMap((ch: any) =>
     border-left: 2px dashed rgba(122, 110, 82, 0.55);
   }
   .transit-loc {
-    font-size: 0.76rem; color: var(--heart-accent-dim, #5a4d38); font-style: italic; flex: none;
+    font-size: 0.76rem; color: var(--ink-soft); font-style: italic; flex: none;
   }
   .transit-route { font-size: 0.9rem; line-height: 1.5; }
   .transit-route :global(p) { margin: 0.1rem 0; }
-  .transit-route :global(strong) { color: var(--heart-accent, #3a3020); }
+  .transit-route :global(strong) { color: var(--crimson); }
 
   .wt-prose { font-size: 0.95rem; line-height: 1.7; }
   .wt-prose :global(p) { margin: 0 0 0.85rem; }
-  .wt-prose :global(strong) { color: var(--heart-accent, #3a3020); }
-  .wt-prose :global(a) { color: #2c5580; }
+  .wt-prose :global(strong) { color: var(--crimson); }
+  .wt-prose :global(a) { color: var(--crimson); text-underline-offset: 2px; }
   .wt-prose :global(table) { width: 100%; border-collapse: collapse; margin: 0.9rem 0; font-size: 0.85rem; }
   .wt-prose :global(th), .wt-prose :global(td) {
     border: 1px solid rgba(122, 110, 82, 0.55); padding: 0.35rem 0.55rem; text-align: left;
   }
   .wt-prose :global(th) { background: rgba(58, 48, 32, 0.1); }
   .wt-prose :global(blockquote) {
-    margin: 0.9rem 0; padding: 0.5rem 0.9rem; border-left: 3px solid var(--heart-card-border, #7a6e52);
+    margin: 0.9rem 0; padding: 0.5rem 0.9rem; border-left: 3px solid var(--rule);
     background: rgba(58, 48, 32, 0.06); font-size: 0.9rem;
   }
-  .wt-prose :global(hr) { border: 0; border-top: 1px solid rgba(122, 110, 82, 0.5); margin: 1.2rem 0; }
+  .wt-prose :global(hr) { border: 0; border-top: 1px solid var(--rule); margin: 1.2rem 0; }
 
   /* Pro Tip — skippable advice; the subtle default blockquote is fine. */
   .wt-prose :global(blockquote.wt-tip) {
-    border-left-color: #7a6e52; background: rgba(122, 110, 82, 0.09);
+    border-left-color: var(--gilt); background: var(--paperblend);
   }
   /* TO PROGRESS — an unintuitive story gate ("you are stuck, this is why").
      Deliberately LOUDER than a tip: a saturated amber signpost with a filled
      left bar, so it can't be scrolled past. */
   .wt-prose :global(blockquote.wt-progress) {
-    border-left: 5px solid #b0640f; background: rgba(176, 100, 15, 0.12);
+    border-left: 5px solid var(--crimson); background: var(--panel);
     padding: 0.65rem 1rem; border-radius: 0 4px 4px 0; margin: 1.1rem 0;
   }
   .wt-prose :global(blockquote.wt-progress) :global(strong:first-child) {
-    color: #8a4d08; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.9em;
+    color: var(--crimson); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.9em;
   }
 
   /* Inline ::shot figures — plain HTML from the remark transform. */
   .wt-prose :global(.wt-inline-shot) { margin: 1.2rem 0; }
   .wt-prose :global(.inline-shot-btn) {
     display: block; width: 100%; padding: 0; cursor: zoom-in; line-height: 0; background: none;
-    border: 2px solid var(--heart-card-border, #7a6e52); border-radius: 4px; overflow: hidden;
+    border: 2px solid var(--rule); border-radius: 4px; overflow: hidden;
   }
   .wt-prose :global(.inline-shot-btn:focus-visible) {
-    outline: 3px solid var(--heart-accent, #3a3020); outline-offset: 2px;
+    outline: 3px solid var(--crimson); outline-offset: 2px;
   }
   .wt-prose :global(.inline-shot-btn img) { width: 100%; height: auto; display: block; }
   .wt-prose :global(.inline-shot-cap) {
     margin: 0.4rem 0 0; font-size: 0.82rem; font-style: italic;
-    color: var(--heart-accent-dim, #5a4d38); text-align: center;
+    color: var(--ink-soft); text-align: center;
   }
   @media (max-width: 900px) {
     .wt-prose :global(.inline-shot-btn img) { max-height: 60svh; width: auto; margin: 0 auto; }
   }
 
   .boss-card {
-    margin-top: 1.1rem; border: 2px solid #8f3323; border-radius: 5px;
+    margin-top: 1.1rem; border: 2px solid var(--crimson); border-radius: 5px;
     background: rgba(143, 51, 35, 0.07); padding: 0.8rem 1rem;
   }
   .boss-card h4 {
-    margin: 0 0 0.55rem; font-size: 0.95rem; color: #8f3323;
+    margin: 0 0 0.55rem; font-size: 0.95rem; color: var(--crimson);
     text-transform: uppercase; letter-spacing: 0.05em;
   }
   .boss-card dl { margin: 0; display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; }
   .boss-card dl div { display: flex; gap: 0.4rem; align-items: baseline; }
   .boss-card dt {
     font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em;
-    color: var(--heart-accent-dim, #5a4d38);
+    color: var(--ink-soft);
   }
   .boss-card dd { margin: 0; font-size: 0.88rem; font-weight: 600; }
   .boss-notes { margin: 0.6rem 0 0; font-size: 0.84rem; line-height: 1.55; }

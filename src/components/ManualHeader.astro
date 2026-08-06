@@ -1,0 +1,46 @@
+---
+/**
+ * ManualHeader.astro — the illuminated-manual nav, shared by every page that
+ * isn't the homepage.
+ *
+ * The homepage keeps its own copy inline because its links are same-page
+ * anchors (#play, #pitch). From a deep-linked page those anchors go nowhere, so
+ * this variant points at the real routes and absolute homepage anchors — the
+ * one meaningful difference between the two. Markup and class names are
+ * otherwise identical, so manual.css styles both.
+ */
+import NavAuth from "./NavAuth.svelte";
+
+interface Props {
+  /** Route that should read as current, e.g. "/changelog/". */
+  active?: string;
+}
+const { active = "" } = Astro.props;
+
+const LINKS = [
+  { href: "/play/", label: "Play" },
+  { href: "/walkthrough/", label: "Strategy Guide" },
+  { href: "/artwork/", label: "Artwork" },
+  { href: "/devlog/", label: "Devlog" },
+  { href: "/changelog/", label: "What's New" },
+];
+---
+
+<header class="nav"><div class="nav-in">
+  <a class="brand" href="/"><img class="brand-icon" src="/home/eed5218325.png" alt=""><span>AllByte</span></a>
+  <nav class="links">
+    <span class="navgroup">
+      {LINKS.map((l) => (
+        <a href={l.href} aria-current={active === l.href ? "page" : undefined}>{l.label}</a>
+      ))}
+    </span>
+    <NavAuth client:load />
+    <button class="theme-toggle" onclick="__abTheme.toggle(this)" aria-label="Toggle theme">☾</button>
+  </nav>
+</div></header>
+
+<style is:global>
+  /* Current-page marker — the homepage nav has no equivalent (its anchors are
+     all same-page), so it lives here rather than in manual.css. */
+  header.nav nav.links a[aria-current="page"] { color: var(--crimson); border-color: var(--gilt); }
+</style>

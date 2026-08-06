@@ -1,7 +1,10 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import Footer from "../../components/Footer.astro";
-import PageHeader from "../../components/PageHeader.astro";
+import ManualLayout from "../../layouts/ManualLayout.astro";
+// devlog.css carries the draft-gating rules (.draft-post-content /
+// .draft-gate / .draft-banner). It was previously imported ONLY by the hub, so
+// this page shipped the gate markup with no CSS to enforce it and every draft
+// post was fully readable at its direct URL. The import IS the gate.
+import "../../styles/devlog.css";
 import { getCollection, render } from "astro:content";
 
 export async function getStaticPaths() {
@@ -21,20 +24,19 @@ const { Content, headings } = await render(post);
 const backHref = "/devlog/";
 const categoryLabel = "Devlog";
 
-const breadcrumbs = [
-  { href: "/", label: "Home" },
-  { href: backHref, label: categoryLabel },
-];
+const categoryLabels: Record<string, string> = {
+  chronicles: "Chronicles of Nesis",
+  "godot-and-claude": "Godot & Claude",
+  studio: "AllByte Studios",
+};
+const seriesLabel = categoryLabels[post.data.devlog] ?? categoryLabel;
 ---
 
-<BaseLayout title={`${post.data.title} — AllByte Studios`} description={post.data.description}>
-  <PageHeader
-    theme="engine"
-    title={post.data.title}
-    backHref={backHref}
-    backLabel={categoryLabel}
-    breadcrumbs={breadcrumbs}
-  />
+<ManualLayout
+  title={`${post.data.title} — AllByte Studios`}
+  description={post.data.description}
+  active="/devlog/"
+>
   <main class="article">
     {post.data.draft && (
       <div class="draft-banner">
@@ -51,12 +53,15 @@ const breadcrumbs = [
     )}
     <article class:list={["content", post.data.draft && "draft-post-content"]}>
       <header class="article-header">
+        <a class="back-link" href={backHref}>← {categoryLabel}</a>
         <div class="post-meta">
           <span class={`category-tag ${post.data.category}`}>{post.data.category}</span>
+          <span class="series-tag">{seriesLabel}</span>
           <time datetime={post.data.pubDate.toISOString()}>
             {post.data.pubDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
           </time>
         </div>
+        <h1 class="post-title">{post.data.title}</h1>
         <p class="subtitle">{post.data.description}</p>
         {post.data.tags.length > 0 && (
           <div class="tags">
@@ -82,7 +87,6 @@ const breadcrumbs = [
       </div>
     </article>
   </main>
-  <Footer theme="engine" />
   <script>
     // Render ```mermaid code blocks as SVG diagrams. Loaded on demand —
     // only runs when a devlog page actually has a .language-mermaid block.
@@ -125,13 +129,15 @@ const breadcrumbs = [
       }
     })();
   </script>
-</BaseLayout>
+</ManualLayout>
 
 <style is:global>
+  /* Repainted into the illuminated-manual system. Deliberate exception: fenced
+     code blocks + mermaid diagrams stay on a DARK plate. Shiki emits per-token
+     inline colors tuned for a dark background, so recoloring the plate to
+     parchment would leave unreadable syntax highlighting. A dark inset panel on
+     parchment reads as intentional; washed-out code does not. */
   .article {
-    background: #1a1e26;
-    color: #e0e7ff;
-    font-family: "Courier New", Courier, monospace;
     min-height: 100dvh;
     padding: 0 1rem 2rem;
   }
@@ -143,169 +149,114 @@ const breadcrumbs = [
 
   .article-header {
     margin-bottom: 3rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+    border-bottom: 1px solid var(--rule);
     padding-bottom: 2rem;
     padding-top: 2rem;
   }
 
+  .back-link {
+    display: inline-block;
+    font-family: "AllByteCustom", Georgia, serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    color: var(--gilt-deep);
+    text-decoration: none;
+    margin-bottom: 1rem;
+  }
+  .back-link:hover { color: var(--crimson); }
+
+  .post-title {
+    font-family: "AllByteCustom", "Trajan Pro", Georgia, serif;
+    font-size: clamp(1.9rem, 4.6vw, 2.7rem);
+    font-weight: 400;
+    color: var(--crimson);
+    line-height: 1.1;
+    margin: 0.6rem 0 0.5rem;
+    text-wrap: balance;
+  }
+
   .article-header .subtitle {
     font-size: 1.05rem;
-    color: rgba(224, 231, 255, 0.6);
-    line-height: 1.8;
+    color: var(--ink-soft);
+    line-height: 1.7;
     margin: 0 0 0.75rem;
   }
 
   .post-meta {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
     margin-bottom: 0.75rem;
   }
 
-  .category-tag {
-    font-family: "Courier New", monospace;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.2rem 0.55rem;
-    border-radius: 2px;
-  }
-
-  .category-tag.engineering {
-    background: rgba(167, 243, 208, 0.15);
-    color: #a7f3d0;
-  }
-  .category-tag.workflow {
-    background: rgba(167, 139, 250, 0.18);
-    color: #c4b5fd;
-  }
-  .category-tag.strategy {
-    background: rgba(96, 165, 250, 0.18);
-    color: #93c5fd;
-  }
-  .category-tag.narrative {
-    background: rgba(251, 191, 36, 0.18);
-    color: #fcd34d;
-  }
-  .category-tag.craft {
-    background: rgba(206, 192, 138, 0.2);
-    color: #d4c595;
-  }
-
   .post-meta time {
-    font-family: "Courier New", monospace;
-    font-size: 0.875rem;
-    color: rgba(224, 231, 255, 0.75);
-  }
-
-  .post-title {
-    font-family: "Courier New", monospace;
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: #a7f3d0;
-    margin: 0 0 0.5rem;
-  }
-
-  .tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 0.75rem;
-  }
-
-  .tag {
-    font-family: "Courier New", monospace;
-    font-size: 0.8rem;
-    color: rgba(167, 243, 208, 0.85);
-    border: 1px solid rgba(167, 243, 208, 0.3);
-    padding: 0.15rem 0.5rem;
-    border-radius: 2px;
+    font-family: "AllByteCustom", Georgia, serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
   }
 
   .toc {
-    background: #12161c;
-    border: 1px solid rgba(167, 243, 208, 0.12);
-    border-radius: 4px;
-    padding: 0.75rem 1.25rem;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 0.9rem 1.25rem;
     margin-bottom: 2rem;
   }
 
-  .toc ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
+  .toc ul { list-style: none; padding: 0; margin: 0; }
 
   .toc li {
-    font-family: "Courier New", monospace;
-    font-size: 0.9rem;
-    line-height: 1.6;
-    color: #eaeaea;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    font-size: 0.94rem;
+    line-height: 1.7;
+    color: var(--ink);
   }
 
-  .toc li.toc-3 {
-    padding-left: 1.25rem;
-  }
+  .toc li.toc-3 { padding-left: 1.25rem; }
 
   .toc li::before {
     content: "—";
-    color: rgba(167, 243, 208, 0.65);
+    color: var(--gilt);
     margin-right: 0.4rem;
   }
 
-  .toc a {
-    color: #a7f3d0;
-    text-decoration: none;
-  }
-
-  .toc a:hover {
-    text-decoration: underline;
-  }
+  .toc a { color: var(--ink); text-decoration: none; }
+  .toc a:hover { color: var(--crimson); text-decoration: underline; }
 
   .post-content {
-    font-family: "Courier New", monospace;
-    font-size: 1.05rem;
-    line-height: 1.8;
-    color: #eaeaea;
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    font-size: 1.08rem;
+    line-height: 1.75;
+    color: var(--ink);
   }
 
   .post-content h1, .post-content h2 {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #a7f3d0;
-    margin: 2rem 0 0.75rem;
+    font-family: "AllByteCustom", "Trajan Pro", Georgia, serif;
+    font-size: 1.55rem;
+    font-weight: 400;
+    color: var(--crimson);
+    margin: 2.2rem 0 0.75rem;
   }
 
   .post-content h3 {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #a7f3d0;
-    margin: 1.5rem 0 0.5rem;
+    font-family: "AllByteCustom", "Trajan Pro", Georgia, serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: var(--gilt-deep);
+    margin: 1.6rem 0 0.5rem;
   }
 
-  .post-content p {
-    margin: 0 0 1rem;
-  }
+  .post-content p { margin: 0 0 1rem; }
 
-  .post-content ul {
-    padding-left: 1.5rem;
-    margin: 0 0 1rem;
-    list-style-type: disc;
-  }
+  .post-content ul { padding-left: 1.5rem; margin: 0 0 1rem; list-style-type: disc; }
+  .post-content ol { padding-left: 1.5rem; margin: 0 0 1rem; list-style-type: decimal; }
+  .post-content li { margin-bottom: 0.4rem; }
+  .post-content ::marker { color: var(--gilt); }
 
-  .post-content ol {
-    padding-left: 1.5rem;
-    margin: 0 0 1rem;
-    list-style-type: decimal;
-  }
-
-  .post-content li {
-    margin-bottom: 0.4rem;
-  }
-
-  .post-content strong {
-    color: #e0e7ff;
-  }
+  .post-content strong { color: var(--ink); font-weight: 700; }
 
   /* Prose has no break opportunity inside long identifiers, paths, or URLs;
      break them on narrow screens rather than widening the page. */
@@ -314,10 +265,13 @@ const breadcrumbs = [
     overflow-wrap: break-word;
   }
 
+  /* Inline code sits IN the prose, so it takes the parchment treatment. */
   .post-content code {
-    background: rgba(167, 243, 208, 0.08);
-    color: #a7f3d0;
-    padding: 0.15rem 0.4rem;
+    font-family: "Courier New", Courier, monospace;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    color: var(--gilt-deep);
+    padding: 0.1rem 0.35rem;
     font-size: 0.85em;
     border-radius: 2px;
     overflow-wrap: anywhere;
@@ -330,34 +284,32 @@ const breadcrumbs = [
 
   .post-content pre {
     background: #12161c;
-    border: 1px solid rgba(167, 243, 208, 0.12);
-    border-radius: 4px;
+    border: 1px solid var(--gilt-deep);
+    border-radius: 2px;
     padding: 1rem 1.25rem;
     margin: 1rem 0 1.5rem;
     overflow-x: auto;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
   }
 
   .post-content pre code {
     background: none;
+    border: 0;
     padding: 0;
     font-size: 0.85rem;
     line-height: 1.6;
     color: #e0e7ff;
   }
 
-  .post-content a {
-    color: #a7f3d0;
-  }
-
-  .post-content a:hover {
-    text-decoration: underline;
-  }
+  .post-content a { color: var(--crimson); text-decoration: underline; text-underline-offset: 2px; }
+  .post-content a:hover { color: var(--crimson-lt); }
 
   .post-content blockquote {
-    border-left: 3px solid rgba(167, 243, 208, 0.3);
+    border-left: 3px solid var(--gilt);
     margin: 1rem 0;
     padding: 0.5rem 1rem;
-    color: rgba(224, 231, 255, 0.7);
+    color: var(--ink-soft);
+    font-style: italic;
   }
 
   /* Scroll wide tables inside their own box instead of pushing the page
@@ -370,27 +322,29 @@ const breadcrumbs = [
     overflow-x: auto;
     border-collapse: collapse;
     margin: 1rem 0 1.5rem;
-    font-size: 0.9rem;
+    font-size: 0.94rem;
   }
 
   .post-content th {
     text-align: left;
     padding: 0.6rem 0.75rem;
-    border-bottom: 2px solid rgba(167, 243, 208, 0.2);
-    color: #a7f3d0;
-    font-weight: 600;
+    border-bottom: 2px solid var(--rule);
+    font-family: "AllByteCustom", Georgia, serif;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: var(--gilt-deep);
   }
 
   .post-content td {
     padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.08);
-    color: #eaeaea;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
   }
 
   .mermaid-diagram {
     background: #12161c;
-    border: 1px solid rgba(167, 243, 208, 0.15);
-    border-radius: 4px;
+    border: 1px solid var(--gilt-deep);
+    border-radius: 2px;
     padding: 1.25rem;
     margin: 1.5rem 0;
     text-align: center;

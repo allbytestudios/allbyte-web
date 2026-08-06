@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-07-23T22:30:30.977Z",
+  "generated_at": "2026-08-06T23:50:53.319Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -22,7 +22,8 @@
       ],
       "chapter": "laria-village",
       "section": "exploring-laria",
-      "seq": 10
+      "seq": 10,
+      "launcher_status": "dormant"
     },
     {
       "id": "hard_root_looted",
@@ -43,7 +44,8 @@
       ],
       "chapter": "laria-village",
       "section": "exploring-laria",
-      "seq": 20
+      "seq": 20,
+      "launcher_status": "dormant"
     },
     {
       "id": "hard_shop_maximal",
@@ -64,7 +66,8 @@
       ],
       "chapter": "laria-village",
       "section": "into-the-waterways",
-      "seq": 5
+      "seq": 5,
+      "launcher_status": "dormant"
     },
     {
       "id": "hard_town_maximal_items",
@@ -85,7 +88,8 @@
       ],
       "chapter": "laria-village",
       "section": "into-the-waterways",
-      "seq": 8
+      "seq": 8,
+      "launcher_status": "dormant"
     },
     {
       "id": "hard_town",
@@ -106,7 +110,8 @@
       ],
       "chapter": "laria-village",
       "section": "exploring-laria",
-      "seq": 30
+      "seq": 30,
+      "launcher_status": "dormant"
     },
     {
       "id": "hard_windmill1",
@@ -127,13 +132,14 @@
       ],
       "chapter": "laria-village",
       "section": "exploring-laria",
-      "seq": 70
+      "seq": 70,
+      "launcher_status": "dormant"
     },
     {
       "id": "med_intro",
       "difficulty": "medium",
       "parent": null,
-      "decision": "new game + intro",
+      "decision": "[pre-pin capture · chain-legal, safe to walk] new game + intro",
       "is_leaf": false,
       "label": "Medium · Intro done (New Game start)",
       "scene": "EliasHouse",
@@ -146,6 +152,7 @@
         "key",
         "intro"
       ],
+      "approval": "unapproved",
       "chapter": "laria-village",
       "section": "exploring-laria",
       "seq": 10
@@ -154,7 +161,7 @@
       "id": "med_ev1_churchsquare",
       "difficulty": "medium",
       "parent": "med_intro",
-      "decision": "Event 1",
+      "decision": "[pre-pin capture · chain-legal, safe to walk] Event 1",
       "is_leaf": false,
       "label": "Medium · After Event 1 (ChurchSquare)",
       "scene": "ChurchSquare",
@@ -166,6 +173,7 @@
         "medium",
         "flesh"
       ],
+      "approval": "unapproved",
       "chapter": "laria-village",
       "section": "exploring-laria",
       "seq": 60
@@ -174,7 +182,7 @@
       "id": "med_ev2_windmill1",
       "difficulty": "medium",
       "parent": "med_ev1_churchsquare",
-      "decision": "Event 2",
+      "decision": "[pre-pin capture · chain-legal, safe to walk] Event 2",
       "is_leaf": false,
       "label": "Medium · After Event 2 (Windmill1)",
       "scene": "Windmill1",
@@ -186,6 +194,7 @@
         "medium",
         "flesh"
       ],
+      "approval": "unapproved",
       "chapter": "laria-village",
       "section": "exploring-laria",
       "seq": 70
@@ -194,7 +203,7 @@
       "id": "med_ev3_windmill1_2f",
       "difficulty": "medium",
       "parent": "med_ev2_windmill1",
-      "decision": "Event 3",
+      "decision": "[pre-pin capture · chain-legal, safe to walk] Event 3",
       "is_leaf": false,
       "label": "Medium · After Event 3 (Windmill1 2F)",
       "scene": "Windmill1SecondFloor",
@@ -206,6 +215,7 @@
         "medium",
         "flesh"
       ],
+      "approval": "unapproved",
       "chapter": "laria-village",
       "section": "exploring-laria",
       "seq": 80
@@ -214,7 +224,7 @@
       "id": "med_ev8_mayors",
       "difficulty": "medium",
       "parent": "med_ev3_windmill1_2f",
-      "decision": "Events 4-8 (skips locked mid-event saves)",
+      "decision": "[pre-pin capture · chain-legal, safe to walk] Events 4-8 (skips locked mid-event saves)",
       "is_leaf": false,
       "label": "Medium · After Event 8 (Mayor's House)",
       "scene": "MayorsHouse",
@@ -226,6 +236,7 @@
         "medium",
         "flesh"
       ],
+      "approval": "unapproved",
       "chapter": "laria-village",
       "section": "exploring-laria",
       "seq": 90
@@ -234,7 +245,7 @@
       "id": "med_ev10_churchsquare",
       "difficulty": "medium",
       "parent": "med_ev8_mayors",
-      "decision": "Events 9-10",
+      "decision": "[pre-pin capture · chain-legal, safe to walk] Events 9-10",
       "is_leaf": false,
       "label": "Medium · After Event 10 (ChurchSquare)",
       "scene": "ChurchSquare",
@@ -246,6 +257,7 @@
         "medium",
         "flesh"
       ],
+      "approval": "unapproved",
       "chapter": "laria-village",
       "section": "exploring-laria",
       "seq": 110
@@ -254,7 +266,7 @@
       "id": "med_ev11_mayors",
       "difficulty": "medium",
       "parent": "med_ev10_churchsquare",
-      "decision": "Event 11",
+      "decision": "[pre-pin capture · chain-legal, safe to walk] Event 11",
       "is_leaf": false,
       "label": "Medium · After Event 11 (Mayor's House)",
       "scene": "MayorsHouse",
@@ -266,6 +278,7 @@
         "medium",
         "flesh"
       ],
+      "approval": "unapproved",
       "chapter": "laria-village",
       "section": "exploring-laria",
       "seq": 120
@@ -274,7 +287,7 @@
       "id": "med_ev12_eliashouse",
       "difficulty": "medium",
       "parent": "med_ev11_mayors",
-      "decision": "Event 12",
+      "decision": "[pre-pin capture · chain-legal, safe to walk] Event 12",
       "is_leaf": false,
       "label": "Medium · After Event 12 (Elias' House)",
       "scene": "EliasHouse",
@@ -286,6 +299,7 @@
         "medium",
         "flesh"
       ],
+      "approval": "unapproved",
       "chapter": "laria-village",
       "section": "exploring-laria",
       "seq": 130
@@ -294,7 +308,7 @@
       "id": "med_before_dungeon",
       "difficulty": "medium",
       "parent": "med_ev12_eliashouse",
-      "decision": "medium full-prep before-dungeon (20 Sen / Valerian x3 / Irid x2 / Mugwort x3 / Glenn equipped / Item Relic / waterway key), cond 11",
+      "decision": "[pre-pin capture · not boss-ready, re-capture pending] medium full-prep before-dungeon (20 Sen / Valerian x3 / Irid x2 / Mugwort x3 / Glenn equipped / Item Relic / waterway key), cond 11",
       "is_leaf": false,
       "label": "Medium · BEFORE DUNGEON (full-prep)",
       "scene": "Windmill1Basement",
@@ -307,7 +321,7 @@
         "key",
         "before-dungeon"
       ],
-      "approval": "approved",
+      "approval": "unapproved",
       "chapter": "laria-village",
       "section": "into-the-waterways",
       "seq": 10
@@ -316,7 +330,7 @@
       "id": "med_boss_pauper",
       "difficulty": "medium",
       "parent": "med_before_dungeon",
-      "decision": "big-jump: dungeon traversed (interior nodes TBD), underprepared",
+      "decision": "[pre-pin capture · not boss-ready, re-capture pending] big-jump: dungeon traversed (interior nodes TBD), underprepared",
       "is_leaf": true,
       "label": "Medium · BEFORE BOSS · underprepared (L1 naked)",
       "scene": "SluiceGate",
@@ -340,7 +354,7 @@
       "id": "med_boss_leveled",
       "difficulty": "medium",
       "parent": "med_before_dungeon",
-      "decision": "big-jump: dungeon traversed, fully prepared",
+      "decision": "[pre-pin capture · not boss-ready, re-capture pending] big-jump: dungeon traversed, fully prepared",
       "is_leaf": true,
       "label": "Medium · BEFORE BOSS · leveled+skilled (L5)",
       "scene": "SluiceGate",
@@ -379,7 +393,8 @@
       ],
       "chapter": "laria-village",
       "section": "exploring-laria",
-      "seq": 100
+      "seq": 100,
+      "launcher_status": "dormant"
     },
     {
       "id": "hard_before_dungeon",
@@ -401,7 +416,8 @@
       "approval": "unapproved",
       "chapter": "laria-village",
       "section": "into-the-waterways",
-      "seq": 10
+      "seq": 10,
+      "launcher_status": "dormant"
     },
     {
       "id": "hard_boss_pauper",
@@ -425,7 +441,8 @@
       "approval": "unapproved",
       "chapter": "laria-village",
       "section": "into-the-waterways",
-      "seq": 30
+      "seq": 30,
+      "launcher_status": "dormant"
     },
     {
       "id": "hard_boss_max",
@@ -449,13 +466,14 @@
       "approval": "unapproved",
       "chapter": "laria-village",
       "section": "into-the-waterways",
-      "seq": 40
+      "seq": 40,
+      "launcher_status": "dormant"
     },
     {
       "id": "easy_root",
       "difficulty": "easy",
       "parent": null,
-      "decision": "new game + intro (Easy)",
+      "decision": "new game + intro (Easy) — walked, chain-legal root",
       "is_leaf": false,
       "label": "Easy · Intro done (New Game start)",
       "scene": "EliasHouse",
@@ -464,13 +482,172 @@
         "Laria"
       ],
       "tags": [
+        "chain-legal",
         "easy",
+        "intro",
         "key",
-        "intro"
+        "spine"
       ],
       "chapter": "laria-village",
       "section": "exploring-laria",
-      "seq": 10
+      "seq": 10,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "easy_ev1_churchsquare",
+      "difficulty": "easy",
+      "parent": "easy_root",
+      "decision": "Event 1 (walked)",
+      "is_leaf": false,
+      "label": "Easy — After Event 1 (Church Square)",
+      "scene": "ChurchSquare",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "easy",
+        "spine",
+        "chain-legal"
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 60,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "easy_ev2_windmill1",
+      "difficulty": "easy",
+      "parent": "easy_ev1_churchsquare",
+      "decision": "Event 2 (walked)",
+      "is_leaf": false,
+      "label": "Easy — After Event 2 (Windmill 1)",
+      "scene": "Windmill1",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "easy",
+        "spine",
+        "chain-legal"
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 70,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "easy_ev3_windmill1_2f",
+      "difficulty": "easy",
+      "parent": "easy_ev2_windmill1",
+      "decision": "Event 3 (walked)",
+      "is_leaf": false,
+      "label": "Easy — After Event 3 (Windmill 1, 2nd Floor)",
+      "scene": "Windmill1SecondFloor",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "easy",
+        "spine",
+        "chain-legal"
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 80,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "easy_ev8_mayors",
+      "difficulty": "easy",
+      "parent": "easy_ev3_windmill1_2f",
+      "decision": "post-intake → Mayor's House (walked)",
+      "is_leaf": false,
+      "label": "Easy — Mayor's House (post-intake)",
+      "scene": "MayorsHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "easy",
+        "spine",
+        "chain-legal"
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 110,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "easy_ev12_eliashouse",
+      "difficulty": "easy",
+      "parent": "easy_ev8_mayors",
+      "decision": "Event 12 — rest beat (walked)",
+      "is_leaf": false,
+      "label": "Easy — Elias' House (rest beat)",
+      "scene": "EliasHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "easy",
+        "spine",
+        "chain-legal"
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria",
+      "seq": 120,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "easy_before_dungeon",
+      "difficulty": "easy",
+      "parent": "easy_ev12_eliashouse",
+      "decision": "before-dungeon — branch point for prep loadouts (walked)",
+      "is_leaf": false,
+      "label": "Easy — Before Dungeon (Windmill 1 Basement)",
+      "scene": "Windmill1Basement",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "easy",
+        "key",
+        "before-dungeon",
+        "chain-legal"
+      ],
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 130,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "easy_grind_start",
+      "difficulty": "easy",
+      "parent": "easy_before_dungeon",
+      "decision": "grind start — Waterway 1 (walked)",
+      "is_leaf": false,
+      "label": "Easy — Grind Start (Waterway 1)",
+      "scene": "Waterway1",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "easy",
+        "spine",
+        "chain-legal",
+        "grind"
+      ],
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 140,
+      "launcher_status": "dormant"
     },
     {
       "id": "easy_before_churchsquare_fight",
@@ -491,7 +668,8 @@
       ],
       "chapter": "laria-village",
       "section": "exploring-laria",
-      "seq": 100
+      "seq": 100,
+      "launcher_status": "dormant"
     },
     {
       "id": "easy_boss_pauper",
@@ -515,7 +693,8 @@
       "approval": "unapproved",
       "chapter": "laria-village",
       "section": "into-the-waterways",
-      "seq": 30
+      "seq": 30,
+      "launcher_status": "dormant"
     },
     {
       "id": "easy_boss_max",
@@ -539,7 +718,8 @@
       "approval": "unapproved",
       "chapter": "laria-village",
       "section": "into-the-waterways",
-      "seq": 40
+      "seq": 40,
+      "launcher_status": "dormant"
     },
     {
       "id": "easy_boss_sidebuild",
@@ -565,13 +745,14 @@
       "approval": "unapproved",
       "chapter": "laria-village",
       "section": "into-the-waterways",
-      "seq": 50
+      "seq": 50,
+      "launcher_status": "dormant"
     },
     {
       "id": "med_boss_sidebuild",
       "difficulty": "medium",
       "parent": "med_before_dungeon",
-      "decision": "Save A — side-branch build (Push/Cleanse/Cure), 4 gear pieces equipped, no central line / no relic",
+      "decision": "[pre-pin capture · not boss-ready, re-capture pending] Save A — side-branch build (Push/Cleanse/Cure), 4 gear pieces equipped, no central line / no relic",
       "is_leaf": true,
       "label": "Medium · BEFORE BOSS · Save A: side-branch build (L5, equipped, no Smite)",
       "scene": "SluiceGate",
@@ -617,7 +798,8 @@
       "approval": "unapproved",
       "chapter": "laria-village",
       "section": "into-the-waterways",
-      "seq": 50
+      "seq": 50,
+      "launcher_status": "dormant"
     },
     {
       "id": "med_grind_start",
@@ -625,7 +807,7 @@
       "parent": "med_before_dungeon",
       "decision": "Save-B grind seed: Glenn's Longsword EQUIPPED + Mugwort x16 (debug-granted) + Item Relic in bag, L1 Waterway1. grind_to_level(5) climbs from here to produce central-line Save B. Debug-assisted provenance (Mugwort granted, not shop-bought).",
       "is_leaf": false,
-      "label": "Medium · Waterway1 grind-start (equipped + Mugwort, L1 — Save-B grind seed)",
+      "label": "Medium · Grind Start — Waterway1 (L1, equipped)",
       "scene": "Waterway1",
       "chain_legal": true,
       "packs": [
@@ -635,7 +817,7 @@
       "tags": [
         "medium",
         "grind-start",
-        "save-b-seed",
+        "grind-seed",
         "debug-assisted",
         "equipped"
       ],

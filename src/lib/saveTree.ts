@@ -54,6 +54,15 @@ export interface SaveTreeNode {
   chapter?: string;
   section?: string;
   seq?: number;
+  /** Launcher visibility (Quinn-authored, Arc-committed). "dormant" hides the
+   *  node from the launcher without deleting the capture — the difficulty track
+   *  is dormant, not removed, and re-capturing later is expensive. Absent =
+   *  "active" (the field is being backfilled; absence must not hide anything).
+   *
+   *  Dormancy is an EXPLICIT field on purpose: never infer it from `difficulty`,
+   *  which would silently re-hide everything if the difficulty track wakes up.
+   *  Distinct from `approval`, which is QA save-verification state. */
+  launcher_status?: "active" | "dormant";
 }
 
 export interface SaveTreeData {
@@ -63,7 +72,22 @@ export interface SaveTreeData {
   nodes: SaveTreeNode[];
 }
 
-export const saveTreeData = data as unknown as SaveTreeData;
+const rawTree = data as unknown as SaveTreeData;
+
+/** A node the launcher should offer. Absent field = active (backfill-safe). */
+export function isLauncherActive(n: SaveTreeNode): boolean {
+  return n.launcher_status !== "dormant";
+}
+
+/**
+ * The tree as every consumer sees it: dormant nodes removed ONCE, here, so a
+ * new consumer can't forget the filter and quietly resurface retired saves.
+ * Read `rawTree` directly only if you genuinely need the dormant rows too.
+ */
+export const saveTreeData: SaveTreeData = {
+  ...rawTree,
+  nodes: (rawTree.nodes ?? []).filter(isLauncherActive),
+};
 
 /** A node with its children resolved, ready for indented rendering. */
 export interface TreeEntry {

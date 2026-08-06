@@ -107,6 +107,11 @@ for (const n of rows) {
     chapter: n.chapter || undefined,
     section: n.section || undefined,
     seq: typeof n.seq === "number" ? n.seq : undefined,
+    // Launcher visibility (Quinn-authored, Arc-committed). "dormant" retires a
+    // node from the launcher without deleting the capture. This whitelist drops
+    // anything not named here, so the field has to be listed explicitly or the
+    // filter downstream would never see it. Absent = active.
+    launcher_status: n.launcher_status === "dormant" ? "dormant" : undefined,
   });
 }
 

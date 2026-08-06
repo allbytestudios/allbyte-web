@@ -10,7 +10,11 @@
 
   const diffs = difficulties();
   // Difficulty is a FILTER across the whole outline, never a grouping level.
-  let difficulty = $state("all");
+  // The build is pinned to Medium (difficulty track dormant), so default the
+  // view there rather than "all". This is a VIEW default only — dormancy is
+  // decided by launcher_status in saveTree.ts, never inferred from difficulty.
+  const DEFAULT_DIFFICULTY = difficulties().includes("medium") ? "medium" : "all";
+  let difficulty = $state(DEFAULT_DIFFICULTY);
   // "Approved only" prunes to Quinn-verified nodes, keeping the section shells.
   let approvedOnly = $state(false);
 

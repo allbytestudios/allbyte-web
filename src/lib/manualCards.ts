@@ -14,13 +14,19 @@ export interface ManualCard {
 
 export const MANUAL_CARDS: ManualCard[] = [
   {
+    // A damage type is NOT a status effect, even where they share a name
+    // (owner 2026-08-06). Poison is a damage type that may ALSO have a chance to
+    // apply Poisoned — it deals its damage either way. The statuses themselves
+    // are the next card's job; this one stays about how damage is reduced.
+    // Rows only, no `lines`: the worker renderer draws rows OR lines, never
+    // both, so prose added here would be invisible to players on /play.
     title: "Damage types",
     rows: [
-      ["Physical", "blocked by physical defense"],
-      ["Poison", "leaves the target Poisoned"],
-      ["Acid", "leaves the target Acid Covered"],
-      ["Radiant (Smite)", "ignores physical defense AND resistance"],
-      ["Every element", "blocked only by Magic Defense"],
+      ["Physical", "reduced by Physical Defense"],
+      ["Everything else", "reduced by Magic Defense"],
+      ["Poison · Acid", "damage first — each may also apply its status"],
+      ["Radiant", "ignores Physical Defense AND resistance"],
+      ["Gear & effects", "can cut one specific type further"],
     ],
   },
   {
@@ -49,7 +55,7 @@ export const MANUAL_CARDS: ManualCard[] = [
       ["Constitution", "HP and physical defense"],
       ["Dexterity", "accuracy, dodge, defense"],
       ["Agility", "initiative and move range"],
-      ["Intelligence", "magic attack + defense (softens Smite)"],
+      ["Intelligence", "magic attack + defense (softens Radiant)"],
       ["Wisdom", "the off-stat that feeds everything"],
     ],
   },
@@ -57,7 +63,7 @@ export const MANUAL_CARDS: ManualCard[] = [
     title: "Battle stats — calculated from your build",
     rows: [
       ["HP", "← Constitution · what you can take"],
-      ["MP", "← Intelligence · fuels Smite & Cure"],
+      ["MP", "← Intelligence · fuels your skills"],
       ["Initiative", "← Agility · who acts first"],
       ["Physical Attack", "← Strength · your weapon damage"],
       ["Magic Defense", "← Intelligence · the only softener of Radiant"],
@@ -78,23 +84,23 @@ export const MANUAL_CARDS: ManualCard[] = [
   {
     title: "Skill types",
     rows: [
-      ["Action (red)", "Smite · Cure · Push — spends AP/MP on your turn"],
-      ["Reaction (yellow)", "Counterattack · Parry — fires on its own"],
-      ["Passive (blue)", "Scan · Move-up — always on"],
+      ["Action (red)", "spends AP and MP on your turn"],
+      ["Reaction (yellow)", "fires on its own when triggered"],
+      ["Passive (blue)", "always on, costs nothing"],
     ],
   },
   {
     title: "In battle",
     lines: [
       "No random encounters — you see enemies on the field. Where you make contact groups them, and the ground you stand on becomes the grid.",
-      "Radiant damage (Smite) ignores physical defense AND resistance — the answer to a tanky wall like the Venom Slime.",
-      "Your crits swing fights your way — roughly 16% for you against a foe's 6%.",
+      "Facing counts before the first blow: the direction you're facing when combat starts feeds the initiative order.",
+      "It counts during the fight too — strike a foe from behind and you'll land the hit far more often than meeting them face to face.",
     ],
   },
   {
     title: "Growing stronger",
     lines: [
-      "Win fights for XP, then level up — each level grants JP for raw stats and SP for the Paladin skill tree.",
+      "Win fights for XP, then level up — each level grants JP for raw stats and SP for your class's skill tree.",
       "Skills grow with use: lean on one and it earns Expertise, getting stronger over a run.",
       "Spend your JP and SP after every level. An unspent pile is wasted power.",
     ],
@@ -105,6 +111,8 @@ export const MANUAL_CARDS: ManualCard[] = [
 // One load card is a random non-boss sprite that turns + swings, captioned with
 // the character's role + blurb below. The loader builds the visual cast from the
 // handcrafted sprite GIFs; these constants are the shared identity + copy.
+// Every non-boss sprite the capture pipeline knows about, Episode 1 AND 2. The
+// /play load screen must NOT draw from this directly — see EPISODE_1_SPRITES.
 export const NONBOSS_SPRITES = new Set([
   "Elias",
   "Falmri",
@@ -113,6 +121,18 @@ export const NONBOSS_SPRITES = new Set([
   "vepir",
   "slime",
 ]);
+
+// Episode 2 cast (owner 2026-08-07). The sprites exist and the art is done, but
+// a player on Episode 1 hasn't met them — showing them on the loading screen
+// spoils characters they have no context for. Kept in the data (the console's
+// /test/cards/ review page still lists them, and Episode 2 flips them on) but
+// filtered out of the live rotation.
+export const EPISODE_2_SPRITES = new Set(["Falmri", "eastwood", "spiter", "vepir"]);
+
+/** The cast the /play living-sprite card may actually draw. */
+export const EPISODE_1_SPRITES = new Set(
+  [...NONBOSS_SPRITES].filter((s) => !EPISODE_2_SPRITES.has(s)),
+);
 
 export const SPRITE_DISPLAY: Record<string, string> = {
   Elias: "Elias",
@@ -147,7 +167,7 @@ export const SPRITE_LORE: Record<string, SpriteLore> = {
     blurb:
       "The bread-and-butter Waterway foe — no resistances, no tricks. The danger is numbers, not any single Slime.",
   },
-  Eastwood: { role: "Enemy · Episode One", blurb: "" },
-  Spiter: { role: "Enemy · Episode One", blurb: "" },
-  Vepir: { role: "Enemy · Episode One", blurb: "" },
+  Eastwood: { role: "Enemy · Episode Two", blurb: "" },
+  Spiter: { role: "Enemy · Episode Two", blurb: "" },
+  Vepir: { role: "Enemy · Episode Two", blurb: "" },
 };

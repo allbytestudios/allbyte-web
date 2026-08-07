@@ -12,7 +12,7 @@
   import { downloadState, ackDownload } from "../lib/downloadGate";
   import gameVersion from "../data/game-version.json";
   import spriteGifs from "../data/sprite-gifs.json";
-  import { MANUAL_CARDS, NONBOSS_SPRITES, SPRITE_DISPLAY, SPRITE_LORE } from "../lib/manualCards.ts";
+  import { MANUAL_CARDS, EPISODE_1_SPRITES, SPRITE_DISPLAY, SPRITE_LORE } from "../lib/manualCards.ts";
   import { versionById, isUnlocked } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
@@ -1212,7 +1212,7 @@
   // One of the manual cards is a random non-boss sprite that turns in place
   // then swings an attack, then moves on to another character — built from the
   // handcrafted sprite GIFs already in the webapp (owner idea 2026-08-03).
-  // NONBOSS_SPRITES / SPRITE_DISPLAY / SPRITE_LORE come from ../lib/manualCards.ts.
+  // EPISODE_1_SPRITES / SPRITE_DISPLAY / SPRITE_LORE come from ../lib/manualCards.ts.
   // Clockwise turn order; we keep only the directions a character actually has.
   const DIR_ORDER = [
     "Down",
@@ -1228,7 +1228,9 @@
   function buildSpriteCast(): CastMember[] {
     const byChar: Record<string, { animation: string; file: string }[]> = {};
     for (const e of spriteGifs as { character: string; animation: string; file: string }[]) {
-      if (!NONBOSS_SPRITES.has(e.character)) continue;
+      // Episode-1 cast only — Episode 2 characters would spoil players who
+      // haven't met them (owner 2026-08-07).
+      if (!EPISODE_1_SPRITES.has(e.character)) continue;
       (byChar[e.character] ??= []).push(e);
     }
     const cast: CastMember[] = [];

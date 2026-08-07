@@ -276,7 +276,28 @@
       : "/godot/public/index.html";
   }
 
-  let gameUrl = $state(resolveGameUrl());
+  // A tier-gated deep-link (?v= / ?channel=, which every scenario jump carries)
+  // CANNOT be resolved before auth hydrates: isUnlocked() sees a null user, the
+  // link falls back to the public build, and the one-shot effect below then
+  // swaps the src once /auth/me lands. That swap reboots the game — a second
+  // full ~75 MB download from a different cache path — and the first boot's
+  // onLoad already fired with the user still anonymous, so it dismissed the
+  // loader while runScenario() silently no-oped at its admin gate.
+  //
+  // So when such a link is present and auth hasn't settled, mount NOTHING yet
+  // (the loader is already up) and let the effect below mount the right build
+  // exactly once. Normal loads still mount immediately — they resolve the same
+  // build before and after auth, so nothing is gained by waiting.
+  function hasGatedDeepLink(): boolean {
+    if (typeof window === "undefined") return false;
+    const q = new URLSearchParams(window.location.search);
+    return !!(q.get("v") || q.get("channel") || q.get("scenario"));
+  }
+  /** resolveGameUrl(), but yields null while a gated deep-link waits on auth. */
+  function resolveGameUrlOrHold(): string | null {
+    return hasGatedDeepLink() && !auth.authReady ? null : resolveGameUrl();
+  }
+  let gameUrl = $state<string | null>(resolveGameUrlOrHold());
 
   // Re-resolve ONCE when auth hydrates (the /auth/me fetch resolves after
   // mount): an admin/Legend's early "public" resolution upgrades to the debug
@@ -406,6 +427,7 @@
     if (!iframeEl) return;
     loading = true;
     error = "";
+    if (!gameUrl) return; // still waiting on auth to pick the build
     iframeEl.src = `${gameUrl}?t=${Date.now()}`;
   }
 
@@ -620,8 +642,11 @@
 
     // Re-resolve client-side — PWA (standalone) detection needs `window`, which
     // isn't available during SSR, so the installed app routes to the public
-    // build here rather than the SSR default.
-    gameUrl = resolveGameUrl();
+    // build here rather than the SSR default. Must go through the HOLD variant:
+    // a plain resolveGameUrl() here runs before /auth/me lands and overwrites
+    // the withheld null with the public build, which is exactly the double-boot
+    // this guard exists to prevent.
+    gameUrl = resolveGameUrlOrHold();
 
     // No download gate anymore (owner 2026-08-03 — the ~75MB data-cost warning
     // isn't necessary and any gate loses players). DESKTOP and MOBILE both go
@@ -646,7 +671,11 @@
     // the iframe mounts, or an entitled user's first load 403s at the edge.
     // Not the security boundary (the edge check is) — just correct sequencing
     // plus a friendly message instead of a raw CloudFront error page.
-    if (isBetaPath(gameUrl)) {
+    // gameUrl is null while a gated deep-link waits on auth — proceed (so the
+    // container is ready) and let the post-auth effect above do the beta-cookie
+    // grant for whatever it resolves to. Calling isBetaPath(null) here throws
+    // and aborts onMount before proceedToGame(), leaving the game unmountable.
+    if (gameUrl && isBetaPath(gameUrl)) {
       void ensureBetaCookies().then((r) => {
         if (r === "granted") proceedToGame();
         else if (r === "denied")
@@ -1978,15 +2007,20 @@
         </span>
       </button>
     {/if}
-    <iframe
-      bind:this={iframeEl}
-      src={gameUrl}
-      title="The Chronicles of Nesis"
-      class="game-frame"
-      onload={onLoad}
-      onerror={onError}
-      allow="cross-origin-isolated; fullscreen"
-    ></iframe>
+    <!-- Held back until a tier-gated deep-link knows which build it wants. An
+         iframe with no src loads about:blank, which would fire onLoad (and so
+         runScenario) against a document that will be replaced. -->
+    {#if gameUrl}
+      <iframe
+        bind:this={iframeEl}
+        src={gameUrl}
+        title="The Chronicles of Nesis"
+        class="game-frame"
+        onload={onLoad}
+        onerror={onError}
+        allow="cross-origin-isolated; fullscreen"
+      ></iframe>
+    {/if}
     <VirtualGamepad iframe={iframeEl} />
     <ManualLetterboxPanel />
     {#if showKbHint}

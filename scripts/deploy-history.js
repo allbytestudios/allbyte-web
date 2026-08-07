@@ -141,6 +141,22 @@ async function main() {
   }
 
   out.reverse(); // newest first
+
+  // IDEMPOTENT WRITE. `generatedAt` changes on every run, so writing
+  // unconditionally makes the file differ every time even when no release
+  // changed — and finalize-web-deploy.js commits + pushes any diff it sees.
+  // With the S3 mirror in place the scheduled reconcile now ALWAYS regenerates
+  // successfully, which turned that into a commit + site deploy every ~10
+  // minutes (6 "changelog: refresh from deploy manifest" commits in 6 hours,
+  // 2026-08-07). Only rewrite when the RELEASES actually changed; otherwise
+  // keep the previous file byte-for-byte, timestamp included.
+  let prev = null;
+  try { prev = JSON.parse(readFileSync(OUT, "utf8")); } catch { /* first run */ }
+  if (prev && JSON.stringify(prev.releases) === JSON.stringify(out)) {
+    console.log(`changelog.json: unchanged (${out.length} releases) — leaving the file untouched.`);
+    return;
+  }
+
   writeFileSync(OUT, JSON.stringify({ generatedAt: new Date().toISOString(), releases: out }, null, 2) + "\n");
   console.log(`changelog.json: ${out.length} releases with changes (${skipped} empty releases skipped), from ${records.length} manifest records.`);
 }

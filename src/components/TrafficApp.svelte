@@ -99,7 +99,7 @@
           <div class="bar-row">
             <span class="bar-label" title={path}>{pageLabel(path)}</span>
             <div class="bar">
-              <div class="fill" style="width:{(cnt / maxPage) * 100}%;background:{SECTION_COLOR[sec] ?? '#94a3b8'}"></div>
+              <div class="fill" style="width:{(cnt / maxPage) * 100}%;background:{SECTION_COLOR[sec] ?? 'var(--ink-soft)'}"></div>
             </div>
             <span class="bar-n">{cnt}</span>
           </div>
@@ -108,7 +108,7 @@
       <div class="legend">
         {#each data.section_totals as [sec, v] (sec)}
           <span class="lg">
-            <i style="background:{SECTION_COLOR[sec] ?? '#94a3b8'}"></i>
+            <i style="background:{SECTION_COLOR[sec] ?? 'var(--ink-soft)'}"></i>
             {SECTION_LABEL[sec] ?? sec} <b>{v}</b>
             <span class="lgp">{totalSectionPv ? Math.round((v / totalSectionPv) * 100) : 0}%</span>
           </span>
@@ -187,64 +187,64 @@
 
 <style>
   .traffic {
-    background: #0a0e17;
-    color: #e0e7ff;
-    font-family: "Courier New", monospace;
+    background: var(--panel);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     padding: 1.25rem;
     max-width: 1120px;
     margin: 0 auto;
   }
-  .muted { color: rgba(224, 231, 255, 0.55); }
+  .muted { color: var(--ink-soft); }
   .err { color: #f87171; }
-  .sub { color: rgba(224, 231, 255, 0.45); font-weight: normal; font-size: 0.78rem; }
+  .sub { color: var(--ink-soft); font-weight: normal; font-size: 0.78rem; }
   .head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
   .btn {
-    background: transparent; color: #a7f3d0; border: 1px solid rgba(167, 243, 208, 0.35);
+    background: transparent; color: var(--crimson); border: 1px solid var(--rule);
     border-radius: 4px; padding: 0.3rem 0.7rem; font-family: inherit; cursor: pointer; white-space: nowrap;
   }
-  .btn:hover { background: rgba(167, 243, 208, 0.1); }
+  .btn:hover { background: var(--rule); }
 
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
-  .card { background: #131a26; border: 1px solid rgba(167, 243, 208, 0.12); border-radius: 6px; padding: 0.9rem 1rem; }
-  .num { font-size: 1.7rem; font-weight: 700; color: #e0e7ff; font-variant-numeric: tabular-nums; }
-  .card.accent .num { color: #a7f3d0; }
+  .card { background: #131a26; border: 1px solid var(--rule); border-radius: 6px; padding: 0.9rem 1rem; }
+  .num { font-size: 1.7rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .card.accent .num { color: var(--crimson); }
   .pctsign { font-size: 1rem; }
   .lbl { font-size: 0.82rem; margin-top: 0.2rem; }
   .lbl .sub { display: block; }
 
   section { margin-top: 1.9rem; }
-  h3 { color: #a7f3d0; font-size: 1rem; margin: 0 0 0.6rem; font-weight: 700; }
-  .cap { color: rgba(224, 231, 255, 0.6); font-size: 0.82rem; margin: 0 0 0.9rem; max-width: 78ch; line-height: 1.5; }
-  .cap b, .foot b { color: rgba(224, 231, 255, 0.85); }
-  code { background: rgba(167, 243, 208, 0.1); padding: 0 0.3rem; border-radius: 3px; }
+  h3 { color: var(--crimson); font-size: 1rem; margin: 0 0 0.6rem; font-weight: 700; }
+  .cap { color: var(--ink-soft); font-size: 0.82rem; margin: 0 0 0.9rem; max-width: 78ch; line-height: 1.5; }
+  .cap b, .foot b { color: var(--ink-soft); }
+  code { background: var(--rule); padding: 0 0.3rem; border-radius: 3px; }
 
   .bars { display: flex; flex-direction: column; gap: 0.4rem; }
   .bar-row { display: grid; grid-template-columns: 13rem 1fr 3rem; align-items: center; gap: 0.6rem; font-size: 0.8rem; }
   .bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bar { background: rgba(167, 243, 208, 0.07); border-radius: 3px; height: 15px; overflow: hidden; }
+  .bar { background: var(--rule); border-radius: 3px; height: 15px; overflow: hidden; }
   .fill { height: 100%; border-radius: 3px; opacity: 0.9; }
-  .bar-n { text-align: right; color: rgba(224, 231, 255, 0.7); font-variant-numeric: tabular-nums; }
-  .legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid rgba(167, 243, 208, 0.12); font-size: 0.76rem; color: rgba(224, 231, 255, 0.6); }
+  .bar-n { text-align: right; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid var(--rule); font-size: 0.76rem; color: var(--ink-soft); }
   .lg { display: inline-flex; align-items: center; gap: 0.4rem; }
   .lg i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-  .lg b { color: #e0e7ff; }
-  .lgp { color: rgba(224, 231, 255, 0.4); }
+  .lg b { color: var(--ink); }
+  .lgp { color: var(--ink-soft); }
 
-  .sankey-wrap { background: #0c1420; border: 1px solid rgba(167, 243, 208, 0.1); border-radius: 8px; padding: 0.75rem; overflow-x: auto; }
+  .sankey-wrap { background: #0c1420; border: 1px solid var(--rule); border-radius: 8px; padding: 0.75rem; overflow-x: auto; }
   .sankey-wrap svg { display: block; min-width: 640px; }
   .rib { transition: fill-opacity 0.12s; }
   .sankey-wrap:hover .rib { fill-opacity: 0.1; }
   .rib:hover { fill-opacity: 0.75 !important; }
-  :global(.traffic .colhead) { fill: rgba(224, 231, 255, 0.4); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
-  :global(.traffic .nl) { fill: #e0e7ff; font-size: 11.5px; paint-order: stroke; stroke: #0c1420; stroke-width: 3px; }
+  :global(.traffic .colhead) { fill: var(--ink-soft); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+  :global(.traffic .nl) { fill: var(--ink); font-size: 11.5px; paint-order: stroke; stroke: #0c1420; stroke-width: 3px; }
   :global(.traffic .nlm) { fill: #cfe6ff; }
-  :global(.traffic .nlp) { fill: rgba(224, 231, 255, 0.4); font-size: 10px; }
+  :global(.traffic .nlp) { fill: var(--ink-soft); font-size: 10px; }
 
   .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
   table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-  th { text-align: left; color: rgba(224, 231, 255, 0.4); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 0 0.5rem; border-bottom: 1px solid rgba(167, 243, 208, 0.12); }
+  th { text-align: left; color: var(--ink-soft); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 0 0.5rem; border-bottom: 1px solid var(--rule); }
   td { padding: 0.35rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-  td.tnum, th.tnum { text-align: right; color: rgba(224, 231, 255, 0.7); font-variant-numeric: tabular-nums; }
+  td.tnum, th.tnum { text-align: right; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 
   .foot { font-size: 0.72rem; margin-top: 1.6rem; line-height: 1.6; max-width: 90ch; }
 

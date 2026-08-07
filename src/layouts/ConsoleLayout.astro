@@ -1,0 +1,70 @@
+---
+/**
+ * ConsoleLayout.astro — the Dev Console (/test/*) on the site's illuminated-
+ * manual visuals (owner 2026-08-06: "use same visuals as rest of site").
+ *
+ * The console previously ran the engine/terminal aesthetic — dark slate page,
+ * monospace, cyan accent — which made it read as a different product from the
+ * site that links to it. It now shares manual.css, the theme toggle, the nav
+ * and the footer with /, /changelog/, /devlog/ and the rest.
+ *
+ * Same shape as ManualLayout, plus the console's own tab bar (TestNav) under
+ * the header. Kept separate from ManualLayout rather than adding a prop,
+ * because these pages are admin/subscriber-gated and carry TestNav — a public
+ * page must never render it.
+ *
+ * NOTE: /play/ deliberately stays on its own aesthetic and is NOT converted.
+ */
+import BaseLayout from "./BaseLayout.astro";
+import ThemeInit from "../components/ThemeInit.astro";
+import ManualHeader from "../components/ManualHeader.astro";
+import TestNav from "../components/TestNav.svelte";
+import "../styles/manual.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Which TestNav tab is current. */
+  active: string;
+}
+const { title, description, active } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="manual-page">
+    <ThemeInit />
+    <ManualHeader />
+
+    <main class="console-page">
+      <TestNav active={active as any} client:load />
+      <slot />
+    </main>
+
+    <footer><div class="wrap">
+      <div class="fnav">
+        <a href="/play/">Play</a>
+        <a href="/test/">Console</a>
+        <a href="/walkthrough/">Strategy Guide</a>
+        <a href="/changelog/">What's New</a>
+      </div>
+      <div class="cr">The Chronicles of Nesis · © AllByte Studios · Made and shared in the open.</div>
+    </div></footer>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  /* Mirrors .home / .manual-page: parchment is painted on <body> by manual.css,
+     so the wrapper stays transparent and only carries type + ink. */
+  .manual-page {
+    min-height: 100vh;
+    color: var(--ink);
+    line-height: 1.64;
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+  .console-page {
+    min-height: calc(100vh - 160px);
+    padding: 0.5rem 0 2rem;
+  }
+</style>

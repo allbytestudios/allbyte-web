@@ -272,22 +272,22 @@
 <style>
   .vg { max-width: 900px; margin: 0 auto; padding: 1.4rem clamp(0.8rem, 4vw, 2rem) 4rem; color: #cfe6dc; font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
   .vg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-  .vg-head h2 { margin: 0 0 0.2rem; color: #a7f3d0; font-size: 1.4rem; }
+  .vg-head h2 { margin: 0 0 0.2rem; color: var(--crimson); font-size: 1.4rem; }
   .sub { margin: 0; color: #8aa89b; font-size: 0.86rem; max-width: 64ch; line-height: 1.5; }
-  .reload { background: #12202b; color: #a7f3d0; border: 1px solid #234; border-radius: 5px; padding: 0.4rem 0.8rem; cursor: pointer; font: inherit; font-size: 0.8rem; }
+  .reload { background: #12202b; color: var(--crimson); border: 1px solid #234; border-radius: 5px; padding: 0.4rem 0.8rem; cursor: pointer; font: inherit; font-size: 0.8rem; }
   .reload:disabled { opacity: 0.6; cursor: default; }
   .tally { display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; margin: 1rem 0 0.4rem; font-size: 0.82rem; color: #8aa89b; }
   .ro { color: #6b8579; }
   .note { color: #8aa89b; font-size: 0.86rem; margin: 1.2rem 0; }
   .empty { margin: 1.4rem 0; }
   .err { color: #f0a58c; font-size: 0.9rem; margin: 0 0 0.5rem; }
-  code { background: #0d1620; border: 1px solid #1e2e3a; border-radius: 3px; padding: 0.05rem 0.35rem; color: #a7f3d0; }
+  code { background: #0d1620; border: 1px solid #1e2e3a; border-radius: 3px; padding: 0.05rem 0.35rem; color: var(--crimson); }
   .relics { list-style: none; margin: 1rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
   .relic { border: 1px solid #1e2e3a; border-radius: 7px; background: #0d1620; overflow: hidden; }
   .relic-head { width: 100%; display: flex; align-items: center; gap: 0.7rem; padding: 0.75rem 0.9rem; background: none; border: 0; color: #cfe6dc; cursor: pointer; font: inherit; text-align: left; }
   .relic-head:hover { background: #10202b; }
   .chev { color: #4f8f7a; width: 0.9em; }
-  .rname { color: #a7f3d0; font-weight: 600; font-size: 0.98rem; }
+  .rname { color: var(--crimson); font-weight: 600; font-size: 0.98rem; }
   .anam { color: #8aa89b; font-style: italic; font-size: 0.78rem; }
   .tcount { margin-left: auto; color: #6b8579; font-size: 0.76rem; }
   .tiers { padding: 0.2rem 0.9rem 0.9rem; display: flex; flex-direction: column; gap: 0.85rem; }
@@ -300,7 +300,7 @@
   .s-review { color: #7ab0d8; }
   .s-approved { color: #7fce8f; }
   .s-edited { color: #7fce8f; }
-  .mini { font: inherit; font-size: 0.72rem; background: #12202b; color: #a7f3d0; border: 1px solid #234; border-radius: 4px; padding: 0.15rem 0.55rem; cursor: pointer; }
+  .mini { font: inherit; font-size: 0.72rem; background: #12202b; color: var(--crimson); border: 1px solid #234; border-radius: 4px; padding: 0.15rem 0.55rem; cursor: pointer; }
   .mini:hover { background: #16303e; }
   .mini:disabled { opacity: 0.6; cursor: default; }
   .mini.save { background: #14361f; color: #7fce8f; border-color: #2d5a34; }

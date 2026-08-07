@@ -158,36 +158,36 @@
     max-width: 1100px;
     margin: 2.5rem auto 0;
     padding: 0 1rem 2rem;
-    color: #d1d5db;
-    font-family: "Courier New", monospace;
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   .tre-title {
     font-size: 1rem;
-    color: #e5e7eb;
-    border-top: 1px solid rgba(167, 243, 208, 0.15);
+    color: var(--ink);
+    border-top: 1px solid var(--rule);
     padding-top: 1.5rem;
     margin: 0 0 0.25rem;
   }
   .tre-lede {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
     line-height: 1.5;
     margin: 0.25rem 0 1.25rem;
   }
-  .tre-lede a { color: #a7f3d0; }
+  .tre-lede a { color: var(--crimson); }
   .tre code {
-    color: #a7f3d0;
-    background: rgba(167, 243, 208, 0.08);
+    color: var(--crimson);
+    background: var(--rule);
     padding: 0 0.25rem;
     border-radius: 3px;
   }
   .tre-note {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.15);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 5px;
     padding: 1rem;
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
 
   .tre-tools {
@@ -204,15 +204,15 @@
   }
   .tre-diff-label {
     font-size: 0.72rem;
-    color: #6b7280;
+    color: var(--ink-soft);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-right: 0.15rem;
   }
   .tre-diffbtn {
     background: none;
-    border: 1px solid rgba(167, 243, 208, 0.2);
-    color: #9ca3af;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
     border-radius: 4px;
     padding: 0.2rem 0.55rem;
     font-family: inherit;
@@ -220,19 +220,19 @@
     cursor: pointer;
   }
   .tre-diffbtn:hover {
-    border-color: rgba(167, 243, 208, 0.45);
-    color: #d1d5db;
+    border-color: var(--rule);
+    color: var(--ink);
   }
   .tre-diffbtn.active {
-    background: rgba(167, 243, 208, 0.12);
-    border-color: rgba(167, 243, 208, 0.55);
-    color: #a7f3d0;
+    background: var(--rule);
+    border-color: var(--rule);
+    color: var(--crimson);
     font-weight: 700;
   }
   .tre-tool {
     background: none;
-    border: 1px solid rgba(167, 243, 208, 0.25);
-    color: #a7f3d0;
+    border: 1px solid var(--rule);
+    color: var(--crimson);
     border-radius: 4px;
     padding: 0.25rem 0.6rem;
     font-family: inherit;
@@ -240,26 +240,26 @@
     cursor: pointer;
   }
   .tre-tool:hover {
-    background: rgba(167, 243, 208, 0.1);
-    border-color: rgba(167, 243, 208, 0.5);
+    background: var(--rule);
+    border-color: var(--rule);
   }
   .tre-appr-toggle {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
     cursor: pointer;
     margin-left: auto;
   }
   .tre-appr-toggle input {
     cursor: pointer;
-    accent-color: #34d399;
+    accent-color: var(--crimson);
   }
 
   .tre-chapter {
     font-size: 0.9rem;
-    color: #e5e7eb;
+    color: var(--ink);
     margin: 1.5rem 0 0.75rem;
     letter-spacing: 0.02em;
   }
@@ -274,8 +274,8 @@
     text-align: left;
     background: none;
     border: none;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.12);
-    color: #a7f3d0;
+    border-bottom: 1px solid var(--rule);
+    color: var(--crimson);
     font-family: inherit;
     font-size: 0.8rem;
     text-transform: uppercase;
@@ -285,14 +285,14 @@
     cursor: pointer;
   }
   .tre-h:hover {
-    border-bottom-color: rgba(167, 243, 208, 0.4);
+    border-bottom-color: var(--rule);
   }
   .tre-h-caret {
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .tre-h-count {
     margin-left: auto;
-    color: #6b7280;
+    color: var(--ink-soft);
     text-transform: none;
     letter-spacing: 0;
     font-size: 0.72rem;
@@ -304,7 +304,7 @@
   }
   .tre-empty {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--ink-soft);
     font-style: italic;
     padding: 0.3rem 0;
     margin: 0;
@@ -314,13 +314,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.08);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 5px;
     padding: 0.45rem 0.75rem;
   }
   .tre-row:hover {
-    border-color: rgba(167, 243, 208, 0.22);
+    border-color: var(--rule);
   }
   .tre-row.leaf {
     border-color: rgba(251, 191, 36, 0.25);
@@ -350,9 +350,9 @@
     font-weight: 700;
   }
   .tre-dchip.d-easy {
-    color: #34d399;
-    background: rgba(52, 211, 153, 0.12);
-    border-color: rgba(52, 211, 153, 0.35);
+    color: var(--crimson);
+    background: var(--panel);
+    border-color: var(--panel);
   }
   .tre-dchip.d-med,
   .tre-dchip.d-medium {
@@ -367,7 +367,7 @@
   }
   .tre-label {
     font-size: 0.88rem;
-    color: #e5e7eb;
+    color: var(--ink);
     font-weight: 600;
   }
   .tre-boss {
@@ -382,9 +382,9 @@
     border: 1px solid transparent;
   }
   .tre-badge.appr {
-    color: #34d399;
-    background: rgba(52, 211, 153, 0.12);
-    border-color: rgba(52, 211, 153, 0.4);
+    color: var(--crimson);
+    background: var(--panel);
+    border-color: var(--panel);
   }
   .tre-badge.unappr {
     color: #f87171;
@@ -392,35 +392,35 @@
     border-color: rgba(248, 113, 113, 0.4);
   }
   .tre-badge.unver {
-    color: #6b7280;
+    color: var(--ink-soft);
     background: rgba(107, 114, 128, 0.1);
     border-color: rgba(107, 114, 128, 0.25);
   }
   .tre-decision {
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-style: italic;
     font-size: 0.78rem;
   }
   .tre-meta {
     font-size: 0.72rem;
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .tre-summary {
     font-size: 0.78rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
   .tre-jump {
     font-size: 0.8rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     text-decoration: none;
     padding: 0.3rem 0.65rem;
-    border: 1px solid rgba(167, 243, 208, 0.35);
+    border: 1px solid var(--rule);
     border-radius: 4px;
     white-space: nowrap;
     flex-shrink: 0;
   }
   .tre-jump:hover {
-    background: rgba(167, 243, 208, 0.1);
-    border-color: rgba(167, 243, 208, 0.6);
+    background: var(--rule);
+    border-color: var(--rule);
   }
 </style>

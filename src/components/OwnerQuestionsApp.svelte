@@ -155,7 +155,7 @@
 
       <div class="question-list">
         {#each pending() as q (q.id)}
-          {@const srcMeta = SOURCE_META[q.source] ?? { label: q.source ?? "Unknown", color: "#9ca3af" }}
+          {@const srcMeta = SOURCE_META[q.source] ?? { label: q.source ?? "Unknown", color: "var(--ink-soft)" }}
           {@const link = deepLinkFor(q)}
           {@const subText = submitting[q.id]}
           <div class="question-card">
@@ -283,18 +283,18 @@
     max-width: 960px;
     margin: 1.5rem auto 3rem;
     padding: 0 1rem;
-    font-family: "Courier New", monospace;
-    color: #e0e7ff;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    color: var(--ink);
   }
 
   .loading, .empty-state {
     text-align: center;
     padding: 3rem 1rem;
-    color: rgba(224, 231, 255, 0.6);
+    color: var(--ink-soft);
   }
 
   .empty-state h2 {
-    color: #a7f3d0;
+    color: var(--crimson);
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.5rem;
     margin: 0 0 0.5rem;
@@ -326,19 +326,19 @@
     gap: 1rem;
     margin-bottom: 1rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+    border-bottom: 1px solid var(--rule);
   }
 
   .section-title {
     font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
     font-size: 1.4rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     margin: 0;
   }
 
   .queue-hint {
     font-size: 0.85rem;
-    color: rgba(224, 231, 255, 0.5);
+    color: var(--ink-soft);
   }
 
   .question-list {
@@ -349,7 +349,7 @@
 
   .question-card {
     background: #141b24;
-    border: 1px solid rgba(167, 243, 208, 0.12);
+    border: 1px solid var(--rule);
     border-radius: 4px;
     padding: 0.85rem 1rem;
   }
@@ -360,13 +360,13 @@
     align-items: center;
     gap: 0.6rem;
     font-size: 0.78rem;
-    color: rgba(224, 231, 255, 0.7);
+    color: var(--ink-soft);
     margin-bottom: 0.5rem;
   }
 
   .q-id {
     font-weight: 700;
-    color: #e0e7ff;
+    color: var(--ink);
   }
 
   .q-source {
@@ -387,17 +387,17 @@
   .q-priority-P0 { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
   .q-priority-P1 { background: rgba(251, 191, 36, 0.18); color: #fcd34d; }
   .q-priority-P2 { background: rgba(96, 165, 250, 0.18); color: #93c5fd; }
-  .q-priority-P3 { background: rgba(156, 163, 175, 0.18); color: #9ca3af; }
+  .q-priority-P3 { background: var(--rule); color: var(--ink-soft); }
 
   .q-ref {
-    font-family: "Courier New", monospace;
-    color: #a7f3d0;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    color: var(--crimson);
     text-decoration: none;
-    border: 1px solid rgba(167, 243, 208, 0.3);
+    border: 1px solid var(--rule);
     padding: 0.1rem 0.4rem;
     border-radius: 2px;
   }
-  .q-ref:hover { border-color: #a7f3d0; }
+  .q-ref:hover { border-color: var(--crimson); }
 
   .q-epic {
     color: rgba(196, 132, 252, 0.8);
@@ -407,23 +407,23 @@
   .q-time {
     margin-left: auto;
     font-size: 0.75rem;
-    color: rgba(224, 231, 255, 0.5);
+    color: var(--ink-soft);
   }
 
   .q-text {
     font-size: 0.95rem;
     line-height: 1.5;
-    color: #e0e7ff;
+    color: var(--ink);
     margin: 0 0 0.5rem;
   }
 
   .q-context {
     font-size: 0.82rem;
     line-height: 1.5;
-    color: rgba(224, 231, 255, 0.55);
+    color: var(--ink-soft);
     margin: 0 0 0.6rem;
     padding-left: 0.75rem;
-    border-left: 2px solid rgba(167, 243, 208, 0.2);
+    border-left: 2px solid var(--rule);
   }
 
   .q-artifacts {
@@ -438,20 +438,20 @@
     align-items: center;
     gap: 0.4rem;
     font-size: 0.75rem;
-    background: rgba(167, 243, 208, 0.06);
-    border: 1px solid rgba(167, 243, 208, 0.15);
+    background: var(--rule);
+    border: 1px solid var(--rule);
     border-radius: 2px;
     padding: 0.15rem 0.5rem;
   }
   .q-artifact .art-type {
-    color: #a7f3d0;
+    color: var(--crimson);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-size: 0.68rem;
   }
   .q-artifact code {
     background: none;
-    color: rgba(224, 231, 255, 0.75);
+    color: var(--ink-soft);
     font-size: 0.75rem;
   }
 
@@ -464,9 +464,9 @@
 
   .q-btn {
     background: #1a2332;
-    border: 1px solid rgba(167, 243, 208, 0.3);
-    color: #e0e7ff;
-    font-family: "Courier New", monospace;
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.82rem;
     padding: 0.4rem 0.75rem;
     border-radius: 3px;
@@ -479,7 +479,7 @@
   }
   .q-btn:hover:not(:disabled) {
     background: #243044;
-    border-color: rgba(167, 243, 208, 0.6);
+    border-color: var(--rule);
   }
   .q-btn:disabled {
     opacity: 0.5;
@@ -487,15 +487,15 @@
   }
 
   .q-btn-recommended {
-    border-color: rgba(167, 243, 208, 0.75);
-    background: rgba(167, 243, 208, 0.1);
+    border-color: var(--rule);
+    background: var(--rule);
   }
 
   .rec-badge {
     font-size: 0.68rem;
     padding: 0.1rem 0.35rem;
-    background: rgba(167, 243, 208, 0.25);
-    color: #a7f3d0;
+    background: var(--rule);
+    color: var(--crimson);
     border-radius: 2px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -525,13 +525,13 @@
   }
 
   .q-btn-send {
-    border-color: rgba(167, 243, 208, 0.5);
-    color: #a7f3d0;
+    border-color: var(--rule);
+    color: var(--crimson);
   }
 
   .q-btn-cancel {
-    border-color: rgba(156, 163, 175, 0.3);
-    color: rgba(224, 231, 255, 0.6);
+    border-color: var(--rule);
+    color: var(--ink-soft);
   }
 
   .q-btn-link {
@@ -543,15 +543,15 @@
   .q-issue-note, .q-freetext {
     margin-top: 0.6rem;
     padding-top: 0.6rem;
-    border-top: 1px solid rgba(167, 243, 208, 0.1);
+    border-top: 1px solid var(--rule);
   }
 
   .q-note-input {
     width: 100%;
-    background: #0d1117;
-    border: 1px solid rgba(167, 243, 208, 0.2);
-    color: #e0e7ff;
-    font-family: "Courier New", monospace;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.85rem;
     padding: 0.5rem 0.6rem;
     border-radius: 3px;
@@ -560,7 +560,7 @@
   }
   .q-note-input:focus {
     outline: none;
-    border-color: rgba(167, 243, 208, 0.5);
+    border-color: var(--rule);
   }
 
   .q-note-actions {

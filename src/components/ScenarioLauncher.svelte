@@ -79,28 +79,28 @@
     max-width: 1100px;
     margin: 0 auto;
     padding: 1rem 1rem 2rem;
-    color: #d1d5db;
-    font-family: "Courier New", monospace;
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   .scn-lede {
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
     line-height: 1.5;
     margin: 0.5rem 0 1.25rem;
   }
   .scn code {
-    color: #a7f3d0;
-    background: rgba(167, 243, 208, 0.08);
+    color: var(--crimson);
+    background: var(--rule);
     padding: 0 0.25rem;
     border-radius: 3px;
   }
   .scn-note-block {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.15);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 5px;
     padding: 1rem;
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
   .scn-section {
     margin-bottom: 1.75rem;
@@ -109,8 +109,8 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #a7f3d0;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.12);
+    color: var(--crimson);
+    border-bottom: 1px solid var(--rule);
     padding-bottom: 0.35rem;
     margin: 0 0 0.6rem;
   }
@@ -125,13 +125,13 @@
     justify-content: space-between;
     gap: 1rem;
     flex-wrap: wrap;
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.08);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 5px;
     padding: 0.6rem 0.85rem;
   }
   .scn-row:hover {
-    border-color: rgba(167, 243, 208, 0.22);
+    border-color: var(--rule);
   }
   .scn-info {
     display: flex;
@@ -141,16 +141,16 @@
   }
   .scn-label {
     font-size: 0.9rem;
-    color: #e5e7eb;
+    color: var(--ink);
     font-weight: 600;
   }
   .scn-desc {
     font-size: 0.78rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
   .scn-meta {
     font-size: 0.72rem;
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .scn-actions {
     display: flex;
@@ -163,12 +163,12 @@
     align-items: center;
     gap: 0.35rem;
     font-size: 0.72rem;
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .scn-persona select {
-    background: #0a0e17;
-    color: #d1d5db;
-    border: 1px solid rgba(167, 243, 208, 0.2);
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--rule);
     border-radius: 3px;
     padding: 0.2rem 0.35rem;
     font-family: inherit;
@@ -176,16 +176,16 @@
   }
   .scn-launch {
     font-size: 0.8rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     text-decoration: none;
     padding: 0.35rem 0.7rem;
-    border: 1px solid rgba(167, 243, 208, 0.35);
+    border: 1px solid var(--rule);
     border-radius: 4px;
     white-space: nowrap;
   }
   .scn-launch:hover {
-    background: rgba(167, 243, 208, 0.1);
-    border-color: rgba(167, 243, 208, 0.6);
+    background: var(--rule);
+    border-color: var(--rule);
   }
   @media (max-width: 600px) {
     .scn-row {

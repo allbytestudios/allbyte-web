@@ -1,37 +1,26 @@
 ---
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import PageHeader from "../../../components/PageHeader.astro";
-import Footer from "../../../components/Footer.astro";
+import ConsoleLayout from "../../../layouts/ConsoleLayout.astro";
 import DemoPromoteButton from "../../../components/DemoPromoteButton.svelte";
 import DeployQaPanel from "../../../components/DeployQaPanel.svelte";
-import TestNav from "../../../components/TestNav.svelte";
 ---
 
-<BaseLayout
+<ConsoleLayout
   title="Deploy — Dev Console — AllByte Studios"
   description="One-click promote develop to the live demo (admin only)."
+
+  active="deploy"
 >
-  <PageHeader
-    theme="engine"
-    title="Dev Console"
-    backHref="/"
-    backLabel="Home"
-    breadcrumbs={[{ href: "/", label: "Home" }]}
-  />
   <main class="deploy-shell">
-    <TestNav active="deploy" client:load />
     {/* Deploy QA: cross-browser + controller smoke against /play/ on prod
         after each deploy (.github/workflows/qa.yml). Lives here rather than
         on the console overview so it sits beside the promote it reports on. */}
     <DeployQaPanel client:only="svelte" />
     <DemoPromoteButton client:only="svelte" />
-  </main>
-  <Footer theme="engine" />
-</BaseLayout>
+</ConsoleLayout>
 
 <style>
   .deploy-shell {
-    background: #0a0e17;
+    background: var(--panel);
     min-height: calc(100vh - 160px);
   }
 </style>

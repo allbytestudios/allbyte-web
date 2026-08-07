@@ -124,7 +124,7 @@
     if (p <= 0) return "#f87171";    // P0
     if (p === 1) return "#fbbf24";   // P1
     if (p === 2) return "#60a5fa";   // P2
-    return "#9ca3af";                // P3+
+    return "var(--ink-soft)";                // P3+
   }
 
   function fmtDate(iso: string | undefined): string {
@@ -280,20 +280,20 @@
     padding: 0.32rem 0.9rem; border-radius: 6px; cursor: pointer;
   }
   .vt-btn:hover { color: #e2e8f0; border-color: rgba(148, 163, 184, 0.45); }
-  .vt-active { background: rgba(167, 243, 208, 0.12); border-color: rgba(167, 243, 208, 0.5); color: #a7f3d0; }
+  .vt-active { background: var(--rule); border-color: var(--rule); color: var(--crimson); }
 
   .lanes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; align-items: start; }
   @media (max-width: 820px) { .lanes { grid-template-columns: 1fr; } }
   .lane {
-    background: rgba(15, 23, 42, 0.5);
+    background: var(--panel);
     border: 1px solid rgba(148, 163, 184, 0.18);
     border-radius: 8px; padding: 0.6rem 0.6rem 0.4rem;
   }
-  .lane-title { display: flex; align-items: center; gap: 0.45rem; font-size: 0.9rem; margin: 0 0 0.55rem; color: #e5e7eb; }
-  .lane-dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
+  .lane-title { display: flex; align-items: center; gap: 0.45rem; font-size: 0.9rem; margin: 0 0 0.55rem; color: var(--ink); }
+  .lane-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-soft); }
   .lane-backlog .lane-dot { background: #60a5fa; }
   .lane-needs-verify .lane-dot { background: #fbbf24; }
-  .lane-completed .lane-dot { background: #34d399; }
+  .lane-completed .lane-dot { background: var(--crimson); }
   .lane-count {
     margin-left: auto; font-size: 0.75rem; color: rgba(226, 232, 240, 0.55);
     background: rgba(148, 163, 184, 0.12); padding: 0.05rem 0.45rem; border-radius: 10px;
@@ -302,7 +302,7 @@
   .lane-empty { font-size: 0.78rem; color: rgba(226, 232, 240, 0.4); padding: 0.3rem; }
   .lane-more { font-size: 0.74rem; color: rgba(226, 232, 240, 0.45); text-align: center; padding: 0.3rem; }
   .bead {
-    background: rgba(30, 41, 59, 0.6);
+    background: var(--panel);
     border: 1px solid rgba(148, 163, 184, 0.15);
     border-radius: 6px; padding: 0.4rem 0.5rem;
   }
@@ -315,14 +315,14 @@
     padding: 0.02rem 0.35rem; border-radius: 3px;
   }
   .bead-meta { margin-left: auto; font-size: 0.68rem; color: rgba(226, 232, 240, 0.4); }
-  .bead-title { font-size: 0.8rem; line-height: 1.35; color: #e5e7eb; word-break: break-word; }
+  .bead-title { font-size: 0.8rem; line-height: 1.35; color: var(--ink); word-break: break-word; }
 
   .tickets {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0.75rem 1rem 2rem;
-    color: #e5e7eb;
-    font-family: "Courier New", monospace;
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
 
   .error-banner {
@@ -342,15 +342,15 @@
     gap: 0.4rem;
     margin: 0 0 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.1);
+    border-bottom: 1px solid var(--rule);
   }
   .ms-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.15);
-    color: #9ca3af;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
     font-family: inherit;
     font-size: 0.82rem;
     padding: 0.35rem 0.7rem;
@@ -358,11 +358,11 @@
     cursor: pointer;
     transition: color 0.15s, border-color 0.15s;
   }
-  .ms-btn:hover { color: #d1d5db; border-color: rgba(167, 243, 208, 0.3); }
+  .ms-btn:hover { color: var(--ink); border-color: var(--rule); }
   .ms-btn.ms-active {
-    color: #a7f3d0;
-    border-color: #a7f3d0;
-    background: rgba(167, 243, 208, 0.06);
+    color: var(--crimson);
+    border-color: var(--crimson);
+    background: var(--rule);
   }
   .ms-btn-label { font-weight: 600; }
   .ms-btn-count {
@@ -370,10 +370,10 @@
     padding: 0.05rem 0.35rem;
     border-radius: 3px;
     background: rgba(107, 114, 128, 0.15);
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .ms-btn-count-open { color: #60a5fa; background: rgba(96, 165, 250, 0.12); }
-  .ms-btn-count-done { color: #a7f3d0; background: rgba(167, 243, 208, 0.12); }
+  .ms-btn-count-done { color: var(--crimson); background: var(--rule); }
 
   /* ---- Sections ---- */
   .section { margin: 1.25rem 0; }
@@ -381,7 +381,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #d1d5db;
+    color: var(--ink);
     font-size: 1rem;
     font-weight: 700;
     margin: 0 0 0.6rem;
@@ -392,18 +392,18 @@
     border-radius: 2px;
   }
   .section-marker-deck { background: #60a5fa; }
-  .section-marker-done { background: #a7f3d0; }
+  .section-marker-done { background: var(--crimson); }
   .section-count {
-    background: rgba(167, 243, 208, 0.12);
-    color: #a7f3d0;
-    border: 1px solid rgba(167, 243, 208, 0.3);
+    background: var(--rule);
+    color: var(--crimson);
+    border: 1px solid var(--rule);
     padding: 0.05rem 0.45rem;
     border-radius: 999px;
     font-size: 0.78rem;
     font-weight: 700;
   }
   .section-empty {
-    color: #6b7280;
+    color: var(--ink-soft);
     font-style: italic;
     margin: 0.5rem 0 0;
     font-size: 0.88rem;
@@ -419,8 +419,8 @@
     gap: 0.3rem;
   }
   .epic-card {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.1);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 4px;
     overflow: hidden;
   }
@@ -439,28 +439,28 @@
     text-align: left;
     cursor: pointer;
   }
-  .epic-head:hover { background: rgba(167, 243, 208, 0.04); }
+  .epic-head:hover { background: var(--rule); }
   .epic-pri {
     font-weight: 700;
     flex-shrink: 0;
     width: 1.8rem;
   }
   .epic-id {
-    color: #6b7280;
+    color: var(--ink-soft);
     font-size: 0.78rem;
     flex-shrink: 0;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   .epic-title {
     flex: 1 1 auto;
-    color: #e5e7eb;
+    color: var(--ink);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
   }
   .epic-ms {
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-size: 0.75rem;
     padding: 0.05rem 0.4rem;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -468,12 +468,12 @@
     flex-shrink: 0;
   }
   .epic-closed-at {
-    color: #a7f3d0;
+    color: var(--crimson);
     font-size: 0.75rem;
     flex-shrink: 0;
   }
   .epic-fold-arrow {
-    color: #6b7280;
+    color: var(--ink-soft);
     font-size: 1rem;
     transition: transform 0.15s;
     transform: rotate(0deg);
@@ -482,22 +482,22 @@
   .epic-fold-arrow.open { transform: rotate(90deg); }
   .epic-body {
     padding: 0.6rem 0.8rem 0.8rem;
-    border-top: 1px solid rgba(167, 243, 208, 0.08);
+    border-top: 1px solid var(--rule);
     font-size: 0.85rem;
-    color: #d1d5db;
+    color: var(--ink);
     line-height: 1.5;
   }
   .epic-body p { margin: 0 0 0.4rem; }
   .epic-body p:last-child { margin-bottom: 0; }
   .epic-meta {
     margin-top: 0.5rem;
-    color: #6b7280;
+    color: var(--ink-soft);
     font-size: 0.75rem;
   }
   .epic-close-reason {
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-style: italic;
-    border-left: 2px solid rgba(167, 243, 208, 0.3);
+    border-left: 2px solid var(--rule);
     padding-left: 0.5rem;
     margin-top: 0.5rem;
   }

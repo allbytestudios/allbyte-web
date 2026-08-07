@@ -150,11 +150,11 @@
     max-width: 1600px;
     margin: 0 auto;
     padding: 0.5rem 0.5rem 0;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.12);
+    border-bottom: 1px solid var(--rule);
     position: sticky;
     top: 77px;            /* pin just under the sticky PageHeader (~77px tall on desktop) */
     z-index: 90;          /* below the header (z-index 100) */
-    background: #0a0e17;  /* opaque + matches the page shell, so any px of gap/overlap is invisible */
+    background: var(--panel);  /* opaque + matches the page shell, so any px of gap/overlap is invisible */
   }
   /* Mobile: don't stick — the grid nav is tall and would eat the small screen.
      Scroll it away normally; the sticky pin is a desktop affordance only. */
@@ -162,9 +162,9 @@
     .test-nav { position: static; }
   }
   .nav-tab {
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.85rem;
-    color: #6b7280;
+    color: var(--ink-soft);
     text-decoration: none;
     padding: 0.55rem 0.75rem;
     border-bottom: 2px solid transparent;
@@ -177,28 +177,28 @@
     flex-shrink: 0;
   }
   .nav-tab:hover {
-    color: #d1d5db;
+    color: var(--ink);
   }
   .nav-tab.active {
-    color: #a7f3d0;
-    border-bottom-color: #a7f3d0;
+    color: var(--crimson);
+    border-bottom-color: var(--crimson);
   }
   .nav-count {
     font-size: 0.75rem;
-    color: #4b5563;
-    background: rgba(167, 243, 208, 0.08);
-    border: 1px solid rgba(167, 243, 208, 0.15);
+    color: var(--ink-soft);
+    background: var(--rule);
+    border: 1px solid var(--rule);
     padding: 0.08rem 0.35rem;
     border-radius: 3px;
   }
   .nav-tab.active .nav-count {
-    color: #a7f3d0;
-    border-color: rgba(167, 243, 208, 0.3);
+    color: var(--crimson);
+    border-color: var(--rule);
   }
   .nav-green {
-    color: #34d399 !important;
-    background: rgba(52, 211, 153, 0.15) !important;
-    border-color: rgba(52, 211, 153, 0.5) !important;
+    color: var(--crimson) !important;
+    background: var(--panel) !important;
+    border-color: var(--panel) !important;
     font-weight: 700;
   }
   .nav-yellow {
@@ -208,7 +208,7 @@
     font-weight: 700;
   }
   .nav-grey {
-    color: #6b7280 !important;
+    color: var(--ink-soft) !important;
     background: rgba(107, 114, 128, 0.08) !important;
     border-color: rgba(107, 114, 128, 0.2) !important;
   }
@@ -229,16 +229,16 @@
     .nav-tab {
       padding: 0.5rem 0.35rem;
       font-size: 0.78rem;
-      border: 1px solid rgba(167, 243, 208, 0.1);
+      border: 1px solid var(--rule);
       border-radius: 4px;
       min-height: 52px;
       flex-wrap: wrap;
       gap: 0.2rem;
     }
     .nav-tab.active {
-      border-color: #a7f3d0;
-      border-bottom-color: #a7f3d0;
-      background: rgba(167, 243, 208, 0.06);
+      border-color: var(--crimson);
+      border-bottom-color: var(--crimson);
+      background: var(--rule);
     }
     .nav-count {
       font-size: 0.7rem;

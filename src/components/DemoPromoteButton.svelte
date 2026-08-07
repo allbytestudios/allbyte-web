@@ -152,21 +152,21 @@
 
 <style>
   .promote {
-    background: #0a0e17; color: #e0e7ff; font-family: "Courier New", monospace;
+    background: var(--panel); color: var(--ink); font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     padding: 1.25rem; max-width: 720px; margin: 0 auto;
   }
-  .muted { color: rgba(224, 231, 255, 0.55); }
-  .sub { color: rgba(224, 231, 255, 0.4); }
-  .card { background: #131a26; border: 1px solid rgba(167, 243, 208, 0.14); border-radius: 8px; padding: 1.25rem 1.4rem; }
-  h3 { color: #a7f3d0; font-size: 1.05rem; margin: 0 0 0.5rem; }
-  .lead { font-size: 0.9rem; line-height: 1.55; color: rgba(224, 231, 255, 0.8); margin: 0 0 1.1rem; }
-  .lead b { color: #e0e7ff; }
-  code { background: rgba(167, 243, 208, 0.12); padding: 0 0.35rem; border-radius: 3px; color: #a7f3d0; }
+  .muted { color: var(--ink-soft); }
+  .sub { color: var(--ink-soft); }
+  .card { background: #131a26; border: 1px solid var(--rule); border-radius: 8px; padding: 1.25rem 1.4rem; }
+  h3 { color: var(--crimson); font-size: 1.05rem; margin: 0 0 0.5rem; }
+  .lead { font-size: 0.9rem; line-height: 1.55; color: var(--ink-soft); margin: 0 0 1.1rem; }
+  .lead b { color: var(--ink); }
+  code { background: var(--rule); padding: 0 0.35rem; border-radius: 3px; color: var(--crimson); }
   .btn {
-    background: transparent; color: #a7f3d0; border: 1px solid rgba(167, 243, 208, 0.4);
+    background: transparent; color: var(--crimson); border: 1px solid var(--rule);
     border-radius: 5px; padding: 0.5rem 0.9rem; font-family: inherit; font-size: 0.88rem; cursor: pointer;
   }
-  .btn:hover:not(:disabled) { background: rgba(167, 243, 208, 0.1); }
+  .btn:hover:not(:disabled) { background: var(--rule); }
   .btn:disabled { opacity: 0.5; cursor: default; }
   .btn.danger { color: #fca5a5; border-color: rgba(248, 113, 113, 0.5); }
   .btn.danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.12); }
@@ -176,12 +176,12 @@
   .result .muted { margin: 0 0 0.7rem; }
   .builds { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
   .builds li { display: flex; align-items: center; gap: 0.7rem; font-size: 0.85rem; }
-  .ch { min-width: 8rem; color: #e0e7ff; }
+  .ch { min-width: 8rem; color: var(--ink); }
   .st { padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.76rem; border: 1px solid transparent; }
   .st.run { color: #fbbf24; background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.35); }
-  .st.ok { color: #34d399; background: rgba(52, 211, 153, 0.14); border-color: rgba(52, 211, 153, 0.4); }
+  .st.ok { color: var(--crimson); background: var(--panel); border-color: var(--panel); }
   .st.err { color: #f87171; background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.4); }
-  .st.wait { color: rgba(224, 231, 255, 0.6); background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); }
+  .st.wait { color: var(--ink-soft); background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); }
   .berr { color: rgba(248, 113, 113, 0.8); font-size: 0.74rem; }
   .finalize-note {
     margin: 0.7rem 0 0;
@@ -200,5 +200,5 @@
     border-radius: 3px;
   }
   .err { color: #f87171; font-size: 0.85rem; margin-top: 0.6rem; }
-  .note { color: rgba(224, 231, 255, 0.45); font-size: 0.74rem; line-height: 1.55; margin-top: 1.1rem; }
+  .note { color: var(--ink-soft); font-size: 0.74rem; line-height: 1.55; margin-top: 1.1rem; }
 </style>

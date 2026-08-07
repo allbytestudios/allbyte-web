@@ -408,15 +408,15 @@
   .deploy-qa-section {
     margin: 1.5rem 0;
     padding: 1rem;
-    background: #0d1117;
+    background: var(--panel);
     border: 1px solid #374151;
     border-radius: 4px;
   }
   .qa-title {
     margin: 0 0 0.75rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 1rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
@@ -424,12 +424,12 @@
     text-transform: none;
     letter-spacing: 0;
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
     margin-left: 0.6rem;
     font-weight: normal;
   }
   .qa-empty {
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-size: 0.85rem;
     padding: 0.75rem 0;
   }
@@ -447,9 +447,9 @@
     }
   }
   .qa-history-title {
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 0.5rem;
@@ -469,8 +469,8 @@
     border-radius: 3px;
     padding: 0.4rem 0.5rem;
     margin-bottom: 0.2rem;
-    color: #d1d5db;
-    font-family: "Courier New", monospace;
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.72rem;
     cursor: pointer;
     display: grid;
@@ -484,7 +484,7 @@
   }
   .qa-history-active {
     background: #161b22;
-    border-color: #a7f3d0;
+    border-color: var(--crimson);
   }
   .qa-history-status {
     font-size: 0.68rem;
@@ -494,10 +494,10 @@
     letter-spacing: 0.05em;
   }
   .qa-history-sha {
-    color: #a7f3d0;
+    color: var(--crimson);
   }
   .qa-history-time {
-    color: #6b7280;
+    color: var(--ink-soft);
     text-align: right;
   }
   .qa-run-header {
@@ -508,9 +508,9 @@
     padding-bottom: 0.5rem;
     border-bottom: 1px solid #374151;
     margin-bottom: 0.75rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.78rem;
-    color: #d1d5db;
+    color: var(--ink);
   }
   .qa-run-overall {
     padding: 0.15rem 0.45rem;
@@ -521,19 +521,19 @@
     margin-right: 0.5rem;
   }
   .qa-run-sha {
-    color: #a7f3d0;
+    color: var(--crimson);
     margin-right: 0.5rem;
   }
   .qa-run-time {
-    color: #9ca3af;
+    color: var(--ink-soft);
     margin-right: 0.5rem;
   }
   .qa-run-trigger {
-    color: #6b7280;
+    color: var(--ink-soft);
     font-size: 0.7rem;
   }
   .qa-run-summary {
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
   .qa-matrix-wrap {
     overflow-x: auto;
@@ -542,7 +542,7 @@
   .qa-matrix {
     border-collapse: collapse;
     width: 100%;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.75rem;
   }
   .qa-matrix th,
@@ -554,7 +554,7 @@
   }
   .qa-matrix th {
     background: #161b22;
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-weight: normal;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -570,8 +570,8 @@
     margin-left: 0.35rem;
     padding: 0.02rem 0.28rem;
     border-radius: 2px;
-    background: rgba(156, 163, 175, 0.18);
-    color: #9ca3af;
+    background: var(--rule);
+    color: var(--ink-soft);
     font-size: 0.58rem;
     letter-spacing: 0.03em;
     text-transform: none;
@@ -590,7 +590,7 @@
     white-space: nowrap;
   }
   .qa-cell-detail {
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-size: 0.68rem;
     margin-top: 0.3rem;
   }
@@ -600,8 +600,8 @@
     margin-top: 0.15rem;
   }
   .qa-ok {
-    background: rgba(52, 211, 153, 0.12);
-    color: #6ee7b7;
+    background: var(--panel);
+    color: var(--crimson);
   }
   .qa-warn {
     background: rgba(252, 211, 77, 0.12);
@@ -612,7 +612,7 @@
     color: #fca5a5;
   }
   .qa-neutral {
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .qa-screenshots,
   .qa-logs {
@@ -620,13 +620,13 @@
     border: 1px solid #374151;
     border-radius: 3px;
     padding: 0.5rem 0.75rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.78rem;
   }
   .qa-screenshots summary,
   .qa-logs summary {
     cursor: pointer;
-    color: #d1d5db;
+    color: var(--ink);
   }
   .qa-screenshot-grid {
     display: grid;
@@ -649,7 +649,7 @@
   }
   .qa-screenshot figcaption {
     font-size: 0.7rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
     margin-top: 0.35rem;
     text-align: center;
   }
@@ -657,15 +657,15 @@
     margin-top: 0.5rem;
   }
   .qa-logs-label {
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 0.2rem;
   }
   .qa-log-line {
-    background: #0a0e17;
-    color: #d1d5db;
+    background: var(--panel);
+    color: var(--ink);
     padding: 0.35rem 0.5rem;
     border-radius: 2px;
     font-size: 0.72rem;

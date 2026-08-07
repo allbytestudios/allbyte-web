@@ -31,7 +31,7 @@
     { key: "messages",     label: "Messages",      color: "#60a5fa", field: "messages" },
     { key: "outputTokens", label: "Output Tokens", color: "#22d3ee", field: "outputTokens" },
     { key: "freshTokens",  label: "Fresh Tokens",  color: "#f472b6", field: "freshTokens" },
-    { key: "commits",      label: "Commits",       color: "#34d399", field: "commits" },
+    { key: "commits",      label: "Commits",       color: "var(--crimson)", field: "commits" },
     { key: "churn",        label: "LOC Changed",   color: "#fbbf24", field: "churn" },
     { key: "ticketsDone",  label: "Tickets Done",  color: "#c084fc", field: "ticketsDone" },
   ];
@@ -418,7 +418,7 @@
         <div class="card-stat">{openEpicCount} <span class="stat-label">on deck</span></div>
         <div class="card-detail">
           {#if closedEpicCount > 0}
-            <span style="color: #a7f3d0">{closedEpicCount} complete</span>
+            <span style="color: var(--crimson)">{closedEpicCount} complete</span>
           {/if}
         </div>
       {:else}
@@ -510,19 +510,19 @@
               <circle cx={x} cy={y} r="3" fill="#60a5fa" />
               <text x={x} y={y - 8} fill="#60a5fa" font-size="10" text-anchor="middle">{d.total}</text>
             {/if}
-            <rect x={x - barW / 2} y={140 - barH} width={barW} height={barH} fill="rgba(52, 211, 153, 0.4)" rx={barW > 4 ? 2 : 0} />
+            <rect x={x - barW / 2} y={140 - barH} width={barW} height={barH} fill="var(--panel)" rx={barW > 4 ? 2 : 0} />
             {#if d.new > 0 && showDetails}
-              <text x={x} y={140 - barH - 3} fill="#34d399" font-size="9" text-anchor="middle">+{d.new}</text>
+              <text x={x} y={140 - barH - 3} fill="var(--crimson)" font-size="9" text-anchor="middle">+{d.new}</text>
             {/if}
             {#if showLabel}
-              <text x={x} y={156} fill="#6b7280" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
+              <text x={x} y={156} fill="var(--ink-soft)" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
             {/if}
           {/each}
         </svg>
         <div class="users-chart-legend">
           <span class="legend-item"><span class="legend-dot" style="background: #60a5fa"></span> Total users</span>
-          <span class="legend-item"><span class="legend-dot" style="background: #34d399"></span> New signups</span>
-          <span class="legend-item" style="color: #9ca3af">{userAnalytics.oauthUsers} OAuth · {userAnalytics.emailPasswordUsers} email</span>
+          <span class="legend-item"><span class="legend-dot" style="background: var(--crimson)"></span> New signups</span>
+          <span class="legend-item" style="color: var(--ink-soft)">{userAnalytics.oauthUsers} OAuth · {userAnalytics.emailPasswordUsers} email</span>
         </div>
       </div>
     </div>
@@ -547,8 +547,8 @@
   {#snippet yAxis(maxVal: number, baseY: number, topY: number)}
     {#each [0, 0.5, 1] as frac}
       {@const y = baseY - frac * (baseY - topY)}
-      <line x1="50" y1={y} x2="650" y2={y} stroke="#4b5563" stroke-width="0.5" opacity="0.25" />
-      <text x="46" y={y + 3} fill="#9ca3af" font-size="9" text-anchor="end">{fmtAxis(maxVal * frac)}</text>
+      <line x1="50" y1={y} x2="650" y2={y} stroke="var(--ink-soft)" stroke-width="0.5" opacity="0.25" />
+      <text x="46" y={y + 3} fill="var(--ink-soft)" font-size="9" text-anchor="end">{fmtAxis(maxVal * frac)}</text>
     {/each}
   {/snippet}
 
@@ -556,7 +556,7 @@
     {@const traffic = dataset.slice(-rangeDays(graphRange))}
     {@const seg = trafficSegment}
     {@const isolated = seg !== "all"}
-    {@const COLOR_OWNER = "#a7f3d0"}
+    {@const COLOR_OWNER = "var(--crimson)"}
     {@const COLOR_BOTS  = "#fbbf24"}
     {@const COLOR_OTHER = "#60a5fa"}
     {@const segColor = seg === "bots" ? COLOR_BOTS : seg === "owner" ? COLOR_OWNER : COLOR_OTHER}
@@ -613,7 +613,7 @@
               {/if}
             {/if}
             {#if showLabel}
-              <text x={x} y={136} fill="#6b7280" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
+              <text x={x} y={136} fill="var(--ink-soft)" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
             {/if}
           {/each}
         </svg>
@@ -757,8 +757,8 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 0.75rem 1rem 2rem;
-    color: #e5e7eb;
-    font-family: "Courier New", monospace;
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
 
   .status-bar {
@@ -768,8 +768,8 @@
     flex-wrap: wrap;
     padding: 0.5rem 0;
     font-size: 0.8rem;
-    color: #6b7280;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.08);
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--rule);
     margin-bottom: 0.75rem;
   }
   .sync-pill {
@@ -781,7 +781,7 @@
     border: 1px solid;
     font-size: 0.75rem;
   }
-  .sync-ok { color: #a7f3d0; border-color: rgba(167, 243, 208, 0.4); }
+  .sync-ok { color: var(--crimson); border-color: var(--rule); }
   .sync-off { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
   .sync-dot {
     width: 6px; height: 6px; border-radius: 50%;
@@ -790,14 +790,14 @@
   .sync-ok .sync-dot { animation: pulse 2s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
   .version-pill {
-    color: #a7f3d0;
+    color: var(--crimson);
     padding: 0.1rem 0.4rem;
-    background: rgba(167, 243, 208, 0.08);
-    border: 1px solid rgba(167, 243, 208, 0.25);
+    background: var(--rule);
+    border: 1px solid var(--rule);
     border-radius: 3px;
   }
-  .session { color: #6b7280; }
-  .commit { color: #4b5563; }
+  .session { color: var(--ink-soft); }
+  .commit { color: var(--ink-soft); }
 
   .cards {
     display: grid;
@@ -806,8 +806,8 @@
     margin: 1rem 0;
   }
   .card {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.12);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 6px;
     padding: 1rem 1.15rem;
     text-decoration: none;
@@ -817,12 +817,12 @@
     transition: border-color 0.15s, background 0.15s;
   }
   .card:hover {
-    border-color: rgba(167, 243, 208, 0.35);
-    background: #161c24;
+    border-color: var(--rule);
+    background: var(--panel);
   }
   .card-title {
     font-size: 0.82rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin: 0;
@@ -830,13 +830,13 @@
   .card-stat {
     font-size: 2rem;
     font-weight: 700;
-    color: #e5e7eb;
+    color: var(--ink);
     line-height: 1;
   }
   .stat-label {
     font-size: 0.85rem;
     font-weight: 400;
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
   .card-detail {
     display: flex;
@@ -847,21 +847,21 @@
   }
   .card-sub {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .card-sub.blocker { color: #f87171; }
 
   .budget-bar {
     width: 100%;
     height: 6px;
-    background: rgba(167, 243, 208, 0.1);
+    background: var(--rule);
     border-radius: 3px;
     overflow: hidden;
     margin: 0.3rem 0;
   }
   .budget-fill {
     height: 100%;
-    background: #34d399;
+    background: var(--crimson);
     border-radius: 3px;
     transition: width 0.5s;
   }
@@ -878,14 +878,14 @@
     flex-wrap: wrap;
     margin: 1.5rem 0 0.5rem;
     padding: 0.5rem 0.75rem;
-    background: rgba(167, 243, 208, 0.04);
-    border: 1px solid rgba(167, 243, 208, 0.15);
+    background: var(--rule);
+    border: 1px solid var(--rule);
     border-radius: 4px;
   }
   .claim-ip-btn {
-    background: rgba(167, 243, 208, 0.12);
-    border: 1px solid rgba(167, 243, 208, 0.35);
-    color: #a7f3d0;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    color: var(--crimson);
     padding: 0.4rem 0.8rem;
     font-family: inherit;
     font-size: 0.78rem;
@@ -894,7 +894,7 @@
     transition: background 0.15s ease;
   }
   .claim-ip-btn:hover:not(:disabled) {
-    background: rgba(167, 243, 208, 0.22);
+    background: var(--rule);
   }
   .claim-ip-btn:disabled {
     opacity: 0.5;
@@ -902,7 +902,7 @@
   }
   .claim-ip-result {
     font-size: 0.78rem;
-    color: #d1d5db;
+    color: var(--ink);
   }
   .claim-ip-result code {
     background: rgba(0, 0, 0, 0.25);
@@ -912,13 +912,13 @@
   }
   .section-subtitle {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--ink-soft);
     font-weight: 400;
     margin-left: 0.5rem;
   }
   .users-chart {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.12);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 6px;
     padding: 1rem;
   }
@@ -931,7 +931,7 @@
     gap: 1.2rem;
     margin-top: 0.5rem;
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
   .legend-item {
     display: flex;
@@ -947,7 +947,7 @@
 
   .section-title {
     font-size: 0.82rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin: 1.5rem 0 0.5rem;
@@ -964,15 +964,15 @@
     padding: 0.25rem 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   }
-  .act-time { color: #4b5563; flex-shrink: 0; width: 3.5rem; }
-  .act-text { color: #d1d5db; }
+  .act-time { color: var(--ink-soft); flex-shrink: 0; width: 3.5rem; }
+  .act-text { color: var(--ink); }
 
   /* Usage vs Time Elapsed */
   .usage-bars {
     margin: 0.75rem 0;
     padding: 0.75rem 1rem;
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.1);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 6px;
   }
   .usage-row {
@@ -983,7 +983,7 @@
   }
   .usage-label {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     min-width: 6.5rem;
@@ -1001,26 +1001,26 @@
     transition: width 0.3s;
   }
   .usage-blue { background: #60a5fa; }
-  .usage-grey { background: #6b7280; }
+  .usage-grey { background: var(--ink-soft); }
   .usage-pct {
     font-size: 0.82rem;
     font-weight: 700;
-    color: #d1d5db;
+    color: var(--ink);
     min-width: 3rem;
     text-align: right;
   }
   .usage-note {
     font-size: 0.72rem;
-    color: #6b7280;
+    color: var(--ink-soft);
     text-align: right;
     margin-top: 0.3rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
   .usage-note.usage-ahead { color: #fbbf24; }
-  .usage-note.usage-behind { color: #a7f3d0; }
+  .usage-note.usage-behind { color: var(--crimson); }
   .usage-budget-hint {
-    color: #4b5563;
+    color: var(--ink-soft);
     font-weight: 400;
     text-transform: none;
     letter-spacing: normal;
@@ -1031,8 +1031,8 @@
   .history-chart {
     margin: 0.5rem 0 1rem;
     padding: 0.75rem 1rem;
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.1);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 6px;
   }
   .chart-legend-toggles {
@@ -1042,10 +1042,10 @@
     margin-bottom: 0.6rem;
   }
   .series-toggle {
-    background: #0d1117;
+    background: var(--panel);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 3px;
-    color: #6b7280;
+    color: var(--ink-soft);
     font-family: inherit;
     font-size: 0.75rem;
     font-weight: 600;
@@ -1086,7 +1086,7 @@
   }
   .series-max {
     font-size: 0.68rem;
-    color: #6b7280;
+    color: var(--ink-soft);
     font-weight: 400;
     text-transform: none;
     letter-spacing: normal;
@@ -1124,15 +1124,15 @@
   .ma-window-ctrl {
     margin-left: auto;
     font-size: 0.72rem;
-    color: #6b7280;
+    color: var(--ink-soft);
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
   }
   .ma-window-select {
-    background: #0d1117;
-    color: #d1d5db;
-    border: 1px solid rgba(167, 243, 208, 0.2);
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--rule);
     border-radius: 3px;
     padding: 0.15rem 0.3rem;
     font-family: inherit;
@@ -1144,9 +1144,9 @@
      with the section-subtitle line height. */
   .range-select {
     margin-left: 0.6rem;
-    background: #0d1117;
-    color: #d1d5db;
-    border: 1px solid rgba(167, 243, 208, 0.25);
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--rule);
     border-radius: 3px;
     padding: 0.18rem 0.4rem;
     font-family: inherit;
@@ -1165,7 +1165,7 @@
     align-items: center;
     gap: 0.2rem;
     font-size: 0.72rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
   .hour-bar-wrap {
     flex: 1 1 0;
@@ -1185,14 +1185,14 @@
   .hour-bar-wrap:hover .hour-bar { opacity: 1; background: #fbbf24; }
   .week-divider {
     flex: 0 0 1px;
-    background: rgba(167, 243, 208, 0.25);
+    background: var(--rule);
     height: 100%;
     margin: 0 3px;
   }
   .chart-legend {
     margin-top: 0.4rem;
     font-size: 0.7rem;
-    color: #4b5563;
+    color: var(--ink-soft);
     font-style: italic;
   }
 
@@ -1220,7 +1220,7 @@
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
-    color: #d1d5db;
+    color: var(--ink);
     font-size: 0.95rem;
     font-weight: 700;
     margin: 0 0 0.5rem;
@@ -1232,12 +1232,12 @@
     border-radius: 2px;
     flex: 0 0 auto;
   }
-  .overview-marker-active { background: #34d399; box-shadow: 0 0 6px rgba(52, 211, 153, 0.5); }
+  .overview-marker-active { background: var(--crimson); box-shadow: 0 0 6px var(--panel); }
   .overview-marker-deck   { background: #60a5fa; }
   .overview-count {
-    background: rgba(167, 243, 208, 0.12);
-    color: #a7f3d0;
-    border: 1px solid rgba(167, 243, 208, 0.3);
+    background: var(--rule);
+    color: var(--crimson);
+    border: 1px solid var(--rule);
     padding: 0.05rem 0.45rem;
     border-radius: 999px;
     font-size: 0.78rem;
@@ -1245,13 +1245,13 @@
   }
   .overview-count-zero {
     background: rgba(75, 85, 99, 0.2);
-    color: #6b7280;
+    color: var(--ink-soft);
     border-color: #374151;
   }
   .overview-count-live {
-    background: rgba(52, 211, 153, 0.15);
-    color: #34d399;
-    border-color: rgba(52, 211, 153, 0.4);
+    background: var(--panel);
+    color: var(--crimson);
+    border-color: var(--panel);
   }
   .overview-count-file {
     background: rgba(96, 165, 250, 0.12);
@@ -1268,12 +1268,12 @@
   .overview-link:hover { text-decoration: underline; }
   .overview-hint {
     margin-left: auto;
-    color: #6b7280;
+    color: var(--ink-soft);
     font-size: 0.78rem;
     font-weight: 400;
   }
   .overview-empty {
-    color: #6b7280;
+    color: var(--ink-soft);
     font-style: italic;
     font-size: 0.85rem;
     margin: 0.25rem 0 0;
@@ -1281,7 +1281,7 @@
   .overview-more {
     margin: 0.5rem 0 0;
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .overview-more a {
     color: #60a5fa;
@@ -1298,13 +1298,13 @@
     gap: 0.4rem;
   }
   .epic-card {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.1);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 4px;
     padding: 0.55rem 0.85rem;
   }
   .epic-active {
-    border-left: 3px solid #34d399;
+    border-left: 3px solid var(--crimson);
   }
   .epic-deck {
     border-left: 3px solid #60a5fa;
@@ -1322,12 +1322,12 @@
     min-width: 1.6rem;
   }
   .epic-id {
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .epic-title {
-    color: #e5e7eb;
+    color: var(--ink);
     font-size: 0.88rem;
     flex: 1 1 auto;
     min-width: 0;
@@ -1336,9 +1336,9 @@
     white-space: nowrap;
   }
   .epic-pct {
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-size: 0.78rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     flex-shrink: 0;
   }
   .epic-meta {
@@ -1352,12 +1352,12 @@
     font-size: 0.74rem;
     padding: 0.05rem 0.4rem;
     border-radius: 2px;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   .epic-stat-active {
-    background: rgba(52, 211, 153, 0.12);
-    color: #34d399;
-    border: 1px solid rgba(52, 211, 153, 0.3);
+    background: var(--panel);
+    color: var(--crimson);
+    border: 1px solid var(--panel);
   }
   .epic-stat-review {
     background: rgba(251, 191, 36, 0.1);
@@ -1370,7 +1370,7 @@
     border: 1px solid rgba(96, 165, 250, 0.3);
   }
   .epic-stat-total {
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .epic-leads {
     display: inline-flex;
@@ -1393,8 +1393,8 @@
     margin: 0.75rem 0;
   }
   .ms-card {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.12);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 6px;
     padding: 0.75rem 1rem;
   }
@@ -1406,7 +1406,7 @@
   }
   .ms-name {
     font-size: 0.85rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-weight: 700;
@@ -1414,7 +1414,7 @@
   .ms-pct {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #e5e7eb;
+    color: var(--ink);
   }
   .ms-bar {
     height: 6px;
@@ -1425,7 +1425,7 @@
   }
   .ms-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #34d399, #a7f3d0);
+    background: linear-gradient(90deg, var(--crimson), var(--crimson));
     border-radius: 3px;
     transition: width 0.3s;
   }
@@ -1433,7 +1433,7 @@
     display: flex;
     gap: 0.6rem;
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--ink-soft);
   }
 
   /* Unscoped milestones (Alpha / Beta before they're broken into epics).
@@ -1441,19 +1441,19 @@
      meaningful yet" — visible in the progression but obviously not
      tracking live work. */
   .ms-card-unscoped {
-    border-color: rgba(156, 163, 175, 0.18);
+    border-color: var(--rule);
     background: rgba(18, 22, 30, 0.5);
   }
   .ms-card-unscoped .ms-name {
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
   .ms-scope-tag {
     font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #9ca3af;
-    border: 1px dashed rgba(156, 163, 175, 0.45);
+    color: var(--ink-soft);
+    border: 1px dashed var(--rule);
     padding: 0.1rem 0.45rem;
     border-radius: 2px;
   }
@@ -1461,14 +1461,14 @@
     background: rgba(255, 255, 255, 0.03);
   }
   .ms-bar-fill-muted {
-    background: rgba(156, 163, 175, 0.25);
+    background: var(--rule);
   }
   .ms-detail-muted {
-    color: rgba(156, 163, 175, 0.7);
+    color: var(--rule);
   }
   .ms-scope-hint {
     font-style: italic;
-    color: rgba(156, 163, 175, 0.55);
+    color: var(--rule);
   }
 
   .estimation {
@@ -1485,16 +1485,16 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
   }
   .est-ms {
-    color: #a7f3d0;
+    color: var(--crimson);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-weight: 700;
     font-size: 0.78rem;
     min-width: 6rem;
   }
-  .est-detail { color: #9ca3af; }
-  .est-hours { color: #6b7280; }
-  .est-pct { margin-left: auto; color: #d1d5db; font-weight: 700; }
+  .est-detail { color: var(--ink-soft); }
+  .est-hours { color: var(--ink-soft); }
+  .est-pct { margin-left: auto; color: var(--ink); font-weight: 700; }
 
   .legend-gate {
     margin: 1.5rem 0 0;
@@ -1502,7 +1502,7 @@
     border: 1px dashed rgba(249, 115, 22, 0.4);
     border-radius: 4px;
     font-size: 0.82rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -1518,15 +1518,15 @@
   .devices-panel {
     margin: 1rem auto 0;
     max-width: 700px;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   .devices-title {
-    color: #a7f3d0;
+    color: var(--crimson);
     font-size: 0.95rem;
     margin: 0 0 0.6rem;
   }
   .devices-sub {
-    color: #6b7280;
+    color: var(--ink-soft);
     font-size: 0.72rem;
     font-weight: normal;
   }
@@ -1539,7 +1539,7 @@
     font-size: 0.8rem;
   }
   .device-name {
-    color: #cbd5e1;
+    color: var(--ink);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1556,6 +1556,6 @@
   }
   .device-n {
     text-align: right;
-    color: rgba(224, 231, 255, 0.7);
+    color: var(--ink-soft);
   }
 </style>

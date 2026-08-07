@@ -417,28 +417,28 @@
 {/if}
 
 <style>
-  .snp { background: #0d1320; border: 1px solid rgba(167,243,208,0.14); border-radius: 8px; padding: 1.25rem 1.4rem 1.5rem; margin: 0 auto 1.5rem; max-width: 1100px; font-family: "Courier New", monospace; color: #cdd6e4; }
-  .snp-head h2 { margin: 0 0 0.35rem; color: #a7f3d0; font-size: 1.1rem; letter-spacing: 0.02em; }
+  .snp { background: #0d1320; border: 1px solid var(--rule); border-radius: 8px; padding: 1.25rem 1.4rem 1.5rem; margin: 0 auto 1.5rem; max-width: 1100px; font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; color: #cdd6e4; }
+  .snp-head h2 { margin: 0 0 0.35rem; color: var(--crimson); font-size: 1.1rem; letter-spacing: 0.02em; }
   .priv { font-size: 0.62rem; color: #6f7c8d; background: rgba(148,163,184,0.12); padding: 0.1rem 0.45rem; border-radius: 999px; vertical-align: middle; }
   .snp-sub { margin: 0 0 0.6rem; font-size: 0.78rem; line-height: 1.5; color: #8b97a8; }
   .snp-msg { font-size: 0.78rem; color: #8b97a8; margin: 0.5rem 0 0; line-height: 1.5; }
   .snp-msg.err { color: #fbbf24; }
-  .snp-msg code, .snp-sub code { color: #a7f3d0; background: rgba(167,243,208,0.08); padding: 0.05rem 0.3rem; border-radius: 3px; overflow-wrap: anywhere; }
+  .snp-msg code, .snp-sub code { color: var(--crimson); background: var(--rule); padding: 0.05rem 0.3rem; border-radius: 3px; overflow-wrap: anywhere; }
 
   .sug-list { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
-  .sug { display: flex; gap: 0.7rem; background: #0f1626; border: 1px solid rgba(255,255,255,0.05); border-left: 2px solid #a7f3d0; border-radius: 5px; padding: 0.55rem 0.7rem; }
+  .sug { display: flex; gap: 0.7rem; background: #0f1626; border: 1px solid rgba(255,255,255,0.05); border-left: 2px solid var(--crimson); border-radius: 5px; padding: 0.55rem 0.7rem; }
   .sug.needs-visual { border-left-color: #fbbf24; }
   .sug-rank { font-size: 0.85rem; color: #6f7c8d; flex: none; width: 1.2rem; text-align: right; line-height: 1.4; }
   .sug-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 0.3rem; }
   .sug-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem; }
   .sug-title { font-size: 0.82rem; color: #e2e8f0; text-decoration: none; overflow-wrap: anywhere; }
-  .sug-title:hover { color: #a7f3d0; }
+  .sug-title:hover { color: var(--crimson); }
   .score { font-size: 0.62rem; color: #6f7c8d; margin-left: auto; flex: none; }
   .aud-badge { font-size: 0.6rem; padding: 0.08rem 0.4rem; border-radius: 999px; flex: none; white-space: nowrap; }
   .aud-players { background: rgba(240,171,252,0.13); color: #f0abfc; }
   .aud-gamedev { background: rgba(125,211,252,0.13); color: #7dd3fc; }
-  .aud-ai-dev { background: rgba(167,243,208,0.13); color: #a7f3d0; }
-  .aud-general { background: rgba(148,163,184,0.13); color: #94a3b8; }
+  .aud-ai-dev { background: var(--rule); color: var(--crimson); }
+  .aud-general { background: rgba(148,163,184,0.13); color: var(--ink-soft); }
 
   .sug-venues { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
   .lbl { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6f7c8d; }
@@ -447,12 +447,12 @@
   .chip-age { color: #6f7c8d; margin-left: 0.3rem; font-size: 0.6rem; }
 
   .sug-why { display: flex; flex-wrap: wrap; gap: 0.3rem; }
-  .why, .vis { font-size: 0.63rem; padding: 0.08rem 0.4rem; border-radius: 999px; background: rgba(148,163,184,0.12); color: #94a3b8; overflow-wrap: anywhere; }
+  .why, .vis { font-size: 0.63rem; padding: 0.08rem 0.4rem; border-radius: 999px; background: rgba(148,163,184,0.12); color: var(--ink-soft); overflow-wrap: anywhere; }
   .why-stale { background: rgba(251,146,60,0.14); color: #fdba74; }
-  .why-warm { background: rgba(148,163,184,0.13); color: #94a3b8; }
-  .why-good { background: rgba(110,231,183,0.13); color: #6ee7b7; }
+  .why-warm { background: rgba(148,163,184,0.13); color: var(--ink-soft); }
+  .why-good { background: rgba(110,231,183,0.13); color: var(--crimson); }
   .why-warn { background: rgba(251,191,36,0.14); color: #fbbf24; }
-  .vis-ok { background: rgba(110,231,183,0.13); color: #6ee7b7; }
+  .vis-ok { background: rgba(110,231,183,0.13); color: var(--crimson); }
   .vis-needed { background: rgba(251,191,36,0.14); color: #fbbf24; }
 
   .snp-block { margin-top: 1.3rem; }

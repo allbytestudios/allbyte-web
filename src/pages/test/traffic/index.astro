@@ -1,32 +1,21 @@
 ---
-import BaseLayout from "../../../layouts/BaseLayout.astro";
-import PageHeader from "../../../components/PageHeader.astro";
-import Footer from "../../../components/Footer.astro";
+import ConsoleLayout from "../../../layouts/ConsoleLayout.astro";
 import TrafficApp from "../../../components/TrafficApp.svelte";
-import TestNav from "../../../components/TestNav.svelte";
 ---
 
-<BaseLayout
+<ConsoleLayout
   title="Site traffic — Dev Console — AllByte Studios"
   description="Real-user page views and navigation flow, aggregated from the CDN access logs (admin only)."
+
+  active="traffic"
 >
-  <PageHeader
-    theme="engine"
-    title="Dev Console"
-    backHref="/"
-    backLabel="Home"
-    breadcrumbs={[{ href: "/", label: "Home" }]}
-  />
   <main class="traffic-shell">
-    <TestNav active="traffic" client:load />
     <TrafficApp client:only="svelte" />
-  </main>
-  <Footer theme="engine" />
-</BaseLayout>
+</ConsoleLayout>
 
 <style>
   .traffic-shell {
-    background: #0a0e17;
+    background: var(--panel);
     min-height: calc(100vh - 160px);
   }
 </style>

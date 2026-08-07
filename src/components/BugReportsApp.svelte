@@ -154,32 +154,32 @@
 
 <style>
   .reports {
-    background: #0a0e17;
-    color: #e0e7ff;
-    font-family: "Courier New", monospace;
+    background: var(--panel);
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     padding: 1.25rem;
     max-width: 1000px;
     margin: 0 auto;
   }
-  .muted { color: rgba(224, 231, 255, 0.55); }
+  .muted { color: var(--ink-soft); }
   .muted.small { font-size: 0.75rem; }
   .err { color: #f87171; }
-  code { background: rgba(167, 243, 208, 0.1); padding: 0 0.3rem; border-radius: 3px; }
+  code { background: var(--rule); padding: 0 0.3rem; border-radius: 3px; }
   .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
   .btn {
-    background: transparent; color: #a7f3d0; border: 1px solid rgba(167, 243, 208, 0.35);
+    background: transparent; color: var(--crimson); border: 1px solid var(--rule);
     border-radius: 4px; padding: 0.3rem 0.7rem; font-family: inherit; cursor: pointer;
     text-decoration: none; display: inline-block; font-size: 0.8rem;
   }
-  .btn:hover { background: rgba(167, 243, 208, 0.1); }
+  .btn:hover { background: var(--rule); }
 
   .rpt {
-    background: #131a26; border: 1px solid rgba(167, 243, 208, 0.12);
+    background: #131a26; border: 1px solid var(--rule);
     border-radius: 6px; padding: 0.85rem 1rem; margin-bottom: 0.85rem;
   }
   .rpt-head {
     display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;
-    font-size: 0.76rem; color: rgba(224, 231, 255, 0.6); margin-bottom: 0.5rem;
+    font-size: 0.76rem; color: var(--ink-soft); margin-bottom: 0.5rem;
   }
   .cat {
     text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700;
@@ -187,10 +187,10 @@
     border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 3px; padding: 0.05rem 0.4rem;
   }
   .status {
-    border-radius: 3px; padding: 0.05rem 0.4rem; border: 1px solid rgba(167, 243, 208, 0.25);
+    border-radius: 3px; padding: 0.05rem 0.4rem; border: 1px solid var(--rule);
   }
-  .status-new { color: #a7f3d0; background: rgba(167, 243, 208, 0.1); }
-  .when { color: rgba(224, 231, 255, 0.55); }
+  .status-new { color: var(--crimson); background: var(--rule); }
+  .when { color: var(--ink-soft); }
   .who { color: #60a5fa; }
   .chip {
     margin-left: auto; color: #c084fc; background: rgba(192, 132, 252, 0.1);
@@ -198,21 +198,21 @@
   }
   .rpt-text {
     white-space: pre-wrap; word-break: break-word; margin: 0 0 0.6rem;
-    font-family: system-ui, sans-serif; font-size: 0.95rem; line-height: 1.5; color: #e0e7ff;
+    font-family: system-ui, sans-serif; font-size: 0.95rem; line-height: 1.5; color: var(--ink);
   }
   .rpt-meta {
     display: flex; flex-wrap: wrap; gap: 0.4rem 1rem;
-    font-size: 0.74rem; color: rgba(224, 231, 255, 0.5); margin-bottom: 0.5rem;
+    font-size: 0.74rem; color: var(--ink-soft); margin-bottom: 0.5rem;
   }
-  .rpt-meta b { color: #a7f3d0; font-weight: 700; }
+  .rpt-meta b { color: var(--crimson); font-weight: 700; }
   .rpt-meta .url { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
   .rpt-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
   .snap { font-size: 0.76rem; }
-  .logs { font-size: 0.76rem; color: rgba(224, 231, 255, 0.7); }
-  .logs summary { cursor: pointer; color: #a7f3d0; }
+  .logs { font-size: 0.76rem; color: var(--ink-soft); }
+  .logs summary { cursor: pointer; color: var(--crimson); }
   .logs pre {
-    margin: 0.4rem 0 0; padding: 0.6rem; background: #0a0e17;
-    border: 1px solid rgba(167, 243, 208, 0.1); border-radius: 4px;
+    margin: 0.4rem 0 0; padding: 0.6rem; background: var(--panel);
+    border: 1px solid var(--rule); border-radius: 4px;
     overflow-x: auto; max-height: 240px; font-size: 0.72rem; line-height: 1.45;
   }
 </style>

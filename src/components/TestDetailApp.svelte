@@ -170,15 +170,15 @@
     max-width: 900px;
     margin: 0 auto;
     padding: 1rem 1.25rem 3rem;
-    color: #e5e7eb;
-    font-family: "Courier New", monospace;
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   .loading,
   .error,
   .gate {
     text-align: center;
     padding: 3rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
   }
   .error h2 { color: #fca5a5; }
   .gate h2 {
@@ -188,13 +188,13 @@
     font-size: 1.05rem;
   }
   .gate strong { color: #fbbf24; }
-  .gate a { color: #a7f3d0; text-decoration: none; }
+  .gate a { color: var(--crimson); text-decoration: none; }
   .gate a:hover { text-decoration: underline; }
   .gate .gate-link {
     display: inline-block;
     margin: 0.5rem 0;
     padding: 0.5rem 1rem;
-    border: 1px solid rgba(167, 243, 208, 0.45);
+    border: 1px solid var(--rule);
     border-radius: 4px;
   }
   .breadcrumb {
@@ -202,16 +202,16 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.8rem;
-    color: #9ca3af;
+    color: var(--ink-soft);
     margin-bottom: 0.4rem;
   }
-  .breadcrumb a { color: #a7f3d0; text-decoration: none; }
+  .breadcrumb a { color: var(--crimson); text-decoration: none; }
   .breadcrumb a:hover { text-decoration: underline; }
-  .sep { color: #4b5563; }
-  .leaf-path { color: #9ca3af; }
+  .sep { color: var(--ink-soft); }
+  .leaf-path { color: var(--ink-soft); }
   .test-name {
     font-size: 1.4rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     margin: 0.3rem 0 0.8rem;
     word-break: break-all;
   }
@@ -220,7 +220,7 @@
     align-items: center;
     gap: 0.6rem;
     padding: 0.5rem 0.8rem;
-    background: #12161e;
+    background: var(--panel);
     border-radius: 4px;
     font-size: 0.9rem;
   }
@@ -229,10 +229,10 @@
     height: 14px;
     border-radius: 50%;
   }
-  .dot-pass { background: #a7f3d0; }
+  .dot-pass { background: var(--crimson); }
   .dot-fail { background: #f87171; }
   .dot-xfail { background: transparent; border: 2px solid #fbbf24; }
-  .dot-skip { background: transparent; border: 2px solid #6b7280; }
+  .dot-skip { background: transparent; border: 2px solid var(--ink-soft); }
   .dot-unknown { background: transparent; border: 2px dashed rgba(255, 255, 255, 0.25); }
   .status-label {
     text-transform: uppercase;
@@ -240,15 +240,15 @@
     font-size: 0.75rem;
     letter-spacing: 0.1em;
   }
-  .status-pass { color: #a7f3d0; }
+  .status-pass { color: var(--crimson); }
   .status-fail { color: #fca5a5; }
   .status-xfail { color: #fbbf24; }
-  .status-skip, .status-unknown { color: #9ca3af; }
-  .last-run { color: #9ca3af; font-size: 0.82rem; }
+  .status-skip, .status-unknown { color: var(--ink-soft); }
+  .last-run { color: var(--ink-soft); font-size: 0.82rem; }
   .last-run.never { font-style: italic; }
   .description {
     margin: 1rem 0;
-    color: #d1d5db;
+    color: var(--ink);
     font-size: 0.95rem;
     line-height: 1.5;
     font-style: italic;
@@ -256,29 +256,29 @@
   .section {
     margin-top: 1.5rem;
     padding-top: 1rem;
-    border-top: 1px solid rgba(167, 243, 208, 0.1);
+    border-top: 1px solid var(--rule);
   }
   .section h2 {
     font-size: 0.85rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin: 0 0 0.6rem;
   }
   .screenshot {
     max-width: 100%;
-    border: 1px solid rgba(167, 243, 208, 0.25);
+    border: 1px solid var(--rule);
     border-radius: 4px;
     background: #000;
   }
   .path {
     font-size: 0.72rem;
-    color: #6b7280;
+    color: var(--ink-soft);
     margin: 0.3rem 0 0;
     word-break: break-all;
   }
   .empty {
-    color: #6b7280;
+    color: var(--ink-soft);
     font-style: italic;
     font-size: 0.85rem;
   }
@@ -290,11 +290,11 @@
     font-size: 0.85rem;
   }
   dt {
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-weight: 400;
   }
   dd {
-    color: #e5e7eb;
+    color: var(--ink);
     margin: 0;
     word-break: break-word;
   }
@@ -320,7 +320,7 @@
     font-size: 0.85rem;
   }
   .k {
-    color: #6b7280;
+    color: var(--ink-soft);
     text-transform: uppercase;
     font-size: 0.65rem;
     letter-spacing: 0.08em;

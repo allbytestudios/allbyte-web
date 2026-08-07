@@ -209,13 +209,13 @@
 
   // --- filter helpers ---
   const STATUS_CHIPS = [
-    { key: "passing", label: "pass", color: "#a7f3d0" },
+    { key: "passing", label: "pass", color: "var(--crimson)" },
     { key: "failing", label: "fail", color: "#f87171" },
     { key: "xfail", label: "xfail", color: "#fbbf24" },
     { key: "xpass", label: "xpass", color: "#fbbf24" },
-    { key: "skipped", label: "skip", color: "#9ca3af" },
-    { key: "unknown", label: "unknown", color: "#6b7280" },
-    { key: "running", label: "running", color: "#a7f3d0" },
+    { key: "skipped", label: "skip", color: "var(--ink-soft)" },
+    { key: "unknown", label: "unknown", color: "var(--ink-soft)" },
+    { key: "running", label: "running", color: "var(--crimson)" },
   ] as const;
 
   function toggleStatus(key: string) {
@@ -296,7 +296,7 @@
           <div class="ov-experts">
             {#each Object.entries(dashboard.experts) as [id, ex]}
               {@const meta = EXPERT_META[id]}
-              <span class="ov-expert" style="color: {meta?.color ?? '#9ca3af'}">
+              <span class="ov-expert" style="color: {meta?.color ?? 'var(--ink-soft)'}">
                 <span class="ov-dot ov-dot-{ex.status === 'active' || ex.status === 'investigating' ? 'active' : 'idle'}"></span>
                 {meta?.label ?? id}
               </span>
@@ -314,7 +314,7 @@
             {#each ["P0", "P1", "P2", "P3"] as p}
               {@const count = ticketsData.tickets.filter(t => t.priority === p).length}
               {#if count > 0}
-                <span class="ov-priority" style="color: {PRIORITY_META[p as keyof typeof PRIORITY_META]?.color ?? '#9ca3af'}">
+                <span class="ov-priority" style="color: {PRIORITY_META[p as keyof typeof PRIORITY_META]?.color ?? 'var(--ink-soft)'}">
                   {p} {count}
                 </span>
               {/if}
@@ -438,7 +438,7 @@
     max-width: 1600px;
     margin: 0 auto;
     padding: 0.75rem 1rem 2rem;
-    color: #e5e7eb;
+    color: var(--ink);
   }
   .error-banner {
     background: rgba(248, 113, 113, 0.1);
@@ -447,19 +447,19 @@
     padding: 0.75rem 1rem;
     margin-bottom: 1rem;
     color: #fca5a5;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.85rem;
   }
   .gate-card {
     max-width: 640px;
     margin: 4rem auto;
     padding: 2rem 2.25rem;
-    background: #12161e;
+    background: var(--panel);
     border: 1px solid rgba(251, 191, 36, 0.4);
     border-radius: 6px;
     text-align: center;
-    font-family: "Courier New", monospace;
-    color: #d1d5db;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    color: var(--ink);
   }
   .overview-cards {
     display: grid;
@@ -468,8 +468,8 @@
     margin: 1rem 0;
   }
   .overview-card {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.12);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 4px;
     padding: 0.85rem 1rem;
     text-decoration: none;
@@ -479,13 +479,13 @@
     gap: 0.4rem;
   }
   .overview-card:hover {
-    border-color: rgba(167, 243, 208, 0.35);
-    background: #161c24;
+    border-color: var(--rule);
+    background: var(--panel);
   }
   .ov-title {
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.85rem;
-    color: #a7f3d0;
+    color: var(--crimson);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin: 0;
@@ -499,7 +499,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.78rem;
   }
   .ov-dot {
@@ -508,21 +508,21 @@
     border-radius: 50%;
     flex-shrink: 0;
   }
-  .ov-dot-active { background: #a7f3d0; box-shadow: 0 0 4px rgba(167, 243, 208, 0.5); }
-  .ov-dot-idle { background: #4b5563; }
+  .ov-dot-active { background: var(--crimson); box-shadow: 0 0 4px var(--rule); }
+  .ov-dot-idle { background: var(--ink-soft); }
   .ov-priorities {
     display: flex;
     gap: 0.5rem;
   }
   .ov-priority {
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.82rem;
     font-weight: 700;
   }
   .ov-sub {
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   @media (max-width: 640px) {
     .overview-cards { grid-template-columns: 1fr; }
@@ -534,12 +534,12 @@
     max-width: 760px;
     margin: 2rem auto;
     padding: 1.75rem 2rem;
-    background: #12161e;
+    background: var(--panel);
     border: 1px dashed rgba(251, 191, 36, 0.45);
     border-radius: 6px;
     text-align: center;
-    font-family: "Courier New", monospace;
-    color: #d1d5db;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    color: var(--ink);
     line-height: 1.55;
   }
   .deep-gate h2 {
@@ -563,13 +563,13 @@
   }
   .deep-gate-sub {
     font-size: 0.78rem;
-    color: #6b7280;
+    color: var(--ink-soft);
   }
   .deep-loading {
     text-align: center;
     padding: 2rem 1rem;
-    color: #6b7280;
-    font-family: "Courier New", monospace;
+    color: var(--ink-soft);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.85rem;
   }
   .gate-card h2 {
@@ -586,13 +586,13 @@
   }
   .gate-card code {
     background: rgba(255, 255, 255, 0.05);
-    color: #a7f3d0;
+    color: var(--crimson);
     padding: 0.1rem 0.35rem;
     border-radius: 2px;
     font-size: 0.85rem;
   }
   .gate-card strong { color: #fbbf24; }
-  .gate-loading { color: #9ca3af; font-style: italic; }
+  .gate-loading { color: var(--ink-soft); font-style: italic; }
   .gate-cta { margin-top: 1.4rem; }
   .gate-link {
     display: inline-block;
@@ -611,9 +611,9 @@
   }
   .loading {
     text-align: center;
-    color: #9ca3af;
+    color: var(--ink-soft);
     padding: 3rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   .summary {
     display: flex;
@@ -621,13 +621,13 @@
     gap: 0.4rem;
     flex-wrap: wrap;
     padding: 0.5rem 0;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.85rem;
-    color: #d1d5db;
+    color: var(--ink);
   }
-  .summary strong { color: #a7f3d0; }
-  .sep { color: #4b5563; }
-  .commit { color: #9ca3af; }
+  .summary strong { color: var(--crimson); }
+  .sep { color: var(--ink-soft); }
+  .commit { color: var(--ink-soft); }
 
   .sync-pill {
     display: inline-flex;
@@ -648,9 +648,9 @@
     flex-shrink: 0;
   }
   .sync-live {
-    color: #a7f3d0;
-    border-color: rgba(167, 243, 208, 0.4);
-    background: rgba(167, 243, 208, 0.08);
+    color: var(--crimson);
+    border-color: var(--rule);
+    background: var(--rule);
   }
   .sync-live .sync-dot {
     animation: sync-pulse 2s ease-in-out infinite;
@@ -666,9 +666,9 @@
     background: rgba(248, 113, 113, 0.12);
   }
   .sync-unknown {
-    color: #9ca3af;
-    border-color: rgba(156, 163, 175, 0.35);
-    background: rgba(156, 163, 175, 0.06);
+    color: var(--ink-soft);
+    border-color: var(--rule);
+    background: var(--rule);
   }
   @keyframes sync-pulse {
     0%, 100% { opacity: 1; }
@@ -708,17 +708,17 @@
   .search {
     flex: 1 1 250px;
     max-width: 400px;
-    background: #1a1e26;
-    border: 1px solid rgba(167, 243, 208, 0.25);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 4px;
     padding: 0.45rem 0.7rem;
-    color: #e5e7eb;
-    font-family: "Courier New", monospace;
+    color: var(--ink);
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.85rem;
   }
   .search:focus {
     outline: none;
-    border-color: rgba(167, 243, 208, 0.6);
+    border-color: var(--rule);
   }
   .chips {
     display: flex;
@@ -727,18 +727,18 @@
   }
   .chip {
     background: transparent;
-    border: 1px solid rgba(156, 163, 175, 0.25);
-    color: #9ca3af;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
     padding: 0.25rem 0.6rem;
     border-radius: 12px;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.72rem;
     cursor: pointer;
     transition: all 0.1s;
   }
   .chip:hover {
-    border-color: var(--c, rgba(167, 243, 208, 0.5));
-    color: var(--c, #e5e7eb);
+    border-color: var(--c, var(--rule));
+    color: var(--c, var(--ink));
   }
   .chip.active {
     background: color-mix(in srgb, var(--c) 15%, transparent);
@@ -755,7 +755,7 @@
     display: none;
     gap: 0.4rem;
     margin-bottom: 0.6rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+    border-bottom: 1px solid var(--rule);
     /* Tab row scrolls itself on narrow phones rather than widening the page. */
     overflow-x: auto;
     scrollbar-width: none;
@@ -765,9 +765,9 @@
     flex: none;
     background: transparent;
     border: none;
-    color: #9ca3af;
+    color: var(--ink-soft);
     padding: 0.5rem 0.9rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
@@ -776,10 +776,10 @@
     align-items: center;
     gap: 0.4rem;
   }
-  .tab:hover { color: #e5e7eb; }
+  .tab:hover { color: var(--ink); }
   .tab.active {
-    color: #a7f3d0;
-    border-bottom-color: #a7f3d0;
+    color: var(--crimson);
+    border-bottom-color: var(--crimson);
   }
   .tab-count {
     font-size: 0.7rem;
@@ -796,8 +796,8 @@
     gap: 1rem;
   }
   .column {
-    background: #12161e;
-    border: 1px solid rgba(167, 243, 208, 0.12);
+    background: var(--panel);
+    border: 1px solid var(--rule);
     border-radius: 6px;
     padding: 0.75rem 0.6rem;
     min-width: 0;
@@ -808,32 +808,32 @@
     gap: 0.5rem;
     padding-bottom: 0.5rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(167, 243, 208, 0.15);
+    border-bottom: 1px solid var(--rule);
   }
   .col-title {
-    color: var(--tier-color, #a7f3d0);
+    color: var(--tier-color, var(--crimson));
     font-weight: 700;
     font-size: 1rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
-  .col-sub { color: #6b7280; font-size: 0.75rem; font-family: "Courier New", monospace; }
+  .col-sub { color: var(--ink-soft); font-size: 0.75rem; font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif; }
   .col-count {
     margin-left: auto;
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-size: 0.8rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   .empty-column {
     padding: 2rem 1rem;
     text-align: center;
-    color: #9ca3af;
+    color: var(--ink-soft);
     font-size: 0.82rem;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   }
   .empty-column p { margin: 0.3rem 0; }
-  .empty-column .muted { color: #6b7280; font-size: 0.75rem; }
+  .empty-column .muted { color: var(--ink-soft); font-size: 0.75rem; }
   .tree {
     max-height: calc(100vh - 280px);
     overflow-y: auto;

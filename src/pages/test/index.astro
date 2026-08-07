@@ -1,33 +1,14 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import PageHeader from "../../components/PageHeader.astro";
-import Footer from "../../components/Footer.astro";
+import ConsoleLayout from "../../layouts/ConsoleLayout.astro";
 import ConsoleOverview from "../../components/ConsoleOverview.svelte";
-import TestNav from "../../components/TestNav.svelte";
 ---
 
-<BaseLayout
+<ConsoleLayout
   title="Dev Console — AllByte Studios"
   description="Live development console for Chronicles of Nesis — tests, agents, tickets, and milestones."
->
-  <PageHeader
-    theme="engine"
-    title="Dev Console"
-    backHref="/"
-    backLabel="Home"
-    breadcrumbs={[{ href: "/", label: "Home" }]}
-  />
-  <main class="console-page">
-    <TestNav active="roadmap" client:load />
-    <ConsoleOverview client:only="svelte" />
-  </main>
-  <Footer theme="engine" />
-</BaseLayout>
 
-<style>
-  .console-page {
-    background: #0a0e17;
-    min-height: calc(100vh - 160px);
-    padding: 0.5rem 0 2rem;
-  }
-</style>
+  active="roadmap"
+>
+  <ConsoleOverview client:only="svelte" />
+</ConsoleLayout>
+

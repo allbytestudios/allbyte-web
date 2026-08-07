@@ -27,7 +27,7 @@
   // Validated against the #0d1320 panel surface: CVD ΔE 27.7 (protan) /
   // 18.3 (tritan) and contrast ≥ 3:1 both pass. They sit just above the
   // dark-mode lightness band, which is the console's existing house
-  // brightness (cf. #a7f3d0 / #60a5fa in the traffic charts) — identity is
+  // brightness (cf. var(--crimson) / #60a5fa in the traffic charts) — identity is
   // never colour-alone here anyway: every series is legended, direct-labelled
   // on the channel bars, and spelled out in the log.
   const COLOR_AUTO = "#a78bfa";
@@ -190,7 +190,7 @@
             {@const y = PLOT_BOT - t * scaleY}
             <line x1={PLOT_L} x2={VB_W - PLOT_R} y1={y} y2={y}
                   stroke="rgba(148,163,184,0.16)" stroke-width="1" />
-            <text x={PLOT_L - 6} y={y + 3} fill="#6b7280" font-size="9" text-anchor="end">{t}</text>
+            <text x={PLOT_L - 6} y={y + 3} fill="var(--ink-soft)" font-size="9" text-anchor="end">{t}</text>
           {/each}
           {#each days as d, i}
             {@const x = PLOT_L + i * stepX + stepX / 2}
@@ -210,7 +210,7 @@
                     width={barW} height={manH} fill={COLOR_MANUAL} rx="2"><title>{tip}</title></rect>
             {/if}
             {#if (days.length - 1 - i) % labelEvery === 0}
-              <text x={x} y={132} fill="#6b7280" font-size="9" text-anchor="middle"
+              <text x={x} y={132} fill="var(--ink-soft)" font-size="9" text-anchor="middle"
                 >{shortDate(d.date)}</text
               >
             {/if}
@@ -288,17 +288,17 @@
 <style>
   .mhp {
     background: #0d1320;
-    border: 1px solid rgba(167, 243, 208, 0.14);
+    border: 1px solid var(--rule);
     border-radius: 8px;
     padding: 1.25rem 1.4rem 1.5rem;
     margin: 0 auto 1.5rem;
     max-width: 1100px;
-    font-family: "Courier New", monospace;
+    font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     color: #cdd6e4;
   }
-  .mhp-head h2 { margin: 0 0 0.35rem; color: #a7f3d0; font-size: 1.1rem; letter-spacing: 0.02em; }
+  .mhp-head h2 { margin: 0 0 0.35rem; color: var(--crimson); font-size: 1.1rem; letter-spacing: 0.02em; }
   .mhp-sub { margin: 0 0 0.6rem; font-size: 0.78rem; line-height: 1.5; color: #8b97a8; }
-  .mhp-sub code { color: #a7f3d0; background: rgba(167, 243, 208, 0.08); padding: 0.05rem 0.3rem; border-radius: 3px; overflow-wrap: anywhere; }
+  .mhp-sub code { color: var(--crimson); background: var(--rule); padding: 0.05rem 0.3rem; border-radius: 3px; overflow-wrap: anywhere; }
   .mhp-stats { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; font-size: 0.75rem; color: #9aa6b6; }
   .mhp-stats strong { color: #e2e8f0; font-weight: 700; }
   .mhp-stats .muted { color: #6f7c8d; }
@@ -338,7 +338,7 @@
   .log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
   .log-day { background: #0f1626; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 5px; padding: 0.45rem 0.6rem; }
   .log-date { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; margin-bottom: 0.3rem; }
-  .ld-iso { color: #a7f3d0; font-size: 0.76rem; }
+  .ld-iso { color: var(--crimson); font-size: 0.76rem; }
   .ld-ago, .ld-n { color: #6f7c8d; font-size: 0.65rem; }
   .log-entries { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
   .log-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem; font-size: 0.72rem; }

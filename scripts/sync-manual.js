@@ -45,7 +45,6 @@ if (!existsSync(SRC)) {
 const TITLE_RULES = [
   [/prolog|story/i, "story"],
   [/cast|character/i, "cast"],
-  [/difficult/i, "difficulty"],
   [/control/i, "controls"],
   [/screen|hud/i, "screen"],
   [/explor/i, "exploring"],
@@ -73,7 +72,10 @@ function readMd(rel) {
   return { body: raw.slice(m ? m[0].length : 0).trim(), key: (raw.match(/(?:^|\n)key:\s*["']?([\w-]+)["']?/) || [])[1] };
 }
 const bodies = {};
-for (const f of ["controls", "screen", "exploring", "battle", "status_damage", "skills", "growth", "items", "menus", "hints", "story", "difficulty"]) {
+// "difficulty" intentionally absent: the game is pinned to Medium and the
+// difficulty track is dormant (owner 2026-08-07), so the manual no longer
+// carries that chapter. Re-add here (and to TITLE_RULES) if it ever returns.
+for (const f of ["controls", "screen", "exploring", "battle", "status_damage", "skills", "growth", "items", "menus", "hints", "story"]) {
   const md = readMd(`${f}.md`);
   if (md) bodies[f] = md.body;
 }

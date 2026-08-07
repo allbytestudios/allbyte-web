@@ -1,46 +1,41 @@
 ---
 /**
- * ManualHeader.astro — the illuminated-manual nav, shared by every page that
- * isn't the homepage.
+ * ManualHeader.astro — the illuminated-manual header for every page that isn't
+ * the homepage (/changelog/, /devlog/, /walkthrough/, /artwork/, /test/*).
  *
- * The homepage keeps its own copy inline because its links are same-page
- * anchors (#play, #pitch). From a deep-linked page those anchors go nowhere, so
- * this variant points at the real routes and absolute homepage anchors — the
- * one meaningful difference between the two. Markup and class names are
- * otherwise identical, so manual.css styles both.
+ * Owner 2026-08-07: from inside one of these pages, the only navigation that
+ * makes sense is getting back out. It used to mirror the homepage's nav and
+ * list the sibling subpages (Play · Strategy Guide · Artwork · Devlog · What's
+ * New), which reads as odd sideways traffic between unrelated destinations —
+ * you don't jump from the changelog to the artwork gallery. So: one Home link,
+ * plus the account + theme controls.
+ *
+ * The homepage keeps its own inline nav, whose links are same-page anchors
+ * (#play, #pitch) that would go nowhere from here. Class names still match
+ * manual.css, so both are styled by the same rules.
  */
 import NavAuth from "./NavAuth.svelte";
 
 interface Props {
-  /** Route that should read as current, e.g. "/changelog/". */
+  /** Accepted for call-site compatibility; there is no sibling nav to mark. */
   active?: string;
 }
-const { active = "" } = Astro.props;
-
-const LINKS = [
-  { href: "/play/", label: "Play" },
-  { href: "/walkthrough/", label: "Strategy Guide" },
-  { href: "/artwork/", label: "Artwork" },
-  { href: "/devlog/", label: "Devlog" },
-  { href: "/changelog/", label: "What's New" },
-];
 ---
 
 <header class="nav"><div class="nav-in">
   <a class="brand" href="/"><img class="brand-icon" src="/home/eed5218325.png" alt=""><span>AllByte</span></a>
   <nav class="links">
-    <span class="navgroup">
-      {LINKS.map((l) => (
-        <a href={l.href} aria-current={active === l.href ? "page" : undefined}>{l.label}</a>
-      ))}
-    </span>
+    <span class="navgroup"><a href="/">Home</a></span>
     <NavAuth client:load />
     <button class="theme-toggle" onclick="__abTheme.toggle(this)" aria-label="Toggle theme">☾</button>
   </nav>
 </div></header>
 
 <style is:global>
-  /* Current-page marker — the homepage nav has no equivalent (its anchors are
-     all same-page), so it lives here rather than in manual.css. */
-  header.nav nav.links a[aria-current="page"] { color: var(--crimson); border-color: var(--gilt); }
+  /* The single Home link keeps its label at narrow widths — manual.css hides
+     non-Play nav links under 880px, which was written for the homepage's
+     five-item nav and would leave a subpage with no way back. */
+  @media (max-width: 880px) {
+    header.nav nav.links .navgroup a { display: inline-block; }
+  }
 </style>

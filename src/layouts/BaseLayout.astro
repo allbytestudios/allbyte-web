@@ -137,6 +137,12 @@ const imageAbs = new URL(image, SITE).href;
         document.addEventListener("astro:page-load", function () { apply(document); syncIcon(); });
       })();
     </script>
+    <!-- The display face is used by the first thing painted (headings, nav).
+         Preload starts the fetch with the HTML instead of after CSS parses,
+         so it lands before first paint. crossorigin is REQUIRED even
+         same-origin — fonts fetch in CORS mode, and without it the browser
+         downloads the file twice and the preload is wasted. -->
+    <link rel="preload" href="/fonts/ModernGoth.otf" as="font" type="font/otf" crossorigin />
     <ClientRouter />
   </head>
   <body>

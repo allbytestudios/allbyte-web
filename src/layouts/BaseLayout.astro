@@ -105,6 +105,38 @@ const imageAbs = new URL(image, SITE).href;
       __redirectIfPwaHome();
       document.addEventListener("astro:page-load", __redirectIfPwaHome);
     </script>
+    <!-- Theme bootstrap — ONE copy for the whole site, in <head> so it runs
+         before first paint. Previously this lived in the page BODY (twice:
+         index.astro inline + ThemeInit.astro) and only re-applied on
+         astro:page-load, which fires AFTER the swap has painted — so every
+         navigation flashed the light default before flipping to dark. -->
+    <script is:inline>
+      (function () {
+        var read = function () { var m = document.cookie.match(/(?:^|; )abtheme=(light|dark)/); return m ? m[1] : null; };
+        var apply = function (doc) { var s = read(); if (s) doc.documentElement.setAttribute("data-theme", s); };
+        apply(document); // pre-paint on a hard load
+        var cur = function () {
+          var t = document.documentElement.getAttribute("data-theme");
+          return t || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light");
+        };
+        window.__abTheme = {
+          icon: function () { return cur() === "dark" ? "☀" : "☾"; },
+          toggle: function (btn) {
+            var next = cur() === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", next);
+            document.cookie = "abtheme=" + next + ";path=/;max-age=31536000;SameSite=Lax";
+            if (btn) btn.textContent = next === "dark" ? "☀" : "☾";
+          },
+        };
+        var syncIcon = function () { var b = document.querySelector(".theme-toggle"); if (b) b.textContent = window.__abTheme.icon(); };
+        if (document.readyState !== "loading") syncIcon(); else document.addEventListener("DOMContentLoaded", syncIcon);
+        // THE FIX: ClientRouter swaps in a document whose <html> attributes come
+        // from the static build (no data-theme). before-swap runs BEFORE that
+        // document is painted, so stamp the INCOMING one here.
+        document.addEventListener("astro:before-swap", function (e) { apply(e.newDocument); });
+        document.addEventListener("astro:page-load", function () { apply(document); syncIcon(); });
+      })();
+    </script>
     <ClientRouter />
   </head>
   <body>

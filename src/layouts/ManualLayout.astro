@@ -13,10 +13,10 @@
  * is opt-in, one import at a time.
  *
  * Page-specific CSS still belongs in the page. This owns the chrome only:
- * tokens (manual.css), pre-paint theme (ThemeInit), nav (ManualHeader), footer.
+ * tokens (manual.css), nav (ManualHeader), footer. Theme is bootstrapped
+ * once in BaseLayout's <head>.
  */
 import BaseLayout from "./BaseLayout.astro";
-import ThemeInit from "../components/ThemeInit.astro";
 import ManualHeader from "../components/ManualHeader.astro";
 import "../styles/manual.css";
 
@@ -31,7 +31,6 @@ const { title, description, active } = Astro.props;
 
 <BaseLayout title={title} description={description}>
   <div class="manual-page">
-    <ThemeInit />
     <ManualHeader active={active} />
 
     <slot />

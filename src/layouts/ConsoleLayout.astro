@@ -16,7 +16,6 @@
  * NOTE: /play/ deliberately stays on its own aesthetic and is NOT converted.
  */
 import BaseLayout from "./BaseLayout.astro";
-import ThemeInit from "../components/ThemeInit.astro";
 import ManualHeader from "../components/ManualHeader.astro";
 import TestNav from "../components/TestNav.svelte";
 import "../styles/manual.css";
@@ -32,7 +31,6 @@ const { title, description, active } = Astro.props;
 
 <BaseLayout title={title} description={description}>
   <div class="manual-page">
-    <ThemeInit />
     <ManualHeader />
 
     <main class="console-page">

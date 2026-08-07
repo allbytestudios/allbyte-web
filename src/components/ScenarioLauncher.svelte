@@ -90,7 +90,7 @@
   }
   .scn code {
     color: var(--crimson);
-    background: var(--rule);
+    background: var(--paperblend);
     padding: 0 0.25rem;
     border-radius: 3px;
   }
@@ -184,7 +184,7 @@
     white-space: nowrap;
   }
   .scn-launch:hover {
-    background: var(--rule);
+    background: var(--paperblend);
     border-color: var(--rule);
   }
   @media (max-width: 600px) {

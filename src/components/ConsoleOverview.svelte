@@ -28,11 +28,11 @@
   // History chart series toggles
   type SeriesKey = "messages" | "outputTokens" | "freshTokens" | "commits" | "churn" | "ticketsDone";
   const SERIES: { key: SeriesKey; label: string; color: string; field: string }[] = [
-    { key: "messages",     label: "Messages",      color: "#60a5fa", field: "messages" },
+    { key: "messages",     label: "Messages",      color: "var(--sem-info)", field: "messages" },
     { key: "outputTokens", label: "Output Tokens", color: "#22d3ee", field: "outputTokens" },
     { key: "freshTokens",  label: "Fresh Tokens",  color: "#f472b6", field: "freshTokens" },
     { key: "commits",      label: "Commits",       color: "var(--crimson)", field: "commits" },
-    { key: "churn",        label: "LOC Changed",   color: "#fbbf24", field: "churn" },
+    { key: "churn",        label: "LOC Changed",   color: "var(--sem-warn)", field: "churn" },
     { key: "ticketsDone",  label: "Tickets Done",  color: "#c084fc", field: "ticketsDone" },
   ];
   let activeSeries = $state<Set<SeriesKey>>(new Set(["messages", "outputTokens", "commits", "ticketsDone"]));
@@ -491,7 +491,7 @@
         <svg viewBox="0 0 700 160" class="users-svg">
           <polyline
             fill="none"
-            stroke="#60a5fa"
+            stroke="var(--sem-info)"
             stroke-width="2"
             points={history.map((d, i) => {
               const x = 50 + i * (600 / (history.length - 1 || 1));
@@ -507,8 +507,8 @@
             {@const showDetails = chartShowPerPointDetails(history.length)}
             {@const showLabel = chartShouldShowLabel(d.date, graphRange)}
             {#if showDetails}
-              <circle cx={x} cy={y} r="3" fill="#60a5fa" />
-              <text x={x} y={y - 8} fill="#60a5fa" font-size="10" text-anchor="middle">{d.total}</text>
+              <circle cx={x} cy={y} r="3" fill="var(--sem-info)" />
+              <text x={x} y={y - 8} fill="var(--sem-info)" font-size="10" text-anchor="middle">{d.total}</text>
             {/if}
             <rect x={x - barW / 2} y={140 - barH} width={barW} height={barH} fill="var(--panel)" rx={barW > 4 ? 2 : 0} />
             {#if d.new > 0 && showDetails}
@@ -520,7 +520,7 @@
           {/each}
         </svg>
         <div class="users-chart-legend">
-          <span class="legend-item"><span class="legend-dot" style="background: #60a5fa"></span> Total users</span>
+          <span class="legend-item"><span class="legend-dot" style="background: var(--sem-info)"></span> Total users</span>
           <span class="legend-item"><span class="legend-dot" style="background: var(--crimson)"></span> New signups</span>
           <span class="legend-item" style="color: var(--ink-soft)">{userAnalytics.oauthUsers} OAuth · {userAnalytics.emailPasswordUsers} email</span>
         </div>
@@ -557,8 +557,8 @@
     {@const seg = trafficSegment}
     {@const isolated = seg !== "all"}
     {@const COLOR_OWNER = "var(--crimson)"}
-    {@const COLOR_BOTS  = "#fbbf24"}
-    {@const COLOR_OTHER = "#60a5fa"}
+    {@const COLOR_BOTS  = "var(--sem-warn)"}
+    {@const COLOR_OTHER = "var(--sem-info)"}
     {@const segColor = seg === "bots" ? COLOR_BOTS : seg === "owner" ? COLOR_OWNER : COLOR_OTHER}
     {@const visMax = Math.max(...traffic.map(d => segValue(d, seg)), 1)}
     {@const total7d = traffic.slice(-7).reduce((s, d) => s + segValue(d, seg), 0)}
@@ -609,7 +609,7 @@
                 <rect x={x - barW / 2} y={120 - ownerH - botsH - otherH} width={barW} height={otherH} fill={COLOR_OTHER} opacity="0.7" rx={barW > 4 ? 3 : 0}><title>{tooltip}</title></rect>
               {/if}
               {#if showCount && total > 0}
-                <text x={x} y={120 - totalH - 5} fill="#60a5fa" font-size="10" text-anchor="middle">{total > 999 ? (total / 1000).toFixed(1) + "k" : total}</text>
+                <text x={x} y={120 - totalH - 5} fill="var(--sem-info)" font-size="10" text-anchor="middle">{total > 999 ? (total / 1000).toFixed(1) + "k" : total}</text>
               {/if}
             {/if}
             {#if showLabel}
@@ -782,7 +782,7 @@
     font-size: 0.75rem;
   }
   .sync-ok { color: var(--crimson); border-color: var(--rule); }
-  .sync-off { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
+  .sync-off { color: var(--sem-danger); border-color: var(--sem-danger); }
   .sync-dot {
     width: 6px; height: 6px; border-radius: 50%;
     background: currentColor;
@@ -792,7 +792,7 @@
   .version-pill {
     color: var(--crimson);
     padding: 0.1rem 0.4rem;
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     border-radius: 3px;
   }
@@ -849,12 +849,12 @@
     font-size: 0.75rem;
     color: var(--ink-soft);
   }
-  .card-sub.blocker { color: #f87171; }
+  .card-sub.blocker { color: var(--sem-danger); }
 
   .budget-bar {
     width: 100%;
     height: 6px;
-    background: var(--rule);
+    background: var(--paperblend);
     border-radius: 3px;
     overflow: hidden;
     margin: 0.3rem 0;
@@ -865,8 +865,8 @@
     border-radius: 3px;
     transition: width 0.5s;
   }
-  .budget-fill.budget-warn { background: #fbbf24; }
-  .budget-fill.budget-danger { background: #f87171; }
+  .budget-fill.budget-warn { background: var(--sem-warn); }
+  .budget-fill.budget-danger { background: var(--sem-danger); }
 
   .users-chart-section {
     margin: 1.5rem 0;
@@ -878,12 +878,12 @@
     flex-wrap: wrap;
     margin: 1.5rem 0 0.5rem;
     padding: 0.5rem 0.75rem;
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     border-radius: 4px;
   }
   .claim-ip-btn {
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     color: var(--crimson);
     padding: 0.4rem 0.8rem;
@@ -894,7 +894,7 @@
     transition: background 0.15s ease;
   }
   .claim-ip-btn:hover:not(:disabled) {
-    background: var(--rule);
+    background: var(--paperblend);
   }
   .claim-ip-btn:disabled {
     opacity: 0.5;
@@ -1000,8 +1000,8 @@
     border-radius: 4px;
     transition: width 0.3s;
   }
-  .usage-blue { background: #60a5fa; }
-  .usage-grey { background: var(--ink-soft); }
+  .usage-blue { background: var(--sem-info); }
+  .usage-grey { background: var(--gilt); }
   .usage-pct {
     font-size: 0.82rem;
     font-weight: 700;
@@ -1017,7 +1017,7 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
-  .usage-note.usage-ahead { color: #fbbf24; }
+  .usage-note.usage-ahead { color: var(--sem-warn); }
   .usage-note.usage-behind { color: var(--crimson); }
   .usage-budget-hint {
     color: var(--ink-soft);
@@ -1177,15 +1177,15 @@
   }
   .hour-bar {
     width: 100%;
-    background: linear-gradient(180deg, #60a5fa, #3b82f6);
+    background: linear-gradient(180deg, var(--sem-info), #3b82f6);
     min-height: 1px;
     opacity: 0.35;
     transition: opacity 0.15s;
   }
-  .hour-bar-wrap:hover .hour-bar { opacity: 1; background: #fbbf24; }
+  .hour-bar-wrap:hover .hour-bar { opacity: 1; background: var(--sem-warn); }
   .week-divider {
     flex: 0 0 1px;
-    background: var(--rule);
+    background: var(--paperblend);
     height: 100%;
     margin: 0 3px;
   }
@@ -1233,9 +1233,9 @@
     flex: 0 0 auto;
   }
   .overview-marker-active { background: var(--crimson); box-shadow: 0 0 6px var(--panel); }
-  .overview-marker-deck   { background: #60a5fa; }
+  .overview-marker-deck   { background: var(--sem-info); }
   .overview-count {
-    background: var(--rule);
+    background: var(--paperblend);
     color: var(--crimson);
     border: 1px solid var(--rule);
     padding: 0.05rem 0.45rem;
@@ -1255,12 +1255,12 @@
   }
   .overview-count-file {
     background: rgba(96, 165, 250, 0.12);
-    color: #60a5fa;
-    border-color: rgba(96, 165, 250, 0.4);
+    color: var(--sem-info);
+    border-color: var(--sem-info);
   }
   .overview-link {
     margin-left: auto;
-    color: #60a5fa;
+    color: var(--sem-info);
     text-decoration: none;
     font-size: 0.78rem;
     font-weight: 400;
@@ -1284,7 +1284,7 @@
     color: var(--ink-soft);
   }
   .overview-more a {
-    color: #60a5fa;
+    color: var(--sem-info);
     text-decoration: none;
   }
   .overview-more a:hover { text-decoration: underline; }
@@ -1307,7 +1307,7 @@
     border-left: 3px solid var(--crimson);
   }
   .epic-deck {
-    border-left: 3px solid #60a5fa;
+    border-left: 3px solid var(--sem-info);
     opacity: 0.95;
   }
   .epic-head {
@@ -1361,12 +1361,12 @@
   }
   .epic-stat-review {
     background: rgba(251, 191, 36, 0.1);
-    color: #fbbf24;
+    color: var(--sem-warn);
     border: 1px solid rgba(251, 191, 36, 0.3);
   }
   .epic-stat-queued {
     background: rgba(96, 165, 250, 0.1);
-    color: #60a5fa;
+    color: var(--sem-info);
     border: 1px solid rgba(96, 165, 250, 0.3);
   }
   .epic-stat-total {
@@ -1461,7 +1461,7 @@
     background: rgba(255, 255, 255, 0.03);
   }
   .ms-bar-fill-muted {
-    background: var(--rule);
+    background: var(--paperblend);
   }
   .ms-detail-muted {
     color: var(--rule);

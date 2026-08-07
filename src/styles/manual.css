@@ -73,3 +73,23 @@
   footer .fnav{ display:flex; gap:1.2rem; justify-content:center; flex-wrap:wrap; font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.08em; font-size:.72rem; }
   footer .fnav a{ color:var(--ink-soft); text-decoration:none; } footer .fnav a:hover{ color:var(--crimson); }
   footer .cr{ font-size:.8rem; margin-top:.9rem; opacity:.75; }
+
+/* --- semantic status colours (console) ---------------------------------
+   Priority/status chips carry MEANING, so they keep their hue rather than
+   collapsing into the parchment palette. But the console's originals were
+   Tailwind 300/400 shades chosen for a dark slate background — on parchment
+   they wash out (a P1 chip was light red on a light-red 12% tint, effectively
+   unreadable). So each hue gets a dark-enough value for light mode and keeps
+   the original for dark mode. Same theme-aware shape as the rest of the file. */
+:root {
+  --sem-danger: #b91c1c;
+  --sem-warn:   #b45309;
+  --sem-info:   #1d4ed8;
+  --sem-ok:     #15803d;
+  --sem-alt:    #6d28d9;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --sem-danger:#f87171; --sem-warn:#fbbf24; --sem-info:#60a5fa; --sem-ok:#34d399; --sem-alt:#c4b5fd; }
+}
+:root[data-theme="dark"]  { --sem-danger:#f87171; --sem-warn:#fbbf24; --sem-info:#60a5fa; --sem-ok:#34d399; --sem-alt:#c4b5fd; }
+:root[data-theme="light"] { --sem-danger:#b91c1c; --sem-warn:#b45309; --sem-info:#1d4ed8; --sem-ok:#15803d; --sem-alt:#6d28d9; }

@@ -27,10 +27,10 @@
   // Validated against the #0d1320 panel surface: CVD ΔE 27.7 (protan) /
   // 18.3 (tritan) and contrast ≥ 3:1 both pass. They sit just above the
   // dark-mode lightness band, which is the console's existing house
-  // brightness (cf. var(--crimson) / #60a5fa in the traffic charts) — identity is
+  // brightness (cf. var(--crimson) / var(--sem-info) in the traffic charts) — identity is
   // never colour-alone here anyway: every series is legended, direct-labelled
   // on the channel bars, and spelled out in the log.
-  const COLOR_AUTO = "#a78bfa";
+  const COLOR_AUTO = "var(--sem-alt)";
   const COLOR_MANUAL = "#fb923c";
 
   /** How far back the chart looks. Stated in the UI — don't change silently. */
@@ -298,7 +298,7 @@
   }
   .mhp-head h2 { margin: 0 0 0.35rem; color: var(--crimson); font-size: 1.1rem; letter-spacing: 0.02em; }
   .mhp-sub { margin: 0 0 0.6rem; font-size: 0.78rem; line-height: 1.5; color: #8b97a8; }
-  .mhp-sub code { color: var(--crimson); background: var(--rule); padding: 0.05rem 0.3rem; border-radius: 3px; overflow-wrap: anywhere; }
+  .mhp-sub code { color: var(--crimson); background: var(--paperblend); padding: 0.05rem 0.3rem; border-radius: 3px; overflow-wrap: anywhere; }
   .mhp-stats { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; font-size: 0.75rem; color: #9aa6b6; }
   .mhp-stats strong { color: #e2e8f0; font-weight: 700; }
   .mhp-stats .muted { color: #6f7c8d; }
@@ -343,7 +343,7 @@
   .log-entries { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
   .log-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem; font-size: 0.72rem; }
   .src { font-size: 0.58rem; padding: 0.06rem 0.38rem; border-radius: 999px; flex: none; text-transform: uppercase; letter-spacing: 0.04em; }
-  .src-postiz { background: rgba(167, 139, 250, 0.16); color: #c4b5fd; }
+  .src-postiz { background: rgba(167, 139, 250, 0.16); color: var(--sem-alt); }
   .src-manual { background: rgba(251, 146, 60, 0.16); color: #fdba74; }
   .plat { color: #e2e8f0; }
   .sub { color: #7dd3fc; }

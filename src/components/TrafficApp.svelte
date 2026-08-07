@@ -195,14 +195,14 @@
     margin: 0 auto;
   }
   .muted { color: var(--ink-soft); }
-  .err { color: #f87171; }
+  .err { color: var(--sem-danger); }
   .sub { color: var(--ink-soft); font-weight: normal; font-size: 0.78rem; }
   .head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
   .btn {
     background: transparent; color: var(--crimson); border: 1px solid var(--rule);
     border-radius: 4px; padding: 0.3rem 0.7rem; font-family: inherit; cursor: pointer; white-space: nowrap;
   }
-  .btn:hover { background: var(--rule); }
+  .btn:hover { background: var(--paperblend); }
 
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
   .card { background: #131a26; border: 1px solid var(--rule); border-radius: 6px; padding: 0.9rem 1rem; }
@@ -216,12 +216,12 @@
   h3 { color: var(--crimson); font-size: 1rem; margin: 0 0 0.6rem; font-weight: 700; }
   .cap { color: var(--ink-soft); font-size: 0.82rem; margin: 0 0 0.9rem; max-width: 78ch; line-height: 1.5; }
   .cap b, .foot b { color: var(--ink-soft); }
-  code { background: var(--rule); padding: 0 0.3rem; border-radius: 3px; }
+  code { background: var(--paperblend); padding: 0 0.3rem; border-radius: 3px; }
 
   .bars { display: flex; flex-direction: column; gap: 0.4rem; }
   .bar-row { display: grid; grid-template-columns: 13rem 1fr 3rem; align-items: center; gap: 0.6rem; font-size: 0.8rem; }
   .bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bar { background: var(--rule); border-radius: 3px; height: 15px; overflow: hidden; }
+  .bar { background: var(--paperblend); border-radius: 3px; height: 15px; overflow: hidden; }
   .fill { height: 100%; border-radius: 3px; opacity: 0.9; }
   .bar-n { text-align: right; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
   .legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid var(--rule); font-size: 0.76rem; color: var(--ink-soft); }

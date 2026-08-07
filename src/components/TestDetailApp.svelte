@@ -180,14 +180,14 @@
     padding: 3rem;
     color: var(--ink-soft);
   }
-  .error h2 { color: #fca5a5; }
+  .error h2 { color: var(--sem-danger); }
   .gate h2 {
-    color: #fbbf24;
+    color: var(--sem-warn);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-size: 1.05rem;
   }
-  .gate strong { color: #fbbf24; }
+  .gate strong { color: var(--sem-warn); }
   .gate a { color: var(--crimson); text-decoration: none; }
   .gate a:hover { text-decoration: underline; }
   .gate .gate-link {
@@ -230,8 +230,8 @@
     border-radius: 50%;
   }
   .dot-pass { background: var(--crimson); }
-  .dot-fail { background: #f87171; }
-  .dot-xfail { background: transparent; border: 2px solid #fbbf24; }
+  .dot-fail { background: var(--sem-danger); }
+  .dot-xfail { background: transparent; border: 2px solid var(--sem-warn); }
   .dot-skip { background: transparent; border: 2px solid var(--ink-soft); }
   .dot-unknown { background: transparent; border: 2px dashed rgba(255, 255, 255, 0.25); }
   .status-label {
@@ -241,8 +241,8 @@
     letter-spacing: 0.1em;
   }
   .status-pass { color: var(--crimson); }
-  .status-fail { color: #fca5a5; }
-  .status-xfail { color: #fbbf24; }
+  .status-fail { color: var(--sem-danger); }
+  .status-xfail { color: var(--sem-warn); }
   .status-skip, .status-unknown { color: var(--ink-soft); }
   .last-run { color: var(--ink-soft); font-size: 0.82rem; }
   .last-run.never { font-style: italic; }

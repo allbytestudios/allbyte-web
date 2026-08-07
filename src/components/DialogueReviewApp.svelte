@@ -407,18 +407,18 @@
   }
   .muted { color: var(--ink-soft); }
   .muted.small { font-size: 0.78rem; line-height: 1.5; margin-top: 0.4rem; }
-  .err { color: #f87171; }
+  .err { color: var(--sem-danger); }
   .sub { color: var(--ink-soft); font-weight: normal; font-size: 0.76rem; }
-  code { background: var(--rule); padding: 0 0.3rem; border-radius: 3px; }
+  code { background: var(--paperblend); padding: 0 0.3rem; border-radius: 3px; }
   .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
   .head .sub { display: block; margin-top: 0.15rem; max-width: 46rem; line-height: 1.45; }
   .head-actions { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
-  .pending { font-size: 0.75rem; color: #fbbf24; background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 3px; padding: 0.1rem 0.45rem; }
+  .pending { font-size: 0.75rem; color: var(--sem-warn); background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 3px; padding: 0.1rem 0.45rem; }
   .btn {
     background: transparent; color: var(--crimson); border: 1px solid var(--rule);
     border-radius: 4px; padding: 0.3rem 0.7rem; font-family: inherit; cursor: pointer; font-size: 0.8rem;
   }
-  .btn:hover:not(:disabled) { background: var(--rule); }
+  .btn:hover:not(:disabled) { background: var(--paperblend); }
   .btn:disabled { opacity: 0.45; cursor: default; }
 
   .zone { margin-bottom: 0.5rem; }
@@ -431,20 +431,20 @@
   .npc { margin-left: 1rem; border-left: 1px solid var(--rule); padding-left: 0.6rem; }
   .npc-fold .npc-name { color: var(--ink); font-size: 0.88rem; font-weight: 600; }
   .dia { margin-left: 1.2rem; border-left: 1px solid rgba(255, 255, 255, 0.05); padding-left: 0.6rem; margin-bottom: 0.15rem; }
-  .dia.edited { border-left-color: rgba(251, 191, 36, 0.5); }
+  .dia.edited { border-left-color: var(--sem-warn); }
   .dia-fold { padding: 0.3rem 0; }
   .dia-ctx { color: #cdd6e4; font-size: 0.82rem; }
   .badge { font-size: 0.62rem; padding: 0.05rem 0.4rem; border-radius: 3px; flex: none; white-space: nowrap; }
   .badge.opts { color: #c084fc; background: rgba(192, 132, 252, 0.12); border: 1px solid rgba(192, 132, 252, 0.35); }
-  .badge.edited-b { color: #fbbf24; background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.4); }
+  .badge.edited-b { color: var(--sem-warn); background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.4); }
   .badge.arc { color: #7dd3fc; background: rgba(125, 211, 252, 0.13); border: 1px solid rgba(125, 211, 252, 0.4); }
   .badge.owner { color: var(--ink-soft); background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.3); }
   .badge.vcount { color: var(--ink-soft); background: rgba(107, 114, 128, 0.1); border: 1px solid rgba(107, 114, 128, 0.25); }
   .filter-tabs { display: inline-flex; border: 1px solid var(--rule); border-radius: 5px; overflow: hidden; }
   .filter-tabs button { background: none; border: none; color: #8b97a8; font-family: inherit; font-size: 0.74rem; padding: 0.25rem 0.6rem; cursor: pointer; }
   .filter-tabs button:not(:last-child) { border-right: 1px solid var(--rule); }
-  .filter-tabs button.on { background: var(--rule); color: var(--crimson); }
-  .filter-tabs button:hover:not(.on) { background: var(--rule); }
+  .filter-tabs button.on { background: var(--paperblend); color: var(--crimson); }
+  .filter-tabs button:hover:not(.on) { background: var(--paperblend); }
   .dia-body { padding: 0.15rem 0 0.6rem 1.1rem; }
   .dia-text {
     width: 100%; box-sizing: border-box; resize: vertical;
@@ -455,7 +455,7 @@
   .dia-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.4rem; }
   .btn.save { color: var(--crimson); border-color: var(--panel); }
   .btn.save:hover:not(:disabled) { background: var(--panel); }
-  .btn.revert { color: #f87171; border-color: rgba(248, 113, 113, 0.35); }
+  .btn.revert { color: var(--sem-danger); border-color: var(--sem-danger); }
   .btn.revert:hover:not(:disabled) { background: rgba(248, 113, 113, 0.1); }
-  .dirty-note { font-size: 0.72rem; color: #fbbf24; }
+  .dirty-note { font-size: 0.72rem; color: var(--sem-warn); }
 </style>

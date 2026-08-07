@@ -261,7 +261,7 @@
     padding: 3rem;
     color: var(--ink-soft);
   }
-  .error h2 { color: #fca5a5; }
+  .error h2 { color: var(--sem-danger); }
   .breadcrumb {
     display: flex;
     align-items: center;
@@ -299,10 +299,10 @@
     padding: 0.15rem 0.45rem;
     border-radius: 3px;
   }
-  .mstatus-done { color: var(--crimson); background: var(--rule); }
-  .mstatus-in_progress { color: #fbbf24; background: rgba(251, 191, 36, 0.12); }
-  .mstatus-planned { color: var(--ink-soft); background: var(--rule); }
-  .mstatus-blocked { color: #fca5a5; background: rgba(248, 113, 113, 0.15); }
+  .mstatus-done { color: var(--crimson); background: var(--paperblend); }
+  .mstatus-in_progress { color: var(--sem-warn); background: rgba(251, 191, 36, 0.12); }
+  .mstatus-planned { color: var(--ink-soft); background: var(--paperblend); }
+  .mstatus-blocked { color: var(--sem-danger); background: rgba(248, 113, 113, 0.15); }
   .pct { color: var(--crimson); font-weight: 700; }
   .hours, .hoursleft { color: var(--ink-soft); font-size: 0.8rem; }
   .hoursleft { margin-left: auto; }
@@ -315,7 +315,7 @@
   }
   .fill {
     height: 100%;
-    background: linear-gradient(90deg, #86efac, var(--crimson));
+    background: linear-gradient(90deg, var(--sem-ok), var(--crimson));
     transition: width 0.3s ease-out;
   }
   .scope {
@@ -350,9 +350,9 @@
     background: rgba(255, 255, 255, 0.02);
   }
   .gate-rollup.gate-pass { color: var(--crimson); border-left: 3px solid var(--crimson); }
-  .gate-rollup.gate-fail { color: #fca5a5; border-left: 3px solid #f87171; }
-  .gate-rollup.gate-xfail { color: #fcd34d; border-left: 3px solid #fbbf24; }
-  .gate-rollup.gate-missing { color: #fca5a5; border-left: 3px dashed #fca5a5; }
+  .gate-rollup.gate-fail { color: var(--sem-danger); border-left: 3px solid var(--sem-danger); }
+  .gate-rollup.gate-xfail { color: var(--sem-warn); border-left: 3px solid var(--sem-warn); }
+  .gate-rollup.gate-missing { color: var(--sem-danger); border-left: 3px dashed var(--sem-danger); }
   .gate-rollup.gate-unknown { color: var(--ink-soft); border-left: 3px dashed var(--ink-soft); }
   .gate-rollup strong { text-transform: uppercase; letter-spacing: 0.08em; }
   .gate-list {
@@ -373,9 +373,9 @@
     font-weight: 700;
   }
   .gate-pass .gcb { color: var(--crimson); }
-  .gate-fail .gcb { color: #fca5a5; }
-  .gate-xfail .gcb { color: #fcd34d; }
-  .gate-missing .gcb { color: #fca5a5; }
+  .gate-fail .gcb { color: var(--sem-danger); }
+  .gate-xfail .gcb { color: var(--sem-warn); }
+  .gate-missing .gcb { color: var(--sem-danger); }
   .gate-unknown .gcb { color: var(--ink-soft); }
   .gate-list code {
     flex: 1;
@@ -399,7 +399,7 @@
     border-radius: 3px;
     margin-bottom: 0.4rem;
   }
-  .blocker-list strong { color: #fca5a5; }
+  .blocker-list strong { color: var(--sem-danger); }
   .blocker-list .sub { color: var(--ink-soft); font-size: 0.72rem; margin-left: 0.6rem; }
   .sub-impact { color: var(--ink); font-size: 0.78rem; margin-top: 0.2rem; }
 
@@ -447,8 +447,8 @@
     border-radius: 50%;
   }
   .dot-pass { background: var(--crimson); }
-  .dot-fail { background: #f87171; }
-  .dot-xfail { background: transparent; border: 1.5px solid #fbbf24; }
+  .dot-fail { background: var(--sem-danger); }
+  .dot-xfail { background: transparent; border: 1.5px solid var(--sem-warn); }
   .dot-unknown { background: transparent; border: 1.5px dashed rgba(255, 255, 255, 0.22); }
   .cell-name { max-width: 260px; }
   .scene-label { color: var(--ink); font-weight: 600; }
@@ -461,11 +461,11 @@
   }
   .cell-size { color: var(--ink-soft); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.05em; }
   .cell-tests { color: var(--ink); white-space: nowrap; }
-  .xfail-marker { color: #fbbf24; font-size: 0.7rem; margin-left: 0.3rem; }
+  .xfail-marker { color: var(--sem-warn); font-size: 0.7rem; margin-left: 0.3rem; }
   .cell-live { color: var(--crimson); white-space: nowrap; }
   .cell-hours { color: var(--ink-soft); white-space: nowrap; }
   .cell-notes { color: var(--ink-soft); font-size: 0.75rem; max-width: 280px; }
-  .blocker-note { color: #fca5a5; }
+  .blocker-note { color: var(--sem-danger); }
   .scene-row.status-blocked { background: rgba(248, 113, 113, 0.03); }
-  .scene-row.status-done { background: var(--rule); }
+  .scene-row.status-done { background: var(--paperblend); }
 </style>

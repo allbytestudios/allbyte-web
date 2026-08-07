@@ -177,7 +177,7 @@
   .tre-lede a { color: var(--crimson); }
   .tre code {
     color: var(--crimson);
-    background: var(--rule);
+    background: var(--paperblend);
     padding: 0 0.25rem;
     border-radius: 3px;
   }
@@ -224,7 +224,7 @@
     color: var(--ink);
   }
   .tre-diffbtn.active {
-    background: var(--rule);
+    background: var(--paperblend);
     border-color: var(--rule);
     color: var(--crimson);
     font-weight: 700;
@@ -240,7 +240,7 @@
     cursor: pointer;
   }
   .tre-tool:hover {
-    background: var(--rule);
+    background: var(--paperblend);
     border-color: var(--rule);
   }
   .tre-appr-toggle {
@@ -323,10 +323,10 @@
     border-color: var(--rule);
   }
   .tre-row.leaf {
-    border-color: rgba(251, 191, 36, 0.25);
+    border-color: var(--sem-warn);
   }
   .tre-row.leaf:hover {
-    border-color: rgba(251, 191, 36, 0.5);
+    border-color: var(--sem-warn);
   }
   .tre-info {
     display: flex;
@@ -356,14 +356,14 @@
   }
   .tre-dchip.d-med,
   .tre-dchip.d-medium {
-    color: #fbbf24;
+    color: var(--sem-warn);
     background: rgba(251, 191, 36, 0.12);
-    border-color: rgba(251, 191, 36, 0.35);
+    border-color: var(--sem-warn);
   }
   .tre-dchip.d-hard {
-    color: #f87171;
+    color: var(--sem-danger);
     background: rgba(248, 113, 113, 0.12);
-    border-color: rgba(248, 113, 113, 0.35);
+    border-color: var(--sem-danger);
   }
   .tre-label {
     font-size: 0.88rem;
@@ -371,7 +371,7 @@
     font-weight: 600;
   }
   .tre-boss {
-    color: #fbbf24;
+    color: var(--sem-warn);
     font-size: 0.72rem;
   }
   .tre-badge {
@@ -387,9 +387,9 @@
     border-color: var(--panel);
   }
   .tre-badge.unappr {
-    color: #f87171;
+    color: var(--sem-danger);
     background: rgba(248, 113, 113, 0.12);
-    border-color: rgba(248, 113, 113, 0.4);
+    border-color: var(--sem-danger);
   }
   .tre-badge.unver {
     color: var(--ink-soft);
@@ -420,7 +420,7 @@
     flex-shrink: 0;
   }
   .tre-jump:hover {
-    background: var(--rule);
+    background: var(--paperblend);
     border-color: var(--rule);
   }
 </style>

@@ -161,14 +161,14 @@
   h3 { color: var(--crimson); font-size: 1.05rem; margin: 0 0 0.5rem; }
   .lead { font-size: 0.9rem; line-height: 1.55; color: var(--ink-soft); margin: 0 0 1.1rem; }
   .lead b { color: var(--ink); }
-  code { background: var(--rule); padding: 0 0.35rem; border-radius: 3px; color: var(--crimson); }
+  code { background: var(--paperblend); padding: 0 0.35rem; border-radius: 3px; color: var(--crimson); }
   .btn {
     background: transparent; color: var(--crimson); border: 1px solid var(--rule);
     border-radius: 5px; padding: 0.5rem 0.9rem; font-family: inherit; font-size: 0.88rem; cursor: pointer;
   }
-  .btn:hover:not(:disabled) { background: var(--rule); }
+  .btn:hover:not(:disabled) { background: var(--paperblend); }
   .btn:disabled { opacity: 0.5; cursor: default; }
-  .btn.danger { color: #fca5a5; border-color: rgba(248, 113, 113, 0.5); }
+  .btn.danger { color: var(--sem-danger); border-color: var(--sem-danger); }
   .btn.danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.12); }
   .confirm { background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.35); border-radius: 6px; padding: 0.85rem 1rem; }
   .confirm p { margin: 0 0 0.8rem; font-size: 0.88rem; line-height: 1.5; }
@@ -178,17 +178,17 @@
   .builds li { display: flex; align-items: center; gap: 0.7rem; font-size: 0.85rem; }
   .ch { min-width: 8rem; color: var(--ink); }
   .st { padding: 0.12rem 0.5rem; border-radius: 4px; font-size: 0.76rem; border: 1px solid transparent; }
-  .st.run { color: #fbbf24; background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.35); }
+  .st.run { color: var(--sem-warn); background: rgba(251, 191, 36, 0.12); border-color: var(--sem-warn); }
   .st.ok { color: var(--crimson); background: var(--panel); border-color: var(--panel); }
-  .st.err { color: #f87171; background: rgba(248, 113, 113, 0.12); border-color: rgba(248, 113, 113, 0.4); }
+  .st.err { color: var(--sem-danger); background: rgba(248, 113, 113, 0.12); border-color: var(--sem-danger); }
   .st.wait { color: var(--ink-soft); background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); }
-  .berr { color: rgba(248, 113, 113, 0.8); font-size: 0.74rem; }
+  .berr { color: var(--sem-danger); font-size: 0.74rem; }
   .finalize-note {
     margin: 0.7rem 0 0;
     padding: 0.55rem 0.7rem;
     font-size: 0.78rem;
     line-height: 1.45;
-    color: rgba(253, 224, 71, 0.9);
+    color: var(--sem-warn);
     background: rgba(253, 224, 71, 0.08);
     border: 1px solid rgba(253, 224, 71, 0.3);
     border-radius: 6px;
@@ -199,6 +199,6 @@
     padding: 0.05rem 0.3rem;
     border-radius: 3px;
   }
-  .err { color: #f87171; font-size: 0.85rem; margin-top: 0.6rem; }
+  .err { color: var(--sem-danger); font-size: 0.85rem; margin-top: 0.6rem; }
   .note { color: var(--ink-soft); font-size: 0.74rem; line-height: 1.55; margin-top: 1.1rem; }
 </style>

@@ -309,12 +309,12 @@
   }
 
   .gate h2 { color: #f97316; margin: 0 0 0.5rem; }
-  .gate a { color: #fbbf24; }
+  .gate a { color: var(--sem-warn); }
 
   .error-banner {
     background: rgba(248, 113, 113, 0.12);
     border: 1px solid rgba(248, 113, 113, 0.4);
-    color: #fca5a5;
+    color: var(--sem-danger);
     padding: 0.6rem 1rem;
     border-radius: 4px;
     margin-bottom: 1rem;
@@ -384,10 +384,10 @@
     border-radius: 2px;
     font-size: 0.72rem;
   }
-  .q-priority-P0 { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
-  .q-priority-P1 { background: rgba(251, 191, 36, 0.18); color: #fcd34d; }
-  .q-priority-P2 { background: rgba(96, 165, 250, 0.18); color: #93c5fd; }
-  .q-priority-P3 { background: var(--rule); color: var(--ink-soft); }
+  .q-priority-P0 { background: rgba(248, 113, 113, 0.18); color: var(--sem-danger); }
+  .q-priority-P1 { background: rgba(251, 191, 36, 0.18); color: var(--sem-warn); }
+  .q-priority-P2 { background: rgba(96, 165, 250, 0.18); color: var(--sem-info); }
+  .q-priority-P3 { background: var(--paperblend); color: var(--ink-soft); }
 
   .q-ref {
     font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
@@ -438,7 +438,7 @@
     align-items: center;
     gap: 0.4rem;
     font-size: 0.75rem;
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     border-radius: 2px;
     padding: 0.15rem 0.5rem;
@@ -488,13 +488,13 @@
 
   .q-btn-recommended {
     border-color: var(--rule);
-    background: var(--rule);
+    background: var(--paperblend);
   }
 
   .rec-badge {
     font-size: 0.68rem;
     padding: 0.1rem 0.35rem;
-    background: var(--rule);
+    background: var(--paperblend);
     color: var(--crimson);
     border-radius: 2px;
     text-transform: uppercase;
@@ -503,25 +503,25 @@
 
   .q-btn-verified {
     border-color: rgba(134, 239, 172, 0.5);
-    color: #86efac;
+    color: var(--sem-ok);
   }
   .q-btn-verified:hover {
     background: rgba(134, 239, 172, 0.12);
-    border-color: #86efac;
+    border-color: var(--sem-ok);
   }
 
   .q-btn-issue {
-    border-color: rgba(248, 113, 113, 0.5);
-    color: #fca5a5;
+    border-color: var(--sem-danger);
+    color: var(--sem-danger);
   }
   .q-btn-issue:hover {
     background: rgba(248, 113, 113, 0.1);
-    border-color: #f87171;
+    border-color: var(--sem-danger);
   }
 
   .q-btn-issue-submit {
-    border-color: rgba(251, 191, 36, 0.6);
-    color: #fcd34d;
+    border-color: var(--sem-warn);
+    color: var(--sem-warn);
   }
 
   .q-btn-send {
@@ -535,8 +535,8 @@
   }
 
   .q-btn-link {
-    border-color: rgba(96, 165, 250, 0.4);
-    color: #93c5fd;
+    border-color: var(--sem-info);
+    color: var(--sem-info);
     margin-left: auto;
   }
 
@@ -575,7 +575,7 @@
     background: rgba(251, 191, 36, 0.08);
     border: 1px solid rgba(251, 191, 36, 0.3);
     border-radius: 3px;
-    color: #fcd34d;
+    color: var(--sem-warn);
     font-size: 0.82rem;
     display: flex;
     align-items: center;
@@ -587,7 +587,7 @@
     width: 10px;
     height: 10px;
     border: 2px solid rgba(251, 191, 36, 0.3);
-    border-top-color: #fcd34d;
+    border-top-color: var(--sem-warn);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }

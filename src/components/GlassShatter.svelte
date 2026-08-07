@@ -19,9 +19,6 @@
     ondone?: () => void;
   } = $props();
 
-  const CX = 50;
-  const CY = 45; // impact point
-
   // Seeded PRNG (mulberry32) so obscure + reveal generate an identical fracture.
   function makeRng(s: number) {
     let a = s >>> 0 || 1;
@@ -36,6 +33,7 @@
 
   type Shard = { pts: string; ox: string; oy: string; dx: number; rot: number; delay: number; tint: number };
   type Crack = { pts: string; w: number };
+  type Pt = [number, number];
 
   let shards = $state<Shard[]>([]);
   let cracks = $state<Crack[]>([]);
@@ -44,83 +42,101 @@
   );
   let reduce = false;
 
-  function polar(a: number, r: number): [number, number] {
-    return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
+  // Delaunay triangulation (Bowyer–Watson) → irregular angular shards across the
+  // WHOLE screen (not a radial web). Shards = triangles, cracks = their edges.
+  function triangulate(points: Pt[]): number[][] {
+    const p = points.slice();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const [x, y] of points) {
+      minX = Math.min(minX, x); minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+    }
+    const dmax = Math.max(maxX - minX, maxY - minY) * 20;
+    const mx = (minX + maxX) / 2, my = (minY + maxY) / 2;
+    const s0 = p.length;
+    p.push([mx - dmax, my - dmax], [mx, my + dmax], [mx + dmax, my - dmax]);
+    let tris: number[][] = [[s0, s0 + 1, s0 + 2]];
+    const inCircum = (t: number[], px: number, py: number) => {
+      const [ax, ay] = p[t[0]], [bx, by] = p[t[1]], [cx, cy] = p[t[2]];
+      const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+      if (Math.abs(d) < 1e-9) return false;
+      const a2 = ax * ax + ay * ay, b2 = bx * bx + by * by, c2 = cx * cx + cy * cy;
+      const ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d;
+      const uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d;
+      return (px - ux) ** 2 + (py - uy) ** 2 < (ax - ux) ** 2 + (ay - uy) ** 2;
+    };
+    for (let i = 0; i < s0; i++) {
+      const bad = tris.filter((t) => inCircum(t, p[i][0], p[i][1]));
+      const edges: number[][] = [];
+      for (const t of bad) {
+        for (const e of [[t[0], t[1]], [t[1], t[2]], [t[2], t[0]]]) {
+          let shared = false;
+          for (const t2 of bad) {
+            if (t2 === t) continue;
+            for (const e2 of [[t2[0], t2[1]], [t2[1], t2[2]], [t2[2], t2[0]]]) {
+              if ((e[0] === e2[0] && e[1] === e2[1]) || (e[0] === e2[1] && e[1] === e2[0])) {
+                shared = true;
+                break;
+              }
+            }
+            if (shared) break;
+          }
+          if (!shared) edges.push(e);
+        }
+      }
+      tris = tris.filter((t) => !bad.includes(t));
+      for (const e of edges) tris.push([e[0], e[1], i]);
+    }
+    return tris.filter((t) => t[0] < s0 && t[1] < s0 && t[2] < s0);
   }
 
   function build() {
     const rng = makeRng(seed);
     const rnd = (a: number, b: number) => a + rng() * (b - a);
-    const spokes = 15;
-    const ang: number[] = [];
-    for (let i = 0; i < spokes; i++) {
-      ang.push((i / spokes) * Math.PI * 2 + rnd(-0.24, 0.24));
-    }
-    const rings = [0, 5, 13, 26, 46, 80, 185];
-    // Jittered vertex grid (radius AND angle jitter per vertex) shared by shards
-    // and cracks — irregular, angular pieces rather than clean concentric rings.
-    const grid: [number, number][][] = [];
-    for (let j = 0; j < rings.length; j++) {
-      const row: [number, number][] = [];
-      for (let i = 0; i < spokes; i++) {
-        if (rings[j] === 0) row.push([CX, CY]);
-        else row.push(polar(ang[i] + rnd(-0.08, 0.08), rings[j] * rnd(0.62, 1.4)));
+    // Scatter: a jittered grid (guarantees full coverage incl. overscan past the
+    // corners) + a few random extras + a slightly denser cluster, so the shatter
+    // is irregular all over rather than centred.
+    const pts: Pt[] = [];
+    const cols = 7, rows = 5;
+    for (let gx = 0; gx <= cols; gx++) {
+      for (let gy = 0; gy <= rows; gy++) {
+        pts.push([(gx / cols) * 128 - 14 + rnd(-9, 9), (gy / rows) * 128 - 14 + rnd(-9, 9)]);
       }
-      grid.push(row);
     }
-    const reach = ang.map(() => (rng() < 0.28 ? rings.length - 2 : rings.length - 1));
+    for (let k = 0; k < 14; k++) pts.push([rnd(2, 98), rnd(2, 98)]);
+    const clx = rnd(25, 75), cly = rnd(25, 70);
+    for (let k = 0; k < 8; k++) pts.push([clx + rnd(-16, 16), cly + rnd(-16, 16)]);
+
+    const tris = triangulate(pts);
 
     const sh: Shard[] = [];
-    for (let j = 0; j < rings.length - 1; j++) {
-      for (let i = 0; i < spokes; i++) {
-        const i1 = (i + 1) % spokes;
-        const pts: [number, number][] =
-          j === 0
-            ? [grid[0][0], grid[1][i], grid[1][i1]]
-            : [grid[j][i], grid[j][i1], grid[j + 1][i1], grid[j + 1][i]];
-        const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
-        const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
-        sh.push({
-          pts: pts.map((p) => `${p[0]}% ${p[1]}%`).join(", "),
-          ox: `${cx}%`,
-          oy: `${cy}%`,
-          dx: (cx - CX) * 0.14 + rnd(-9, 9),
-          rot: rnd(-80, 80),
-          delay: Math.round((rings[j] / 185) * 130 + rnd(0, 150)),
-          tint: rnd(0.1, 0.32),
-        });
-      }
+    for (const t of tris) {
+      const tp = [pts[t[0]], pts[t[1]], pts[t[2]]];
+      const cx = (tp[0][0] + tp[1][0] + tp[2][0]) / 3;
+      const cy = (tp[0][1] + tp[1][1] + tp[2][1]) / 3;
+      sh.push({
+        pts: tp.map((q) => `${q[0]}% ${q[1]}%`).join(", "),
+        ox: `${cx}%`,
+        oy: `${cy}%`,
+        dx: rnd(-10, 10),
+        rot: rnd(-85, 85),
+        // top pieces let go first (gravity), plus jitter — a cascade, not a ring.
+        delay: Math.round(Math.max(0, cy) * 1.4 + rnd(0, 120)),
+        tint: rnd(0.1, 0.34),
+      });
     }
     shards = sh;
 
+    // Cracks = unique triangle edges.
     const cr: Crack[] = [];
-    for (let i = 0; i < spokes; i++) {
-      const pl: string[] = [`${CX},${CY}`];
-      for (let j = 1; j <= reach[i]; j++) pl.push(`${grid[j][i][0]},${grid[j][i][1]}`);
-      cr.push({ pts: pl.join(" "), w: rnd(0.7, 1.5) });
-    }
-    for (let j = 1; j < rings.length - 1; j++) {
-      const pl: string[] = [];
-      for (let i = 0; i <= spokes; i++) {
-        const g = grid[j][i % spokes];
-        pl.push(`${g[0]},${g[1]}`);
+    const seen = new Set<string>();
+    for (const t of tris) {
+      for (const [a, b] of [[t[0], t[1]], [t[1], t[2]], [t[2], t[0]]]) {
+        const key = a < b ? `${a}_${b}` : `${b}_${a}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        cr.push({ pts: `${pts[a][0]},${pts[a][1]} ${pts[b][0]},${pts[b][1]}`, w: rnd(0.5, 1.2) });
       }
-      cr.push({ pts: pl.join(" "), w: rnd(0.5, 1.0) });
-    }
-    // Extra irregularity: dead-end branch cracks + chords across a shard.
-    for (let k = 0; k < 9; k++) {
-      const i = Math.floor(rng() * spokes);
-      const j = 1 + Math.floor(rng() * (rings.length - 3));
-      const [bx, by] = grid[j][i];
-      const [ex, ey] = polar(ang[i] + rnd(-0.55, 0.55), rings[j] * rnd(1.12, 1.7));
-      cr.push({ pts: `${bx},${by} ${ex},${ey}`, w: rnd(0.4, 0.85) });
-    }
-    for (let k = 0; k < 5; k++) {
-      const j = 1 + Math.floor(rng() * (rings.length - 2));
-      const i = Math.floor(rng() * spokes);
-      const a = grid[j][i];
-      const b = grid[Math.min(j + 1, rings.length - 1)][(i + 2) % spokes];
-      cr.push({ pts: `${a[0]},${a[1]} ${b[0]},${b[1]}`, w: rnd(0.4, 0.7) });
     }
     cracks = cr;
   }

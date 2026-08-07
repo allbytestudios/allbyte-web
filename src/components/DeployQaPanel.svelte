@@ -434,7 +434,7 @@
     padding: 0.75rem 0;
   }
   .qa-error {
-    color: #fca5a5;
+    color: var(--sem-danger);
   }
   .qa-layout {
     display: grid;
@@ -570,7 +570,7 @@
     margin-left: 0.35rem;
     padding: 0.02rem 0.28rem;
     border-radius: 2px;
-    background: var(--rule);
+    background: var(--paperblend);
     color: var(--ink-soft);
     font-size: 0.58rem;
     letter-spacing: 0.03em;
@@ -595,7 +595,7 @@
     margin-top: 0.3rem;
   }
   .qa-cell-flag {
-    color: #fca5a5;
+    color: var(--sem-danger);
     font-size: 0.68rem;
     margin-top: 0.15rem;
   }
@@ -605,11 +605,11 @@
   }
   .qa-warn {
     background: rgba(252, 211, 77, 0.12);
-    color: #fcd34d;
+    color: var(--sem-warn);
   }
   .qa-fail {
     background: rgba(248, 113, 113, 0.12);
-    color: #fca5a5;
+    color: var(--sem-danger);
   }
   .qa-neutral {
     color: var(--ink-soft);
@@ -675,9 +675,9 @@
     border-left: 2px solid transparent;
   }
   .qa-log-fatal {
-    border-left-color: #f87171;
+    border-left-color: var(--sem-danger);
   }
   .qa-log-suspect {
-    border-left-color: #fcd34d;
+    border-left-color: var(--sem-warn);
   }
 </style>

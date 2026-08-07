@@ -210,9 +210,9 @@
   // --- filter helpers ---
   const STATUS_CHIPS = [
     { key: "passing", label: "pass", color: "var(--crimson)" },
-    { key: "failing", label: "fail", color: "#f87171" },
-    { key: "xfail", label: "xfail", color: "#fbbf24" },
-    { key: "xpass", label: "xpass", color: "#fbbf24" },
+    { key: "failing", label: "fail", color: "var(--sem-danger)" },
+    { key: "xfail", label: "xfail", color: "var(--sem-warn)" },
+    { key: "xpass", label: "xpass", color: "var(--sem-warn)" },
     { key: "skipped", label: "skip", color: "var(--ink-soft)" },
     { key: "unknown", label: "unknown", color: "var(--ink-soft)" },
     { key: "running", label: "running", color: "var(--crimson)" },
@@ -446,7 +446,7 @@
     border-radius: 4px;
     padding: 0.75rem 1rem;
     margin-bottom: 1rem;
-    color: #fca5a5;
+    color: var(--sem-danger);
     font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-size: 0.85rem;
   }
@@ -509,7 +509,7 @@
     flex-shrink: 0;
   }
   .ov-dot-active { background: var(--crimson); box-shadow: 0 0 4px var(--rule); }
-  .ov-dot-idle { background: var(--ink-soft); }
+  .ov-dot-idle { background: var(--gilt); }
   .ov-priorities {
     display: flex;
     gap: 0.5rem;
@@ -543,7 +543,7 @@
     line-height: 1.55;
   }
   .deep-gate h2 {
-    color: #fbbf24;
+    color: var(--sem-warn);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-size: 1.05rem;
@@ -553,7 +553,7 @@
     font-size: 0.88rem;
     margin: 0.4rem 0;
   }
-  .deep-gate strong { color: #fbbf24; }
+  .deep-gate strong { color: var(--sem-warn); }
   .deep-gate-cta {
     margin-top: 1rem !important;
     display: flex;
@@ -573,7 +573,7 @@
     font-size: 0.85rem;
   }
   .gate-card h2 {
-    color: #fbbf24;
+    color: var(--sem-warn);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-size: 1.05rem;
@@ -591,12 +591,12 @@
     border-radius: 2px;
     font-size: 0.85rem;
   }
-  .gate-card strong { color: #fbbf24; }
+  .gate-card strong { color: var(--sem-warn); }
   .gate-loading { color: var(--ink-soft); font-style: italic; }
   .gate-cta { margin-top: 1.4rem; }
   .gate-link {
     display: inline-block;
-    color: #fbbf24;
+    color: var(--sem-warn);
     text-decoration: none;
     border: 1px solid rgba(251, 191, 36, 0.5);
     padding: 0.55rem 1.1rem;
@@ -607,7 +607,7 @@
   }
   .gate-link:hover {
     background: rgba(251, 191, 36, 0.12);
-    border-color: rgba(251, 191, 36, 0.85);
+    border-color: var(--sem-warn);
   }
   .loading {
     text-align: center;
@@ -650,25 +650,25 @@
   .sync-live {
     color: var(--crimson);
     border-color: var(--rule);
-    background: var(--rule);
+    background: var(--paperblend);
   }
   .sync-live .sync-dot {
     animation: sync-pulse 2s ease-in-out infinite;
   }
   .sync-stale {
-    color: #fbbf24;
-    border-color: rgba(251, 191, 36, 0.45);
+    color: var(--sem-warn);
+    border-color: var(--sem-warn);
     background: rgba(251, 191, 36, 0.1);
   }
   .sync-offline {
-    color: #f87171;
-    border-color: rgba(248, 113, 113, 0.5);
+    color: var(--sem-danger);
+    border-color: var(--sem-danger);
     background: rgba(248, 113, 113, 0.12);
   }
   .sync-unknown {
     color: var(--ink-soft);
     border-color: var(--rule);
-    background: var(--rule);
+    background: var(--paperblend);
   }
   @keyframes sync-pulse {
     0%, 100% { opacity: 1; }
@@ -688,14 +688,14 @@
   }
   .sync-warning strong { white-space: nowrap; }
   .sync-warning-offline {
-    color: #fca5a5;
+    color: var(--sem-danger);
     background: rgba(248, 113, 113, 0.08);
-    border-color: rgba(248, 113, 113, 0.4);
+    border-color: var(--sem-danger);
   }
   .sync-warning-stale {
-    color: #fcd34d;
+    color: var(--sem-warn);
     background: rgba(251, 191, 36, 0.08);
-    border-color: rgba(251, 191, 36, 0.4);
+    border-color: var(--sem-warn);
   }
 
   .filters {
@@ -746,8 +746,8 @@
     color: var(--c);
   }
   .chip.clear {
-    border-color: rgba(248, 113, 113, 0.35);
-    color: #fca5a5;
+    border-color: var(--sem-danger);
+    color: var(--sem-danger);
   }
 
   /* Tab bar — only visible on narrow viewports */

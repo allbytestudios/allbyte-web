@@ -502,17 +502,17 @@
   .coverage-pill {
     font-size: 0.75rem;
     color: var(--ink);
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     padding: 0.1rem 0.5rem;
     border-radius: 3px;
     text-transform: none;
     letter-spacing: 0;
   }
-  .coverage-warn { color: #f87171; }
-  .coverage-gap  { color: #fbbf24; }
+  .coverage-warn { color: var(--sem-danger); }
+  .coverage-gap  { color: var(--sem-warn); }
   .verify-btn {
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     color: var(--crimson);
     padding: 0.25rem 0.6rem;
@@ -528,7 +528,7 @@
     margin: 0;
     border: 1px solid var(--rule);
     border-radius: 4px;
-    background: var(--rule);
+    background: var(--paperblend);
   }
   .fixture-row { border-bottom: 1px solid var(--rule); }
   .fixture-row:last-child { border-bottom: none; }
@@ -547,20 +547,20 @@
     font-family: inherit;
     font-size: 0.8rem;
   }
-  .fixture-row-btn:hover { background: var(--rule); }
-  .fixture-row.selected .fixture-row-btn { background: var(--rule); }
+  .fixture-row-btn:hover { background: var(--paperblend); }
+  .fixture-row.selected .fixture-row-btn { background: var(--paperblend); }
   .fixture-status {
     text-align: center;
     font-weight: bold;
     font-size: 0.9rem;
   }
   .status-available { color: var(--crimson); }
-  .status-missing   { color: #f87171; }
-  .status-gap       { color: #fbbf24; }
+  .status-missing   { color: var(--sem-danger); }
+  .status-gap       { color: var(--sem-warn); }
   .status-unchecked { color: var(--ink-soft); }
   .fixture-category {
     color: var(--crimson);
-    background: var(--rule);
+    background: var(--paperblend);
     padding: 0.05rem 0.4rem;
     border-radius: 2px;
     font-size: 0.7rem;
@@ -579,7 +579,7 @@
   }
   .fixture-detail {
     padding: 0.25rem 0.75rem 0.75rem 0.75rem;
-    background: var(--rule);
+    background: var(--paperblend);
     border-top: 1px dashed var(--rule);
   }
   .fixture-notes {
@@ -590,7 +590,7 @@
   .fixture-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; margin: 0.25rem 0; }
   .fixture-tag {
     font-size: 0.68rem;
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     color: var(--crimson);
     padding: 0.05rem 0.35rem;
@@ -609,7 +609,7 @@
     margin: 0.25rem 0;
   }
   .fixture-gap-note {
-    color: #fbbf24;
+    color: var(--sem-warn);
     font-size: 0.78rem;
     margin: 0.5rem 0;
   }
@@ -640,13 +640,13 @@
   }
   .empty code {
     color: var(--crimson);
-    background: var(--rule);
+    background: var(--paperblend);
     padding: 0.05rem 0.3rem;
     border-radius: 2px;
   }
 
   .sidebar {
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     border-radius: 4px;
     padding: 0.75rem;
@@ -663,7 +663,7 @@
     justify-content: space-between;
   }
   .sidebar-title .count {
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     padding: 0.05rem 0.4rem;
     border-radius: 3px;
@@ -703,10 +703,10 @@
     transition: background 0.1s ease;
   }
   .clip-row:hover {
-    background: var(--rule);
+    background: var(--paperblend);
   }
   .clip-row.active {
-    background: var(--rule);
+    background: var(--paperblend);
     border-color: var(--rule);
   }
   .thumb {
@@ -735,7 +735,7 @@
   .badge.captioned {
     color: var(--crimson);
     border-color: var(--rule);
-    background: var(--rule);
+    background: var(--paperblend);
   }
   .badge.no-captions {
     color: var(--ink-soft);
@@ -744,7 +744,7 @@
   }
 
   .detail {
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     border-radius: 4px;
     padding: 1rem;
@@ -797,7 +797,7 @@
     flex-wrap: wrap;
   }
   .draft-btn, .approve-btn {
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     color: var(--crimson);
     padding: 0.4rem 0.8rem;
@@ -808,7 +808,7 @@
   }
   .draft-btn:hover:not(:disabled),
   .approve-btn:hover:not(:disabled) {
-    background: var(--rule);
+    background: var(--paperblend);
   }
   .draft-btn:disabled, .approve-btn:disabled {
     opacity: 0.5;
@@ -816,8 +816,8 @@
   }
   .approve-btn {
     background: rgba(251, 191, 36, 0.1);
-    border-color: rgba(251, 191, 36, 0.4);
-    color: #fbbf24;
+    border-color: var(--sem-warn);
+    color: var(--sem-warn);
   }
   .approve-btn:hover:not(:disabled) {
     background: rgba(251, 191, 36, 0.22);
@@ -871,7 +871,7 @@
     min-width: 9rem;
   }
   .caption-row button {
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     color: var(--crimson);
     padding: 0.4rem 0.7rem;
@@ -882,7 +882,7 @@
     height: max-content;
   }
   .caption-row button:hover:not(:disabled) {
-    background: var(--rule);
+    background: var(--paperblend);
   }
   .caption-row button:disabled {
     opacity: 0.4;
@@ -890,8 +890,8 @@
   }
   .publish-btn {
     background: rgba(251, 191, 36, 0.1) !important;
-    border-color: rgba(251, 191, 36, 0.4) !important;
-    color: #fbbf24 !important;
+    border-color: var(--sem-warn) !important;
+    color: var(--sem-warn) !important;
   }
   .publish-btn:hover:not(:disabled) {
     background: rgba(251, 191, 36, 0.22) !important;
@@ -904,14 +904,14 @@
     font-family: inherit;
   }
   .publish-result.ok {
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     color: var(--crimson);
   }
   .publish-result.err {
     background: rgba(248, 113, 113, 0.1);
     border: 1px solid rgba(248, 113, 113, 0.3);
-    color: #f87171;
+    color: var(--sem-danger);
     word-break: break-word;
   }
 

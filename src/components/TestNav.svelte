@@ -186,7 +186,7 @@
   .nav-count {
     font-size: 0.75rem;
     color: var(--ink-soft);
-    background: var(--rule);
+    background: var(--paperblend);
     border: 1px solid var(--rule);
     padding: 0.08rem 0.35rem;
     border-radius: 3px;
@@ -202,9 +202,9 @@
     font-weight: 700;
   }
   .nav-yellow {
-    color: #fbbf24 !important;
+    color: var(--sem-warn) !important;
     background: rgba(251, 191, 36, 0.15) !important;
-    border-color: rgba(251, 191, 36, 0.4) !important;
+    border-color: var(--sem-warn) !important;
     font-weight: 700;
   }
   .nav-grey {
@@ -213,9 +213,9 @@
     border-color: rgba(107, 114, 128, 0.2) !important;
   }
   .nav-red {
-    color: #f87171 !important;
+    color: var(--sem-danger) !important;
     background: rgba(248, 113, 113, 0.15) !important;
-    border-color: rgba(248, 113, 113, 0.4) !important;
+    border-color: var(--sem-danger) !important;
     font-weight: 700;
   }
 
@@ -238,7 +238,7 @@
     .nav-tab.active {
       border-color: var(--crimson);
       border-bottom-color: var(--crimson);
-      background: var(--rule);
+      background: var(--paperblend);
     }
     .nav-count {
       font-size: 0.7rem;

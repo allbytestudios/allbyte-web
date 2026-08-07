@@ -422,12 +422,12 @@
   .priv { font-size: 0.62rem; color: #6f7c8d; background: rgba(148,163,184,0.12); padding: 0.1rem 0.45rem; border-radius: 999px; vertical-align: middle; }
   .snp-sub { margin: 0 0 0.6rem; font-size: 0.78rem; line-height: 1.5; color: #8b97a8; }
   .snp-msg { font-size: 0.78rem; color: #8b97a8; margin: 0.5rem 0 0; line-height: 1.5; }
-  .snp-msg.err { color: #fbbf24; }
-  .snp-msg code, .snp-sub code { color: var(--crimson); background: var(--rule); padding: 0.05rem 0.3rem; border-radius: 3px; overflow-wrap: anywhere; }
+  .snp-msg.err { color: var(--sem-warn); }
+  .snp-msg code, .snp-sub code { color: var(--crimson); background: var(--paperblend); padding: 0.05rem 0.3rem; border-radius: 3px; overflow-wrap: anywhere; }
 
   .sug-list { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
   .sug { display: flex; gap: 0.7rem; background: #0f1626; border: 1px solid rgba(255,255,255,0.05); border-left: 2px solid var(--crimson); border-radius: 5px; padding: 0.55rem 0.7rem; }
-  .sug.needs-visual { border-left-color: #fbbf24; }
+  .sug.needs-visual { border-left-color: var(--sem-warn); }
   .sug-rank { font-size: 0.85rem; color: #6f7c8d; flex: none; width: 1.2rem; text-align: right; line-height: 1.4; }
   .sug-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 0.3rem; }
   .sug-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.45rem; }
@@ -437,7 +437,7 @@
   .aud-badge { font-size: 0.6rem; padding: 0.08rem 0.4rem; border-radius: 999px; flex: none; white-space: nowrap; }
   .aud-players { background: rgba(240,171,252,0.13); color: #f0abfc; }
   .aud-gamedev { background: rgba(125,211,252,0.13); color: #7dd3fc; }
-  .aud-ai-dev { background: var(--rule); color: var(--crimson); }
+  .aud-ai-dev { background: var(--paperblend); color: var(--crimson); }
   .aud-general { background: rgba(148,163,184,0.13); color: var(--ink-soft); }
 
   .sug-venues { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
@@ -451,9 +451,9 @@
   .why-stale { background: rgba(251,146,60,0.14); color: #fdba74; }
   .why-warm { background: rgba(148,163,184,0.13); color: var(--ink-soft); }
   .why-good { background: rgba(110,231,183,0.13); color: var(--crimson); }
-  .why-warn { background: rgba(251,191,36,0.14); color: #fbbf24; }
+  .why-warn { background: rgba(251,191,36,0.14); color: var(--sem-warn); }
   .vis-ok { background: rgba(110,231,183,0.13); color: var(--crimson); }
-  .vis-needed { background: rgba(251,191,36,0.14); color: #fbbf24; }
+  .vis-needed { background: rgba(251,191,36,0.14); color: var(--sem-warn); }
 
   .snp-block { margin-top: 1.3rem; }
   .block-title { font-size: 0.82rem; color: #7dd3fc; margin: 0 0 0.5rem; letter-spacing: 0.03em; }

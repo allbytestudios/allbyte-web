@@ -430,14 +430,14 @@
     margin: 0 auto;
   }
   .muted { color: var(--ink-soft); }
-  .err { color: #f87171; }
+  .err { color: var(--sem-danger); }
   .sub { color: var(--ink-soft); font-weight: normal; font-size: 0.78rem; }
   .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
   .btn {
     background: transparent; color: var(--crimson); border: 1px solid var(--rule);
     border-radius: 4px; padding: 0.3rem 0.7rem; font-family: inherit; cursor: pointer;
   }
-  .btn:hover { background: var(--rule); }
+  .btn:hover { background: var(--paperblend); }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
   .bot-note { margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--ink-soft); }
   .bot-note .sub { display: block; margin-top: 0.1rem; }
@@ -449,27 +449,27 @@
     background: #131a26; border: 1px solid var(--rule);
     border-radius: 6px; padding: 0.9rem 1rem;
   }
-  .card.warn { border-color: rgba(248, 113, 113, 0.5); }
+  .card.warn { border-color: var(--sem-danger); }
   .num { font-size: 1.7rem; font-weight: 700; color: var(--crimson); }
-  .card.warn .num { color: #f87171; }
+  .card.warn .num { color: var(--sem-danger); }
   .lbl { font-size: 0.82rem; margin-top: 0.2rem; }
   .lbl .sub { display: block; }
   .signal {
     margin: 1rem 0 0; padding: 0.6rem 0.8rem; border-radius: 6px;
     background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.4);
-    color: #fca5a5; font-size: 0.85rem;
+    color: var(--sem-danger); font-size: 0.85rem;
   }
   .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
   h3 { color: var(--crimson); font-size: 1rem; margin: 0 0 0.6rem; font-weight: 700; }
   .bar-row { display: grid; grid-template-columns: 9rem 1fr 2.5rem; align-items: center; gap: 0.5rem; margin: 0.3rem 0; font-size: 0.8rem; }
   .bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .bar { background: var(--rule); border-radius: 3px; height: 14px; overflow: hidden; }
+  .bar { background: var(--paperblend); border-radius: 3px; height: 14px; overflow: hidden; }
   .fill { height: 100%; background: var(--crimson); }
-  .fill.alt { background: #fbbf24; }
-  .fill.ref { background: #60a5fa; }
+  .fill.alt { background: var(--sem-warn); }
+  .fill.ref { background: var(--sem-info); }
   .fill.dev { background: #c084fc; }
   .bar-n { text-align: right; color: var(--ink-soft); }
-  code { background: var(--rule); padding: 0 0.3rem; border-radius: 3px; }
+  code { background: var(--paperblend); padding: 0 0.3rem; border-radius: 3px; }
 
   /* Sessions-per-day chart */
   .daily { margin-top: 1.5rem; }
@@ -497,7 +497,7 @@
   .day-bar {
     position: relative;
     width: 100%;
-    background: var(--rule);
+    background: var(--paperblend);
     border-radius: 3px 3px 0 0;
     min-height: 3px;
   }
@@ -532,18 +532,18 @@
   .mf-track { background: rgba(251, 191, 36, 0.08); border-radius: 3px; height: 16px; }
   .mf-bar {
     height: 100%;
-    background: #fbbf24;
+    background: var(--sem-warn);
     border-radius: 3px;
     min-width: 2px;
     transition: width 0.3s ease;
   }
   .mf-stat { text-align: right; color: var(--ink-soft); font-size: 0.78rem; white-space: nowrap; }
   .mf-kept { color: var(--ink-soft); }
-  .mf-row.worst .mf-bar { background: #f87171; }
-  .mf-row.worst .mf-label { color: #fca5a5; }
-  .mf-row.worst .mf-kept { color: #f87171; }
+  .mf-row.worst .mf-bar { background: var(--sem-danger); }
+  .mf-row.worst .mf-label { color: var(--sem-danger); }
+  .mf-row.worst .mf-kept { color: var(--sem-danger); }
   .mf-note { font-size: 0.72rem; margin-top: 0.6rem; line-height: 1.5; }
-  .mf-note .worst-key { color: #f87171; font-weight: 700; }
+  .mf-note .worst-key { color: var(--sem-danger); font-weight: 700; }
 
   /* Engagement-by-device graph */
   .device-engagement { margin-top: 1.5rem; }
@@ -553,7 +553,7 @@
   .de-legend i.boot { background: #8b5cf6; }
   .de-legend i.past { background: var(--crimson); }
   .de-row { display: grid; grid-template-columns: 10rem 1fr 13rem; align-items: center; gap: 0.5rem; margin: 0.35rem 0; font-size: 0.8rem; }
-  .de-row.flag .bar-label { color: #fca5a5; }
+  .de-row.flag .bar-label { color: var(--sem-danger); }
   .de-track { background: rgba(255, 255, 255, 0.04); border-radius: 3px; height: 16px; }
   .de-bar { position: relative; height: 100%; background: rgba(192, 132, 252, 0.22); border-radius: 3px; min-width: 2px; }
   .de-seg { position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px; }

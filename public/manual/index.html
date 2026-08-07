@@ -638,10 +638,14 @@ function normalizeDashesMd(md) {
   // battle + screen + status_damage). A single-file overlay would clobber the
   // other files' content, so skip them until per-subfile Combat editing lands.
   var GROUPED = { battle: 1 };
-  function addBtn(anchor, key) {
-    if (!anchor || anchor.querySelector(".manual-edit-btn")) return;
+function addBtn(anchor, key, label) {
+    // Dedupe per (anchor, KEY), not per anchor: a grouped chapter head carries
+    // one button per subfile, and the old anchor-only guard silently dropped
+    // every button after the first.
+    if (!anchor || anchor.querySelector('.manual-edit-btn[data-key="' + key + '"]')) return;
     var b = document.createElement("button");
-    b.className = "manual-edit-btn"; b.type = "button"; b.textContent = "Edit";
+    b.className = "manual-edit-btn"; b.type = "button"; b.textContent = label || "Edit";
+    b.setAttribute("data-key", key);
     (function (k) { b.addEventListener("click", function () { openEditor(k); }); })(key);
     anchor.appendChild(b);
   }
@@ -661,10 +665,25 @@ function normalizeDashesMd(md) {
     }
     // grouped-chapter subsections (Combat = battle/screen/status_damage) ->
     // a button per subsection block (bodies keyed by the subfile name)
-    var subs = document.querySelectorAll("[data-subsection]");
+var subs = document.querySelectorAll("[data-subsection]");
     for (var s = 0; s < subs.length; s++) {
       var subEl = subs[s], skey = subEl.getAttribute("data-subsection");
       if (bodies[skey]) addBtn(subEl, skey);
+    }
+    // ...and ALSO in the grouped chapter's HEAD. Per-subfile editing works, but
+    // its only affordance was those inline buttons down in the prose, so Combat
+    // was the one chapter with a bare head - which reads as "not editable"
+    // (owner 2026-08-07). Label each by subfile so it's obvious which part.
+    var SUB_LABEL = { battle: "Combat", screen: "Screen", status_damage: "Damage & Status" };
+    for (var g = 0; g < leaves.length; g++) {
+      var gleaf = leaves[g], gkey = gleaf.getAttribute("data-section");
+      if (!GROUPED[gkey]) continue;
+      var head = gleaf.querySelector(".leaf-head");
+      var gsubs = gleaf.querySelectorAll("[data-subsection]");
+      for (var q = 0; q < gsubs.length; q++) {
+        var qk = gsubs[q].getAttribute("data-subsection");
+        if (bodies[qk]) addBtn(head, qk, "Edit " + (SUB_LABEL[qk] || qk));
+      }
     }
   }
 

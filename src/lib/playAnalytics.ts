@@ -16,6 +16,9 @@
 
 // WriteEndpoint output of the play-analytics CloudFormation stack
 // (allbyte-studio-play-analytics, us-east-1). Empty string = disabled (no-op).
+import { auth } from "./auth.svelte";
+
+// WriteEndpoint output (see below)
 const WRITE_URL = "https://pdtoj70foi.execute-api.us-east-1.amazonaws.com/play";
 
 // Only record real prod sessions — keeps localhost/dev noise out of the funnel.
@@ -23,6 +26,8 @@ const PROD_HOST = "allbyte.studio";
 const POLL_MS = 4000;
 const SID_KEY = "ab_play_sid";
 const OWNER_KEY = "ab_play_owner";
+// Longest we hold the arrival beacon waiting on /auth/me before recording anyway.
+const AUTH_WAIT_MS = 3000;
 
 /**
  * True for clients we exclude from the funnel — keeps bots and the owner's own
@@ -35,6 +40,15 @@ const OWNER_KEY = "ab_play_owner";
  *    machine/phone they test on without any account coupling (the funnel is
  *    anonymous by design).
  */
+/** True when the auth store currently reports an admin. Local read only. */
+function isAdminNow(): boolean {
+  try {
+    return String(auth.currentUser?.tier || "").toLowerCase() === "admin";
+  } catch {
+    return false;
+  }
+}
+
 function isExcludedClient(): boolean {
   try {
     if (new URLSearchParams(window.location.search).get("owner") === "1") {
@@ -45,6 +59,16 @@ function isExcludedClient(): boolean {
       }
     }
     if (localStorage.getItem(OWNER_KEY) === "1") return true;
+    // Logged-in admin = the owner, on ANY device, with nothing to remember.
+    // `?owner=1` only ever tagged the one browser you happened to type it in,
+    // which is how the owner's phone ended up in the funnel (owner 2026-08-07).
+    // Reading tier locally sends nothing: no account id leaves the page, the
+    // beacon body is unchanged, and we only use it to decide NOT to send.
+    // Tag the device too, so subsequent loads short-circuit before auth resolves.
+    if (isAdminNow()) {
+      try { localStorage.setItem(OWNER_KEY, "1"); } catch { /* private mode */ }
+      return true;
+    }
   } catch {
     /* storage unavailable — fall through to the webdriver check */
   }
@@ -158,6 +182,40 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
   const onProd = host === PROD_HOST || host === `www.${PROD_HOST}`;
   if (typeof window === "undefined" || !WRITE_URL || !onProd || isExcludedClient()) {
     return () => {};
+  }
+
+  // A logged-in visitor's TIER isn't known until /auth/me resolves, which is
+  // after this runs — so an admin would still fire the arrival beacon before we
+  // could tell it was the owner. When a token is present but auth hasn't
+  // settled, wait for it and then re-enter (by which point isExcludedClient()
+  // can see the admin and self-tag the device). Anonymous visitors — nearly all
+  // real traffic — never wait, so bounce timing is unaffected.
+  let hasToken = false;
+  try {
+    hasToken = !!localStorage.getItem("allbyte_token");
+  } catch {
+    /* storage unavailable — treat as anonymous */
+  }
+  if (hasToken && !auth.authReady) {
+    let cancelled = false;
+    let inner: (() => void) | null = null;
+    const t0 = Date.now();
+    const iv = setInterval(() => {
+      if (cancelled) {
+        clearInterval(iv);
+        return;
+      }
+      // Bounded: a dead/slow auth API must not silently drop the session.
+      if (auth.authReady || Date.now() - t0 > AUTH_WAIT_MS) {
+        clearInterval(iv);
+        if (!cancelled) inner = initPlayAnalytics(stateGetter);
+      }
+    }, 50);
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+      if (inner) inner();
+    };
   }
 
   const sid = sessionId();

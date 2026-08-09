@@ -160,7 +160,37 @@ const EDITOR_CSS =
   "</style>";
 html = html.replace("</style>", EDITOR_CSS, 1);
 const bodiesJson = JSON.stringify(bodies).replace(/</g, "\\u003c");
-const BLOB = `<script type="application/json" id="manual-bodies">${bodiesJson}</script>`;
+// --- figure key -> built asset map -------------------------------------------
+// Bodies reference figures by LOGICAL KEY (![alt](combat_hud_annotated)); this
+// render resolves them to hashed files. An override is re-rendered in the
+// BROWSER though, where that mapping doesn't exist — so an edited section
+// emitted <img src="combat_hud_annotated"> and 404'd (owner 2026-08-08, Combat).
+// Ship the map so the client resolver can do the same substitution.
+//
+// Matched on ALT text, loosely: normalizeDashes rewrites dashes in the rendered
+// HTML, so an exact compare misses any alt containing one.
+const loose = (t) => String(t || "").replace(/&[#\w]+;/g, " ").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 60);
+const renderedByAlt = {};
+for (const tag of html.match(/<img[^>]*>/gi) || []) {
+  const src = tag.match(/src="(assets\/[^"]+)"/i);
+  const alt = tag.match(/alt="([^"]*)"/i);
+  if (src && alt && !(loose(alt[1]) in renderedByAlt)) renderedByAlt[loose(alt[1])] = src[1];
+}
+const imageMap = {};
+for (const body of Object.values(bodies)) {
+  if (typeof body !== "string") continue;
+  for (const m of body.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)) {
+    const ref = m[2].trim();
+    if (/^(assets\/|https?:|data:|\/)/i.test(ref)) continue;
+    const hit = renderedByAlt[loose(m[1])];
+    if (hit) imageMap[ref] = hit;   // no hit = the export emitted no <img> for it
+  }
+}
+console.log(`[sync-manual] figure map: ${Object.keys(imageMap).length} key(s) resolved`);
+
+const BLOB =
+  `<script type="application/json" id="manual-images">${JSON.stringify(imageMap)}</script>` +
+  `<script type="application/json" id="manual-bodies">${bodiesJson}</script>`;
 // Inject the inline editor (admin-gated client). MANUAL_API = the deployed
 // allbyte-studio-manual-overlay stack.
 const MANUAL_API = "https://2qvnqlwv78.execute-api.us-east-1.amazonaws.com";

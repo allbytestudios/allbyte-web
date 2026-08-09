@@ -98,11 +98,34 @@
     var leaf = document.querySelector('.leaf[data-section="' + esc(key) + '"]');
     return leaf ? leaf.querySelector(".prose") : null;
   }
+  // Markdown bodies reference figures by LOGICAL KEY — ![alt](combat_hud_annotated).
+  // The build resolves those to hashed files (assets/<sha>.png) when it renders
+  // the static page, but an override is re-rendered HERE in the browser, where
+  // no such mapping exists — so an edited section emitted <img src="combat_hud_
+  // annotated">, which 404s. That's why editing the Combat text broke its images
+  // (owner 2026-08-08). The build now ships the key->asset map alongside the
+  // bodies; resolve against it after rendering. Unmapped keys are dropped rather
+  // than left as a broken-image icon.
+  var IMAGES = (function () {
+    try { return JSON.parse(document.getElementById("manual-images").textContent) || {}; }
+    catch (e) { return {}; }
+  })();
+  function resolveImages(html) {
+    return html.replace(/<img[^>]*>/gi, function (tag) {
+      var m = tag.match(/src="([^"]*)"/i);
+      if (!m) return tag;
+      var ref = m[1];
+      if (/^(assets\/|https?:|data:|\/)/i.test(ref)) return tag;
+      var hit = IMAGES[ref];
+      return hit ? tag.replace(m[0], 'src="' + hit + '"') : "";
+    });
+  }
   function applyOne(key) {
     var el = proseOf(key), ov = overrides[key];
     if (el && ov) {
       var rendered = renderMd(ov.edited_md);
       if (typeof normalizeDashes === "function") rendered = normalizeDashes(rendered); // no em-dashes (AI tell)
+      rendered = resolveImages(rendered);
       el.innerHTML = rendered;
       var container = el.closest("[data-cast-key]") || (el.classList && el.classList.contains("charbio") ? cardForCharbio(el) : null) || el.closest(".leaf");
       if (container) container.setAttribute("data-overridden", "true");

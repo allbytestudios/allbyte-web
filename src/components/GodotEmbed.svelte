@@ -156,6 +156,22 @@
   // notice. The decision is made client-side in onMount (localStorage isn't
   // available during SSR), so the server emits neither the iframe nor a wrong
   // gate state. Admin fixture deep-loads skip the gate entirely.
+  // --- Instruction Booklet letterbox panel: OFF by default (feature flag) ----
+  // It iframes /manual/, and /play/ is cross-origin-isolated (COEP), so a nested
+  // document that doesn't send its own COEP is refused by the browser — wide
+  // desktop visitors got a "allbyte.studio refused to connect" box in the left
+  // bar instead of the manual (owner-reported 2026-08-08, Chrome/macOS).
+  //
+  // Hidden for everyone until the header is in place and the owner has tested
+  // it. Enable per-URL with ?manualpanel=1 — deliberately NOT persisted, so a
+  // stray flag can never leak the panel back to players.
+  //
+  // NOTE: enabling this alone still shows the refusal box; /manual/ must also
+  // serve Cross-Origin-Embedder-Policy (+ CORP) before the panel can render.
+  const manualPanelEnabled =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).has("manualpanel");
+
   let allowed = $state(false);
   let showGate = $state(false);
   // Returning mobile users skip the download gate, so /play never gets a
@@ -2024,7 +2040,9 @@
       ></iframe>
     {/if}
     <VirtualGamepad iframe={iframeEl} />
-    <ManualLetterboxPanel />
+    {#if manualPanelEnabled}
+      <ManualLetterboxPanel />
+    {/if}
     {#if showKbHint}
       <div class="kb-hint-layer kb-hint-{kbHintPos}">
         <div

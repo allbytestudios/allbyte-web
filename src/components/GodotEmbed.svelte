@@ -13,7 +13,7 @@
   import gameVersion from "../data/game-version.json";
   import spriteGifs from "../data/sprite-gifs.json";
   import { MANUAL_CARDS, EPISODE_1_SPRITES, SPRITE_DISPLAY, SPRITE_LORE } from "../lib/manualCards.ts";
-  import { versionById, isUnlocked } from "../lib/gameVersions";
+  import { versionById, isUnlocked, DEBUG_CHANNEL_ID } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
@@ -73,7 +73,13 @@
   // so they must NOT fire for these — otherwise the expected version mismatch
   // triggers an endless "loads then reloads" cache-clear loop. alpha/alpha-debug
   // still get the self-heal (their version SHOULD match).
-  const SELF_VERSIONED = new Set(["develop", "staging"]);
+  // Empty since develop + staging were retired (2026-08-17): both surviving
+  // channels (prod = alpha, prod debug = alpha-debug) ARE stamped at
+  // game-version.json, so both legitimately get the freshness/crash self-heal.
+  // Kept as a set rather than deleted — scenario loads still bypass the self-heal
+  // via the `scenario` check below, and a future self-versioned channel just
+  // slots back in here.
+  const SELF_VERSIONED = new Set<string>([]);
   function isNonDefaultBuild(): boolean {
     if (typeof window === "undefined") return false;
     const q = new URLSearchParams(window.location.search);
@@ -787,9 +793,12 @@
       }
     });
 
-    // Remote console-log shipper — DEVELOP channel only (debug build), so Arc can
-    // read a real device's console without USB debugging. Never ships public logs.
-    if (typeof gameUrl === "string" && gameUrl.includes("/godot/develop/")) {
+    // Remote console-log shipper — PROD DEBUG channel only, so Arc can read a real
+    // device's console without USB debugging. Never ships public logs. Followed the
+    // debug build from /godot/develop/ to /godot/alpha-debug/ when develop was
+    // retired (2026-08-17) — keyed off the channel table so it can't drift again.
+    const debugPath = versionById(DEBUG_CHANNEL_ID)?.path ?? "";
+    if (typeof gameUrl === "string" && debugPath && gameUrl.startsWith(debugPath.replace(/index\.html$/, ""))) {
       logShipOff = initConsoleLogShipper(
         () => {
           try {
@@ -807,7 +816,7 @@
           }
           return {
             version,
-            channel: "develop",
+            channel: DEBUG_CHANNEL_ID,
             url: window.location.href,
             userAgent: navigator.userAgent,
             viewport: `${window.innerWidth}x${window.innerHeight}`,

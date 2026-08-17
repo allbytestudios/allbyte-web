@@ -29,7 +29,9 @@ import time
 from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get("SCENARIO_BASE", "https://allbyte.studio").rstrip("/")
-CHANNEL = os.environ.get("SCENARIO_CHANNEL", "develop")
+# prod debug — scenario jumps need the TestBridge hooks the public build lacks.
+# Was "develop" until that channel was retired (2026-08-17).
+CHANNEL = os.environ.get("SCENARIO_CHANNEL", "alpha-debug")
 GAME_URL = f"{BASE}/godot/{CHANNEL}/index.html"
 
 _FIXTURE = (

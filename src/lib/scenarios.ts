@@ -16,6 +16,7 @@
  */
 
 import data from "../data/scenarios.json";
+import { DEBUG_CHANNEL_ID } from "./gameVersions";
 
 export interface Scenario {
   /** stable row id */
@@ -44,10 +45,10 @@ export interface ScenarioData {
 
 export const scenarioData = data as unknown as ScenarioData;
 
-/** Compose the /play deep-link that drops straight into the develop build. */
+/** Compose the /play deep-link that drops straight into the prod debug build. */
 export function launchUrl(s: Scenario, opts?: { persona?: string }): string {
   const p = new URLSearchParams();
-  p.set("channel", "develop");
+  p.set("channel", DEBUG_CHANNEL_ID);
   p.set("scenario", s.fixtureId);
   if (s.packs?.length) p.set("packs", s.packs.join(","));
   const persona = opts?.persona ?? s.persona;

@@ -12,6 +12,7 @@
  */
 
 import data from "../data/save-tree.json";
+import { DEBUG_CHANNEL_ID } from "./gameVersions";
 import spine from "../data/story-spine.json";
 
 export interface SaveTreeBuild {
@@ -124,10 +125,10 @@ export function treeFor(difficulty: string): TreeEntry[] {
   return [...roots, ...orphans];
 }
 
-/** Compose the /play deep-link that jumps the develop build into this node. */
+/** Compose the /play deep-link that jumps the prod debug build into this node. */
 export function jumpUrl(n: SaveTreeNode): string {
   const p = new URLSearchParams();
-  p.set("channel", "develop");
+  p.set("channel", DEBUG_CHANNEL_ID);
   p.set("scenario", `tree-${n.id}`);
   if (n.packs?.length) p.set("packs", n.packs.join(","));
   return `/play/?${p.toString()}`;

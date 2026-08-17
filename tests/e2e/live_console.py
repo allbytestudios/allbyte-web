@@ -23,7 +23,7 @@ USAGE
   python tests/e2e/live_console.py --out report.json       # full JSON report
 
 OPTIONS
-  --channel <name>  develop|alpha|alpha-debug|beta|beta-debug (default: develop)
+  --channel <name>  alpha (prod) | alpha-debug (prod debug) (default: alpha-debug)
   --raw             load /godot/<channel>/index.html directly (no /play embed/gate)
   --base <url>      site origin (default: https://allbyte.studio)
   --url <url>       explicit URL, overrides --channel/--raw/--base
@@ -119,7 +119,7 @@ def drive_step(gf, page, step):
 
 def main():
     ap = argparse.ArgumentParser(description="Read the live site console via Playwright.")
-    ap.add_argument("--channel", default="develop")
+    ap.add_argument("--channel", default="alpha-debug")
     ap.add_argument("--raw", action="store_true")
     ap.add_argument("--base", default="https://allbyte.studio")
     ap.add_argument("--url", default="")

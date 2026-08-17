@@ -29,6 +29,15 @@ export interface TrafficMeta {
   raw_page_hits: number;
   bot_hits: number;
   bot_pct: number;
+  /**
+   * Our own Deploy QA / smoke runs against prod, removed from the figures above.
+   * They used to read as play traffic and swamped the real players (~50:1 on the
+   * busiest deploy days), which is what made this panel disagree with the play
+   * funnel. Surfaced rather than silently dropped so a misfiring filter is
+   * visible. Optional: aggregates written before the filter shipped lack them.
+   */
+  ci_hits?: number;
+  ci_ips?: number;
   human_pageviews: number;
   n_sessions: number;
   avg_pages: number;

@@ -131,6 +131,37 @@ READY_POLL_S = 1
 NAV_ATTEMPTS = 3
 
 
+# Tag every request this harness makes so the traffic aggregator can drop it.
+# Deploy QA boots /play/ on PROD across the engine matrix after every deploy, and
+# those hits used to land in /test/traffic/ as play traffic — on 2026-08-03 the
+# panel read 162 /play/ hits against 14 real sessions in the play funnel, which
+# is what made the two disagree. Playwright's Chromium already says
+# "HeadlessChrome" and was filtered; its Firefox and WebKit builds look like
+# ordinary browsers, so they need this explicit marker. APPENDED, never
+# substituted — the OS/engine tokens the engine and the site sniff stay intact.
+QA_UA_TAG = "AllByteQA/1"
+
+_UA_CACHE: dict = {}
+
+
+def _qa_new_context(browser, **kw):
+    """browser.new_context() with the CI marker appended to the User-Agent."""
+    key = id(browser)
+    base = _UA_CACHE.get(key)
+    if base is None:
+        probe = browser.new_context()
+        try:
+            base = probe.new_page().evaluate("navigator.userAgent")
+        finally:
+            try:
+                probe.close()
+            except Exception:
+                pass
+        _UA_CACHE[key] = base
+    kw.setdefault("user_agent", f"{base} {QA_UA_TAG}")
+    return browser.new_context(**kw)
+
+
 def _launch(p, engine_name: str, headless: bool):
     if engine_name == "chromium":
         # swiftshader so a headless CI runner / GPU-less box still gets a WebGL
@@ -294,7 +325,7 @@ def test_engine(
         # Separate contexts so the /play/ embed and the public gameplay runs are
         # fully isolated (no shared localStorage ack, no lingering WebGL game).
         boot_to = 90 if engine_name == "firefox" else BOOT_TIMEOUT_S
-        ctx1 = browser.new_context(viewport={"width": 1280, "height": 900})
+        ctx1 = _qa_new_context(browser, viewport={"width": 1280, "height": 900})
         embed = _play_embed(ctx1, play_url, out_dir, engine_name, boot_to)
         print(f"  [{engine_name}] /play/ embed: {embed['status']} scene={embed['scene']}", flush=True)
         try:
@@ -302,7 +333,7 @@ def test_engine(
         except Exception:
             pass
 
-        ctx2 = browser.new_context(viewport={"width": 1280, "height": 900})
+        ctx2 = _qa_new_context(browser, viewport={"width": 1280, "height": 900})
         stages, pub_logs = _public_gameplay(ctx2, public_url, engine_name)
         try:
             ctx2.close()

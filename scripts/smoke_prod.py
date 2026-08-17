@@ -68,6 +68,24 @@ READY_POLL_S = 1
 # sets SMOKE_CHROMIUM_NO_SANDBOX=1 so the in-build boot gate can launch headless.
 # Empty (the default) everywhere else, so local/CI-runner behavior is unchanged.
 CHROMIUM_LAUNCH_ARGS = ["--no-sandbox"] if os.environ.get("SMOKE_CHROMIUM_NO_SANDBOX") else []
+# Marks this smoke run as our own CI in the CloudFront logs so the traffic
+# aggregator drops it instead of counting it as a play. Appended to the real UA,
+# never substituted. Same token as tests/cross-browser-qa/run.py.
+QA_UA_TAG = "AllByteQA/1"
+
+
+def _qa_context(browser, **kw):
+    """new_context() with the CI marker appended to the User-Agent."""
+    probe = browser.new_context()
+    try:
+        base = probe.new_page().evaluate("navigator.userAgent")
+    finally:
+        try:
+            probe.close()
+        except Exception:
+            pass
+    kw.setdefault("user_agent", f"{base} {QA_UA_TAG}")
+    return browser.new_context(**kw)
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERSION_FILE = os.path.join(REPO, "src", "data", "game-version.json")
@@ -167,7 +185,7 @@ def check_channel_boot(url: str, label: str = "channel", cookies: list | None = 
     channel boot through its signed-cookie grant."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
+        context = _qa_context(browser, viewport={"width": 1280, "height": 800})
         if cookies:
             context.add_cookies(cookies)
         page = context.new_page()
@@ -311,7 +329,7 @@ def get_beta_cookies(origin: str) -> list | None:
 def check_boot() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
+        context = _qa_context(browser, viewport={"width": 1280, "height": 800})
         page = context.new_page()
 
         # Collect console events from page + game iframe.

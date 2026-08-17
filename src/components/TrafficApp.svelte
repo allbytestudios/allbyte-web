@@ -66,7 +66,8 @@
     <div class="head">
       <span class="muted">
         {data.meta.date_range[0]} → {data.meta.date_range[1]} ·
-        bot &amp; crawler traffic removed ({data.meta.bot_pct}% of page requests) ·
+        bot &amp; crawler traffic removed ({data.meta.bot_pct}% of page requests){#if data.meta.ci_hits},
+        including {data.meta.ci_hits.toLocaleString()} hits from own CI{/if} ·
         updated {when(data.meta.generatedAt)}
       </span>
       <button class="btn" onclick={load}>Refresh</button>
@@ -180,7 +181,9 @@
     <p class="foot muted">
       Source: CloudFront access logs, rolling 14 days ({data.meta.n_files.toLocaleString()} files). Pages only
       (trailing-slash GET, 200/304); assets, packs and the game WASM excluded. Sessions = client IP + user-agent
-      within a 30-min gap. Caveat: <code>/play/</code> counts include some automated boot-smoke / QA hits.
+      within a 30-min gap. Our own Deploy QA / boot-smoke runs are excluded from <code>/play/</code> — they
+      self-identify by user-agent, plus a cohort rule for logs older than that filter. Mobile visitors are never
+      treated as CI, so referrer-less arrivals from social apps still count.
     </p>
   {/if}
 </div>

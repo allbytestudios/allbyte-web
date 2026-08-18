@@ -171,7 +171,7 @@ const bodiesJson = JSON.stringify(bodies).replace(/</g, "\\u003c");
 // HTML, so an exact compare misses any alt containing one.
 const loose = (t) => String(t || "").replace(/&[#\w]+;/g, " ").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 60);
 const renderedByAlt = {};
-for (const tag of html.match(/<img[^>]*>/gi) || []) {
+for (const tag of html.match(/<img\b[^>]*>/gi) || []) {
   const src = tag.match(/src="(assets\/[^"]+)"/i);
   const alt = tag.match(/alt="([^"]*)"/i);
   if (src && alt && !(loose(alt[1]) in renderedByAlt)) renderedByAlt[loose(alt[1])] = src[1];

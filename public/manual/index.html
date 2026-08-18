@@ -538,6 +538,12 @@ function normalizeDashesMd(md) {
   function inline(raw) {
     var t = String(raw == null ? "" : raw).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     t = t.replace(/`([^`]+)`/g, function (_, c) { return "<code>" + c + "</code>"; });
+    // Images MUST be matched before links: the link rule below otherwise claims
+    // "![alt](key)" and emits "!" followed by <a href="key">alt</a>. That is exactly
+    // how the Combat screenshots became hyperlinks once that section was edited
+    // (owner 2026-08-17) — the key->asset map shipped, but nothing ever produced an
+    // <img> for resolveImages() to rewrite. Logical keys are resolved after render.
+    t = t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function (_, a, u) { return '<img src="' + u + '" alt="' + a.replace(/"/g, "&quot;") + '">'; });
     t = t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (_, x, u) { return '<a href="' + u + '">' + x + "</a>"; });
     t = t.replace(/\[([^\]]+)\]/g, function (_, x) { return '<span class="item">' + x + "</span>"; }); // [Item] chips
     t = t.replace(/\*\*([^*]+)\*\*/g, function (_, b) { return "<strong>" + b + "</strong>"; });
@@ -566,6 +572,14 @@ function normalizeDashesMd(md) {
       var line = lines[i];
       if (!line.trim()) { i++; continue; }
       if (/^\s*---+\s*$/.test(line)) { out.push("<hr>"); i++; continue; }
+      // A line that is ONLY an image becomes a <figure>, matching the markup
+      // Quinn's static export emits, so an edited section's screenshots sit and
+      // caption exactly like an unedited section's rather than as a bare inline img.
+      var fig = line.match(/^\s*!\[([^\]]*)\]\(([^)\s]+)\)\s*$/);
+      if (fig) {
+        out.push('<figure class="figure wide"><img src="' + fig[2] + '" alt="' + fig[1].replace(/"/g, "&quot;") + '"><figcaption>' + inline(fig[1]) + "</figcaption></figure>");
+        i++; continue;
+      }
       var h = line.match(/^\s*(#{2,6})\s+(.*)$/);
       if (h) { var lv = Math.max(2, h[1].length); out.push("<h" + lv + ">" + inline(h[2]) + "</h" + lv + ">"); i++; continue; }
       if (/^\s*\|.*\|/.test(line) && i + 1 < lines.length && isTableSep(lines[i + 1])) {
@@ -586,7 +600,9 @@ function normalizeDashesMd(md) {
         var ob = []; while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { ob.push(lines[i].replace(/^\s*\d+\.\s+/, "")); i++; }
         out.push("<ol>" + ob.map(function (li) { return "<li>" + inline(li) + "</li>"; }).join("") + "</ol>"); continue;
       }
-      var pb = []; while (i < lines.length && lines[i].trim() && !/^\s*(>|#{2,6}\s|[-*]\s|\d+\.\s|\||---+\s*$)/.test(lines[i])) { pb.push(lines[i]); i++; }
+      // `!\[` terminates a paragraph too — without it an image line following prose
+      // is absorbed into the <p> and never reaches the figure branch above.
+      var pb = []; while (i < lines.length && lines[i].trim() && !/^\s*(>|#{2,6}\s|[-*]\s|\d+\.\s|\||---+\s*$|!\[)/.test(lines[i])) { pb.push(lines[i]); i++; }
       out.push("<p>" + inline(pb.join(" ")) + "</p>");
     }
     return out.join("\n");
@@ -621,14 +637,17 @@ function normalizeDashesMd(md) {
     catch (e) { return {}; }
   })();
   function resolveImages(html) {
-    return html.replace(/<img[^>]*>/gi, function (tag) {
+    return html.replace(/<img\b[^>]*>/gi, function (tag) {
       var m = tag.match(/src="([^"]*)"/i);
       if (!m) return tag;
       var ref = m[1];
       if (/^(assets\/|https?:|data:|\/)/i.test(ref)) return tag;
       var hit = IMAGES[ref];
       return hit ? tag.replace(m[0], 'src="' + hit + '"') : "";
-    });
+    })
+    // An unmapped key drops its <img>; clear the now-imageless figure too so we
+    // don't leave a caption floating under nothing.
+    .replace(/<figure class="figure wide"><figcaption>.*?<\/figcaption><\/figure>/g, "");
   }
   function applyOne(key) {
     var el = proseOf(key), ov = overrides[key];

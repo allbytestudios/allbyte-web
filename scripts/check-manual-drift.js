@@ -120,6 +120,30 @@ for (const [k, v] of Object.entries(images)) {
   if (!existsSync(join(process.cwd(), "public", "manual", v))) note("(assets)", `image key ${k} -> missing file ${v}`);
 }
 
+// Rendered <img> carry RESOLVED paths; the markdown carries logical keys. Rebuild
+// an asset without re-rendering and the HTML keeps pointing at the old hash — the
+// file still exists, so nothing 404s and the page silently shows the stale art.
+// (Cost me the relic's flash animation once already.)
+//
+// Scoped to the rendered prose containers: that is the content generated FROM the
+// markdown, so it is the only place the two layers have to agree. Portraits and
+// other page chrome sit outside prose and legitimately have no image key.
+const live = new Set(Object.values(images));
+const stale = new Map();
+for (const key of Object.keys(bodies)) {
+  let rendered = renderedFor(key);
+  if (!rendered) continue;
+  // Cast portraits are card chrome, not markdown output — they live in
+  // .figure.portrait inside .charcard and have no logical key by design.
+  rendered = rendered.replace(/<div class="figure portrait">[\s\S]*?<\/div>/g, "");
+  for (const m of rendered.matchAll(/<img\b[^>]*\bsrc="(assets\/[^"]+)"/g)) {
+    if (!live.has(m[1])) stale.set(m[1], key);
+  }
+}
+for (const [v, key] of stale) {
+  note(key, `rendered <img> points at ${v}, which no image key resolves to — asset rebuilt without re-rendering`);
+}
+
 if (!quiet) {
   const sections = Object.keys(bodies).length;
   if (!problems.length) {

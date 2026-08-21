@@ -125,6 +125,76 @@ function chroniclesProxy() {
 //
 // In prod, the marketing-queue will read from S3 instead — this proxy
 // doesn't ship.
+// Dev-only: preview the manual SNAPSHOT with the live override layer bypassed.
+//
+// /manual/ is a static snapshot in public/, but on load it fetches the PROD
+// override API and overlays any section an admin has edited. That layer always
+// wins, so an edit made to the snapshot in this repo is invisible locally --
+// you cannot see your own change until it is published. This plugin closes that
+// gap: `?snapshot=1` serves the same file with loadOverrides() neutered, so what
+// renders is exactly what the repo says.
+//
+// Served at /manual-snapshot/ rather than /manual/?snapshot=1: public/manual/
+// exists on disk, so Vite's static middleware answers it before any plugin
+// middleware can. A path with no file behind it avoids that ordering fight
+// entirely. A <base> tag is injected so the page's relative asset/ URLs still
+// resolve against /manual/.
+function manualSnapshotPreview() {
+  const manualFile = resolve(join(process.cwd(), "public", "manual", "index.html"));
+  return {
+    name: "allbyte-manual-snapshot-preview",
+    configureServer(server) {
+      server.middlewares.use("/manual-snapshot", (req, res, next) => {
+        try {
+          if (!existsSync(manualFile)) return next();
+
+          let html = readFileSync(manualFile, "utf8");
+          const marker = "function loadOverrides() {";
+          const i = html.indexOf(marker);
+          if (i === -1) {
+            // Renderer changed shape; fail loudly rather than serving a page
+            // that silently still overlays prod.
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "text/plain; charset=utf-8");
+            res.end("manual snapshot preview: loadOverrides() not found in public/manual/index.html");
+            return;
+          }
+          // Comment out the ORIGINAL body including its closing brace -- leaving
+          // that brace behind orphans it and breaks the whole script block.
+          const close = "\n  }";
+          const j = html.indexOf(close, i);
+          if (j === -1) {
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "text/plain; charset=utf-8");
+            res.end("manual snapshot preview: could not find end of loadOverrides()");
+            return;
+          }
+          const jEnd = j + close.length;
+          html =
+            html.slice(0, i) +
+            "function loadOverrides() { overrides = {}; return Promise.resolve(); }\n  /* snapshot preview: prod overrides bypassed" +
+            html.slice(i + marker.length, jEnd) +
+            "*/" +
+            html.slice(jEnd);
+          html = html.replace(
+            "</head>",
+            '<base href="/manual/">' +
+              '<style>body::before{content:"SNAPSHOT PREVIEW \\2014 prod overrides bypassed";' +
+              "position:fixed;z-index:9999;top:0;left:0;right:0;background:#8A2B21;color:#E4D8BB;" +
+              'font:600 13px/2.2 system-ui,sans-serif;text-align:center;letter-spacing:.06em}' +
+              "body{padding-top:29px}</style></head>"
+          );
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          res.setHeader("Cache-Control", "no-store");
+          res.end(html);
+        } catch {
+          next();
+        }
+      });
+    },
+  };
+}
+
 function captureLocalProxy() {
   const captureRoot = resolve(
     process.env.CAPTURE_OUT_DIR ||
@@ -1218,7 +1288,7 @@ export default defineConfig({
     remarkPlugins: [remarkDirective, remarkWalkthroughDirectives],
   },
   vite: {
-    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), relicVignetteOverrideWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork()],
+    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), relicVignetteOverrideWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork(), manualSnapshotPreview()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

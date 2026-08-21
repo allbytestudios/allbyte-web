@@ -37,6 +37,7 @@
     "sync:walkthrough": "node scripts/sync-walkthrough.js",
     "sync:walkthrough:dry": "node scripts/sync-walkthrough.js --dry-run",
     "sync:walkthrough-edits": "node scripts/sync-walkthrough-edits.js",
+    "check:manual": "node scripts/check-manual-drift.js",
     "sync:manual": "node scripts/sync-manual.js"
   },
   "repository": {

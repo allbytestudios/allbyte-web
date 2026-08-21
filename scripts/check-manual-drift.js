@@ -116,6 +116,20 @@ if (orphans) note("(page)", `${orphans} orphaned list continuation(s) — a bull
 if (!/return "<strong>" \+ b \+ "<\/strong>"/.test(html)) {
   note("(page)", "markdown renderer's bold rule is damaged — client-side edits would lose <strong>");
 }
+
+// Unbalanced <div> inside a chapter escapes that chapter and closes .booklet
+// early, so every chapter after it renders at a different width — and a stray
+// open leaks its layout (a two-column .cf-row swallowed a whole chapter once).
+// Neither shows up as a content mismatch, so check the structure directly.
+for (const m of html.matchAll(/<section class="leaf"[^>]*data-section="([a-z_:]+)"/g)) {
+  const end = html.indexOf("</section>", m.index);
+  const seg = html.slice(m.index, end === -1 ? undefined : end);
+  const opens = (seg.match(/<div\b/g) || []).length;
+  const closes = (seg.match(/<\/div>/g) || []).length;
+  if (opens !== closes) {
+    note(m[1], `unbalanced <div>: ${opens} open vs ${closes} closed (${opens - closes > 0 ? "leaks into" : "escapes"} the rest of the booklet)`);
+  }
+}
 for (const [k, v] of Object.entries(images)) {
   if (!existsSync(join(process.cwd(), "public", "manual", v))) note("(assets)", `image key ${k} -> missing file ${v}`);
 }

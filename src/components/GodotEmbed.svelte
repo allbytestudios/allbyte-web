@@ -288,14 +288,18 @@
     // install non debug"). The public export boots as of v0.7.2066+. Bonus:
     // it's a different path than the debug build, so a PWA stuck on a stale
     // /godot/ cache gets a fresh fetch from /godot/public/.
-    if (isStandalonePWA()) return "/godot/public/index.html";
-    // Browser — Arc's deploy layout (CON_CLAUDE_TIER_GATED_LANDED.md 2026-06-05):
-    //   debug  → /godot/index.html         (current path, kept)
-    //   public → /godot/public/index.html  (new subdir)
-    if (!VARIANT_PATHS_AVAILABLE) return "/godot/index.html";
-    return resolveVariant() === "debug"
-      ? "/godot/index.html"
-      : "/godot/public/index.html";
+    // SINGLE GATED BUILD (Arc, CON_CLAUDE_SINGLE_GATED_BUILD_VERIFIED.md,
+    // build 0.8.2440). There is no longer a separate debug ARTIFACT to route
+    // to: one Public export ships everywhere, with its dev surface gated at
+    // call time behind ?debug=<token>. So everybody — visitor, Legend, admin,
+    // installed PWA — loads the same file, and the ONLY difference is whether
+    // debugParam() forwards the token (admins) or strips it (everyone else).
+    //
+    // This is what closes APP_CLAUDE_PROD_IS_DEBUG_BUILD.md: prod used to serve
+    // the debug export to every visitor, cheat hooks and DEV ADMIN included.
+    // Routing by tier is now the wrong shape — a tier can no longer buy you a
+    // different build, only a different authorisation on the same one.
+    return "/godot/public/index.html";
   }
 
   // A tier-gated deep-link (?v= / ?channel=, which every scenario jump carries)
@@ -318,6 +322,30 @@
   /** resolveGameUrl(), but yields null while a gated deep-link waits on auth. */
   function resolveGameUrlOrHold(): string | null {
     return hasGatedDeepLink() && !auth.authReady ? null : resolveGameUrl();
+  }
+
+  // --- ?debug passthrough (single-build debug gate) --------------------------
+  // Two independent layers, and neither half knows the other's:
+  //   site  gates on IDENTITY  — admin, verified server-side by /auth/me
+  //   game  gates on the TOKEN — checked against a constant in its own build
+  // The token is NEVER stored in this repo (it is public); it arrives in the
+  // owner's URL and is forwarded verbatim for admins, or dropped for everyone
+  // else. So a non-admin who finds the URL has the param stripped before it
+  // reaches the game, and anyone hitting /godot/ directly still needs the token.
+  //
+  // Gated on auth.authReady for the same reason the ?v=/?channel= deep-links are:
+  // a pre-auth read sees a null user, forwards nothing, and the game boots
+  // dormant — with no second chance, since we never swap builds mid-session.
+  function debugParam(): string {
+    if (typeof window === "undefined" || !auth.authReady) return "";
+    if (!isAdmin(auth.currentUser)) return "";
+    const t = new URLSearchParams(window.location.search).get("debug");
+    return t ? `&debug=${encodeURIComponent(t)}` : "";
+  }
+
+  /** The iframe src: the resolved build plus the admin-only debug passthrough. */
+  function gameSrc(base: string): string {
+    return `${base}?t=${Date.now()}${debugParam()}`;
   }
   let gameUrl = $state<string | null>(resolveGameUrlOrHold());
 
@@ -450,7 +478,7 @@
     loading = true;
     error = "";
     if (!gameUrl) return; // still waiting on auth to pick the build
-    iframeEl.src = `${gameUrl}?t=${Date.now()}`;
+    iframeEl.src = gameSrc(gameUrl);
   }
 
   // Owner spec for quit/exit:
@@ -2040,7 +2068,7 @@
     {#if gameUrl}
       <iframe
         bind:this={iframeEl}
-        src={gameUrl}
+        src={gameSrc(gameUrl)}
         title="The Chronicles of Nesis"
         class="game-frame"
         onload={onLoad}

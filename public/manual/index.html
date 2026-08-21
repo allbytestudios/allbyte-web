@@ -397,6 +397,18 @@ tbody tr:nth-child(even){ background:rgba(60,40,20,.045); }
   .leaf .fig-quad.facing-quad{ grid-template-columns:repeat(2,1fr) !important; }
   .tbl-wrap{ -webkit-overflow-scrolling:touch; }
 }
+/* A glyph must not collapse with its column. img{max-width:100%} squeezed
+   these boxes to 4.8px wide at phone width — object-fit kept the aspect, so
+   instead of stretching they just went tiny. min-width beats max-width in the
+   cascade, so the glyph holds its size and the TABLE scrolls in .tbl-wrap
+   instead, which is what that wrapper is for. */
+.leaf .statsym{ min-width:1.05em; }
+.leaf .terrsym{ min-width:1.6em; }
+.leaf[data-section="status_damage"] .statsym{ min-width:1.31em; }
+.leaf[data-section="status_damage"] .terrsym{ min-width:2em; }
+.leaf .aff-stack img{ min-width:3.2em; }
+.leaf[data-section="status_damage"] tbody td:first-child,
+.leaf[data-section="status_damage"] thead th:first-child{ min-width:2.4em; }
 .callout-fig{
   /* Capture inset from the paper edge, callouts in the margins above and below,
      joined by SVG leader lines. The words are real HTML at body size: baked-in

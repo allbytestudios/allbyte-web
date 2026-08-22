@@ -7,6 +7,9 @@ import UpdateOverlay from "../components/UpdateOverlay.svelte";
 
 interface Props {
   title?: string;
+  /** Card headline. Defaults to `title`; set it when the <title> carries an
+   *  SEO suffix a link preview shouldn't repeat. */
+  ogTitle?: string;
   description?: string;
   image?: string;
   type?: string;
@@ -14,10 +17,13 @@ interface Props {
 
 const {
   title = "AllByte Studios",
+  ogTitle,
   description = "A handcrafted tactical RPG in the spirit of 90s JRPGs from AllByte Studios — play free in your browser.",
   image = "/og-image.jpg",
   type = "website",
 } = Astro.props;
+
+const cardTitle = ogTitle ?? title;
 
 // Absolute URLs for link-preview cards (OG/Twitter require absolute, https).
 const SITE = "https://allbyte.studio";
@@ -40,14 +46,14 @@ const imageAbs = new URL(image, SITE).href;
          shared. Per-page overridable via the title/description/image props. -->
     <meta property="og:type" content={type} />
     <meta property="og:site_name" content="AllByte Studios" />
-    <meta property="og:title" content={title} />
+    <meta property="og:title" content={cardTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={imageAbs} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
+    <meta name="twitter:title" content={cardTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageAbs} />
 

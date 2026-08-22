@@ -9,7 +9,16 @@
 
   let viewerIsAdmin = $derived(isAdmin(auth.currentUser));
   let ready = $state(false);
-  let developVersion = $state<string | null>(null);
+  // What prod is on RIGHT NOW — i.e. what this promote would replace.
+  //
+  // This used to read channels.json's `develop` entry and present it as the
+  // version about to ship. That entry is dead: develop was retired as a
+  // deployed channel on 2026-08-17 and nothing has written to it since, so it
+  // sat at 0.8.2356 while prod moved on — the button showed a stale number for
+  // a correct build. There is no honest pre-flight version to show anyway,
+  // because CodeBuild exports from develop's HEAD and the version isn't known
+  // until it builds; `result.version` reports the real one once it starts.
+  let liveVersion = $state<string | null>(null);
 
   let confirming = $state(false);
   let submitting = $state(false);
@@ -27,7 +36,7 @@
     ready = true;
     try {
       const r = await fetch("/godot/channels.json", { cache: "no-store" });
-      if (r.ok) developVersion = (await r.json())?.develop?.version ?? null;
+      if (r.ok) liveVersion = (await r.json())?.alpha?.version ?? null;
     } catch { /* best-effort */ }
   });
 
@@ -95,8 +104,9 @@
       <h3>Promote develop → live</h3>
       <p class="lead">
         Rebuilds the <b>release</b> (public <b>Demo</b>, debug compiled out) and <b>Demo&nbsp;Debug</b>
-        variants from develop's current commit{#if developVersion} (<code>{developVersion}</code>){/if}
-        and deploys each. The public Demo goes live once its boot-smoke passes.
+        variants from develop's current commit and deploys each. The public Demo goes
+        live once its boot-smoke passes.{#if liveVersion} Prod is currently on
+        <code>{liveVersion}</code>.{/if}
       </p>
 
       {#if !result}
@@ -106,8 +116,9 @@
           </button>
         {:else}
           <div class="confirm">
-            <p><b>Confirm:</b> promote develop{#if developVersion} <code>{developVersion}</code>{/if}
-              to the <b>public Demo</b> and Demo&nbsp;Debug? This ships to the live demo.</p>
+            <p><b>Confirm:</b> promote develop's current commit to the <b>public Demo</b>
+              and Demo&nbsp;Debug? This ships to the live demo{#if liveVersion}, replacing
+              <code>{liveVersion}</code>{/if}.</p>
             <div class="row">
               <button class="btn danger" onclick={doPromote} disabled={submitting}>
                 {submitting ? "Starting…" : "Yes, promote"}
@@ -143,8 +154,9 @@
 
       <p class="note">
         develop stays the debug test lane; this doesn’t touch it. Each target boot-smoke-gates —
-        a build that doesn’t boot never reaches its channel. “Waiting on build project” means the
-        channel’s CodeBuild project isn’t deployed yet (pending Arc’s <code>buildspec.web.yml</code>).
+        a build that doesn’t boot never reaches its channel. Both lanes
+        (<code>allbyte-godot-alpha</code>, <code>allbyte-godot-alpha-debug</code>) are deployed;
+        “Waiting on build project” would mean one had gone missing.
       </p>
     </div>
   {/if}

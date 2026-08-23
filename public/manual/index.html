@@ -436,7 +436,15 @@ tbody tr:nth-child(even){ background:rgba(60,40,20,.045); }
   color:var(--ink-soft); }
 @media (max-width:640px){
   .callout-fig{ width:100%; margin:1.4em 0; transform:none; }
-  .callout-fig svg{ display:none; }
+  /* The leaders are REDRAWN to the captions' real positions at this width (see
+     the cf-leaders script) instead of being hidden. Hiding them left every
+     caption as a floating phrase with nothing tying it to the spot it names,
+     which is the whole job of an annotated plate.
+     The 60vw clamp above must NOT apply here: it makes the img box shorter
+     than the picture's own aspect, so object-fit:contain letterboxes the
+     picture inside the wrap — and since the SVG maps its viewBox onto the
+     WRAP, every baked anchor would drift off the feature it points at. */
+  .leaf .callout-fig img{ max-height:none; }
   .callout-fig .cf-row{ grid-template-columns:1fr 1fr !important; }
 }
 .figure.wide figcaption{ font-size:.95em; max-width:64ch; margin-left:auto; margin-right:auto; }
@@ -1060,5 +1068,82 @@ var subs = document.querySelectorAll("[data-subsection]");
 
   // ---- go -------------------------------------------------------------------
   loadOverrides().then(function () { applyAll(); return checkAdmin(); }).then(function (admin) { if (admin) injectButtons(); });
+})();
+
+/* ---- cf-leaders: annotated plates keep their leader lines on a phone --------
+   Each .callout-fig pairs N captions with N anchor points baked into the SVG in
+   viewBox units, joined by hand-aimed L-shaped paths. Those paths are correct at
+   desktop widths only: below 640px the caption grid reflows, so a baked path
+   points at where its caption USED to be. The CSS used to answer that by hiding
+   the SVG outright, which left every caption floating with no line to the thing
+   it names — the plate stopped being annotated at exactly the width where most
+   readers see it.
+
+   So redraw instead: same route (out to the margin, along it, then straight in
+   to the anchor), but starting from where the caption actually sits now. The
+   anchors themselves never move — they are baked in viewBox units and the SVG
+   covers .cf-imgwrap with preserveAspectRatio="none", so viewBox maps linearly
+   onto that box (which is why the mobile max-height clamp is dropped above; a
+   letterboxed picture would slide out from under its own anchors).
+
+   Pairing is document order: i-th .cf-lab <-> i-th <path> <-> i-th ring. */
+(function () {
+  var MOBILE = "(max-width:640px)";
+  if (!document.querySelector(".callout-fig")) return;
+
+  function draw(fig) {
+    var svg = fig.querySelector("svg");
+    var wrap = fig.querySelector(".cf-imgwrap");
+    if (!svg || !wrap) return;
+    var paths = [].slice.call(svg.querySelectorAll("path"));
+    var rings = [].slice.call(svg.querySelectorAll('circle[r="4.5"]'));
+    var labs = [].slice.call(fig.querySelectorAll(".cf-lab"));
+
+    // Stash the hand-aimed desktop paths once so widening the window restores them.
+    paths.forEach(function (p) {
+      if (p.getAttribute("data-d0") === null) p.setAttribute("data-d0", p.getAttribute("d") || "");
+    });
+    if (!window.matchMedia(MOBILE).matches) {
+      paths.forEach(function (p) { p.setAttribute("d", p.getAttribute("data-d0")); });
+      return;
+    }
+
+    var vb = (svg.getAttribute("viewBox") || "").split(/[\s,]+/).map(Number);
+    var VW = vb[2], VH = vb[3];
+    var wr = wrap.getBoundingClientRect();
+    // Before the capture loads the wrap has no height and every mapping is
+    // garbage; the load handler below calls back once it does.
+    if (!VW || !VH || !wr.width || !wr.height) return;
+
+    var n = Math.min(paths.length, rings.length, labs.length);
+    for (var i = 0; i < n; i++) {
+      var lr = labs[i].getBoundingClientRect();
+      if (!lr.width) continue;
+      var ax = parseFloat(rings[i].getAttribute("cx"));
+      var ay = parseFloat(rings[i].getAttribute("cy"));
+      if (isNaN(ax) || isNaN(ay)) continue;
+      // Leave from the caption edge that faces the picture.
+      var top = !!(labs[i].closest && labs[i].closest(".cf-top"));
+      var edge = top ? lr.bottom + 5 : lr.top - 5;
+      var sx = (lr.left + lr.width / 2 - wr.left) * VW / wr.width;
+      var sy = (edge - wr.top) * VH / wr.height;
+      paths[i].setAttribute("d",
+        "M " + sx.toFixed(1) + " " + sy.toFixed(1) +
+        " L " + ax.toFixed(1) + " " + sy.toFixed(1) +
+        " L " + ax.toFixed(1) + " " + ay.toFixed(1));
+    }
+  }
+
+  // Re-query each pass: an admin override re-renders a section's markup.
+  function all() { [].slice.call(document.querySelectorAll(".callout-fig")).forEach(draw); }
+
+  all();
+  window.addEventListener("resize", all);
+  window.addEventListener("orientationchange", all);
+  // Captions reflow when the display face lands, which moves every start point.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(all);
+  [].slice.call(document.querySelectorAll(".callout-fig .cf-imgwrap img")).forEach(function (img) {
+    if (!img.complete) img.addEventListener("load", all);
+  });
 })();
 </script></body></html>

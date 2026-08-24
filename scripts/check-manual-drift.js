@@ -56,8 +56,15 @@ function renderedFor(key) {
   const sub = /^([a-z]+):(.+)$/.exec(key);
   if (sub) {
     const c = html.match(new RegExp(`data-${sub[1]}-key="${sub[2].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
-    if (c) return sliceFrom(c.index, 4000);
-    return null;
+    if (!c) return null;
+    // Only this card's .charbio — that is precisely what applyOne() replaces.
+    // A flat 4000-char slice ran on into the NEXT character's card, so every
+    // neighbour's bio read as prose missing from this one's markdown.
+    const b = html.indexOf('<div class="prose charbio">', c.index);
+    if (b === -1) return sliceFrom(c.index, 4000);
+    const open = b + '<div class="prose charbio">'.length;
+    const close = html.indexOf("</div>", open);
+    return close === -1 ? sliceFrom(open, 4000) : html.slice(open, close);
   }
   m = html.match(new RegExp(`<section class="leaf"[^>]*data-section="${esc}">`));
   if (!m) return null;
@@ -72,6 +79,55 @@ function sliceFrom(start, cap = 40000) {
 }
 
 const stripTags = (s) => s.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").trim();
+
+/** Comparable prose: one quote glyph, no markup, no punctuation, one spacing. */
+const normProse = (s) =>
+  s
+    .replace(/&#39;|&rsquo;|’/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ") // markdown images
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[*`_#>|]/g, " ") // markdown markers
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+// Compare PARAGRAPH prose only, in both layers. Everything else in the rendered
+// layer — tables, figures, annotated plates, keycap diagrams, `.char-quote`,
+// headings — is either hand-authored structure markdown cannot round-trip, or
+// already has its own dedicated check above. Comparing it produced 30+ false
+// positives and a checker nobody would trust.
+const splitSentences = (t) =>
+  normProse(t)
+    .split(/(?<=[.:!?])\s+/)
+    // Fragments this short are labels and list stubs — too noisy to compare.
+    .filter((s) => s.split(" ").length >= 6);
+
+/** Markdown paragraph text: drop table rows and headings, strip image syntax. */
+const mdProseText = (md) =>
+  md
+    .split("\n")
+    .filter((l) => !/^\s*[|#]/.test(l))
+    .join("\n")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ");
+
+/** Rendered paragraph text: <p> only, minus the deliberately-uneditable ones. */
+const htProseText = (h) => {
+  const cleaned = h
+    .replace(/<table[\s\S]*?<\/table>/g, " ")
+    .replace(/<figure[\s\S]*?<\/figure>/g, " ")
+    .replace(/<svg[\s\S]*?<\/svg>/g, " ");
+  const out = [];
+  // <li> too: several sections (Hints, the Skills lead-in) are bullet lists, and
+  // those ARE editable prose — excluding them made every list look like drift.
+  for (const m of cleaned.matchAll(/<(p|li)(?: [^>]*)?>([\s\S]*?)<\/\1>/g)) {
+    if (/class="char-quote"/.test(m[0])) continue; // sits outside .charbio by design
+    out.push(m[2]);
+  }
+  return out.join("\n");
+};
 
 for (const [key, md] of Object.entries(bodies)) {
   if (typeof md !== "string") continue;
@@ -107,6 +163,24 @@ for (const [key, md] of Object.entries(bodies)) {
   for (const k of mdImgs) if (!(k in images)) note(key, `markdown references missing image key: ${k}`);
   const htImgs = (rendered.match(/<img /g) || []).length;
   if (mdImgs.length > htImgs) note(key, `markdown has ${mdImgs.length} figures, rendered has ${htImgs}`);
+
+  // prose parity — the words, not just the shape
+  //
+  // Every check above passed while 17 sentences had silently diverged across 4
+  // sections (2026-08-23): a section keeps its headings, tables and figures and
+  // still loses its words. The reverse direction is the dangerous one — prose
+  // the PAGE has but the markdown lacks is deleted the moment an admin opens
+  // that section and saves.
+  const htProse = normProse(htProseText(rendered));
+  const mdProse = normProse(mdProseText(md));
+  for (const s of splitSentences(mdProseText(md))) {
+    if (!htProse.includes(s))
+      note(key, `markdown sentence is not on the page: "${s.slice(0, 72)}…"`);
+  }
+  for (const s of splitSentences(htProseText(rendered))) {
+    if (!mdProse.includes(s))
+      note(key, `page prose missing from the editor markdown (an edit would DELETE it): "${s.slice(0, 72)}…"`);
+  }
 }
 
 // --- whole-file checks -------------------------------------------------------

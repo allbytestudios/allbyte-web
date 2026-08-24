@@ -3,6 +3,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import NavAuth from "../components/NavAuth.svelte";
 import HeroPlay from "../components/HeroPlay.svelte";
 import RelicDeck from "../components/RelicDeck.svelte";
+import EmailSignup from "../components/EmailSignup.svelte";
+import { SIGNUP_ENABLED } from "../lib/emailSignup";
 import gameVersion from "../data/game-version.json";
 // The shared manual system (tokens, base type, nav, footer) — extracted from
 // this file so /changelog/, /devlog/, /walkthrough/ and /artwork/ can use the
@@ -79,6 +81,21 @@ import "../styles/manual.css";
     <a class="btscard" href="/test/"><div class="sigil">⚙</div><h4>Builder’s Workshop <span class="relic-dot"></span></h4><p>Tools, systems, and architecture behind The Chronicles of Nesis.</p><span class="cta">Enter</span></a>
   </div>
 </div></section>
+
+{SIGNUP_ENABLED && (
+  <section id="notify"><div class="wrap">
+    <div class="notify-band">
+      <EmailSignup
+        client:visible
+        source="home"
+        variant="paper"
+        heading="Told when there's more"
+        blurb="Episode 1 is free to play right now. Leave your email and I will write when the next one is playable."
+        cta="Notify me"
+      />
+    </div>
+  </div></section>
+)}
 
 <footer><div class="wrap">
   <div class="fnav"><a href="/play/">Play</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="/manual/">Manual</a><a href="/walkthrough/">Strategy Guide</a><a href="#studio">Studio</a></div>
@@ -187,6 +204,13 @@ import "../styles/manual.css";
 
   /* STUDIO — small, at the very bottom */
   .studio{ background:linear-gradient(var(--paperblend),var(--paperblend)); padding:clamp(2.2rem,4vw,3rem) 0; }
+  /* Notify band: deliberately a quiet strip near the foot, NOT a modal or a
+     popup. The homepage's whole job is getting someone into the game, and an
+     interstitial that interrupts that trades play-depth for addresses. */
+  #notify{ padding:clamp(1.8rem,3.5vw,2.6rem) 0; border-top:1px solid var(--rule); }
+  .notify-band{ display:flex; justify-content:center; text-align:center; }
+  .notify-band :global(.signup){ margin:0 auto; }
+  .notify-band :global(.row){ justify-content:center; }
   .studioline{ text-align:center; }
   .studioline .who{ font-family:"AllByteCustom",Georgia,serif; color:var(--crimson); font-size:1.7rem; }
   .studioline .tag{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt-deep); letter-spacing:.03em; font-size:1.05rem; margin-top:.15rem; }

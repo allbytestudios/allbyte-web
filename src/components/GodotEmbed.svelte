@@ -13,6 +13,8 @@
   import gameVersion from "../data/game-version.json";
   import spriteGifs from "../data/sprite-gifs.json";
   import { MANUAL_CARDS, EPISODE_1_SPRITES, SPRITE_DISPLAY, SPRITE_LORE } from "../lib/manualCards.ts";
+  import EmailSignup from "./EmailSignup.svelte";
+  import { SIGNUP_ENABLED, alreadySignedUp } from "../lib/emailSignup";
   import { versionById, isUnlocked, DEBUG_CHANNEL_ID } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
@@ -385,6 +387,8 @@
   let sseUnsub: (() => void) | null = null;
   let messageOff: (() => void) | null = null;
   let bugReportOff: (() => void) | null = null;
+  let creditsSignupOff: (() => void) | null = null;
+  let creditsSignupOpen = $state(false);
   let visibilityOff: (() => void) | null = null;
   let fsChangeOff: (() => void) | null = null;
 
@@ -884,6 +888,32 @@
     window.addEventListener("message", onBugReport);
     bugReportOff = () => window.removeEventListener("message", onBugReport);
 
+    // End of the Episode 1 credits -> offer the Episode 2 notify form.
+    //
+    // Contract agreed with Arc (game side fires it from Credits.gd via
+    // JavaScriptBridge, web-guarded, just before the Credits->Title routing):
+    //   { type: "allbyte_ep1_credits_complete", completed, version, replay }
+    // Underscore naming because that is the game->page convention here
+    // (allbyte_title_ready, allbyte_touch_accept); the colon form is page->game.
+    //
+    // REGISTERED HERE, ABOVE THE DEV GUARD, ON PURPOSE. The other message
+    // listener below sits after `if (!import.meta.env.DEV) return`, so it never
+    // runs in production — putting this one there would mean the overlay only
+    // ever appeared on a dev server.
+    const onCreditsEnd = (ev: MessageEvent) => {
+      if (!iframeEl || ev.source !== iframeEl.contentWindow) return;
+      const d = ev.data;
+      if (!d || d.type !== "allbyte_ep1_credits_complete") return;
+      // Only ask someone who actually watched it through. Prompting a player
+      // who just skipped the credits is the worst possible moment to ask.
+      if (d.completed === false) return;
+      if (d.replay === true) return;      // they have finished before; don't re-ask
+      if (!SIGNUP_ENABLED || alreadySignedUp()) return;
+      creditsSignupOpen = true;
+    };
+    window.addEventListener("message", onCreditsEnd);
+    creditsSignupOff = () => window.removeEventListener("message", onCreditsEnd);
+
     if (!import.meta.env.DEV) return;
 
     sseUnsub = subscribeToFile("godot/reload", doReload);
@@ -906,6 +936,7 @@
     sseUnsub?.();
     messageOff?.();
     bugReportOff?.();
+    creditsSignupOff?.();
     analyticsOff?.();
     logShipOff?.();
     teardownSaveBridge();
@@ -2145,6 +2176,27 @@
       </div>
     {/if}
   {/if}
+
+  <!-- End of the Episode 1 credits: the one moment someone has actually
+       finished the game and is most likely to want to hear about the next one.
+       Overlays the game; the game keeps routing to Title underneath, so
+       dismissing this drops them exactly where they would have been. -->
+  {#if creditsSignupOpen}
+    <div class="credits-signup" role="dialog" aria-modal="false" aria-label="Get notified about Episode 2">
+      <div class="credits-signup-card">
+        <button class="credits-signup-close" onclick={() => (creditsSignupOpen = false)}
+                aria-label="Dismiss">×</button>
+        <EmailSignup
+          source="ep1_credits"
+          variant="overlay"
+          heading="That was Episode 1"
+          blurb="Episode 2 is being built now. Leave your email and I will write once, on the day it is playable."
+          cta="Tell me"
+          ondone={() => setTimeout(() => (creditsSignupOpen = false), 2200)}
+        />
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -2803,5 +2855,38 @@
     font-weight: bold;
     text-shadow: 0 0 1px rgba(255, 255, 255, 0.4);
     pointer-events: none;
+  }
+
+  /* Episode 2 notify overlay, shown at the end of the Ep1 credits. Sits over
+     the game rather than replacing it: the game routes on to Title underneath,
+     so dismissing leaves the player exactly where they would have been. */
+  .credits-signup {
+    position: absolute; inset: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.2rem;
+    background: rgba(8, 6, 3, 0.78);
+    backdrop-filter: blur(2px);
+  }
+  .credits-signup-card {
+    position: relative;
+    max-width: 33rem; width: 100%;
+    padding: 1.5rem 1.6rem 1.3rem;
+    background: rgba(20, 15, 8, 0.96);
+    border: 1px solid rgba(230, 200, 119, 0.35);
+    border-radius: 3px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  .credits-signup-close {
+    position: absolute; top: 0.35rem; right: 0.5rem;
+    background: none; border: 0; cursor: pointer;
+    font-size: 1.5rem; line-height: 1;
+    color: rgba(232, 226, 212, 0.55);
+    padding: 0.2rem 0.4rem;
+  }
+  .credits-signup-close:hover { color: #e6c877; }
+  @media (max-width: 520px) {
+    .credits-signup { padding: 0.7rem; }
+    .credits-signup-card { padding: 1.2rem 1rem 1rem; }
   }
 </style>

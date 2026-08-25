@@ -81,6 +81,13 @@
     </p>
   {:else}
     <div class="tre-tools">
+      <!-- Only worth showing when there is a choice. Easy and Hard are marked
+           dormant in the manifest and filtered out in saveTree.ts, so today the
+           launcher offers Medium and nothing else: the control rendered as a
+           one-option filter and every row carried the same "Med" chip. Driven
+           off the data, so it comes back by itself if the difficulty track
+           wakes up. -->
+      {#if diffs.length > 1}
       <div class="tre-diff" role="group" aria-label="Difficulty filter">
         <span class="tre-diff-label">Difficulty</span>
         {#each ["all", ...diffs] as d (d)}
@@ -91,6 +98,7 @@
           >{diffLabel(d)}</button>
         {/each}
       </div>
+      {/if}
       <button class="tre-tool" onclick={collapseAll}>⊟ Collapse</button>
       <button class="tre-tool" onclick={expandAll}>⊞ Expand</button>
       <label class="tre-appr-toggle">
@@ -124,7 +132,7 @@
                   <div class="tre-row" class:leaf={n.is_leaf}>
                     <div class="tre-info">
                       <span class="tre-line">
-                        <span class={`tre-dchip d-${n.difficulty}`}>{diffLabel(n.difficulty)}</span>
+                        {#if diffs.length > 1}<span class={`tre-dchip d-${n.difficulty}`}>{diffLabel(n.difficulty)}</span>{/if}
                         <span class="tre-label">{n.label}</span>
                         {#if n.is_leaf}<span class="tre-boss">★ boss</span>{/if}
                         {#if n.approval === "approved"}

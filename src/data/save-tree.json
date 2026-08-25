@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-08-06T23:50:53.319Z",
+  "generated_at": "2026-08-08T19:50:42.336Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -825,6 +825,107 @@
       "chapter": "laria-village",
       "section": "into-the-waterways",
       "seq": 20
+    },
+    {
+      "id": "med_boss_ready_outlast",
+      "difficulty": "medium",
+      "parent": "med_before_dungeon",
+      "decision": "boss-ready L5 (Cleanse/Cure/Push + Item Relic + Poisona Pendant + Mugwort x8) — tuned-boss (v0.8.2371) OUTLAST fixture; pairs with the Smite variant",
+      "is_leaf": false,
+      "label": "Medium · BEFORE BOSS · boss-ready (L5, tuned build, outlast path)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "before-boss",
+        "boss-ready",
+        "outlast"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 45
+    },
+    {
+      "id": "med_boss_ready_smite",
+      "difficulty": "medium",
+      "parent": "med_before_dungeon",
+      "decision": "boss-ready L5 + Smite (skillID 11) DEBUG-granted via _testLearnSkill (NOT earned) — burst-path counterpart; not a valid T5 chain state",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · boss-ready + Smite (L5, DEBUG-assisted, burst path)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "before-boss",
+        "boss-ready",
+        "smite",
+        "debug-assisted",
+        "burst"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 46
+    },
+    {
+      "id": "med_boss_defeated",
+      "difficulty": "medium",
+      "parent": "med_boss_ready_outlast",
+      "decision": "AUTHORED post-boss (boss proven beatable; driver-capture blocked by QB-067 tool-ceiling): Mother Slime + young adds defeated, Berserckounter Relic (24) + Poisona Pendant collected, 100 Sen, Elias L5 survived-win 18HP; cond 1=13. Authored load-mode (Arc), not driver-captured.",
+      "is_leaf": false,
+      "label": "Medium · AFTER BOSS · Mother Slime defeated (cond 13)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "after-boss",
+        "post-boss",
+        "cond13"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 60
+    },
+    {
+      "id": "med_end_ep1",
+      "difficulty": "medium",
+      "parent": "med_boss_defeated",
+      "decision": "PLAYED-FORWARD from cond-13 (Quinn drove overworld → Event 15 Mayor cutscene): end of Episode 1, cond 1=14, Berserckounter Relic + Pendant carried, 600 Sen, Elias L5 18HP @ MayorsHouse. Genuine played-forward end-state (autoplay_capture_node).",
+      "is_leaf": true,
+      "label": "Medium · END EPISODE 1 (cond 14, Mayor's House)",
+      "scene": "MayorsHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "end-ep1",
+        "cond14",
+        "played-forward"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 70
     }
   ]
 }

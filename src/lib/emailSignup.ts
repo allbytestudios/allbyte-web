@@ -15,10 +15,15 @@
  * broadcast when Episode 2 is actually ready.
  */
 
-/** Flip to true once the backend stack is deployed. */
-export const SIGNUP_ENABLED = false;
+export const SIGNUP_ENABLED = true;
 
-const API = "https://api.allbyte.studio";
+/**
+ * Its own stack (`allbyte-studio-email-notify`), not api.allbyte.studio — that
+ * custom domain is mapped to the auth/saves API only. Same pattern as the
+ * manual-overlay, bug-report and play-analytics stacks, which all address their
+ * own execute-api endpoint directly.
+ */
+const API = "https://gabgrzxo42.execute-api.us-east-1.amazonaws.com";
 
 export type SignupSource = "home" | "ep1_credits";
 

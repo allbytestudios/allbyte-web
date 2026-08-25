@@ -1,0 +1,44 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<BaseLayout title="You're on the list — AllByte Studios">
+  <main class="notify-page">
+    <h1>You're on the list</h1>
+    <p>I'll write once, on the day the next Episode is playable. Nothing else.</p>
+    <p>Episode 1 is free to play right now, if you haven't yet.</p>
+    <p class="cta"><a href="/play/">Play The Chronicles of Nesis</a></p>
+  </main>
+  <Footer theme="engine" />
+</BaseLayout>
+
+<style>
+  .notify-page {
+    background: #1a1e26;
+    color: #e0e7ff;
+    font-family: "Courier New", Courier, monospace;
+    min-height: 80dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+  h1 {
+    font-family: "AllByteCustom", Georgia, "Times New Roman", serif;
+    font-size: 2rem;
+    color: #a7f3d0;
+    margin-bottom: 1rem;
+  }
+  p {
+    font-size: 1.1rem;
+    color: rgba(224, 231, 255, 0.7);
+    line-height: 1.6;
+    margin: 0.5rem 0;
+    max-width: 46ch;
+  }
+  .cta { margin-top: 1.4rem; }
+  a { color: #a7f3d0; }
+</style>

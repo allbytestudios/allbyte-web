@@ -203,6 +203,25 @@ for (const m of html.matchAll(/<section class="leaf"[^>]*data-section="([a-z_:]+
   if (opens !== closes) {
     note(m[1], `unbalanced <div>: ${opens} open vs ${closes} closed (${opens - closes > 0 ? "leaks into" : "escapes"} the rest of the booklet)`);
   }
+
+  // Inline emphasis has to balance too, and it fails LOUDER than a stray div.
+  // ModernGoth ships a single weight, so an unclosed <strong> makes the parser
+  // re-open it across the following blocks and everything downstream inherits
+  // font-weight:700 -> SYNTHETIC bold, i.e. whole chapters of smeared text.
+  // A 2026-08-25 copy pass left six of these (as `<strong><strong>`) and they
+  // bolded most of the booklet; div-balance was green throughout, which is why
+  // this check exists separately.
+  for (const tag of ["strong", "em"]) {
+    const o = (seg.match(new RegExp(`<${tag}\\b`, "g")) || []).length;
+    const c = (seg.match(new RegExp(`</${tag}>`, "g")) || []).length;
+    if (o !== c) {
+      note(m[1], `unbalanced <${tag}>: ${o} open vs ${c} closed — the parser will re-open it across the following blocks, inheriting synthetic bold`);
+    }
+    const doubled = (seg.match(new RegExp(`<${tag}\\b[^>]*><${tag}\\b`, "g")) || []).length;
+    if (doubled) {
+      note(m[1], `${doubled} doubled <${tag}><${tag}> — an unpaired opener`);
+    }
+  }
 }
 for (const [k, v] of Object.entries(images)) {
   if (!existsSync(join(process.cwd(), "public", "manual", v))) note("(assets)", `image key ${k} -> missing file ${v}`);

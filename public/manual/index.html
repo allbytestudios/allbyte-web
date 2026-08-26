@@ -173,8 +173,13 @@ tbody tr:nth-child(even){ background:rgba(60,40,20,.045); }
 .figure.hud img{ width:100%; border:1px solid var(--rule); box-shadow:0 4px 14px rgba(0,0,0,.25); }
 .figure.wide{
   /* Break out of the 64ch prose column. The width here is the CAP the image may
-     use; the img itself stays width:auto so it never scales past native. */
-  width:min(88vw,720px);
+     use; the img itself stays width:auto so it never scales past native.
+     Raised 720 -> 1040 (2026-08-26): the menu and combat captures are 946-1114px
+     native, so a 720 cap was forcing a needless downscale on exactly the figures
+     with the most small text in them. At 1040 they land at or near 1:1 and stay
+     crisp. Nothing else grows - width:auto means an image smaller than the cap
+     still renders at its own size. */
+  width:min(92vw,1040px);
   max-width:none;
   margin:1.6em 0 1.6em 50%;
   transform:translateX(-50%);
@@ -370,11 +375,11 @@ tbody tr:nth-child(even){ background:rgba(60,40,20,.045); }
    sit side by side. Two images, not a baked composite, so either can be
    swapped without redrawing the other. */
 .aff-stack{ position:relative; display:inline-block; line-height:0; }
-.aff-stack img{ height:3.2em; width:auto; display:block; image-rendering:pixelated; }
+.aff-stack img{ height:3em; width:auto; display:block; image-rendering:pixelated; }
 /* the affinity mark is a badge on the status icon, not a replacement for
    it: bottom-right, about a third of it. */
-.aff-stack .aff-mark{ position:absolute; right:0; bottom:.34em; left:auto;
-  top:auto; height:1.15em; }
+.aff-stack .aff-mark{ position:absolute; right:0; bottom:0; left:auto;
+  top:auto; height:1.3em; width:1.3em; min-width:0; }
 /* damage-type, status and ground glyphs read small at booklet size: +25% */
 .leaf[data-section="status_damage"] .statsym{ height:1.31em; vertical-align:-.2em; }
 .leaf[data-section="status_damage"] .terrsym{ height:2em; vertical-align:-.56em; }
@@ -419,7 +424,9 @@ tbody tr:nth-child(even){ background:rgba(60,40,20,.045); }
 .leaf .treesym{ min-width:52px; width:52px; height:52px; image-rendering:pixelated; }
 .leaf[data-section="status_damage"] .statsym{ min-width:1.31em; }
 .leaf[data-section="status_damage"] .terrsym{ min-width:2em; }
-.leaf .aff-stack img{ min-width:3.2em; }
+/* base glyph only — this used to catch .aff-mark too, which forced the
+   badge box to full width and shoved its picture to the left. */
+.leaf .aff-stack img:not(.aff-mark){ min-width:3em; }
 .leaf[data-section="status_damage"] tbody td:first-child,
 .leaf[data-section="status_damage"] thead th:first-child{ min-width:2.4em; }
 .callout-fig{
@@ -1161,5 +1168,34 @@ var subs = document.querySelectorAll("[data-subsection]");
   [].slice.call(document.querySelectorAll(".callout-fig .cf-imgwrap img")).forEach(function (img) {
     if (!img.complete) img.addEventListener("load", all);
   });
+})();
+
+/* ---- image-rendering by measured scale -------------------------------------
+   `pixelated` is right for pixel art shown at 1:1 or larger. Below 1:1 it is
+   actively harmful: nearest-neighbour DROPS pixels, and the first thing to go
+   is small text — which is why the menu captures looked chewed. CSS cannot see
+   the scale factor, so measure and pick per image. Re-runs on resize because
+   the same figure can cross 1:1 as the column width changes. */
+(function () {
+  function tune() {
+    var imgs = document.querySelectorAll(".leaf img, .booklet img");
+    for (var i = 0; i < imgs.length; i++) {
+      var im = imgs[i];
+      if (!im.naturalWidth) continue;
+      var shown = im.getBoundingClientRect().width;
+      if (!shown) continue;
+      // 0.98 rather than 1.0: a hair under native is still effectively 1:1 and
+      // looks better crisp than softened.
+      im.style.imageRendering = shown < im.naturalWidth * 0.98 ? "auto" : "pixelated";
+    }
+  }
+  function whenReady() {
+    tune();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(tune);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", whenReady);
+  else whenReady();
+  window.addEventListener("load", tune);
+  window.addEventListener("resize", tune);
 })();
 </script></body></html>

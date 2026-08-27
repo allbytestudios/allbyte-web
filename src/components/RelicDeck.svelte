@@ -1,4 +1,9 @@
 <script>
+  import vignetteData from "../data/relic-vignettes.json";
+  // Tier-one vignettes, copied from the game's core_RelicVignettes.json and keyed
+  // by relic name. The card shows as much as fits and fades the rest out.
+  const VIGNETTES = vignetteData.vignettes;
+
   // Interactive relic codex. The deck is a keyed circular stack; every card
   // shows its full face at all times (no fading). On next/prev the front card
   // physically DEALS — slides out to the side, revealing the card beneath, then
@@ -7,20 +12,15 @@
   // Skill copy is a first pass — confirm against the game.
   const RELICS = [
     { name: "Berserckounter Relic", type: "reaction", tiers: 4, icon: "/home/relics/Skill_Berserckounter.png",
-      skill: "Raises the damage you take in place of the damage you deal.",
-      frag: "The captain was usually a reasonable man…" },
+      skill: "Raises the damage you take in place of the damage you deal." },
     { name: "Scan Relic", type: "passive", tiers: 3, icon: "/home/relics/Skill_Scan.png",
-      skill: "Reveals a foe’s stats and hidden weaknesses.",
-      frag: "A plague has taken two lives a week for six weeks…" },
+      skill: "Reveals a foe’s stats and hidden weaknesses." },
     { name: "Item Relic", type: "action", tiers: 5, icon: "/home/relics/Skill_Item.png",
-      skill: "Use items from your bag in the thick of battle.",
-      frag: "An early winter blizzard came down on the sixth day of the cold snap…" },
+      skill: "Use items from your bag in the thick of battle." },
     { name: "Health Relic", type: "passive", tiers: 4, icon: "/home/relics/Skill_Health.png",
-      skill: "Strengthens the bearer’s vitality.",
-      frag: "We broke on level ground, nothing behind me but wounded men walking slow…" },
+      skill: "Strengthens the bearer’s vitality." },
     { name: "Move Relic", type: "passive", tiers: 4, icon: "/home/relics/Skill_Move.png",
-      skill: "Carries the bearer farther across the field.",
-      frag: "We had the tent up two days in a town that never much liked us having it up…" },
+      skill: "Carries the bearer farther across the field." },
   ];
   const TYPE = {
     action:   { label: "Action",   c: "var(--t-action)" },
@@ -62,9 +62,21 @@
         onclick={next} tabindex={slot === 0 ? 0 : -1} aria-hidden={slot !== 0}
         aria-label={`${RELICS[ri].name} — click for the next relic`}>
         <span class="inner">
-          <span class="type-tab">{TYPE[RELICS[ri].type].label}</span>
-          <span class="medallion"><img src={RELICS[ri].icon} alt="" width="96" height="96" /></span>
-          <span class="rname">{RELICS[ri].name}</span>
+          <span class="crest">
+            <span class="band">
+              <span class="stone">
+                <img src="/home/relics/stone-slot.webp" alt="" width="48" height="48" />
+                <img src={`/home/relics/stone-${RELICS[ri].type}.webp`} alt="" width="48" height="48" />
+                <span class="shine"></span>
+              </span>
+              <span class="bandline">
+                <span class="lab">{TYPE[RELICS[ri].type].label}</span>
+                <img class="sym" src={`/home/relics/type-${RELICS[ri].type}.svg`} alt="" width="36" height="36" />
+              </span>
+            </span>
+            <span class="rname">{RELICS[ri].name}</span>
+            <span class="medallion"><img src={RELICS[ri].icon} alt="" width="96" height="96" /></span>
+          </span>
           <span class="rskill">{RELICS[ri].skill}</span>
           <span class="tiers">
             <span class="lbl">Expertise</span>
@@ -72,7 +84,11 @@
               <span class="pip {i === 0 ? 'on' : ''}">{ROMAN[i + 1]}</span>
             {/each}
           </span>
-          <span class="frag"><span class="q">&ldquo;</span>{RELICS[ri].frag}</span>
+          <span class="frag">
+            {#each VIGNETTES[RELICS[ri].name] as line}
+              <span class="line">{line}</span>
+            {/each}
+          </span>
         </span>
       </button>
     {/each}
@@ -146,9 +162,40 @@
 
   .inner{ position:absolute; inset:0; padding:20px 20px 18px; display:flex; flex-direction:column; align-items:center; }
 
-  .type-tab{ text-transform:uppercase; letter-spacing:.16em; font-size:.62rem; font-weight:700; color:#fff;
-    background:var(--tc); padding:.24rem .7rem; border-radius:2px; margin-top:.2rem; }
-  .medallion{ margin:.7rem 0 .45rem; display:flex; align-items:center; justify-content:center; }
+  /* The crest: category band, then the name, then the coin. The band bleeds past
+     the card's padding so its 20px margin is measured against the CARD, and its
+     height is tied to the stone's diameter — the cap radius is exactly half of it,
+     which is the stone's radius, so the two ends of the band mirror each other. */
+  .crest{ position:relative; width:calc(100% + 40px); margin:.25rem -20px .45rem;
+    display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .crest .rname{ padding:0 20px; }
+  .band{ position:relative; width:calc(100% - 40px); }
+  .stone{ position:absolute; left:0; top:50%; transform:translateY(-50%);
+    width:48px; height:48px; z-index:2; }
+  .stone img, .stone .shine{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  /* RelicFlash.png is six 64x64 frames; the sixth is empty, which is why the gleam
+     sweeps and then rests. Percentage positioning keeps it size-agnostic. */
+  .stone .shine{ background-image:url("/home/relics/stone-flash.webp"); background-size:600% 100%;
+    background-repeat:no-repeat; background-position-x:100%;
+    animation:shine 2.5s step-end infinite; }
+  @keyframes shine{
+    0%     { background-position-x:0%; }
+    2.88%  { background-position-x:20%; }
+    5.76%  { background-position-x:40%; }
+    8.64%  { background-position-x:60%; }
+    11.52% { background-position-x:80%; }
+    14.4%  { background-position-x:100%; }
+    100%   { background-position-x:100%; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .stone .shine{ animation:none; background-position-x:100%; }
+  }
+  .bandline{ margin-left:24px; height:48px; background:var(--tc); color:#fff;
+    font-size:.8rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700;
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    padding-left:32px; padding-right:18px; border-radius:0 24px 24px 0; }
+  .bandline .sym{ width:36px; height:36px; display:block; flex:none; }
+  .medallion{ display:flex; align-items:center; justify-content:center; }
   /* No frame around the icon. The relic art is ALREADY a struck coin with its
      own rim, so the parchment medallion that used to sit around it put two
      concentric circles on the card - one vector-smooth, one made of pixels - and
@@ -159,14 +206,24 @@
      behind the front one still carry the deck's fractional --slot scale, but
      they are smaller, dimmer and not the subject. */
   .medallion img{ width:96px; height:96px; image-rendering:pixelated; }
-  .rname{ font-size:1.3rem; color:var(--crimson); font-weight:700; margin-top:.1rem; line-height:1.1; }
+  .rname{ font-size:1.3rem; color:var(--crimson); font-weight:700; line-height:1.1; text-align:center; }
   .rskill{ font-size:.9rem; color:var(--ink-soft); font-style:italic; margin:.3rem 0 .55rem; }
   .tiers{ display:flex; gap:.3rem; align-items:center; margin-bottom:.55rem; flex-wrap:wrap; justify-content:center; }
   .tiers .lbl{ font-size:.56rem; text-transform:uppercase; letter-spacing:.14em; color:var(--gilt-deep); margin-right:.1rem; }
   .pip{ width:15px; height:15px; border-radius:50%; border:1.5px solid var(--gilt-deep); display:flex; align-items:center; justify-content:center; font-size:.48rem; color:var(--gilt-deep); }
   .pip.on{ background:var(--tc); border-color:var(--tc); color:#fff; }
-  .frag{ font-size:.82rem; color:var(--ink); line-height:1.5; font-style:italic; border-top:1px solid var(--rule); padding-top:.55rem; margin-top:auto; }
-  .frag .q{ color:var(--gilt-deep); font-size:1.3rem; line-height:0; vertical-align:-.2em; margin-right:.05rem; }
+  /* The vignette runs from the pips to the floor of the card and fades out where it
+     runs off, rather than being cut mid-word. The lines are very uneven — Scan and
+     Item open with whole paragraphs — so how far it gets varies by relic, which is
+     why this fills the space rather than showing a fixed number of lines. No
+     decorative quote mark: the prose carries its own dialogue quotes. */
+  .frag{ font-size:.82rem; color:var(--ink); line-height:1.5; font-style:italic;
+    width:100%; text-align:center; border-top:1px solid var(--rule);
+    padding-top:.55rem; margin-top:.1rem; flex:1 1 auto; min-height:0; overflow:hidden;
+    -webkit-mask-image:linear-gradient(#000 58%, transparent 97%);
+    mask-image:linear-gradient(#000 58%, transparent 97%); }
+  .frag .line{ display:block; }
+  .frag .line + .line{ margin-top:.55em; }
 
   .controls{ display:flex; align-items:center; gap:.9rem; margin-top:1.4rem; }
   .arrow{ background:none; border:1px solid var(--gilt); color:var(--crimson); width:30px; height:30px; border-radius:50%;

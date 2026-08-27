@@ -1,0 +1,65 @@
+{
+ "_source": "ChroniclesOfNesis/WebBootstrap/DataStore/web/core_RelicVignettes.json, tier 1",
+ "_note": "Owner-authored vignette prose. Re-copy when the game's file changes.",
+ "vignettes": {
+  "Berserckounter Relic": [
+   "The captain was usually a reasonable man.",
+   "\"Break him by sundown or he's put down.\"",
+   "The horse had put two ranchers in the straw already. One of them was still out cold.",
+   "I tallied eleven rounds before noon.",
+   "You learn the ground, learn how to fall. Nobody ever teaches how to want to get back up.",
+   "A horse doesn't fight you because he's wicked. He fights because he's frightened. I have never found that worth killing over.",
+   "One thing I've learned: the horse tires before you do.",
+   "But experience and wits don't always stop a hoof from finding your head.",
+   "The twelfth time, I knew exactly how it would feel.",
+   "I got up and went back to the fence."
+  ],
+  "Scan Relic": [
+   "A plague has taken two lives a week for six weeks. The tracks I found when it started were too large, and too convenient, to be coincidence. I set the traps myself.",
+   "At first light they told me we had caught it.",
+   "Half the village was there. Someone put my spear in my hands. A sick child had been carried down to watch. He thanked me.",
+   "I looked into the beast's eyes. Calm, thick through the flank, coat like a plough-horse. It had been eating well, and eating lately.",
+   "What I feared seemed true. Whatever is killing us is not in that animal. It would be dying of it too.",
+   "\"This doesn't add up. Let me study it, it may still be part of this.\"",
+   "\"Kill it.\"\n\"He's not going to?\"\n\"He's just standing there looking.\"\n\"My boy is sick.\"",
+   "I gave the spear back. The child watched me, confused. I had nothing to tell him."
+  ],
+  "Item Relic": [
+   "An early winter blizzard came down on the sixth day of the cold snap.\nThe upper valley was already in a dire state: no grain, no fuel.",
+   "Everyone was prepping to head up the pass, but really we were waiting for the caravan. Twelve carts, eight armed men.",
+   "\"Nobody goes up that road in this. Not up, and certainly not back down.\"\n\"The monsters in the pass have been growing in number. It'd be suicide to go without the guard.\"",
+   "I had one cart. Wool, lamp oil, salt, and the grain I hadn't sold. Not enough to save them, but probably enough to keep them until the caravan came.",
+   "\"You'll die at the fork.\"\n\"Wait for the caravan.\"\n\"There's enough dead up there already.\"",
+   "Eleven years of ledgers told me what that valley eats in a week.",
+   "I already knew what a fortnight without does to a child.",
+   "I doubled the canvas covering, rewrapped the wire on my snow shoes, and stepped into the storm."
+  ],
+  "Health Relic": [
+   "We broke on level ground and there was nothing behind me but wounded men walking slow.",
+   "Archers on the rise. They were ready to drop every one of the wounded before the treeline.",
+   "But archers loose at what stands in front of them. An upright man in the clearing is a thing they cannot leave.",
+   "So I ran out to where they could see me best, and I planted.",
+   "The first flight I took clean. The second put one through the boards and into my arm.",
+   "Every one that came at me was one that did not go to the others.",
+   "I know what a man my size can take. It is not a guess, it is a number, and I was always proud of mine.",
+   "I passed my number while the last of them were still crossing.",
+   "When the last reached the trees I dropped the shield and ran.",
+   "Then I counted what was in me. I had been wrong about the number."
+  ],
+  "Move Relic": [
+   "We had the tent up two days in a town that never much liked us having it up at all.",
+   "She came in through the back while I was chalking the boards. Just stood there, breathing hard.",
+   "The front flap opened. Three of them, armed, asking about a young elf girl.",
+   "\"What elf?\" I said it before I knew what I was saying.",
+   "\"I swore she ran in here.\"",
+   "\"I've been sitting here the whole while. I've seen nothing.\"",
+   "\"Lying to a soldier in Geneedea is worse than death. Even the road-players know that.\"",
+   "He put his sword through a bale of straw keeping his eyes locked on me.",
+   "\"I can't tell you what I didn't see.\"",
+   "I have played to a great many faces, and his wanted an answer, any answer.",
+   "I took the chalk and pointed down the south road. He took it. I am very good at my job.",
+   "She was behind the blanket the whole time. I could hear her not breathing.",
+   "We tore down the tent before first light. I never asked her a single thing."
+  ]
+ }
+}

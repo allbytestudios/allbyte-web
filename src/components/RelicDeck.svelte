@@ -63,7 +63,7 @@
         aria-label={`${RELICS[ri].name} — click for the next relic`}>
         <span class="inner">
           <span class="type-tab">{TYPE[RELICS[ri].type].label}</span>
-          <span class="medallion"><img src={RELICS[ri].icon} alt="" width="72" height="72" /></span>
+          <span class="medallion"><img src={RELICS[ri].icon} alt="" width="64" height="64" /></span>
           <span class="rname">{RELICS[ri].name}</span>
           <span class="rskill">{RELICS[ri].skill}</span>
           <span class="tiers">
@@ -151,7 +151,15 @@
   .medallion{ width:104px; height:104px; border-radius:50%; margin:.85rem 0 .5rem; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(circle at 50% 40%,#f6eecd,#e3d5ac); border:3px solid var(--gilt);
     box-shadow:inset 0 0 12px rgba(111,83,33,.35),0 2px 6px var(--shadow); }
-  .medallion img{ width:68px; height:68px; image-rendering:pixelated; }
+  /* 32x32 pixel art, so the DISPLAY SIZE has to be an integer multiple or
+     nearest-neighbour makes some source pixels 2 device-px wide and their
+     neighbours 3 — that uneven blocking is what read as "a bit pixelated".
+     68px was 2.125x. 64px is exactly 2x, so the front card (the one actually
+     being read) is pixel-perfect. Cards behind it still carry the deck's
+     fractional --slot scale, but they are smaller, dimmer and not the subject.
+     Smoothing was tried instead and is worse: it trades hard edges for blur,
+     which on hand-made pixel art reads as low-res rather than deliberate. */
+  .medallion img{ width:64px; height:64px; image-rendering:pixelated; }
   .rname{ font-size:1.3rem; color:var(--crimson); font-weight:700; margin-top:.1rem; line-height:1.1; }
   .rskill{ font-size:.9rem; color:var(--ink-soft); font-style:italic; margin:.3rem 0 .55rem; }
   .tiers{ display:flex; gap:.3rem; align-items:center; margin-bottom:.55rem; flex-wrap:wrap; justify-content:center; }

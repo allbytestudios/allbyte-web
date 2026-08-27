@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-08-08T19:50:42.336Z",
+  "generated_at": "2026-08-27T02:41:26.508Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -325,6 +325,29 @@
       "chapter": "laria-village",
       "section": "into-the-waterways",
       "seq": 10
+    },
+    {
+      "id": "med_before_dungeon_lowprep",
+      "difficulty": "medium",
+      "parent": "med_ev12_eliashouse",
+      "decision": "[authored by Quinn 2026-08-17, derived off med_before_dungeon_fullprep by stripping bought consumables] low-prep before-dungeon: story gear only (Glenn's Longsword equipped + Waterways Key + Item Relic), L2, cond 11, currency 415 (395 refund est.), scene Windmill1Basement. Sibling prep-branch to fullprep. NOTE: carries leftover partyData.difficulty=2 (inert schema artifact, left for the difficulty-collapse cleanup). Load-verify + refund-estimate confirmation pending.",
+      "is_leaf": false,
+      "label": "Medium · BEFORE DUNGEON (low-prep)",
+      "scene": "Windmill1Basement",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "before-dungeon",
+        "low-prep"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 11
     },
     {
       "id": "med_boss_pauper",
@@ -906,7 +929,7 @@
     {
       "id": "med_end_ep1",
       "difficulty": "medium",
-      "parent": "med_boss_defeated",
+      "parent": "med_boss_at_mayor",
       "decision": "PLAYED-FORWARD from cond-13 (Quinn drove overworld → Event 15 Mayor cutscene): end of Episode 1, cond 1=14, Berserckounter Relic + Pendant carried, 600 Sen, Elias L5 18HP @ MayorsHouse. Genuine played-forward end-state (autoplay_capture_node).",
       "is_leaf": true,
       "label": "Medium · END EPISODE 1 (cond 14, Mayor's House)",
@@ -926,6 +949,32 @@
       "chapter": "laria-village",
       "section": "into-the-waterways",
       "seq": 70
+    },
+    {
+      "id": "med_boss_at_mayor",
+      "difficulty": "medium",
+      "parent": "med_boss_defeated",
+      "decision": "FAST-TRACK test entry for the Ep1-end event (QB-068/yicx): cond 1=13, positioned by MayorRaeges at MayorsHouse, controllable, Berserckounter Relic + full post-boss inventory. Load → walk to Mayor → talk → verify Event 15 fires → cond 14. Skips the SluiceGate→MayorsHouse trek.",
+      "is_leaf": false,
+      "label": "Medium · AFTER BOSS · at Mayor (cond 13, pre-Event-15 — QB-068 test entry)",
+      "scene": "MayorsHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "after-boss",
+        "post-boss",
+        "cond13",
+        "at-mayor",
+        "qb-068-test"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 65
     }
   ]
 }

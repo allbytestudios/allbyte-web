@@ -387,6 +387,7 @@
   let sseUnsub: (() => void) | null = null;
   let messageOff: (() => void) | null = null;
   let bugReportOff: (() => void) | null = null;
+  let rotateOff: (() => void) | null = null;
   let creditsSignupOff: (() => void) | null = null;
   let creditsSignupOpen = $state(false);
   let visibilityOff: (() => void) | null = null;
@@ -780,6 +781,45 @@
       };
       document.addEventListener("visibilitychange", onVisible);
       visibilityOff = () => document.removeEventListener("visibilitychange", onVisible);
+      // Rotation re-nudge (owner 2026-08-27: rotating portrait -> landscape on
+      // the loading screen left the picture stuck in the left half).
+      //
+      // The canvas DOES follow the iframe under an emulated rotation, so this
+      // is not a plain missing-resize bug. On real devices — iOS Safari most of
+      // all — `orientationchange` fires BEFORE layout settles, so anything that
+      // samples dimensions at that moment reads the PRE-rotation size and keeps
+      // it. Godot sizes its canvas from the window, and mid-boot it has no
+      // handler installed yet to correct itself afterwards.
+      //
+      // So: after rotation, re-dispatch resize INTO the iframe once layout has
+      // actually settled. Twice, because "settled" is device-dependent and a
+      // slow phone mid-wasm-compile can miss the first. Same-origin, so this is
+      // allowed; idempotent, so extra fires cost nothing.
+      const nudgeIframeResize = () => {
+        const win = iframeEl?.contentWindow;
+        if (!win) return;
+        try {
+          win.dispatchEvent(new Event("resize"));
+        } catch {
+          /* cross-origin (shouldn't happen — same origin in dev and prod) */
+        }
+      };
+      const onRotate = () => {
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            nudgeIframeResize();
+            setTimeout(nudgeIframeResize, 250);
+            setTimeout(nudgeIframeResize, 700);
+          }),
+        );
+      };
+      window.addEventListener("orientationchange", onRotate);
+      window.visualViewport?.addEventListener("resize", onRotate);
+      rotateOff = () => {
+        window.removeEventListener("orientationchange", onRotate);
+        window.visualViewport?.removeEventListener("resize", onRotate);
+      };
+
       if (window.matchMedia) {
         const mql = window.matchMedia("(pointer: coarse) and (max-width: 1100px)");
         const onChange = () => pushMobileContext();
@@ -936,6 +976,7 @@
     sseUnsub?.();
     messageOff?.();
     bugReportOff?.();
+    rotateOff?.();
     creditsSignupOff?.();
     analyticsOff?.();
     logShipOff?.();

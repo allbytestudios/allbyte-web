@@ -117,7 +117,7 @@
   .relicdeck{
     --crimson:#8a2b21; --gilt:#9a7736; --gilt-deep:#6f5321; --ink:#3a2c1b; --ink-soft:#5b4a33;
     --panel:#efe6cd; --rule:#c9b78a; --paperblend:#e7dcbd; --shadow:rgba(60,40,15,.28);
-    --t-action:#8a2b21; --t-reaction:#b6862c; --t-passive:#4f7a4a;
+    --t-action:#8a2b21; --t-reaction:#b6862c; --t-passive:#4e4a78;
     width:100%; overflow-x:clip;
     display:flex; flex-direction:column; align-items:center;
     font-family:Georgia,"Times New Roman",serif; color:var(--ink);

@@ -804,12 +804,28 @@
           /* cross-origin (shouldn't happen — same origin in dev and prod) */
         }
       };
+      // The LOADING screen is our own HTML, and its type is sized in vw
+      // (clamp(2.6rem, 9vw, 5rem) and friends). iOS Safari recomputes viewport
+      // units only after the rotation animation finishes, so the studio mark
+      // and the manual card visibly lag ~a second behind the rotation while the
+      // Godot canvas — which sizes itself off the window — turns immediately.
+      // Owner 2026-08-27: "it does look to switch just kind of slow".
+      //
+      // Reading offsetWidth forces a synchronous layout, which prompts Safari
+      // to settle the viewport units on this subtree sooner. It cannot beat
+      // Safari's own rotation animation, so this narrows the lag rather than
+      // removing it.
+      const reflowLoader = () => {
+        const el = containerEl?.querySelector(".loading-screen") as HTMLElement | null;
+        if (el) void el.offsetWidth;
+      };
       const onRotate = () => {
         requestAnimationFrame(() =>
           requestAnimationFrame(() => {
+            reflowLoader();
             nudgeIframeResize();
-            setTimeout(nudgeIframeResize, 250);
-            setTimeout(nudgeIframeResize, 700);
+            setTimeout(() => { reflowLoader(); nudgeIframeResize(); }, 250);
+            setTimeout(() => { reflowLoader(); nudgeIframeResize(); }, 700);
           }),
         );
       };

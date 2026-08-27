@@ -63,7 +63,7 @@
         aria-label={`${RELICS[ri].name} — click for the next relic`}>
         <span class="inner">
           <span class="type-tab">{TYPE[RELICS[ri].type].label}</span>
-          <span class="medallion"><img src={RELICS[ri].icon} alt="" width="64" height="64" /></span>
+          <span class="medallion"><img src={RELICS[ri].icon} alt="" width="96" height="96" /></span>
           <span class="rname">{RELICS[ri].name}</span>
           <span class="rskill">{RELICS[ri].skill}</span>
           <span class="tiers">
@@ -72,7 +72,7 @@
               <span class="pip {i === 0 ? 'on' : ''}">{ROMAN[i + 1]}</span>
             {/each}
           </span>
-          <span class="frag"><span class="q">&ldquo;</span>{RELICS[ri].frag}<span class="tier-note"> &mdash; Tier {ROMAN[1]} of {ROMAN[RELICS[ri].tiers]}</span></span>
+          <span class="frag"><span class="q">&ldquo;</span>{RELICS[ri].frag}</span>
         </span>
       </button>
     {/each}
@@ -148,18 +148,17 @@
 
   .type-tab{ text-transform:uppercase; letter-spacing:.16em; font-size:.62rem; font-weight:700; color:#fff;
     background:var(--tc); padding:.24rem .7rem; border-radius:2px; margin-top:.2rem; }
-  .medallion{ width:104px; height:104px; border-radius:50%; margin:.85rem 0 .5rem; display:flex; align-items:center; justify-content:center;
-    background:radial-gradient(circle at 50% 40%,#f6eecd,#e3d5ac); border:3px solid var(--gilt);
-    box-shadow:inset 0 0 12px rgba(111,83,33,.35),0 2px 6px var(--shadow); }
-  /* 32x32 pixel art, so the DISPLAY SIZE has to be an integer multiple or
-     nearest-neighbour makes some source pixels 2 device-px wide and their
-     neighbours 3 — that uneven blocking is what read as "a bit pixelated".
-     68px was 2.125x. 64px is exactly 2x, so the front card (the one actually
-     being read) is pixel-perfect. Cards behind it still carry the deck's
-     fractional --slot scale, but they are smaller, dimmer and not the subject.
-     Smoothing was tried instead and is worse: it trades hard edges for blur,
-     which on hand-made pixel art reads as low-res rather than deliberate. */
-  .medallion img{ width:64px; height:64px; image-rendering:pixelated; }
+  .medallion{ margin:.7rem 0 .45rem; display:flex; align-items:center; justify-content:center; }
+  /* No frame around the icon. The relic art is ALREADY a struck coin with its
+     own rim, so the parchment medallion that used to sit around it put two
+     concentric circles on the card - one vector-smooth, one made of pixels - and
+     that collision is what made the art read as awkward rather than deliberate.
+     Smoothing the pixels was tried first and is worse: it trades hard edges for
+     blur, which on hand-made pixel art reads as low-res. 96px is exactly 3x the
+     32x32 source, so nearest-neighbour stays exact - 6x on a 2x display. Cards
+     behind the front one still carry the deck's fractional --slot scale, but
+     they are smaller, dimmer and not the subject. */
+  .medallion img{ width:96px; height:96px; image-rendering:pixelated; }
   .rname{ font-size:1.3rem; color:var(--crimson); font-weight:700; margin-top:.1rem; line-height:1.1; }
   .rskill{ font-size:.9rem; color:var(--ink-soft); font-style:italic; margin:.3rem 0 .55rem; }
   .tiers{ display:flex; gap:.3rem; align-items:center; margin-bottom:.55rem; flex-wrap:wrap; justify-content:center; }
@@ -168,7 +167,6 @@
   .pip.on{ background:var(--tc); border-color:var(--tc); color:#fff; }
   .frag{ font-size:.82rem; color:var(--ink); line-height:1.5; font-style:italic; border-top:1px solid var(--rule); padding-top:.55rem; margin-top:auto; }
   .frag .q{ color:var(--gilt-deep); font-size:1.3rem; line-height:0; vertical-align:-.2em; margin-right:.05rem; }
-  .tier-note{ color:var(--gilt-deep); font-style:normal; }
 
   .controls{ display:flex; align-items:center; gap:.9rem; margin-top:1.4rem; }
   .arrow{ background:none; border:1px solid var(--gilt); color:var(--crimson); width:30px; height:30px; border-radius:50%;

@@ -359,7 +359,10 @@ export async function downloadSavesFile() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Do NOT revoke synchronously. Chromium starts the download asynchronously
+  // after the click, and revoking the blob URL first cancels it — the file
+  // never lands and nothing surfaces an error. Defer past the hand-off.
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 /**

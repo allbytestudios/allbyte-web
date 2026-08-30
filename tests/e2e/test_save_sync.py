@@ -18,22 +18,38 @@ import pytest
 
 
 def enter_play_mode(page, base_url):
-    """Click the demo banner to enter play mode and wait for the iframe + bridge."""
-    page.goto(f"{base_url}/", wait_until="domcontentloaded")
-    # Do NOT wait_for_load_state("networkidle") here: the landing page keeps
-    # audio connections open (music player + cursor sfx), so it never reaches
-    # networkidle in dev and the wait times out. Wait for the element we need.
-    page.wait_for_selector(".demo-row", timeout=10000)
-    # Set the test bypass flag BEFORE entering play mode so the bridge picks it up
+    """Open /play/ and wait for the iframe + save bridge.
+
+    Was: load "/" and click ".demo-row". That banner belonged to the bilateral
+    landing page, which was retired on 2026-07-28 — so every test in this file
+    had been failing on a 10s selector timeout ever since, silently, because
+    this suite is not in CI. Go straight to /play/ instead, which is where the
+    save bridge actually mounts.
+    """
+    # The download gate withholds the iframe src until the ~75MB download is
+    # acknowledged, so pre-ack it. Must be an init script: the gate reads
+    # localStorage before we would get a chance to set it after goto().
+    import json as _json
+    from pathlib import Path
+    ver = _json.loads(
+        Path(__file__).resolve().parents[2].joinpath("src/data/game-version.json").read_text()
+    )["version"]
+    page.add_init_script(
+        "try{localStorage.setItem('ab_download_acked', %s);}catch(e){}"
+        "window.__saves_test_skip_source_check = true;" % _json.dumps(ver)
+    )
+    page.goto(f"{base_url}/play/?scenario=__savesync", wait_until="domcontentloaded")
+    # Not networkidle: /play/ holds audio + polling connections open, so it
+    # never settles in dev. Wait for the things we actually need.
+    page.wait_for_selector(".game-frame", timeout=15000)
+    page.wait_for_function("() => window.__saves_test !== undefined", timeout=15000)
+    # The ?scenario= param above is what keeps this stable: GodotEmbed's
+    # isNonDefaultBuild() treats any scenario load as "not the default build"
+    # and skips the stale-cache freshness check. Without it, /play/ RELOADS
+    # whenever the built game's version differs from game-version.json — which
+    # it constantly does on a dev box — and the reload kills any pending
+    # download or in-flight message mid-test.
     page.evaluate("window.__saves_test_skip_source_check = true")
-    # Click the demo banner to launch the game
-    page.click(".demo-row")
-    # Wait for the iframe to mount
-    page.wait_for_selector(".game-frame", timeout=5000)
-    # Wait for the test hook to be installed
-    page.wait_for_function("() => window.__saves_test !== undefined", timeout=5000)
-    # Wait for the expand-in animation to complete (0.8s + buffer)
-    page.wait_for_timeout(900)
 
 
 def fire_game_message(page, msg):
@@ -236,8 +252,23 @@ def test_export_downloads_current_saves(page, base_url):
     # downloadSavesFile() requests a fresh snapshot, then fires the anchor
     # download once allbyte:all-saves lands (or after a 1500ms fallback — no
     # responder in this test, so the cached snapshot is what gets written).
-    with page.expect_download(timeout=5000) as dl_info:
-        page.evaluate("() => window.allbyteRequestExport()")
+    # Must be a REAL click. Chromium requires transient user activation to let
+    # an <a download> actually download; page.evaluate() has none, so calling
+    # allbyteRequestExport() directly runs the whole function (blob built,
+    # anchor clicked) and silently produces NO file. That is what made this
+    # test look like a broken feature. In the game the activation comes from
+    # the player's click inside the same-origin iframe.
+    page.evaluate("""() => {
+        const b = document.createElement('button');
+        b.id = '__export_btn';
+        b.style.cssText = 'position:fixed;top:0;left:0;z-index:99999';
+        b.onclick = () => window.allbyteRequestExport();
+        document.body.appendChild(b);
+    }""")
+    # Generous timeout: downloadSavesFile() asks the game for a fresh snapshot
+    # first and only falls back after 1500ms, and the blob hand-off is async.
+    with page.expect_download(timeout=20000) as dl_info:
+        page.click("#__export_btn")
     download = dl_info.value
     assert "chronicles-of-nesis-saves" in download.suggested_filename
     with open(download.path(), encoding="utf-8") as f:

@@ -3,6 +3,8 @@ dist/
 
 # claude code
 .claude/
+CLAUDE.md
+.claudeignore
 
 # dependencies
 node_modules/
@@ -80,3 +82,8 @@ tests/ai-eval/results/
 
 # Scratch/working files (never commit)
 .tmp/
+
+# Private marketing strategy — audience tactics, venue plan, content calendar.
+# Rendered dev-only into /test/marketing-queue/ (never ships to the public CDN
+# or this public repo). See DevlogDistributionPanel in here.
+/private/

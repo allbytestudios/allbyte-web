@@ -1,0 +1,21 @@
+---
+import ConsoleLayout from "../../../layouts/ConsoleLayout.astro";
+import DevSessionApp from "../../../components/DevSessionApp.svelte";
+---
+
+<ConsoleLayout
+  title="Live session — Dev Console — AllByte Studios"
+  description="The state of the game currently being played, as the agents see it — the read half of the dev-session bridge."
+  active="session"
+>
+  <main class="session-shell">
+    <DevSessionApp client:only="svelte" />
+  </main>
+</ConsoleLayout>
+
+<style>
+  .session-shell {
+    background: var(--panel);
+    min-height: calc(100vh - 160px);
+  }
+</style>

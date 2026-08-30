@@ -131,6 +131,9 @@
   <a href="/test/scenarios/" class="nav-tab" class:active={active === "scenarios"}>
     Scenarios
   </a>
+  <a href="/test/session/" class="nav-tab" class:active={active === "session"}>
+    Live session
+  </a>
   <a href="/test/dialogue/" class="nav-tab" class:active={active === "dialogue"}>
     Dialogue
   </a>

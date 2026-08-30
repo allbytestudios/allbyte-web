@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { subscribeToFile } from "../lib/testEvents";
   import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
+  import { initDevSession, teardownDevSession } from "../lib/devSession";
   import { auth } from "../lib/auth.svelte.ts";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import VirtualGamepad from "./VirtualGamepad.svelte";
@@ -1018,6 +1019,40 @@
     if (iframeEl) {
       initSaveBridge(iframeEl, { onExit: handleExit });
     }
+  });
+
+  // --- Dev-session bridge (admin + debug token only) -------------------------
+  // Registers this LIVE session with the dev-session API so Arc/Quinn can watch
+  // its state and push mutations into the game the owner is actually playing —
+  // on prod, on whatever device they're holding. Design:
+  // Desktop/GameDev/APP_CLAUDE_DEV_SESSION_BRIDGE.md
+  //
+  // The gate is `debugParam()`, not a channel id. Since the single gated build
+  // (0.8.2440) everyone loads /godot/public/index.html and the ONLY thing that
+  // turns on the game's dev surface is whether the ?debug token is forwarded —
+  // which happens for admins only, after auth hydrates. Without that token the
+  // game emits no allbyte:state and ignores allbyte:command, so gating on
+  // anything else would just register sessions that can never say anything.
+  //
+  // Server-side this is belt-and-braces: every bridge route independently
+  // verifies an admin JWT, so a leaked debug token still reaches nobody's
+  // session. Two layers, neither trusting the other — same shape as the
+  // identity/token split above.
+  //
+  // The gate is "is the game's dev surface actually on", which is NOT the same
+  // as "was a token forwarded". The game authorises its dev surface via
+  // GlobalWorld._debug_authorized: auto-true on local/develop/staging builds,
+  // ?debug=<token> on public. So dev servers qualify without a token — matching
+  // the game rather than demanding a param it does not need there.
+  $effect(() => {
+    if (!iframeEl || !auth.authReady) return;
+    if (!isAdmin(auth.currentUser) || !(debugParam() || import.meta.env.DEV)) return;
+    initDevSession(iframeEl, {
+      channel: getVersionSelection() || resolveVariant(),
+      gameVersion: EXPECTED_BUILD,
+      label: "prod /play",
+    });
+    return () => teardownDevSession();
   });
 
   // --- Scenario launcher (admin/Legend) — Arc's canonical load sequence -------

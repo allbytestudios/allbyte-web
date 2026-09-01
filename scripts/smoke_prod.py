@@ -356,20 +356,38 @@ def check_boot() -> int:
         except Exception:
             pass  # no gate (already consented on this context) — fine
 
-        # Wait for the iframe to mount. /play/ renders GodotEmbed which
-        # injects an <iframe> after a brief loading screen.
-        try:
-            iframe_handle = page.wait_for_selector("iframe", timeout=10_000)
-        except Exception:
-            print("[smoke] FAIL — no <iframe> mounted on /play/")
+        # Resolve the game frame by URL, never by holding an ElementHandle.
+        #
+        # /play/ can REMOUNT the iframe after first paint — a tier-gated
+        # ?v=/?channel= link swaps src once /auth/me lands, and the stale-cache
+        # self-heal reloads outright. A handle taken before that dies with the
+        # old element, and content_frame() then raises "Element is not attached
+        # to the DOM" — which crashed the smoke rather than failing it, so the
+        # boot check silently stopped running while still looking like coverage.
+        #
+        # page.frames is re-read on every poll, so a remount just resolves to the
+        # new frame on the next tick.
+        def game_frame():
+            for f in page.frames:
+                if f is not page.main_frame and "/godot/" in (f.url or ""):
+                    return f
+            return None
+
+        iframe = None
+        for _ in range(40):  # 20s
+            iframe = game_frame()
+            if iframe is not None:
+                break
+            page.wait_for_timeout(500)
+        if iframe is None:
+            print("[smoke] FAIL — no /godot/ frame mounted on /play/")
             return 1
 
-        iframe = iframe_handle.content_frame()
-        if iframe is None:
-            print("[smoke] FAIL — iframe.content_frame() returned None")
-            return 1
-        iframe.on("console", lambda m: events.append(("game", m.type, m.text)))
-        iframe.on("pageerror", lambda e: events.append(("game", "error", str(e))))
+        # Console/error listeners live on the PAGE, which reports messages from
+        # every frame — so they survive a remount that would orphan frame-level
+        # handlers. Frame is tagged by url at read time instead.
+        page.on("console", lambda m: events.append(("game", m.type, m.text))
+                if "/godot/" in (m.location or {}).get("url", "") else None)
 
         # Poll for the game to actually boot. window.gameState.scene is set
         # by the engine once the title scene loads.
@@ -379,7 +397,10 @@ def check_boot() -> int:
             page.wait_for_timeout(READY_POLL_S * 1000)
             elapsed += READY_POLL_S
             try:
-                scene = iframe.evaluate("window.gameState?.scene || null")
+                # Re-resolve each poll: a remount mid-boot would otherwise leave
+                # us evaluating against a dead frame forever.
+                fr = game_frame() or iframe
+                scene = fr.evaluate("window.gameState?.scene || null")
             except Exception:
                 scene = None
             if scene:
@@ -392,7 +413,7 @@ def check_boot() -> int:
         # Grab the captured Godot stdout/stderr from the dev-console
         # interceptor that index.html installs. Lines are plain strings.
         try:
-            logs = iframe.evaluate("window._consoleLogs || []") or []
+            logs = (game_frame() or iframe).evaluate("window._consoleLogs || []") or []
         except Exception:
             logs = []
 

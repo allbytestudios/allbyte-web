@@ -2094,7 +2094,27 @@
       oncontinue={consentToDownload}
       oncancel={() => (window.location.href = "/")}
     />
-  {:else if allowed}
+  {:else if !allowed}
+    <!-- INSTANT BOOT SHELL. `allowed` only flips inside onMount, and the
+         download gate was retired 2026-08-03, so without this branch the
+         component rendered NOTHING between navigation and hydration — the
+         "unexplained black interval before the AllByte mark" in the recorded
+         launch. Black reads as failed navigation, not as a cinematic beat.
+
+         This paints the ground and the identity on the very first frame, from
+         the thin browser shell, with no dependency on Godot, the worker, or
+         any async work. It is the SAME markup the studio phase uses, so when
+         `allowed` flips the bits simply start scrambling in place — no remount,
+         no flash, no second transition. -->
+    <div class="loading-screen studio-screen">
+      <div class="studio-mark">
+        <div class="studio-bits" aria-hidden="true">
+          {#each studioBits as b}<span class="studio-bit">{b}</span>{/each}
+        </div>
+        <div class="studio-word">All&nbsp;Byte</div>
+      </div>
+    </div>
+  {:else}
     {#if loading && useWorkerLoader && !workerFailed}
       <!-- Freeze-proof load screen: the whole sequence is drawn by a Web Worker
            on this OffscreenCanvas, so it never stalls during the WASM boot. -->
@@ -2472,7 +2492,12 @@
     display: inline-flex;
     flex-direction: column;
     align-items: stretch; /* bits row + word share the same (word) width */
-    animation: studioIn 0.35s ease-out both;
+    /* NO fade-in. The identity must be legible on the first painted frame —
+       a 0.35s ramp from opacity:0 delays acknowledgement of the click, which
+       is the one thing this screen exists to provide. The scale settle is
+       kept because it starts fully opaque and reads as arrival rather than
+       as waiting. */
+    animation: studioIn 0.28s ease-out both;
     transition: opacity 0.2s ease-in;
   }
   .studio-mark.fading {
@@ -2502,8 +2527,8 @@
   }
   @keyframes studioIn {
     0% {
-      opacity: 0;
-      transform: scale(0.98);
+      opacity: 1;
+      transform: scale(0.985);
     }
     100% {
       opacity: 1;

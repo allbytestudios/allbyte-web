@@ -1,7 +1,10 @@
 // Data layer for the one-click "promote develop -> demo (+ demo-debug)" button.
 // Talks to the admin-gated orchestrator (allbyte-studio-demo-promote stack): it
-// resolves develop's current commit from channels.json and StartBuilds the target
-// channel projects at that SHA. Admin-gated server-side (JWT tier == admin).
+// StartBuilds the target channel projects at a BRANCH REF (refs/heads/develop),
+// which CodeBuild resolves to HEAD at build time. Admin-gated server-side (JWT
+// tier == admin). It used to resolve a SHA from channels.json's `develop` entry
+// — that entry died on 2026-08-17 and the button silently shipped Aug-17 code
+// over prod until 2026-09-01.
 
 export const PROMOTE_BASE =
   "https://5deecoa9g8.execute-api.us-east-1.amazonaws.com";
@@ -14,7 +17,8 @@ export interface PromoteBuild {
   error?: string;
 }
 export interface PromoteResult {
-  promotingSha: string;
+  /** The ref being built, e.g. "refs/heads/develop". */
+  promotingRef: string;
   version: string;
   builds: PromoteBuild[];
 }
@@ -22,6 +26,8 @@ export interface BuildStatus {
   id: string;
   status: string; // IN_PROGRESS | SUCCEEDED | FAILED | STOPPED | FAULT | TIMED_OUT
   phase: string;
+  /** Commit CodeBuild actually resolved the ref to. Absent until source is fetched. */
+  sha?: string;
 }
 
 export async function promoteDevelop(token: string): Promise<PromoteResult> {

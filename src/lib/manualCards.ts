@@ -91,18 +91,21 @@ export const MANUAL_CARDS: ManualCard[] = [
   },
   {
     title: "In battle",
-    lines: [
-      "No random encounters — you see enemies on the field. Where you make contact groups them, and the ground you stand on becomes the grid.",
-      "Facing counts before the first blow: the direction you're facing when combat starts feeds the initiative order.",
-      "It counts during the fight too — strike a foe from behind and you'll land the hit far more often than meeting them face to face.",
+    lines: ["No random encounters. Where you make contact becomes the grid."],
+    rows: [
+      ["Where you fight", "the ground you were standing on"],
+      ["Facing at contact", "sets the initiative order"],
+      ["Facing in the fight", "strike from behind to hit far more often"],
     ],
   },
   {
     title: "Growing stronger",
-    lines: [
-      "Win fights for XP, then level up — each level grants JP for raw stats and SP for your class's skill tree.",
-      "Skills grow with use: lean on one and it earns Expertise, getting stronger over a run.",
-      "Spend your JP and SP after every level. An unspent pile is wasted power.",
+    lines: ["Spend JP and SP as you earn them — an unspent pile is wasted power."],
+    rows: [
+      ["XP", "won from fights; fills to a level"],
+      ["JP", "granted each level; buys raw stats"],
+      ["SP", "granted each level; buys skill-tree nodes"],
+      ["Expertise", "earned by using a skill; makes it stronger"],
     ],
   },
 ];

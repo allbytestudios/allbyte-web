@@ -58,6 +58,8 @@
     }
   }
 
+  let resolvedSha = $state<string | undefined>(undefined);
+
   function activeIds(): string[] {
     return (result?.builds ?? [])
       .filter((b) => b.buildId)
@@ -74,6 +76,10 @@
         const map: Record<string, BuildStatus> = {};
         for (const b of s) map[b.id] = b;
         statuses = map;
+        // The ref only becomes a commit once CodeBuild fetches source. Surface
+        // the first one that resolves, so the card can say what actually shipped
+        // rather than what we asked for.
+        resolvedSha = s.find((b) => b.sha)?.sha ?? resolvedSha;
         const done = s.every((b) => b.status && b.status !== "IN_PROGRESS");
         if (done && poll) { clearInterval(poll); poll = null; }
       } catch { /* keep last */ }
@@ -130,7 +136,7 @@
       {:else}
         <div class="result">
           <p class="muted">Promoting <code>{result.version}</code>
-            <span class="sub">({result.promotingSha?.slice(0, 8)})</span></p>
+            {#if resolvedSha}<span class="sub">({resolvedSha.slice(0, 8)})</span>{/if}</p>
           <ul class="builds">
             {#each result.builds as b (b.channel)}
               {@const bd = badge(b)}

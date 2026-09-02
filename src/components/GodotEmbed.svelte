@@ -2164,16 +2164,26 @@
 
          This paints the ground and the identity on the very first frame, from
          the thin browser shell, with no dependency on Godot, the worker, or
-         any async work. It is the SAME markup the studio phase uses, so when
-         `allowed` flips the bits simply start scrambling in place — no remount,
-         no flash, no second transition. -->
-    <div class="loading-screen studio-screen">
-      <div class="studio-mark">
-        <div class="studio-bits" aria-hidden="true">
-          {#each studioBits as b}<span class="studio-bit">{b}</span>{/each}
-        </div>
-        <div class="studio-word">All&nbsp;Byte</div>
-      </div>
+         any async work.
+
+         It must be pixel-identical to the FIRST FRAME the worker canvas draws,
+         minus the bits (owner 2026-09-02) — the wordmark sits still and the
+         bits then appear over it and start rotating, so the handoff reads as
+         one continuous shot instead of two different screens. Matching it in
+         DOM is why this is an <svg> and not a <div>: drawStudio() places the
+         word with textAlign "center" + textBaseline "alphabetic" at
+         (W/2, H/2 + 0.3*letterPx), and SVG <text> is the only HTML primitive
+         with those exact semantics. A flex-centred div centres the em BOX, not
+         the baseline, and lands a few px off at every viewport height.
+
+         Every constant below is mirrored from drawStudio() in
+         src/lib/loadScreenWorker.ts — change one, change both. The container is
+         position:fixed/inset:0, so its height IS the viewport height and 14vh
+         equals the canvas's H*0.14. -->
+    <div class="loading-screen studio-static">
+      <svg class="studio-static-mark" aria-hidden="true" focusable="false">
+        <text x="50%" y="50%">All Byte</text>
+      </svg>
     </div>
   {:else}
     {#if loading && useWorkerLoader && !workerFailed}
@@ -2577,6 +2587,35 @@
     line-height: 1;
     color: #f4ecd6;
   }
+  /* Pre-hydration studio frame — a DOM copy of drawStudio()'s first frame.
+     Mirrors src/lib/loadScreenWorker.ts: DARK ground #050608, wordmark
+     `600 clamp(H*0.14,42,80)px AllByteCustom` in #f4ecd6, centred on W/2 with
+     its ALPHABETIC BASELINE at H/2 + 0.3*letterPx. No text-shadow: the canvas
+     draws none, and the .studio-word glow was part of why the handoff read as
+     a font change. Keep this block and drawStudio() in lockstep. */
+  .studio-static {
+    background: #050608; /* canvas DARK, not .loading-screen's #0a0e17 */
+  }
+  .studio-static-mark {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .studio-static-mark text {
+    font-family: "AllByteCustom", Georgia, serif;
+    /* 600 matches the canvas font string; without it the browser picks 400 and
+       synthesises differently from the canvas, which reads as a second face. */
+    font-weight: 600;
+    font-size: clamp(42px, 14vh, 80px);
+    fill: #f4ecd6;
+    /* y="50%" puts the alphabetic baseline at H/2; the canvas then adds
+       0.3*letterPx, so translate by exactly that. */
+    transform: translateY(calc(0.3 * clamp(42px, 14vh, 80px)));
+    text-anchor: middle;
+  }
+
   .studio-word {
     font-family: "AllByteCustom", Georgia, serif;
     font-size: clamp(2.6rem, 9vw, 5rem);

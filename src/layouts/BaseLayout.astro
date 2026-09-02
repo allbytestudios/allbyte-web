@@ -57,6 +57,34 @@ const imageAbs = new URL(image, SITE).href;
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageAbs} />
 
+    <!-- Inbound-link attribution. A marketing link carries ?ref=<tag>
+         (e.g. https://allbyte.studio?ref=feedbackquest9) and it is almost never
+         the page the visitor eventually plays from — they land on / and click
+         through to /play/, which drops the query string. So capture it on FIRST
+         page view and hold it for the tab; playAnalytics reads it back as the
+         session's launch_context, which is what ties a play session to the link
+         that produced it.
+
+         Inline and early on purpose: it must survive a visitor who bounces
+         before any bundle hydrates. First ref wins — a second ?ref= later in
+         the same session is a navigation artefact, not a new acquisition.
+         Sanitised to the character set the analytics Lambda keeps, so what's
+         stored is what's ultimately reported. -->
+    <script is:inline>
+      try {
+        var r = new URLSearchParams(location.search).get("ref");
+        if (r && !sessionStorage.getItem("ab_ref")) {
+          // Lowercased here, not just at report time, so ?ref=Foo and ?ref=foo
+          // are one tag everywhere rather than two that collapse only in the
+          // console.
+          r = r.toLowerCase().replace(/[^a-z0-9_.\-]/g, "").slice(0, 40);
+          if (r) sessionStorage.setItem("ab_ref", r);
+        }
+      } catch (e) {
+        /* private mode / storage disabled — attribution degrades, page is fine */
+      }
+    </script>
+
     <!-- PWA: manifest + theme color drive Android install eligibility and
          the address-bar tint on mobile. -->
     <link rel="manifest" href="/manifest.json" />

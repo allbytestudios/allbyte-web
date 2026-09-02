@@ -227,14 +227,28 @@ export function markStartup(ev: StartupEvent): void {
  * §7 acquisition routing. Answers "does a homepage-qualified visitor behave
  * differently from someone handed an explicitly labelled direct-game link?"
  *
- * `?src=` is authoritative when present (that's how a marketing link declares
- * itself); otherwise infer from the referrer. Values stay in the plan's
- * vocabulary so the console can group them.
+ * Resolution order, most specific first:
+ *  1. `?ref=` on THIS url — a marketing link that points straight at /play/.
+ *  2. The tab's stored ref, captured by BaseLayout on the first page view. This
+ *     is the common case: the link lands on / and the visitor clicks through,
+ *     which drops the query string long before the funnel ever runs.
+ *  3. `?src=` — the original spelling, kept so older links keep resolving.
+ *  4. Referrer inference.
  */
 function launchContext(): string {
+  const tidy = (s: string) => s.toLowerCase().replace(/[^a-z0-9_.\-]/g, "").slice(0, 40);
   try {
-    const q = new URLSearchParams(window.location.search).get("src");
-    if (q) return q.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 40) || "unknown";
+    const p = new URLSearchParams(window.location.search);
+    const direct = p.get("ref");
+    if (direct) return tidy(direct) || "unknown";
+    try {
+      const held = sessionStorage.getItem("ab_ref");
+      if (held) return tidy(held) || "unknown";
+    } catch {
+      /* storage unavailable — fall through to referrer inference */
+    }
+    const q = p.get("src");
+    if (q) return tidy(q) || "unknown";
     const r = referrerHost();
     if (r === "direct") return "bookmark_or_direct";
     if (r === "internal") return "homepage_cta";

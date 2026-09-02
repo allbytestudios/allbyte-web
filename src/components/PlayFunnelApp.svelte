@@ -30,6 +30,17 @@
     retentionDays?: number;
     /** Known automation (CI Deploy QA / Playwright), excluded from every metric. */
     automationSessions?: number;
+    /** §6.1 startup sequence, canonical order — drives the startup funnel. */
+    startupSeq?: string[];
+    startupCounts?: Record<string, number>;
+    /** Median ms since navigation start, per startup event (§6.2). */
+    startupMedianMs?: Record<string, number>;
+    /** §6.3 verdict → session count. */
+    startupClasses?: Record<string, number>;
+    /** Sessions carrying startup marks; sessions predating §6 have none. */
+    startupInstrumented?: number;
+    /** §7 launch_context bucket → session count. */
+    launchContexts?: Record<string, number>;
     sceneCounts: Record<string, number>;
     referrers: Record<string, number>;
     devices?: Record<string, number>;
@@ -94,14 +105,93 @@
     return `${m}m ${s % 60}s`;
   }
 
-  // Split sceneCounts into location scenes vs "m:" milestones.
+  // Split sceneCounts into location scenes vs the two namespaced funnels:
+  // "m:" progression milestones and "s:" §6.1 startup events. Both must be
+  // excluded here or they'd render as places the player visited.
   let locations = $derived(
     data
       ? Object.entries(data.sceneCounts)
-          .filter(([k]) => !k.startsWith("m:"))
+          .filter(([k]) => !k.startsWith("m:") && !k.startsWith("s:"))
           .sort((a, b) => b[1] - a[1])
       : []
   );
+
+  // §6.1 startup funnel, in canonical order, with step-over-step retention.
+  // Only events any session actually reached are shown, so the panel stays
+  // short before the game-side marks (continue_confirmed) land.
+  let startupFunnel = $derived.by(() => {
+    if (!data?.startupSeq || !data.startupCounts) return [];
+    const entry = data.startupCounts["play_page_open"] || data.startupInstrumented || 0;
+    let prior = 0;
+    return data.startupSeq
+      .map((k) => ({ key: k, n: data!.startupCounts![k] || 0, ms: data!.startupMedianMs?.[k] }))
+      .filter((r) => r.n > 0)
+      .map((r, i) => {
+        const row = {
+          ...r,
+          label: STARTUP_LABEL[r.key] ?? r.key,
+          ofEntry: pct(r.n, entry),
+          ofPrior: i === 0 ? 100 : pct(r.n, prior),
+          first: i === 0,
+        };
+        prior = r.n;
+        return row;
+      });
+  });
+
+  const STARTUP_LABEL: Record<string, string> = {
+    play_page_open: "Opened /play/",
+    boot_shell_visible: "Boot shell painted",
+    game_download_start: "Download started",
+    game_download_complete: "Download complete",
+    engine_init_start: "Engine bring-up began",
+    engine_init_complete: "Engine running",
+    title_rendered: "Title rendered",
+    title_interactive: "Title interactive",
+    first_input: "First input",
+    new_game_confirmed: "Pressed New Game",
+    continue_confirmed: "Chose Continue",
+    first_world_scene_ready: "World scene ready",
+    first_player_move: "First move",
+  };
+
+  // §6.3 verdicts. Ordered worst-to-best so the top row is the biggest problem;
+  // the wording says what to go fix, not just which mark was missing.
+  const CLASS_LABEL: Record<string, string> = {
+    never_reached_boot_shell: "Never saw the boot shell — page/script failure",
+    boot_shell_no_download: "Shell, then no download — network or abandonment",
+    download_no_engine_init: "Downloaded but engine never started — WASM/runtime",
+    engine_init_no_title_interactive: "Engine ran, title never became usable",
+    title_interactive_no_input: "Title was usable, never touched — voluntary bounce",
+    input_no_start: "Tapped but never started — menu/controls unclear",
+    started_no_world_ready: "Started, world never loaded — scene failure",
+    world_ready_no_movement: "In the world, never moved — onboarding",
+    completed_to_movement: "Reached movement",
+  };
+  const CLASS_ORDER = [
+    "never_reached_boot_shell",
+    "boot_shell_no_download",
+    "download_no_engine_init",
+    "engine_init_no_title_interactive",
+    "input_no_start",
+    "started_no_world_ready",
+    "world_ready_no_movement",
+    "title_interactive_no_input",
+    "completed_to_movement",
+  ];
+  let startupClasses = $derived.by(() => {
+    if (!data?.startupClasses) return [];
+    const tot = Object.values(data.startupClasses).reduce((a, b) => a + b, 0);
+    return CLASS_ORDER.filter((k) => data!.startupClasses![k])
+      .map((k) => ({
+        key: k,
+        label: CLASS_LABEL[k] ?? k,
+        n: data!.startupClasses![k],
+        pct: pct(data!.startupClasses![k], tot),
+        good: k === "completed_to_movement",
+        bounce: k === "title_interactive_no_input",
+      }));
+  });
   // Milestone progression funnel: milestones in PLAY ORDER (not by count), with
   // step-over-step drop-off, so you see how far players get and where they fall off.
   const MILESTONE_SEQ = ["m:newgame", "m:moved", "m:dialogue", "m:combat"];
@@ -291,6 +381,51 @@
     </section>
 
     <!-- Milestone progression — how far players get once they start, and where they drop -->
+    <section class="milestone-funnel startup-funnel">
+      <h3>
+        Startup sequence
+        <span class="sub">(§6.1 · bar = share of /play/ opens · median = ms from navigation start)</span>
+      </h3>
+      {#if startupFunnel.length === 0}
+        <p class="muted">
+          No startup marks yet — sessions recorded before this instrumentation shipped carry none.
+          New sessions populate this within minutes of a visit.
+        </p>
+      {:else}
+        {#each startupFunnel as r (r.key)}
+          <div class="mf-row">
+            <span class="mf-label" title={r.key}>{r.label}</span>
+            <div class="mf-track"><div class="mf-bar" style="width:{Math.max(2, r.ofEntry)}%"></div></div>
+            <span class="mf-stat">
+              {r.n}
+              {#if r.ms != null}<span class="mf-kept">· {r.ms < 1000 ? `${r.ms}ms` : `${(r.ms / 1000).toFixed(1)}s`}</span>{/if}
+            </span>
+          </div>
+        {/each}
+      {/if}
+
+      {#if startupClasses.length > 0}
+        <h3 class="sc-head">
+          Where sessions ended
+          <span class="sub">(§6.3 · {data.startupInstrumented} instrumented session{data.startupInstrumented === 1 ? "" : "s"})</span>
+        </h3>
+        {#each startupClasses as c (c.key)}
+          <div class="mf-row">
+            <span class="mf-label sc-label" class:good={c.good} class:bounce={c.bounce} title={c.key}>{c.label}</span>
+            <div class="mf-track">
+              <div class="mf-bar" class:good={c.good} class:bounce={c.bounce} style="width:{Math.max(2, c.pct)}%"></div>
+            </div>
+            <span class="mf-stat">{c.n} <span class="mf-kept">· {c.pct}%</span></span>
+          </div>
+        {/each}
+        <p class="mf-note muted">
+          Everything above “Reached movement” is a session that stopped early. The rows split the one
+          number the old funnel couldn’t: a <em>technical</em> failure (no shell, no download, no engine,
+          no usable title) versus a <em>voluntary</em> bounce — the title worked and nobody touched it.
+        </p>
+      {/if}
+    </section>
+
     <section class="milestone-funnel">
       <h3>
         Milestone progression
@@ -520,6 +655,13 @@
 
   /* Milestone progression funnel */
   .milestone-funnel { margin-top: 1.5rem; }
+  .sc-head { margin-top: 1.4rem; }
+  /* Verdict rows: the healthy outcome and the "worked, they left" outcome read
+     differently from a technical failure, because they call for different work. */
+  .sc-label.good { color: var(--engine-accent, #a7f3d0); }
+  .sc-label.bounce { color: #fbbf24; }
+  .mf-bar.good { background: var(--engine-accent, #a7f3d0); }
+  .mf-bar.bounce { background: #fbbf24; }
   .mf-row {
     display: grid;
     grid-template-columns: 11rem 1fr 9rem;

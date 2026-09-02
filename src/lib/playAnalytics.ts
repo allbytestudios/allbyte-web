@@ -26,6 +26,10 @@ const PROD_HOST = "allbyte.studio";
 const POLL_MS = 4000;
 const SID_KEY = "ab_play_sid";
 const OWNER_KEY = "ab_play_owner";
+// Set once this browser has completed a boot to Title — lets a later session
+// report warm-vs-cold launch (§7 "cache / return state") without any tracking
+// id: it's a single local boolean, never sent as an identifier.
+const WARM_KEY = "ab_play_warm";
 // Longest we hold the arrival beacon waiting on /auth/me before recording anyway.
 const AUTH_WAIT_MS = 3000;
 
@@ -163,6 +167,120 @@ function deviceClass(): string {
   }
 }
 
+// --- §6 startup instrumentation -------------------------------------------
+// The plan's §6 point: the old aggregate funnel ("opened play → past title →
+// moved") cannot separate a TECHNICAL failure from a voluntary bounce, because
+// both look identical — the session simply stops emitting. §6.1 fixes that with
+// an explicit ordered event sequence; §6.3 then classifies a session by the
+// furthest event it reached (see STARTUP_SEQ order below).
+//
+// Wire format: each startup event rides the EXISTING "scene" event as a token
+// namespaced `s:` — same trick the milestone funnel uses with `m:`, so the
+// backend schema needs no new event type. Two rules make this safe:
+//   - the token stays CLEAN (no interpolated timing), so it aggregates;
+//   - timing goes in a separate `ms` field, NEVER in `dur`. The reader does
+//     `dur = max(dur, ...)` per session as "seconds played", so putting
+//     milliseconds there would report a 30s boot as 30,000 seconds.
+export const STARTUP_SEQ = [
+  "play_page_open",
+  "boot_shell_visible",
+  "game_download_start",
+  "game_download_complete",
+  "engine_init_start",
+  "engine_init_complete",
+  "title_rendered",
+  "title_interactive",
+  "first_input",
+  "new_game_confirmed",
+  "continue_confirmed",
+  "first_world_scene_ready",
+  "first_player_move",
+] as const;
+
+export type StartupEvent = (typeof STARTUP_SEQ)[number];
+
+// Set once initPlayAnalytics has decided this client is recordable. Null means
+// "not recording" (SSR, dev host, owner/bot, or auth still settling) — marks
+// that arrive first are buffered below and flushed on init.
+let emitStartup: ((ev: StartupEvent) => void) | null = null;
+let pendingMarks: StartupEvent[] = [];
+
+/**
+ * Record a §6.1 startup event. Safe to call from anywhere at any time — before
+ * init (buffered), twice (deduped downstream), or on a client we don't record
+ * (dropped). Callers never need to know whether analytics is live.
+ *
+ * Timing is NOT passed in: every mark stamps `performance.now()` at the moment
+ * it fires, which is already "ms since navigation start" — exactly the origin
+ * §6.2 asks durations to be measured from.
+ */
+export function markStartup(ev: StartupEvent): void {
+  if (emitStartup) {
+    emitStartup(ev);
+    return;
+  }
+  // Cap the buffer: if analytics never initialises we must not grow forever.
+  if (pendingMarks.length < STARTUP_SEQ.length * 2) pendingMarks.push(ev);
+}
+
+/**
+ * §7 acquisition routing. Answers "does a homepage-qualified visitor behave
+ * differently from someone handed an explicitly labelled direct-game link?"
+ *
+ * `?src=` is authoritative when present (that's how a marketing link declares
+ * itself); otherwise infer from the referrer. Values stay in the plan's
+ * vocabulary so the console can group them.
+ */
+function launchContext(): string {
+  try {
+    const q = new URLSearchParams(window.location.search).get("src");
+    if (q) return q.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 40) || "unknown";
+    const r = referrerHost();
+    if (r === "direct") return "bookmark_or_direct";
+    if (r === "internal") return "homepage_cta";
+    if (r.includes("reddit")) return "reddit_direct_play";
+    return "external_referral";
+  } catch {
+    return "unknown";
+  }
+}
+
+/**
+ * §7 session metadata, packed into ONE short string rather than a column per
+ * field — keeps the beacon a CORS-simple request and the table schema flat.
+ * Deliberately coarse: a viewport bucket and a warm/cold flag are enough to
+ * segment startup failures without becoming a fingerprint.
+ *
+ * Format is `k:v/k:v` — NOT the more obvious `k=v;k=v`, because the write
+ * Lambda sanitises every string field through SAFE (`[^A-Za-z0-9_./:\- ]`) and
+ * would silently strip `=` and `;`, leaving one unparseable run of characters.
+ * `:` and `/` survive that filter, so the separators must be those.
+ */
+function sessionMeta(): string {
+  const bits: string[] = [];
+  try {
+    bits.push(`vp:${window.innerWidth}x${window.innerHeight}`);
+    bits.push(`dpr:${Math.round((window.devicePixelRatio || 1) * 10) / 10}`);
+    bits.push(`touch:${navigator.maxTouchPoints > 0 ? 1 : 0}`);
+    bits.push(`or:${window.innerWidth >= window.innerHeight ? "l" : "p"}`);
+    // Cold vs warm launch: whether this browser has completed a /play/ boot
+    // before. Distinguishes "slow because first download" from "slow anyway".
+    let warm = 0;
+    try {
+      warm = localStorage.getItem(WARM_KEY) ? 1 : 0;
+    } catch {
+      /* private mode — reports cold, which is the safe assumption */
+    }
+    bits.push(`warm:${warm}`);
+    // Only where the browser actually provides it (§7 says don't assume).
+    const c = (navigator as any).connection;
+    if (c?.effectiveType) bits.push(`net:${String(c.effectiveType).slice(0, 8)}`);
+  } catch {
+    /* best-effort */
+  }
+  return bits.join("/").slice(0, 120);
+}
+
 /**
  * Start the funnel beacon. `stateGetter` returns a snapshot of the game's
  * current state (or null if not booted yet). Returns a teardown fn. No-op
@@ -229,9 +347,9 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
 
   const elapsed = () => Math.round((Date.now() - startTs) / 1000);
 
-  function send(ev: Ev, scene: string): void {
+  function send(ev: Ev, scene: string, extra?: Record<string, unknown>): void {
     try {
-      const body = JSON.stringify({ sid, ev, scene, dur: elapsed(), ref, dev });
+      const body = JSON.stringify({ sid, ev, scene, dur: elapsed(), ref, dev, ...extra });
       navigator.sendBeacon(WRITE_URL, new Blob([body], { type: "text/plain" }));
     } catch {
       /* best-effort; never break the page */
@@ -245,8 +363,38 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
     send("scene", token);
   }
 
+  // §6.1 startup event. `ms` is time since navigation start, which is the
+  // origin every §6.2 duration is measured from — so the reader derives all of
+  // them by subtracting two marks, and we never send a duration per se.
+  function startup(evName: StartupEvent): void {
+    const token = `s:${evName}`;
+    if (seen.has(token)) return; // each startup event is once-per-session
+    seen.add(token);
+    send("scene", token, { ms: Math.round(performance.now()) });
+    // Reaching an interactive title is what makes the NEXT visit a warm launch.
+    if (evName === "title_interactive") {
+      try {
+        localStorage.setItem(WARM_KEY, "1");
+      } catch {
+        /* private mode — next launch just reports cold */
+      }
+    }
+  }
+
+  emitStartup = startup;
+
   // Arrival — counts /play loads even if the engine never boots (boot-rate).
-  send("open", "");
+  // `meta` + `ctx` ride the open beacon only: they're per-session constants,
+  // so repeating them on every stage would be pure payload.
+  send("open", "", { meta: sessionMeta(), ctx: launchContext() });
+  startup("play_page_open");
+
+  // Anything marked before we were ready to record (the boot shell paints
+  // before onMount in a fast load, and an admin check can defer init by up to
+  // AUTH_WAIT_MS) is replayed now, in the order it happened.
+  const replay = pendingMarks;
+  pendingMarks = [];
+  for (const m of replay) startup(m);
 
   function tick(): void {
     let st: PlayState | null = null;
@@ -256,13 +404,27 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
       st = null;
     }
     if (!st) return;
+    // A readable gameState means the engine is alive and running game code.
+    // That's the page-observable proxy for engine_init_complete — the precise
+    // WASM-init boundaries are game-side (see the Arc handoff on this bead).
+    startup("engine_init_complete");
     if (st.scene) {
       lastScene = st.scene; // furthest location scene, sent on "end"
       stage(st.scene);
+      // The title is a scene like any other, so split on its name: anything
+      // else that renders is, by definition, the first world scene.
+      if (/title/i.test(st.scene)) startup("title_rendered");
+      else startup("first_world_scene_ready");
     }
     if (st.touch) stage("m:touch");
-    if (st.newGame) stage("m:newgame");
-    if (st.moving) stage("m:moved");
+    if (st.newGame) {
+      stage("m:newgame");
+      startup("new_game_confirmed");
+    }
+    if (st.moving) {
+      stage("m:moved");
+      startup("first_player_move");
+    }
     if (st.dialogue) stage("m:dialogue");
     if (st.inBattle) stage("m:combat");
     // lastTriggeredEventId is -1 (and sometimes 0) when NO story event has
@@ -297,6 +459,7 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
 
   return () => {
     if (poller) clearInterval(poller);
+    emitStartup = null;
     window.removeEventListener("pagehide", end);
     document.removeEventListener("visibilitychange", onHidden);
   };

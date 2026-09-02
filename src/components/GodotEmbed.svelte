@@ -7,7 +7,7 @@
   import { isAdmin, isTierAtLeast } from "../lib/tier";
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import ManualLetterboxPanel from "./ManualLetterboxPanel.svelte";
-  import { initPlayAnalytics } from "../lib/playAnalytics";
+  import { initPlayAnalytics, markStartup } from "../lib/playAnalytics";
   import { initConsoleLogShipper } from "../lib/consoleLogShipper";
   import DownloadGate from "./DownloadGate.svelte";
   import { downloadState, ackDownload } from "../lib/downloadGate";
@@ -200,6 +200,10 @@
     window.dispatchEvent(new CustomEvent("music-player:pause"));
     loadStart = Date.now(); // count load time from consent, not page arrival
     lastProgressAt = Date.now(); // reset the boot-watchdog grace window too
+    // Rendering the iframe is what sets its src and starts the engine fetching
+    // — the page-observable start of engine bring-up. (When the gate was
+    // already acked this fires from onMount instead; see below.)
+    markStartup("engine_init_start");
     // The consent tap is a user gesture — enter mobile fullscreen right here
     // instead of waiting to catch a later pointerdown (new users' guaranteed gesture).
     tryEnterFullscreen();
@@ -387,6 +391,43 @@
   //    auto-loads the reserved reload slot if fresh (<60s).
   let sseUnsub: (() => void) | null = null;
   let messageOff: (() => void) | null = null;
+  let firstInputOff: (() => void) | null = null;
+
+  /**
+   * §6.1 `first_input` — the first real input AFTER the title is interactive.
+   * Ordering is the whole point: an input before the title can respond proves
+   * nothing, whereas "title interactive, then nothing" is §6.3's voluntary
+   * bounce. So these listeners are installed only once title_interactive fires.
+   *
+   * Both surfaces are watched. Input aimed at the game lands in the iframe's
+   * own document and never bubbles to the parent, while taps on the letterbox
+   * hit the page — so we listen on each, whichever comes first wins, and the
+   * first one to fire tears both down.
+   */
+  function watchFirstInput() {
+    if (firstInputOff) return; // already armed
+    const targets: EventTarget[] = [window];
+    try {
+      const doc = iframeEl?.contentWindow?.document;
+      if (doc) targets.push(doc);
+    } catch {
+      /* iframe not ready or navigated — the window listener still covers us */
+    }
+    const evs = ["pointerdown", "keydown", "touchstart"] as const;
+    const hit = () => {
+      markStartup("first_input");
+      firstInputOff?.();
+    };
+    for (const t of targets) {
+      for (const e of evs) t.addEventListener(e, hit, { capture: true, passive: true });
+    }
+    firstInputOff = () => {
+      for (const t of targets) {
+        for (const e of evs) t.removeEventListener(e, hit, { capture: true } as any);
+      }
+      firstInputOff = null;
+    };
+  }
   let bugReportOff: (() => void) | null = null;
   let rotateOff: (() => void) | null = null;
   let creditsSignupOff: (() => void) | null = null;
@@ -684,6 +725,13 @@
   }
 
   onMount(() => {
+    // §6.1 boot_shell_visible — the AllByte identity is PAINTED, not merely
+    // mounted. rAF runs before paint, so the inner frame is what guarantees the
+    // browser has actually put pixels up; measuring the outer one would report
+    // a shell the player hasn't seen yet. This is the number the instant-shell
+    // fix (2026-09-01) exists to move, and until now nothing recorded it.
+    requestAnimationFrame(() => requestAnimationFrame(() => markStartup("boot_shell_visible")));
+
     // Set the mobile-context flag FIRST — before the iframe/WASM boots — so the
     // engine sees it at Title startup (Arc's contract). The download gate often
     // holds the iframe behind a click anyway, but set it up-front regardless.
@@ -719,6 +767,7 @@
     const proceedToGame = () => {
       const hasScenario = new URLSearchParams(window.location.search).has("scenario");
       allowed = true;
+      markStartup("engine_init_start"); // iframe mounts → engine begins fetching
       // Game brings its own music — pause the persistent site player.
       window.dispatchEvent(new CustomEvent("music-player:pause"));
       if (!fixture && !hasScenario && isMobileViewport()) showStartTap = true;
@@ -982,6 +1031,11 @@
         reloadReadyResolve = null;
       } else if (ev.data?.type === "allbyte_title_ready") {
         titleReadySignal = true; // title is interactive → OK to hide the loader
+        // §6.1's critical distinction: input can ACTUALLY trigger New Game,
+        // not merely "the title scene node exists". The game already sends
+        // this, so it needs no new game-side work.
+        markStartup("title_interactive");
+        watchFirstInput();
       } else if (ev.data?.type === "allbyte_touch_accept") {
         touchAcceptSeen = true; // mobile tap registered as ui_accept → funnel
       }
@@ -992,6 +1046,7 @@
   onDestroy(() => {
     sseUnsub?.();
     messageOff?.();
+    firstInputOff?.();
     bugReportOff?.();
     rotateOff?.();
     creditsSignupOff?.();
@@ -1835,6 +1890,12 @@
           bytesDownloaded = totalBytes;
           filesDownloaded = count;
           lastProgressAt = Date.now(); // fresh bytes → boot is still progressing
+          // §6.1 download boundaries. On a WARM cache transferSize is 0 for
+          // every entry, so neither mark fires from bytes — the session shows
+          // engine_init_complete with no download pair, which is exactly how
+          // §6.3 should read a cached launch (and `warm=1` in meta confirms it).
+          if (totalBytes > 0) markStartup("game_download_start");
+          if (totalBytes >= EXPECTED_DOWNLOAD_BYTES) markStartup("game_download_complete");
           // Owner spec (2026-06-01): web reports transport-level progress,
           // game owns the visible loading UI. Emit the postMessage so Arc's
           // Chronicles boot shell can drive a real progress bar instead of

@@ -39,6 +39,9 @@ let studioBits = [1, 1, 1, 0, 1, 1, 0, 0];
 let lastScramble = 0;
 let scrambleInterval = 15; // starts a near-60fps blur (barely legible), grows fast
 let bitsSettled = false;
+// One-shot latches for the two studio-phase notifications to the page.
+let studioFadeAnnounced = false;
+let studioEndAnnounced = false;
 let spinner: ImageBitmap | null = null; // in-game LoadingIcon.png (6× 32×32 strip)
 
 /**
@@ -201,6 +204,10 @@ function loop() {
   const t = now - started;
   if (t < cfg.studioMs) drawStudio(now, t);
   else {
+    if (!studioEndAnnounced) {
+      studioEndAnnounced = true;
+      (self as any).postMessage({ type: "studioEnd" }); // page unmounts the wordmark overlay
+    }
     if (cardShownAt === 0) { cardShownAt = now; }
     drawManual(now, t);
     if (hasPoison()) {
@@ -254,10 +261,17 @@ function drawStudio(now: number, t: number) {
     if (t >= cfg.studioSettleMs) bitsSettled = true;
   }
 
-  const fade = t > cfg.studioMs - cfg.studioFadeMs
+  const fading = t > cfg.studioMs - cfg.studioFadeMs;
+  const fade = fading
     ? clamp(1 - (t - (cfg.studioMs - cfg.studioFadeMs)) / cfg.studioFadeMs, 0, 1)
     : 1;
   ctx.globalAlpha = fade;
+  // Tell the page when to fade the overlaid wordmark, so it leaves with the
+  // bits rather than on a page-side timer that could drift from this clock.
+  if (fading && !studioFadeAnnounced) {
+    studioFadeAnnounced = true;
+    (self as any).postMessage({ type: "studioFade" });
+  }
 
   const word = "All Byte";
   const letterPx = clamp(H * 0.14, 42, 80);
@@ -283,14 +297,12 @@ function drawStudio(now: number, t: number) {
     if (g) drawGlyph(g, left + i * gap, bitsY);
     else ctx.fillText(String(studioBits[i]), left + i * gap, bitsY);
   }
-  // wordmark
-  if (gWord) {
-    drawGlyph(gWord, cx, wordY);
-  } else {
-    ctx.font = `600 ${letterPx}px ${FONT}, Georgia, serif`;
-    ctx.fillStyle = "#f4ecd6";
-    ctx.fillText(word, cx, wordY);
-  }
+  // The wordmark is deliberately NOT drawn here. It is the same DOM node that
+  // painted before hydration, kept mounted above this canvas for the whole
+  // studio scene — so it never re-renders and there is no swap to blip. This
+  // canvas only adds the bits over it. `wordY` is still needed as the anchor
+  // the bits are positioned from, and gWord is still needed for its advance
+  // width; neither is drawn.
   ctx.globalAlpha = 1;
   // (spinner now drawn once per frame in loop(), pinned bottom-right)
 }

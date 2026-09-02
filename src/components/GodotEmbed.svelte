@@ -1426,6 +1426,12 @@
   // The game is revealed only once the studio intro has played AND a scene has
   // appeared — so the studio always plays and the manual card fills the rest.
   // Normal PLAYER loads only; scenario/fixture (admin) reveal as before.
+  // The pre-hydration wordmark stays mounted over the worker canvas for the
+  // whole studio scene, then fades with it. Driven by worker messages rather
+  // than a page-side timer so the fade can't drift out of sync with the bits.
+  let studioOverlay = $state(true);
+  let studioOverlayFading = $state(false);
+
   let loadPhase = $state<"studio" | "manual">("studio");
   let studioDone = $state(false);
   let sceneReady = $state(false);
@@ -1644,6 +1650,9 @@
       const worker = new LoadScreenWorker();
       worker.onmessage = (ev) => {
         if (ev.data?.type === "reveal") loading = false;
+        // Studio scene is fading / done — take the overlaid wordmark with it.
+        else if (ev.data?.type === "studioFade") studioOverlayFading = true;
+        else if (ev.data?.type === "studioEnd") studioOverlay = false;
       };
       worker.onerror = () => { workerFailed = true; };
       const off = loadCanvasEl.transferControlToOffscreen();
@@ -2213,6 +2222,19 @@
       onCancel={brClose}
     />
   {/if}
+  {#snippet studioMark()}
+    <!-- Mirrors drawStudio() in loadScreenWorker.ts: ModernGoth 600 at
+         clamp(H*0.14,42,80), #f4ecd6, centred on W/2 with its ALPHABETIC
+         baseline at H/2 + 0.3*letterPx. SVG <text> because that is the only
+         HTML primitive with fillText's centre+baseline semantics; a
+         flex-centred div centres the em box instead and lands a few px off at
+         every viewport height. One definition, rendered both as the
+         pre-hydration shell and as the studio overlay, so the two can't drift. -->
+    <svg class="studio-static-mark" aria-hidden="true" focusable="false">
+      <text x="50%" y="50%">All Byte</text>
+    </svg>
+  {/snippet}
+
   {#if error}
     <div class="loading-screen">
       <div class="loading-title">AllByte Studios</div>
@@ -2250,15 +2272,30 @@
          position:fixed/inset:0, so its height IS the viewport height and 14vh
          equals the canvas's H*0.14. -->
     <div class="loading-screen studio-static">
-      <svg class="studio-static-mark" aria-hidden="true" focusable="false">
-        <text x="50%" y="50%">All Byte</text>
-      </svg>
+      {@render studioMark()}
     </div>
   {:else}
     {#if loading && useWorkerLoader && !workerFailed}
       <!-- Freeze-proof load screen: the whole sequence is drawn by a Web Worker
            on this OffscreenCanvas, so it never stalls during the WASM boot. -->
       <canvas class="worker-load" bind:this={loadCanvasEl}></canvas>
+      <!-- The wordmark is NOT redrawn by the canvas during the studio scene: it
+           stays this same DOM node, mounted continuously from before hydration
+           through the studio phase. Swapping the SVG for a canvas copy — even a
+           pixel-identical one, which it was — still leaves a frame where the SVG
+           has unmounted and the canvas hasn't painted, and that one-frame gap is
+           the blip. Keeping the node means there is nothing to swap: the bits
+           simply appear over a wordmark that never moved. Transparent ground,
+           layered above the canvas, so the canvas's bits show through. -->
+      {#if studioOverlay}
+        <div
+          class="loading-screen studio-static overlay"
+          class:fading={studioOverlayFading}
+          style="--studio-fade-ms: {STUDIO_FADE_MS}ms"
+        >
+          {@render studioMark()}
+        </div>
+      {/if}
     {:else if loading}
       {#if loadPhase === "studio"}
         <!-- Phase 1: AllByte studio intro, full-screen ~STUDIO_MS. Eight bits
@@ -2664,6 +2701,25 @@
      a font change. Keep this block and drawStudio() in lockstep. */
   .studio-static {
     background: #050608; /* canvas DARK, not .loading-screen's #0a0e17 */
+  }
+  /* Overlay mode: the canvas underneath supplies the ground AND the bits, so
+     this must be transparent or it would hide them. Sits above the canvas
+     (which is z-index 2) purely to keep the wordmark node alive across the
+     handoff — there is no visual stacking intent beyond that. */
+  .studio-static.overlay {
+    background: transparent;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity var(--studio-fade-ms, 400ms) linear;
+  }
+  .studio-static.overlay.fading {
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .studio-static.overlay {
+      transition: none;
+    }
   }
   .studio-static-mark {
     position: absolute;

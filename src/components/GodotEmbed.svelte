@@ -254,6 +254,65 @@
     return "public";
   }
 
+  /**
+   * Render one run of text in ModernGoth into a transferable tile.
+   *
+   * The worker draws these instead of calling fillText, so the tile has to
+   * carry enough metrics to be placed exactly where fillText would have put it
+   * (textAlign "center", textBaseline "alphabetic"): the advance width, the
+   * left padding, and the baseline's offset from the tile top. Padding is
+   * generous because ModernGoth's blackletter forms overhang their advance
+   * width, and a tight tile clips the swashes.
+   *
+   * Drawn at device-pixel resolution; the worker scales its context by dpr and
+   * draws the tile at its CSS size, so the result is 1:1 and stays crisp.
+   */
+  async function makeGlyphTile(text: string, px: number, weight: number, dpr: number) {
+    const pad = Math.ceil(px * 0.6);
+    const measure = document.createElement("canvas").getContext("2d");
+    if (!measure) return null;
+    const font = `${weight} ${px}px "AllByteCustom", Georgia, serif`;
+    measure.font = font;
+    const w = measure.measureText(text).width;
+    const tw = Math.ceil(w + pad * 2);
+    const th = Math.ceil(px * 2.2);
+    const base = px * 1.5; // baseline inside the tile
+    const cv = document.createElement("canvas");
+    cv.width = Math.ceil(tw * dpr);
+    cv.height = Math.ceil(th * dpr);
+    const c = cv.getContext("2d");
+    if (!c) return null;
+    c.scale(dpr, dpr);
+    c.font = font;
+    c.textAlign = "left";
+    c.textBaseline = "alphabetic";
+    c.fillStyle = "#f4ecd6";
+    c.fillText(text, pad, base);
+    return { bmp: await createImageBitmap(cv), w, pad, base, tw, th };
+  }
+
+  /** Ship the studio scene's ModernGoth glyphs to the worker. Sizes mirror
+   *  drawStudio() in loadScreenWorker.ts — keep the two in step. */
+  async function sendStudioGlyphs(worker: Worker, cssH: number, dpr: number) {
+    try {
+      // The document's own face must be ready, or we'd rasterise Georgia here
+      // too and ship a tile that looks identical to the bug we're fixing.
+      if (document.fonts?.load) await document.fonts.load('600 80px "AllByteCustom"');
+      await document.fonts?.ready;
+      const letterPx = Math.max(42, Math.min(80, cssH * 0.14));
+      const bitPx = Math.max(14, Math.min(30, letterPx * 0.34));
+      const [word, bit0, bit1] = await Promise.all([
+        makeGlyphTile("All Byte", letterPx, 600, dpr),
+        makeGlyphTile("0", bitPx, 400, dpr),
+        makeGlyphTile("1", bitPx, 400, dpr),
+      ]);
+      if (!word || !bit0 || !bit1) return;
+      worker.postMessage({ type: "studioGlyphs", word, bit0, bit1 }, [word.bmp, bit0.bmp, bit1.bmp]);
+    } catch {
+      /* worker keeps its Georgia fallback — degraded, never broken */
+    }
+  }
+
   /** Installed-PWA detection: standalone/fullscreen display mode, plus iOS
    *  Safari's navigator.standalone. The installed app is the player-facing
    *  surface, so it gets the clean NON-DEBUG (public) build — no debug HUD /
@@ -1615,6 +1674,16 @@
       // isolation (no-CORP same-origin subresources NetworkError inside it), so
       // fetch them here on the main thread and transfer the bytes/bitmap over.
       // The worker renders immediately with fallbacks and upgrades in place.
+      // The studio wordmark + bit digits are rendered HERE and shipped as
+      // bitmaps, because OffscreenCanvas text in a dedicated worker cannot use
+      // a font added via self.fonts: the FontFace resolves and reports
+      // "loaded", yet measureText stays byte-identical to the Georgia fallback
+      // (verified 2026-09-02 — 319.14px either way vs 254.56px for ModernGoth
+      // here). The `font` message below still ships the face because the CARD
+      // scene's text has the same problem and will need the same treatment;
+      // sending it costs one cached fetch and keeps that path warm.
+      sendStudioGlyphs(worker, loadCanvasEl.clientHeight || window.innerHeight, dpr);
+
       fetch("/fonts/ModernGoth.otf")
         .then((r) => r.arrayBuffer())
         .then((buf) => worker.postMessage({ type: "font", buf }, [buf]))

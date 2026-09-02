@@ -40,6 +40,44 @@ let lastScramble = 0;
 let scrambleInterval = 15; // starts a near-60fps blur (barely legible), grows fast
 let bitsSettled = false;
 let spinner: ImageBitmap | null = null; // in-game LoadingIcon.png (6× 32×32 strip)
+
+/**
+ * Pre-rendered studio glyphs, drawn on the MAIN thread where ModernGoth is a
+ * real loaded face.
+ *
+ * Why they exist: OffscreenCanvas text inside a dedicated worker CANNOT use a
+ * font added through `self.fonts`. `new FontFace(...)` resolves, `face.load()`
+ * succeeds and `self.fonts.status` reports "loaded" — and `measureText` is
+ * still byte-identical to the Georgia fallback (verified 2026-09-02: 319.14px
+ * both before and after adding the face, vs 254.56px for the same string in
+ * ModernGoth on the main thread). So `fontReady` was reporting success for
+ * something that never took effect, and the whole studio scene has been
+ * rendering in Georgia — which is what made the animated wordmark look like a
+ * different typeface from the static shell that precedes it.
+ *
+ * Each tile carries the metrics needed to place it exactly where fillText would
+ * have, so drawStudio()'s geometry is unchanged.
+ */
+interface Glyph {
+  bmp: ImageBitmap;
+  /** Advance width of the text in CSS px — what measureText would have returned. */
+  w: number;
+  /** Left padding inside the tile, CSS px. */
+  pad: number;
+  /** Alphabetic baseline offset from the tile top, CSS px. */
+  base: number;
+  /** Tile size in CSS px. */
+  tw: number;
+  th: number;
+}
+let gWord: Glyph | null = null;
+let gBit: (Glyph | null)[] = [null, null]; // index by bit value 0/1
+
+/** Draw a pre-rendered glyph as fillText(text, x, y) would with
+ *  textAlign "center" + textBaseline "alphabetic". */
+function drawGlyph(g: Glyph, x: number, y: number) {
+  ctx.drawImage(g.bmp, x - g.w / 2 - g.pad, y - g.base, g.tw, g.th);
+}
 // Faithful to the in-game LoadingIcon (Arc, LoadingIcon.gd): TWO nested rings,
 // the sprite strip IS the tumble; both rings rotate CW; the inner ring is a
 // child so it spins ~2× the outer and sits at a 45° offset, and is slightly
@@ -119,6 +157,11 @@ self.onmessage = async (e: MessageEvent) => {
       self.fonts.add(face);
       fontReady = true;
     } catch { fontReady = false; }
+  } else if (m.type === "studioGlyphs") {
+    // Main-thread-rendered ModernGoth tiles — see the Glyph docs above for why
+    // the worker cannot render this text itself.
+    gWord = (m.word as Glyph) || null;
+    gBit = [(m.bit0 as Glyph) || null, (m.bit1 as Glyph) || null];
   } else if (m.type === "spinner") {
     spinner = (m.bmp as ImageBitmap) || null;
   } else if (m.type === "sprite") {
@@ -221,7 +264,10 @@ function drawStudio(now: number, t: number) {
   ctx.font = `600 ${letterPx}px ${FONT}, Georgia, serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  const wordW = ctx.measureText(word).width;
+  // Prefer the pre-rendered advance width: measureText here is Georgia's, and
+  // using it would space the bits to the wrong word width even once the
+  // wordmark itself draws from a bitmap.
+  const wordW = gWord ? gWord.w : ctx.measureText(word).width;
   const cx = W / 2;
   const wordY = H / 2 + letterPx * 0.3;
 
@@ -233,12 +279,18 @@ function drawStudio(now: number, t: number) {
   ctx.fillStyle = "#f4ecd6";
   const bitsY = wordY - letterPx - bitPx * 0.6;
   for (let i = 0; i < studioBits.length; i++) {
-    ctx.fillText(String(studioBits[i]), left + i * gap, bitsY);
+    const g = gBit[studioBits[i]];
+    if (g) drawGlyph(g, left + i * gap, bitsY);
+    else ctx.fillText(String(studioBits[i]), left + i * gap, bitsY);
   }
   // wordmark
-  ctx.font = `600 ${letterPx}px ${FONT}, Georgia, serif`;
-  ctx.fillStyle = "#f4ecd6";
-  ctx.fillText(word, cx, wordY);
+  if (gWord) {
+    drawGlyph(gWord, cx, wordY);
+  } else {
+    ctx.font = `600 ${letterPx}px ${FONT}, Georgia, serif`;
+    ctx.fillStyle = "#f4ecd6";
+    ctx.fillText(word, cx, wordY);
+  }
   ctx.globalAlpha = 1;
   // (spinner now drawn once per frame in loop(), pinned bottom-right)
 }

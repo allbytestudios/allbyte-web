@@ -1493,8 +1493,12 @@
   // slow exponentially → STOP on random values (STUDIO_SETTLE_MS) → hold briefly
   // → the whole scene fades away (STUDIO_FADE_MS) → the first manual card.
   const STUDIO_MS = 2000; // studio scene 2s (owner: 1s felt too short)
-  const STUDIO_SETTLE_MS = 850; // bits blur fast then stop early (~0.85s), then hold...
-  const STUDIO_FADE_MS = 220; // ...then the scene fades away over this
+  // The bit timeline now lives with startStudioScramble() (BITS_* constants) —
+  // it landed at 1280ms and holds until the fade below. This is still sent to
+  // the worker for protocol compatibility, but the worker no longer draws the
+  // studio scene, so nothing reads it there.
+  const STUDIO_SETTLE_MS = 850;
+  const STUDIO_FADE_MS = 220; // the scene fades away over this, ending at STUDIO_MS
   const CARD_MS = 3000; // each card gets a full 3s before it rotates
   const CARD_MIN_MS = 1000; // a card still shows ≥1s if the game is already ready
   let studioFading = $state(false);
@@ -1518,25 +1522,49 @@
   // values and hold before the scene fades. Mirrors the real in-game
   // AllByteGames splash; all glyphs are ModernGoth.
   let studioBits = $state<number[]>([1, 1, 1, 0, 1, 1, 0, 0]);
+  // Studio bit sequence — the "Converge" timing the owner picked from the
+  // three mocked-up readings (2026-09-03). Phases, from the moment the mark is
+  // on screen:
+  //   150–400ms   bits fade in (CSS, see .sm-bit) while already flipping
+  //   400–980ms   flat-out flips at BITS_FAST_MS
+  //   980–1280ms  interval grows quadratically — the eight visibly slow together
+  //   1280ms      land on the final value
+  //   1280–1780ms hold it still (500ms) before the layer starts its fade at
+  //               STUDIO_MS - STUDIO_FADE_MS
+  // The whole sequence fits the existing 2000ms studio budget, so card timing
+  // and reveal are untouched.
+  const BITS_FAST_MS = 42;
+  const BITS_FAST_UNTIL = 980;
+  const BITS_SETTLE_AT = 1280;
+  const BITS_DECEL = 270; // ms added at the end of the converge ramp
+
   function startStudioScramble() {
-    const randomBits = () => studioBits.map(() => (Math.random() < 0.5 ? 0 : 1));
+    const rnd = () => (Math.random() < 0.5 ? 0 : 1);
+    // Decided up-front so the landing value is a real random number the bits
+    // converge ONTO, rather than wherever the last flip happened to stop.
+    const landed = studioBits.map(rnd);
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
-      studioBits = randomBits();
+      studioBits = landed;
       return;
     }
     const start = performance.now();
-    let interval = 40; // fast initial flip
-    const growth = 1.36; // exponential slowdown
     const tick = () => {
-      studioBits = randomBits();
-      if (performance.now() - start >= STUDIO_SETTLE_MS) return; // stop on final
-      interval *= growth;
-      setTimeout(tick, interval);
+      const t = performance.now() - start;
+      if (t >= BITS_SETTLE_AT) {
+        studioBits = landed; // land, then hold — no further timer
+        return;
+      }
+      studioBits = studioBits.map(rnd);
+      const k =
+        t < BITS_FAST_UNTIL
+          ? 0
+          : (t - BITS_FAST_UNTIL) / (BITS_SETTLE_AT - BITS_FAST_UNTIL);
+      setTimeout(tick, BITS_FAST_MS + k * k * BITS_DECEL);
     };
-    setTimeout(tick, interval);
+    setTimeout(tick, BITS_FAST_MS);
   }
 
   // All text is drawn from the in-game manual (public/manual/index.html) —
@@ -2307,7 +2335,13 @@
          every viewport height. One definition, rendered both as the
          pre-hydration shell and as the studio overlay, so the two can't drift. -->
     <svg class="studio-static-mark" aria-hidden="true" focusable="false">
-      <text class="sm-bits" x="50%" y="50%">{studioBits.join(" ")}</text>
+      <!-- One <text> per bit at a FIXED x. In ModernGoth "0" is 0.54em wide and
+           "1" only 0.40em — 26% apart — so drawing the row as a single centred
+           string re-flows it on every flip and slides all eight sideways. Each
+           digit owning its own position makes a flip purely a glyph swap. -->
+      {#each studioBits as b, i}
+        <text class="sm-bit" style="--i:{i}" x="50%" y="50%">{b}</text>
+      {/each}
       <text class="sm-word" x="50%" y="50%">All Byte</text>
     </svg>
   {/snippet}
@@ -2360,17 +2394,13 @@
       <canvas class="worker-load" bind:this={loadCanvasEl}></canvas>
     {:else if loading}
       {#if loadPhase === "studio"}
-        <!-- Phase 1: AllByte studio intro, full-screen ~STUDIO_MS. Eight bits
-             (one per char of "All Byte", the space included = a Byte) flip 0/1,
-             slow, stop, then fade — all ModernGoth. -->
-        <div class="loading-screen studio-screen">
-          <div class="studio-mark" class:fading={studioFading}>
-            <div class="studio-bits" aria-hidden="true">
-              {#each studioBits as b}<span class="studio-bit">{b}</span>{/each}
-            </div>
-            <div class="studio-word">All&nbsp;Byte</div>
-          </div>
-        </div>
+        <!-- Phase 1 draws NOTHING here. The studio scene is the single layer
+             below `{/if}`, which covers every path — worker canvas and this DOM
+             fallback alike. This branch used to render its own wordmark + bits;
+             once the layer became path-independent the two stacked, each
+             scrambling on its own timer, which read as doubled text that
+             flickered and never flipped cleanly. One scene, one source. -->
+        <div class="loading-screen studio-screen"></div>
       {:else}
         <!-- Phase 2: Chronicles-themed manual card + accurate progress tracker -->
         <div class="loading-screen manual-screen">
@@ -2816,6 +2846,11 @@
   .studio-static-mark {
     --letter: clamp(42px, 14vh, 80px);
     --bit: clamp(14px, 4.76vh, 30px);
+    /* "All Byte" measures 3.182em at weight 600 in ModernGoth (254.56px at
+       80px). Eight bits span that full width across seven gaps, so the row is
+       exactly as wide as the wordmark and the outermost bits sit on its edges —
+       the geometry drawStudio() used before the scene moved to the DOM. */
+    --step: calc(0.4546 * var(--letter));
   }
   .studio-static-mark text {
     font-family: "AllByteCustom", Georgia, serif;
@@ -2833,12 +2868,17 @@
   }
   /* Bits sit above the wordmark at drawStudio's bitsY:
      H/2 + 0.3*letter - letter - 0.6*bit  =>  -(0.7*letter + 0.6*bit) from H/2.
-     They PHASE IN rather than appearing with the wordmark (owner): the identity
-     lands instantly, the machine part arrives a beat later. */
-  .studio-static-mark .sm-bits {
+     Each is placed at its own x — (i - 3.5) steps from centre — so the row is
+     centred on the wordmark and no flip can shift a neighbour.
+     They PHASE IN rather than arriving with the wordmark (owner): the identity
+     lands instantly, the machine part a beat later. */
+  .studio-static-mark .sm-bit {
     font-size: var(--bit);
-    transform: translateY(calc(-0.7 * var(--letter) - 0.6 * var(--bit)));
-    animation: bitsIn 520ms ease-out 260ms both;
+    transform: translate(
+      calc((var(--i) - 3.5) * var(--step)),
+      calc(-0.7 * var(--letter) - 0.6 * var(--bit))
+    );
+    animation: bitsIn 250ms linear 150ms both;
   }
   @keyframes bitsIn {
     from {
@@ -2849,7 +2889,7 @@
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .studio-static-mark .sm-bits {
+    .studio-static-mark .sm-bit {
       animation: none;
     }
   }

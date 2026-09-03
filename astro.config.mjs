@@ -8,6 +8,23 @@ import chokidar from "chokidar";
 import remarkDirective from "remark-directive";
 import remarkWalkthroughDirectives from "./scripts/remark-walkthrough-directives.mjs";
 
+// SITE build stamp — distinct from the GAME version in game-version.json.
+// The two move independently: a site deploy ships new Astro/Svelte output while
+// the game stays put, and a game promote does the reverse. Without a site
+// stamp there is no way to tell, from a loaded page, which site build you are
+// looking at — which cost real time confirming whether a fix had shipped.
+// Falls back to a timestamp where git isn't available (it always is in CI).
+const SITE_BUILD = (() => {
+  let sha = "nogit";
+  try {
+    const r = spawnSync("git", ["rev-parse", "--short=8", "HEAD"], { encoding: "utf8" });
+    if (r.status === 0 && r.stdout.trim()) sha = r.stdout.trim();
+  } catch {
+    /* no git — the timestamp below still identifies the build */
+  }
+  return `${sha}·${new Date().toISOString().slice(0, 16).replace("T", " ")}Z`;
+})();
+
 const chroniclesRoot = resolve(
   process.env.CHRONICLES_DIR ||
     "C:/Users/drew/Desktop/GameDev/ChroniclesOfNesis"
@@ -1288,6 +1305,11 @@ export default defineConfig({
     remarkPlugins: [remarkDirective, remarkWalkthroughDirectives],
   },
   vite: {
+    define: {
+      // Available to any component as __SITE_BUILD__; surfaced on the page by
+      // BaseLayout so it can be read without devtools.
+      __SITE_BUILD__: JSON.stringify(SITE_BUILD),
+    },
     plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), relicVignetteOverrideWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork(), manualSnapshotPreview()],
     server: {
       host: "0.0.0.0",

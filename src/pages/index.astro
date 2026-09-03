@@ -10,6 +10,11 @@ import gameVersion from "../data/game-version.json";
 // this file so /changelog/, /devlog/, /walkthrough/ and /artwork/ can use the
 // same one. Homepage-only rules stay in the <style> block below.
 import "../styles/manual.css";
+
+/** Injected by vite.define in astro.config.mjs — the SITE build, which moves
+ *  independently of the game version above it. */
+const SITE_BUILD: string = __SITE_BUILD__;
+const GAME_VERSION: string = gameVersion.version;
 ---
 
 <BaseLayout title="The Chronicles of Nesis | AllByte Studios" description="A world that has forgotten its heroes. Play The Chronicles of Nesis free in your browser, a handcrafted tactical RPG from AllByte Studios.">
@@ -89,7 +94,7 @@ import "../styles/manual.css";
         client:visible
         source="home"
         variant="paper"
-        heading="Told when there's more"
+        heading="Email for updates"
         blurb="Episode 1 is free to play right now. Get notified when the next episode releases."
         cta="Notify me"
       />
@@ -100,6 +105,10 @@ import "../styles/manual.css";
 <footer><div class="wrap">
   <div class="fnav"><a href="/play/">Play</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="/manual/">Manual</a><a href="/walkthrough/">Strategy Guide</a><a href="#studio">Studio</a></div>
   <div class="cr">The Chronicles of Nesis · © AllByte Studios · Made and shared in the open.</div>
+  <!-- Build stamp. Site and game versions ship independently, so both are
+       shown: knowing one never tells you the other, which is exactly what
+       made "is my fix live?" hard to answer from a loaded page. -->
+  <div class="build">site {SITE_BUILD} · game {GAME_VERSION}</div>
 </div>
 
 </footer>

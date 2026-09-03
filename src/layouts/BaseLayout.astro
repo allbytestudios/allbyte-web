@@ -4,6 +4,11 @@ import MusicPlayer from "../components/MusicPlayer.svelte";
 import AuthInit from "../components/AuthInit.svelte";
 import DevAuthSwitcher from "../components/DevAuthSwitcher.svelte";
 import UpdateOverlay from "../components/UpdateOverlay.svelte";
+import gameVersion from "../data/game-version.json";
+
+/** Injected by vite.define in astro.config.mjs: "<short sha>·<build time>Z". */
+const SITE_BUILD: string = __SITE_BUILD__;
+const GAME_VERSION: string = gameVersion.version;
 
 interface Props {
   title?: string;
@@ -83,6 +88,23 @@ const imageAbs = new URL(image, SITE).href;
       } catch (e) {
         /* private mode / storage disabled — attribution degrades, page is fine */
       }
+    </script>
+
+    <!-- SITE build stamp. Separate from the GAME version (game-version.json,
+         shown on the homepage and /changelog/) because the two ship
+         independently — a site deploy moves this and not that. Readable three
+         ways so confirming "which build am I actually looking at" never needs
+         devtools archaeology: this meta tag, window.__SITE_BUILD, and a line
+         logged on every page load. -->
+    <meta name="site-build" content={SITE_BUILD} />
+    <script is:inline define:vars={{ SITE_BUILD, GAME_VERSION }}>
+      window.__SITE_BUILD = SITE_BUILD;
+      window.__GAME_VERSION = GAME_VERSION;
+      console.log(
+        "%c[allbyte]%c site " + SITE_BUILD + "  ·  game " + GAME_VERSION,
+        "color:#a7f3d0;font-weight:bold",
+        "color:inherit",
+      );
     </script>
 
     <!-- PWA: manifest + theme color drive Android install eligibility and

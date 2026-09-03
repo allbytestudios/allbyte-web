@@ -73,6 +73,12 @@
   footer .fnav{ display:flex; gap:1.2rem; justify-content:center; flex-wrap:wrap; font-family:"AllByteCustom",Georgia,serif; text-transform:uppercase; letter-spacing:.08em; font-size:.72rem; }
   footer .fnav a{ color:var(--ink-soft); text-decoration:none; } footer .fnav a:hover{ color:var(--crimson); }
   footer .cr{ font-size:.8rem; margin-top:.9rem; opacity:.75; }
+  /* Build stamp — quiet by design; a diagnostic, not a design element.
+     Monospace + tabular so two builds compare character by character, and
+     user-select:all so one click grabs the whole thing to paste back. */
+  footer .build{ font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+    font-size:.66rem; letter-spacing:.02em; margin-top:.45rem; opacity:.5;
+    font-variant-numeric:tabular-nums; user-select:all; }
 
 /* --- semantic status colours (console) ---------------------------------
    Priority/status chips carry MEANING, so they keep their hue rather than

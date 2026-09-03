@@ -1,9 +1,15 @@
 ---
+import gameVersion from "../data/game-version.json";
+
 interface Props {
   theme?: "engine" | "heart";
 }
 
 const { theme = "engine" } = Astro.props;
+/** Injected by vite.define in astro.config.mjs. Site and game versions ship
+ *  independently, so both are shown — knowing one never tells you the other. */
+const SITE_BUILD: string = __SITE_BUILD__;
+const GAME_VERSION: string = gameVersion.version;
 ---
 
 <footer class:list={["site-footer", `site-footer--${theme}`]}>
@@ -16,6 +22,9 @@ const { theme = "engine" } = Astro.props;
     <a href="/terms/">Terms</a>
   </nav>
   <span class="footer-copyright">&copy; 2026 AllByte Studios</span>
+  <span class="footer-build" title="Site build · game build — they ship independently">
+    site {SITE_BUILD} &middot; game {GAME_VERSION}
+  </span>
 </footer>
 
 <style>
@@ -96,5 +105,16 @@ const { theme = "engine" } = Astro.props;
 
   .footer-copyright {
     font-size: 0.875rem;
+  }
+
+  /* Deliberately quiet — it's a diagnostic, not a design element. Monospace and
+     tabular so two builds can be compared character by character at a glance. */
+  .footer-build {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    opacity: 0.55;
+    font-variant-numeric: tabular-nums;
+    user-select: all; /* one click selects the whole stamp to paste back */
   }
 </style>

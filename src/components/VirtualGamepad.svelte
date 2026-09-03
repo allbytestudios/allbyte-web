@@ -72,11 +72,20 @@
    * The delay exists so the down and up land in different frames; a pair
    * dispatched in the same tick risks being coalesced before the engine polls.
    */
-  type Shoulder = "L1" | "R1";
+  type Shoulder = "L1" | "R1" | "R2";
   const SHOULDER_KEYS: Record<Shoulder, { key: string; code: string; keyCode: number }> = {
     L1: { key: "r", code: "KeyR", keyCode: 82 },
     R1: { key: "f", code: "KeyF", keyCode: 70 },
+    R2: { key: "g", code: "KeyG", keyCode: 71 },
   };
+  /**
+   * R2 is the one shoulder that HOLDS rather than taps: the game reads the held
+   * state each frame and returns to 1x on keyup, with no latch of its own. That
+   * makes the keyup load-bearing — outside combat R2 drives Engine.time_scale,
+   * so a key left down would strand the whole game at speed. releaseAll() (blur,
+   * pagehide, visibilitychange) is what guarantees it can't.
+   */
+  const SHOULDER_HOLD: Record<Shoulder, boolean> = { L1: false, R1: false, R2: true };
   const SHOULDER_TAP_MS = 60;
 
   /** Visual only — which shoulder the finger is currently on. Input timing is
@@ -105,14 +114,28 @@
     );
   }
 
-  /** Flush any in-flight tap immediately — used by releaseAll so a backgrounded
-   *  page can't leave a key down. */
+  /** Press a hold-style shoulder (R2). Goes through press()/release() so it
+   *  shares the `held` guard and the releaseAll() safety net. */
+  function pressShoulder(btn: Shoulder) {
+    press(`s-${btn}`, SHOULDER_KEYS[btn]);
+  }
+  function releaseShoulder(btn: Shoulder) {
+    release(`s-${btn}`, SHOULDER_KEYS[btn]);
+  }
+
+  /** Release every shoulder — pending taps AND anything held. Used by
+   *  releaseAll so a backgrounded page can't leave a key down. For R2 that is
+   *  the difference between returning to 1x and coming back with the game
+   *  stuck at speed. */
   function flushShoulderTaps() {
     for (const [btn, t] of shoulderTimers) {
       clearTimeout(t);
       dispatchKey("keyup", SHOULDER_KEYS[btn]);
     }
     shoulderTimers.clear();
+    for (const btn of Object.keys(SHOULDER_HOLD) as Shoulder[]) {
+      if (SHOULDER_HOLD[btn]) releaseShoulder(btn);
+    }
     shoulderDown = null;
   }
 
@@ -527,20 +550,47 @@
        single discrete action, so they get keyboard/AT activation for free.
        Fired on pointerdown rather than click: a tap should register on contact,
        the way the rest of the pad behaves, not on release. -->
-  {#each [["L1", "Toggle combat log"], ["R1", "Cycle combat speed"]] as [btn, label] (btn)}
+  {#each [["L1", "shoulder-l", "Toggle combat log"], ["R1", "shoulder-r", "Cycle combat speed"], ["R2", "shoulder-r2", "Hold for saved speed"]] as [btn, pos, label] (btn)}
     <button
       type="button"
-      class="shoulder-btn {btn === 'L1' ? 'shoulder-l' : 'shoulder-r'}"
+      class="shoulder-btn {pos}"
       class:active={shoulderDown === btn}
       aria-label="{btn} — {label}"
       onpointerdown={(e) => {
         e.preventDefault();
-        shoulderDown = btn as Shoulder;
-        tapShoulder(btn as Shoulder);
+        const b = btn as Shoulder;
+        shoulderDown = b;
+        if (SHOULDER_HOLD[b]) {
+          // Capture the pointer so a finger that drifts off the button still
+          // delivers pointerup here. Without it, drift fires pointerleave and
+          // the key would release mid-hold — or worse, never.
+          try {
+            (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+          } catch {
+            /* capture unsupported — pointerleave below is the fallback */
+          }
+          pressShoulder(b);
+        } else {
+          tapShoulder(b);
+        }
       }}
-      onpointerup={() => (shoulderDown = null)}
-      onpointercancel={() => (shoulderDown = null)}
-      onpointerleave={() => (shoulderDown = null)}
+      onpointerup={() => {
+        const b = btn as Shoulder;
+        if (SHOULDER_HOLD[b]) releaseShoulder(b);
+        shoulderDown = null;
+      }}
+      onpointercancel={() => {
+        const b = btn as Shoulder;
+        if (SHOULDER_HOLD[b]) releaseShoulder(b);
+        shoulderDown = null;
+      }}
+      onpointerleave={() => {
+        // With capture active this won't fire mid-hold; it's the safety net for
+        // browsers that refused the capture.
+        const b = btn as Shoulder;
+        if (SHOULDER_HOLD[b]) releaseShoulder(b);
+        shoulderDown = null;
+      }}
       oncontextmenu={(e) => e.preventDefault()}
     >
       {btn}
@@ -687,6 +737,12 @@
   }
   .shoulder-r {
     right: max(8px, env(safe-area-inset-right, 0px));
+  }
+  /* R2 sits inboard of R1 on the same row, so both stay in the letterbox band
+     rather than stacking up into the game canvas. R1 keeps the outer edge —
+     it's the one tapped repeatedly, R2 is held. */
+  .shoulder-r2 {
+    right: calc(max(8px, env(safe-area-inset-right, 0px)) + 64px);
   }
   .shoulder-btn.active {
     background: rgba(167, 243, 208, 0.26);

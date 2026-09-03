@@ -57,6 +57,65 @@
     Y: { key: "e",      code: "KeyE",      keyCode: 69, label: "Y" },
   };
 
+  /**
+   * Shoulder buttons — both combat features, both discrete TAPS.
+   *
+   *   L1 → R : toggle the in-combat log
+   *   R1 → F : cycle combat speed 1 → 2 → 4 → 8 → 1
+   *
+   * Unlike the face buttons these do NOT hold: the keyup is fired on a short
+   * timer rather than on finger-release, so the key is never sustained no
+   * matter how long the button is pressed. That matters because both actions
+   * are edge-triggered toggles — a held key that the game happened to sample
+   * per-frame would cycle the speed continuously instead of once per tap.
+   *
+   * The delay exists so the down and up land in different frames; a pair
+   * dispatched in the same tick risks being coalesced before the engine polls.
+   */
+  type Shoulder = "L1" | "R1";
+  const SHOULDER_KEYS: Record<Shoulder, { key: string; code: string; keyCode: number }> = {
+    L1: { key: "r", code: "KeyR", keyCode: 82 },
+    R1: { key: "f", code: "KeyF", keyCode: 70 },
+  };
+  const SHOULDER_TAP_MS = 60;
+
+  /** Visual only — which shoulder the finger is currently on. Input timing is
+   *  driven by the tap timer above, not by this. */
+  let shoulderDown = $state<Shoulder | null>(null);
+  const shoulderTimers = new Map<Shoulder, ReturnType<typeof setTimeout>>();
+
+  /** Fire one discrete keypress. Re-tapping before the previous keyup lands
+   *  flushes it first, so a fast double-tap is two clean presses rather than
+   *  one long one. */
+  function tapShoulder(btn: Shoulder) {
+    const k = SHOULDER_KEYS[btn];
+    const pending = shoulderTimers.get(btn);
+    if (pending) {
+      clearTimeout(pending);
+      shoulderTimers.delete(btn);
+      dispatchKey("keyup", k);
+    }
+    dispatchKey("keydown", k);
+    shoulderTimers.set(
+      btn,
+      setTimeout(() => {
+        shoulderTimers.delete(btn);
+        dispatchKey("keyup", k);
+      }, SHOULDER_TAP_MS),
+    );
+  }
+
+  /** Flush any in-flight tap immediately — used by releaseAll so a backgrounded
+   *  page can't leave a key down. */
+  function flushShoulderTaps() {
+    for (const [btn, t] of shoulderTimers) {
+      clearTimeout(t);
+      dispatchKey("keyup", SHOULDER_KEYS[btn]);
+    }
+    shoulderTimers.clear();
+    shoulderDown = null;
+  }
+
   /** Track which buttons are currently held so we don't double-fire keydown
    *  if a touch lingers or multitouch jitters. */
   const held = new Set<string>();
@@ -132,6 +191,7 @@
    *  to touchcancel, blur, and page-hide below. */
   function releaseAll() {
     stopFaceRepeat();
+    flushShoulderTaps();
     if (dpadUp) release("d-up", DPAD_KEYS.up);
     if (dpadDown) release("d-down", DPAD_KEYS.down);
     if (dpadLeft) release("d-left", DPAD_KEYS.left);
@@ -463,6 +523,30 @@
      pointer-events:none so touches on the game canvas in the middle still
      reach the iframe; the zones below opt back in. -->
 <div class="gamepad-overlay" aria-hidden="false">
+  <!-- Shoulders. Real buttons (not spans like the face pad) because each is a
+       single discrete action, so they get keyboard/AT activation for free.
+       Fired on pointerdown rather than click: a tap should register on contact,
+       the way the rest of the pad behaves, not on release. -->
+  {#each [["L1", "Toggle combat log"], ["R1", "Cycle combat speed"]] as [btn, label] (btn)}
+    <button
+      type="button"
+      class="shoulder-btn {btn === 'L1' ? 'shoulder-l' : 'shoulder-r'}"
+      class:active={shoulderDown === btn}
+      aria-label="{btn} — {label}"
+      onpointerdown={(e) => {
+        e.preventDefault();
+        shoulderDown = btn as Shoulder;
+        tapShoulder(btn as Shoulder);
+      }}
+      onpointerup={() => (shoulderDown = null)}
+      onpointercancel={() => (shoulderDown = null)}
+      onpointerleave={() => (shoulderDown = null)}
+      oncontextmenu={(e) => e.preventDefault()}
+    >
+      {btn}
+    </button>
+  {/each}
+
   <div
     class="dpad-zone"
     role="group"
@@ -570,6 +654,50 @@
 
   .face-zone {
     right: max(8px, env(safe-area-inset-right, 0px));
+  }
+
+  /* === Shoulder buttons (L1 / R1) ===
+     Sit ABOVE the d-pad and face pad, where shoulders live on a real
+     controller, and clear of them so a thumb reaching for one can't clip the
+     other. The overlay is pointer-events:none, so like the other zones these
+     opt back in explicitly. */
+  .shoulder-btn {
+    position: absolute;
+    bottom: max(172px, calc(env(safe-area-inset-bottom, 0px) + 168px));
+    min-width: 56px;
+    padding: 0.45rem 0.75rem;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    font: 600 0.82rem/1 ui-monospace, "Courier New", monospace;
+    letter-spacing: 0.06em;
+    color: #cfd8e8;
+    background: rgba(12, 16, 24, 0.44);
+    border: 1px solid rgba(190, 205, 230, 0.34);
+    border-radius: 8px;
+    /* Instant feedback on tap — these fire on contact, so a transition on the
+       press would lag behind the input it represents. */
+    transition: background 120ms ease-out, color 120ms ease-out;
+  }
+  .shoulder-l {
+    left: max(8px, env(safe-area-inset-left, 0px));
+  }
+  .shoulder-r {
+    right: max(8px, env(safe-area-inset-right, 0px));
+  }
+  .shoulder-btn.active {
+    background: rgba(167, 243, 208, 0.26);
+    border-color: rgba(167, 243, 208, 0.7);
+    color: #eaf7f1;
+    transition: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shoulder-btn {
+      transition: none;
+    }
   }
 
   /* === Traditional cross/plus D-pad (single SVG) === */

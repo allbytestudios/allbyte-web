@@ -1474,6 +1474,12 @@
    */
   let showStudioMark = $derived(studioOverlay && loading && !error && !showGate);
 
+  /** Set once the worker has painted its first card, at which point the DOM
+   *  card underneath is redundant. Until then — including forever, if the
+   *  worker never starts — the DOM card IS the load screen. */
+  let workerDrewCard = $state(false);
+  let showDomCard = $derived(loading && !workerDrewCard && !error && !showGate);
+
   let loadPhase = $state<"studio" | "manual">("studio");
   let studioDone = $state(false);
   let sceneReady = $state(false);
@@ -1698,6 +1704,7 @@
           cssW: loadCanvasEl.clientWidth || window.innerWidth,
           cssH: loadCanvasEl.clientHeight || window.innerHeight,
           cards: builtCards,
+          startCard: loadCardIsSprite ? undefined : loadCard,
           isMobile: isMobileViewport(),
           cfg: {
             studioMs: STUDIO_MS,
@@ -1821,7 +1828,15 @@
     if (allowed && loading && !studioTimerStarted && isNormalPlayerLoad()) {
       studioTimerStarted = true;
       // Pick the first manual card to show after the studio scene.
-      const pick = Math.floor(Math.random() * TOTAL_CARDS);
+      // Reuse the card the parse-time script already chose and rendered, so
+      // when the worker takes over it continues on the SAME card instead of
+      // swapping content under the player. Falls back to its own pick if that
+      // script didn't run.
+      const chosen = (window as any).__abLoadCard;
+      const pick =
+        typeof chosen === "number" && chosen >= 0 && chosen < TOTAL_CARDS
+          ? chosen
+          : Math.floor(Math.random() * TOTAL_CARDS);
       loadCardIsSprite = HAS_SPRITE_CARD && pick === MANUAL_CARDS.length;
       loadCard = loadCardIsSprite ? 0 : pick;
       setTimeout(() => (studioFading = true), STUDIO_MS - STUDIO_FADE_MS);
@@ -2533,6 +2548,64 @@
        canvas is behind it, since that canvas then supplies the ground.
        Geometry mirrors drawStudio() in src/lib/loadScreenWorker.ts — the
        container is position:fixed/inset:0, so 14vh equals the canvas's H*0.14. -->
+  <!--
+    LOADING SPINNER — DOM, not canvas.
+    It used to be drawn by the worker every frame, paced by setTimeout(loop,16),
+    and it visibly paused. Here the rotation is a CSS `transform` animation,
+    which runs on the compositor and therefore keeps turning even while the main
+    thread is wedged for the ~8.8s WASM compile.
+    Geometry mirrors drawSpinner() in loadScreenWorker.ts: two nested rings off
+    the same 6-frame strip, the inner one 2x the outer's rate, offset 45deg and
+    a touch larger. Frame stepping is a paint property so it can stall under
+    load; the rotation cannot, so the spinner still reads as alive.
+  -->
+  {#if loading}
+    <div class="load-spin" aria-hidden="true">
+      <span class="load-ring load-ring-outer"></span>
+      <span class="load-ring load-ring-inner"></span>
+    </div>
+  {/if}
+
+  <!--
+    THE LOAD SCREEN'S FIRST CARD — DOM, revealed on the parse-time clock.
+
+    The card scene is otherwise drawn by the worker, which is created at
+    hydration; hydration is a main-thread task that can land seconds late, so
+    the AllByte -> load-screen hand-off was never deterministic. It could open a
+    dead gap of dark screen of arbitrary length.
+
+    This card fades IN over exactly the window the mark fades OUT
+    (1780-2000ms), both as CSS animations started at paint. The transition is
+    therefore always the same length and always lands, whatever the machine is
+    doing. The worker takes over later, drawing its own cards over the top; if
+    it never manages to, this card simply stays — which is still a correct load
+    screen. Card choice is made at parse time (see play.astro) so it stays
+    random per load rather than fixed at build.
+  -->
+  {#if showDomCard}
+    <div class="loading-screen manual-screen dom-cards" aria-hidden="true">
+      {#each MANUAL_CARDS as card, i}
+        <div class="manual-card dom-card-item" data-i={i}>
+          <div class="manual-kicker">From the Manual</div>
+          <h2 class="manual-card-title">{card.title}</h2>
+          {#if card.rows}
+            <dl class="manual-rows">
+              {#each card.rows as [term, desc]}
+                <dt>{term}</dt>
+                <dd>{desc}</dd>
+              {/each}
+            </dl>
+          {/if}
+          {#if card.lines}
+            <div class="manual-lines">
+              {#each card.lines as line}<p>{line}</p>{/each}
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
+
   {#if showStudioMark}
     <div
       class="loading-screen studio-static"
@@ -2777,6 +2850,97 @@
      its ALPHABETIC BASELINE at H/2 + 0.3*letterPx. No text-shadow: the canvas
      draws none, and the .studio-word glow was part of why the handoff read as
      a font change. Keep this block and drawStudio() in lockstep. */
+  /* Spinner. z-index above the studio layer (3) and the canvas (2) so it rides
+     the whole load, exactly as the canvas-drawn one did. */
+  .load-spin {
+    position: absolute;
+    right: clamp(16px, 4.5vmin, 30px);
+    bottom: clamp(16px, 4.5vmin, 30px);
+    width: clamp(19px, 4.4vmin, 32px);
+    aspect-ratio: 1;
+    z-index: 4;
+    pointer-events: none;
+  }
+  .load-ring {
+    position: absolute;
+    inset: 0;
+    background-image: url("/loading-icon.png");
+    background-repeat: no-repeat;
+    background-size: 600% 100%; /* 6-frame horizontal strip */
+    image-rendering: pixelated;
+    /* Two animations: the frame strip (paint — may stall under load) and the
+       rotation (compositor — never stalls). SPIN_W 0.42 rad/s = 14.96s/turn;
+       SPIN_FPS 8.5 over 6 frames = 0.706s per cycle. */
+    animation:
+      ringFrames 0.706s steps(6) infinite,
+      ringSpin 14.96s linear infinite;
+    will-change: transform;
+  }
+  .load-ring-inner {
+    /* inner: 2x rate, +45deg, INNER_SCALE 1.083 */
+    scale: 1.083;
+    animation:
+      ringFrames 0.706s steps(6) infinite,
+      ringSpinInner 7.48s linear infinite;
+  }
+  @keyframes ringFrames {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: -600% 0;
+    }
+  }
+  @keyframes ringSpin {
+    to {
+      rotate: 360deg;
+    }
+  }
+  @keyframes ringSpinInner {
+    from {
+      rotate: 45deg;
+    }
+    to {
+      rotate: 405deg;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .load-ring {
+      animation: ringFrames 0.706s steps(6) infinite;
+    }
+    .load-ring-inner {
+      animation: ringFrames 0.706s steps(6) infinite;
+    }
+  }
+
+  /* The DOM first card. Fades in over exactly the window the mark fades out, so
+     the hand-off is one deterministic crossfade rather than two independent
+     events that can drift apart. Sits BELOW the mark (z 3 vs 4) so the mark is
+     on top while it fades, and above the canvas so it is visible until the
+     worker is genuinely drawing. */
+  /* .loading-screen.dom-cards, not .dom-cards: the .manual-screen rules below
+     carry their own animation and a .manual-card display:flex, and being later
+     in the sheet they win at equal specificity. */
+  .loading-screen.dom-cards {
+    z-index: 3;
+    pointer-events: none;
+    animation: cardIn 220ms linear 1780ms both;
+    will-change: opacity;
+  }
+  @keyframes cardIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  /* Every card is rendered; the parse-time script in play.astro reveals one, so
+     the choice stays random per load instead of being frozen at build time. */
+  .dom-cards .dom-card-item {
+    display: none;
+  }
+
   .studio-static {
     background: #050608; /* canvas DARK, not .loading-screen's #0a0e17 */
   }
@@ -2786,7 +2950,7 @@
      handoff — there is no visual stacking intent beyond that. */
   .studio-static.overlay {
     background: transparent;
-    z-index: 3;
+    z-index: 4; /* above .dom-cards (3), so the mark fades out on top of it */
     pointer-events: none;
     opacity: 1;
     transition: opacity var(--studio-fade-ms, 400ms) linear;

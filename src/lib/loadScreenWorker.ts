@@ -20,6 +20,8 @@ interface InitMsg {
   cards: Card[];
   isMobile?: boolean;
   cfg: { studioMs: number; studioSettleMs: number; studioFadeMs: number; cardMs: number; cardMinMs: number };
+  /** Index of the card the DOM is already showing — see GodotEmbed. */
+  startCard?: number;
 }
 
 const FONT = "AllByteCustom";
@@ -142,7 +144,11 @@ self.onmessage = async (e: MessageEvent) => {
     cv.height = Math.round(H * dpr);
     ctx = cv.getContext("2d") as OffscreenCanvasRenderingContext2D;
     ctx.scale(dpr, dpr);
-    cardIdx = Math.floor(Math.random() * cards.length);
+    // Open on the card the page is ALREADY showing in DOM, so this takeover
+    // is a continuation rather than a visible content swap.
+    cardIdx = typeof msg.startCard === "number" && msg.startCard >= 0 && msg.startCard < cards.length
+      ? msg.startCard
+      : Math.floor(Math.random() * cards.length);
     // Assets (font, spinner, sprite gifs) can't be fetched by URL from inside a
     // blob worker under cross-origin isolation — no-CORP same-origin subresource
     // loads NetworkError there. The main thread fetches them and hands the bytes
@@ -228,11 +234,9 @@ function loop() {
       }
     }
   }
-  // JRPG-style "processing" indicator: the spinner is pinned to the bottom-right
-  // corner across BOTH the AllByte studio scene AND the card scene, spinning the
-  // whole load as a thematically-consistent "still working" cue. Drawn last so
-  // it sits on top of whatever the scene rendered (cards, poison trail, Elias).
-  drawCornerSpinner(now);
+  // The corner spinner is NOT drawn here any more — it is a DOM element with a
+  // CSS transform animation (see .load-spin in GodotEmbed.svelte). Paced by
+  // this setTimeout loop it visibly paused; on the compositor it cannot.
   setTimeout(loop, 16);
 }
 

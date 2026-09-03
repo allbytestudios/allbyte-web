@@ -11,6 +11,12 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
   description="A handcrafted tactical RPG in the spirit of 90s JRPGs. Play in your browser — no install, no account."
   image="/og-play.jpg"
 >
+
+  <main class="play-page">
+    {fixture && <span class="fixture-label">Fixture: {fixture}</span>}
+    <GodotEmbed client:load {fixture} />
+  </main>
+
   <!--
     STUDIO BIT ANIMATION — generated here, at parse time, deliberately.
 
@@ -58,17 +64,26 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
         css += ".ab-b" + i + ".ab-0{animation:abz" + i + " " + TOTAL + "ms step-end both}";
         css += ".ab-b" + i + ".ab-1{animation:abo" + i + " " + TOTAL + "ms step-end both}";
       }
+      // Pick which manual card the load screen opens on. Done HERE, at parse
+      // time, for the same reason as the bits: the choice must not wait on
+      // hydration, and it must still be random per load rather than frozen at
+      // build. The count is read from the markup so adding a card needs no
+      // change here.
+      var cards = document.querySelectorAll(".dom-card-item");
+      if (cards.length) {
+        var pick = Math.floor(Math.random() * cards.length);
+        css += '.dom-cards .dom-card-item[data-i="' + pick + '"]{display:flex}';
+        // Tell the worker to open on the SAME card, so its later takeover is a
+        // continuation rather than a visible content swap.
+        window.__abLoadCard = pick;
+      }
+
       var s = document.createElement("style");
       s.id = "ab-bitseq";
       s.textContent = css;
       document.head.appendChild(s);
     })();
   </script>
-
-  <main class="play-page">
-    {fixture && <span class="fixture-label">Fixture: {fixture}</span>}
-    <GodotEmbed client:load {fixture} />
-  </main>
 </BaseLayout>
 
 <!--

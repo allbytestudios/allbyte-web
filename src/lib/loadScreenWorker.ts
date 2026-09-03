@@ -273,36 +273,17 @@ function drawStudio(now: number, t: number) {
     (self as any).postMessage({ type: "studioFade" });
   }
 
-  const word = "All Byte";
-  const letterPx = clamp(H * 0.14, 42, 80);
-  ctx.font = `600 ${letterPx}px ${FONT}, Georgia, serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-  // Prefer the pre-rendered advance width: measureText here is Georgia's, and
-  // using it would space the bits to the wrong word width even once the
-  // wordmark itself draws from a bitmap.
-  const wordW = gWord ? gWord.w : ctx.measureText(word).width;
-  const cx = W / 2;
-  const wordY = H / 2 + letterPx * 0.3;
-
-  // bits row, equidistant across the word width
-  const bitPx = clamp(letterPx * 0.34, 14, 30);
-  ctx.font = `${bitPx}px ${FONT}, Georgia, serif`;
-  const left = cx - wordW / 2, right = cx + wordW / 2;
-  const gap = studioBits.length > 1 ? (right - left) / (studioBits.length - 1) : 0;
-  ctx.fillStyle = "#f4ecd6";
-  const bitsY = wordY - letterPx - bitPx * 0.6;
-  for (let i = 0; i < studioBits.length; i++) {
-    const g = gBit[studioBits[i]];
-    if (g) drawGlyph(g, left + i * gap, bitsY);
-    else ctx.fillText(String(studioBits[i]), left + i * gap, bitsY);
-  }
-  // The wordmark is deliberately NOT drawn here. It is the same DOM node that
-  // painted before hydration, kept mounted above this canvas for the whole
-  // studio scene — so it never re-renders and there is no swap to blip. This
-  // canvas only adds the bits over it. `wordY` is still needed as the anchor
-  // the bits are positioned from, and gWord is still needed for its advance
-  // width; neither is drawn.
+  // Nothing is drawn here but the ground.
+  //
+  // The whole studio scene — wordmark AND bits — is DOM, mounted from before
+  // hydration and layered above this canvas. Two reasons it moved:
+  //   1. Nothing visible should wait on the worker. The bits used to appear
+  //      only once the blob worker had been created, handed the canvas and
+  //      rendered a frame, which on a cold load was seconds after the wordmark.
+  //   2. One source means no swap, so no blip and no chance of two copies
+  //      disagreeing about position or typeface.
+  // This canvas still paints DARK so the ground is continuous when the DOM
+  // layer fades out and the card scene takes over.
   ctx.globalAlpha = 1;
   // (spinner now drawn once per frame in loop(), pinned bottom-right)
 }

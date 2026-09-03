@@ -82,6 +82,19 @@
   // Kept as a set rather than deleted — scenario loads still bypass the self-heal
   // via the `scenario` check below, and a future self-versioned channel just
   // slots back in here.
+  /** localhost / LAN dev server — never the deployed site. */
+  function isDevHost(): boolean {
+    if (typeof window === "undefined") return false;
+    const h = window.location.hostname;
+    return (
+      h === "localhost" ||
+      h === "127.0.0.1" ||
+      h === "[::1]" ||
+      h.endsWith(".local") ||
+      /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h)
+    );
+  }
+
   const SELF_VERSIONED = new Set<string>([]);
   function isNonDefaultBuild(): boolean {
     if (typeof window === "undefined") return false;
@@ -102,6 +115,16 @@
     if (freshnessChecked) return;
     freshnessChecked = true;
     if (isNonDefaultBuild()) return;
+    // Never on a dev host. `npm run sync` pulls whatever the Godot project has
+    // just exported into public/godot/, while game-version.json stays pinned to
+    // the DEPLOYED build (it must, or committing it would stamp sw.js ahead of
+    // what prod actually serves and cause the drift hang this check exists to
+    // prevent). So locally the loaded build is routinely NEWER than expected —
+    // which is normal development, not a stale cache. Treating it as staleness
+    // nuked the caches and reloaded on every single local load: the "AllByte ->
+    // Load -> AllByte -> Load" double load. Prod is unaffected, where a
+    // mismatch really does mean the SW served a stale build.
+    if (isDevHost()) return;
     const norm = (v: unknown) => String(v ?? "").replace(/^v/, "").split("-")[0];
     const loaded = norm(loadedVersion);
     const expected = norm(EXPECTED_BUILD);
@@ -1440,6 +1463,17 @@
   let studioOverlay = $state(true);
   let studioOverlayFading = $state(false);
 
+  /**
+   * Whether the studio layer is on screen.
+   *
+   * `loading` is the important term: it makes the layer structurally incapable
+   * of outliving the load screen. Without it, a game that reveals early would
+   * be covered by the wordmark — the reported bug, but over live gameplay
+   * instead of over a card. The other two keep it off the error and
+   * download-gate screens, which own the viewport when they appear.
+   */
+  let showStudioMark = $derived(studioOverlay && loading && !error && !showGate);
+
   let loadPhase = $state<"studio" | "manual">("studio");
   let studioDone = $state(false);
   let sceneReady = $state(false);
@@ -1817,6 +1851,20 @@
   // if the messages land first they simply win and these become no-ops.
   // Deliberately NOT gated on isNormalPlayerLoad(): the overlay renders
   // whenever the worker canvas does, so it must always have an exit.
+  // Scramble the bits from the moment the mark is on screen — including the
+  // pre-hydration shell, before `allowed` and long before the worker exists.
+  // The bits used to be drawn by the worker canvas, which meant they didn't
+  // appear until the blob worker had been created, handed the canvas and
+  // rendered its first frame. On a cold load competing with the game download
+  // that was seconds after the wordmark, which is the "bits take soooo long"
+  // report. Nothing visible in the studio scene waits on the worker now.
+  let scrambleStarted = false;
+  $effect(() => {
+    if (scrambleStarted || !studioOverlay) return;
+    scrambleStarted = true;
+    startStudioScramble();
+  });
+
   $effect(() => {
     if (!(allowed && loading && studioOverlay)) return;
     const fadeAt = setTimeout(() => (studioOverlayFading = true), STUDIO_MS - STUDIO_FADE_MS);
@@ -2259,7 +2307,8 @@
          every viewport height. One definition, rendered both as the
          pre-hydration shell and as the studio overlay, so the two can't drift. -->
     <svg class="studio-static-mark" aria-hidden="true" focusable="false">
-      <text x="50%" y="50%">All Byte</text>
+      <text class="sm-bits" x="50%" y="50%">{studioBits.join(" ")}</text>
+      <text class="sm-word" x="50%" y="50%">All Byte</text>
     </svg>
   {/snippet}
 
@@ -2299,31 +2348,16 @@
          src/lib/loadScreenWorker.ts — change one, change both. The container is
          position:fixed/inset:0, so its height IS the viewport height and 14vh
          equals the canvas's H*0.14. -->
-    <div class="loading-screen studio-static">
-      {@render studioMark()}
-    </div>
+    <!-- The studio scene itself is rendered ONCE, outside this whole chain —
+         see the studio layer just below `{/if}`. Putting it in a branch meant
+         it was a different DOM node either side of `allowed`, so hydration
+         destroyed and rebuilt it: a ~300ms hole where nothing was on screen,
+         and the bits replayed their phase-in. -->
   {:else}
     {#if loading && useWorkerLoader && !workerFailed}
       <!-- Freeze-proof load screen: the whole sequence is drawn by a Web Worker
            on this OffscreenCanvas, so it never stalls during the WASM boot. -->
       <canvas class="worker-load" bind:this={loadCanvasEl}></canvas>
-      <!-- The wordmark is NOT redrawn by the canvas during the studio scene: it
-           stays this same DOM node, mounted continuously from before hydration
-           through the studio phase. Swapping the SVG for a canvas copy — even a
-           pixel-identical one, which it was — still leaves a frame where the SVG
-           has unmounted and the canvas hasn't painted, and that one-frame gap is
-           the blip. Keeping the node means there is nothing to swap: the bits
-           simply appear over a wordmark that never moved. Transparent ground,
-           layered above the canvas, so the canvas's bits show through. -->
-      {#if studioOverlay}
-        <div
-          class="loading-screen studio-static overlay"
-          class:fading={studioOverlayFading}
-          style="--studio-fade-ms: {STUDIO_FADE_MS}ms"
-        >
-          {@render studioMark()}
-        </div>
-      {/if}
     {:else if loading}
       {#if loadPhase === "studio"}
         <!-- Phase 1: AllByte studio intro, full-screen ~STUDIO_MS. Eight bits
@@ -2492,6 +2526,26 @@
         {/if}
       </div>
     {/if}
+  {/if}
+
+  <!-- THE STUDIO LAYER — one node, rendered outside the chain above so it
+       survives `allowed` flipping. That is the whole point: it paints from the
+       very first frame (before hydration, before the iframe, before the worker)
+       and is never destroyed and rebuilt, so there is no hole and the bits
+       never replay their phase-in.
+       Ground while it is the only thing on screen; transparent once the worker
+       canvas is behind it, since that canvas then supplies the ground.
+       Geometry mirrors drawStudio() in src/lib/loadScreenWorker.ts — the
+       container is position:fixed/inset:0, so 14vh equals the canvas's H*0.14. -->
+  {#if showStudioMark}
+    <div
+      class="loading-screen studio-static"
+      class:overlay={allowed}
+      class:fading={studioOverlayFading}
+      style="--studio-fade-ms: {STUDIO_FADE_MS}ms"
+    >
+      {@render studioMark()}
+    </div>
   {/if}
 
   <!-- End of the Episode 1 credits: the one moment someone has actually
@@ -2756,17 +2810,48 @@
     height: 100%;
     display: block;
   }
+  /* Geometry mirrored from drawStudio(): letterPx = clamp(H*0.14,42,80) and
+     bitPx = clamp(letterPx*0.34,14,30). Held as custom properties so the
+     wordmark and the bit row derive from one source. */
+  .studio-static-mark {
+    --letter: clamp(42px, 14vh, 80px);
+    --bit: clamp(14px, 4.76vh, 30px);
+  }
   .studio-static-mark text {
     font-family: "AllByteCustom", Georgia, serif;
-    /* 600 matches the canvas font string; without it the browser picks 400 and
-       synthesises differently from the canvas, which reads as a second face. */
-    font-weight: 600;
-    font-size: clamp(42px, 14vh, 80px);
     fill: #f4ecd6;
-    /* y="50%" puts the alphabetic baseline at H/2; the canvas then adds
-       0.3*letterPx, so translate by exactly that. */
-    transform: translateY(calc(0.3 * clamp(42px, 14vh, 80px)));
     text-anchor: middle;
+  }
+  .studio-static-mark .sm-word {
+    /* 600 matches the canvas font string; without it the browser picks 400 and
+       synthesises differently, which reads as a second face. */
+    font-weight: 600;
+    font-size: var(--letter);
+    /* y="50%" puts the alphabetic baseline at H/2; drawStudio then adds
+       0.3*letterPx, so translate by exactly that. */
+    transform: translateY(calc(0.3 * var(--letter)));
+  }
+  /* Bits sit above the wordmark at drawStudio's bitsY:
+     H/2 + 0.3*letter - letter - 0.6*bit  =>  -(0.7*letter + 0.6*bit) from H/2.
+     They PHASE IN rather than appearing with the wordmark (owner): the identity
+     lands instantly, the machine part arrives a beat later. */
+  .studio-static-mark .sm-bits {
+    font-size: var(--bit);
+    transform: translateY(calc(-0.7 * var(--letter) - 0.6 * var(--bit)));
+    animation: bitsIn 520ms ease-out 260ms both;
+  }
+  @keyframes bitsIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .studio-static-mark .sm-bits {
+      animation: none;
+    }
   }
 
   .studio-word {

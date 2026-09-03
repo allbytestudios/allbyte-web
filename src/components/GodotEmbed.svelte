@@ -1886,10 +1886,17 @@
   // rendered its first frame. On a cold load competing with the game download
   // that was seconds after the wordmark, which is the "bits take soooo long"
   // report. Nothing visible in the studio scene waits on the worker now.
-  let scrambleStarted = false;
+  // Gates the bits' fade-in as well as starting the scramble, and the two must
+  // stay welded together. The fade is a CSS animation, which begins when the
+  // element is PAINTED — i.e. from the server-rendered markup — while the
+  // scramble can only start at hydration. On a slow load those drift apart and
+  // the bits fade up holding the static server value, then begin flipping once
+  // hydration lands. Driving the animation off this flag means they can only
+  // ever become visible while something is already changing them.
+  let bitsLive = $state(false);
   $effect(() => {
-    if (scrambleStarted || !studioOverlay) return;
-    scrambleStarted = true;
+    if (bitsLive || !studioOverlay) return;
+    bitsLive = true;
     startStudioScramble();
   });
 
@@ -2340,7 +2347,7 @@
            string re-flows it on every flip and slides all eight sideways. Each
            digit owning its own position makes a flip purely a glyph swap. -->
       {#each studioBits as b, i}
-        <text class="sm-bit" style="--i:{i}" x="50%" y="50%">{b}</text>
+        <text class="sm-bit" class:live={bitsLive} style="--i:{i}" x="50%" y="50%">{b}</text>
       {/each}
       <text class="sm-word" x="50%" y="50%">All Byte</text>
     </svg>
@@ -2878,6 +2885,11 @@
       calc((var(--i) - 3.5) * var(--step)),
       calc(-0.7 * var(--letter) - 0.6 * var(--bit))
     );
+    /* Hidden until `live` — see bitsLive. The server-rendered value must never
+       be seen sitting still; the first thing on screen is motion. */
+    opacity: 0;
+  }
+  .studio-static-mark .sm-bit.live {
     animation: bitsIn 250ms linear 150ms both;
   }
   @keyframes bitsIn {

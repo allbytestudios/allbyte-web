@@ -1427,8 +1427,16 @@
   // appeared — so the studio always plays and the manual card fills the rest.
   // Normal PLAYER loads only; scenario/fixture (admin) reveal as before.
   // The pre-hydration wordmark stays mounted over the worker canvas for the
-  // whole studio scene, then fades with it. Driven by worker messages rather
-  // than a page-side timer so the fade can't drift out of sync with the bits.
+  // whole studio scene, then fades with it. Timing comes from worker messages
+  // so the fade can't drift out of sync with the bits it sits among.
+  //
+  // But the messages are the PREFERRED source, never the only one. If the
+  // worker never starts (canvas not yet bound when the effect ran, transfer
+  // refused) no message ever arrives, and an overlay whose sole exit is that
+  // message would sit on screen for the entire load — which is exactly the
+  // "AllByte text sitting through the load screen" report. The watchdog below
+  // guarantees it comes down on time regardless, so the worker only ever makes
+  // the timing *nicer*, not correct.
   let studioOverlay = $state(true);
   let studioOverlayFading = $state(false);
 
@@ -1799,6 +1807,26 @@
         enterManual(); // ALWAYS land on a card ≥1s, even if the game is ready
       }, STUDIO_MS);
     }
+  });
+
+  // Watchdog for the wordmark overlay (see studioOverlay above). The worker's
+  // studioFade/studioEnd give the nicest timing because they come off the same
+  // clock as the bits, but they are not guaranteed to arrive — a worker that
+  // never starts posts nothing at all. These fire from the same instant the
+  // studio scene begins, so worst case the overlay leaves on schedule anyway;
+  // if the messages land first they simply win and these become no-ops.
+  // Deliberately NOT gated on isNormalPlayerLoad(): the overlay renders
+  // whenever the worker canvas does, so it must always have an exit.
+  $effect(() => {
+    if (!(allowed && loading && studioOverlay)) return;
+    const fadeAt = setTimeout(() => (studioOverlayFading = true), STUDIO_MS - STUDIO_FADE_MS);
+    // Small grace after the fade so the worker's own studioEnd normally lands
+    // first and this never has to act.
+    const endAt = setTimeout(() => (studioOverlay = false), STUDIO_MS + 250);
+    return () => {
+      clearTimeout(fadeAt);
+      clearTimeout(endAt);
+    };
   });
 
   // Drive the living-sprite card: turn in place, swing an attack, then move to

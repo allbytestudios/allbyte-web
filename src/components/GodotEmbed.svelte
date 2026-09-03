@@ -1493,7 +1493,7 @@
   // slow exponentially → STOP on random values (STUDIO_SETTLE_MS) → hold briefly
   // → the whole scene fades away (STUDIO_FADE_MS) → the first manual card.
   const STUDIO_MS = 2000; // studio scene 2s (owner: 1s felt too short)
-  // The bit timeline now lives with startStudioScramble() (BITS_* constants) —
+  // The bit timeline lives in src/pages/play.astro (CSS keyframes) —
   // it landed at 1280ms and holds until the fade below. This is still sent to
   // the worker for protocol compatibility, but the worker no longer draws the
   // studio scene, so nothing reads it there.
@@ -1518,54 +1518,16 @@
   }
 
   // "All Byte" = 8 characters (the space included makes a Byte), one binary bit
-  // over each. The bits flip 0/1 fast, slow exponentially, then STOP on random
-  // values and hold before the scene fades. Mirrors the real in-game
-  // AllByteGames splash; all glyphs are ModernGoth.
-  let studioBits = $state<number[]>([1, 1, 1, 0, 1, 1, 0, 0]);
-  // Studio bit sequence — the "Converge" timing the owner picked from the
-  // three mocked-up readings (2026-09-03). Phases, from the moment the mark is
-  // on screen:
-  //   150–400ms   bits fade in (CSS, see .sm-bit) while already flipping
-  //   400–980ms   flat-out flips at BITS_FAST_MS
-  //   980–1280ms  interval grows quadratically — the eight visibly slow together
-  //   1280ms      land on the final value
-  //   1280–1780ms hold it still (500ms) before the layer starts its fade at
-  //               STUDIO_MS - STUDIO_FADE_MS
-  // The whole sequence fits the existing 2000ms studio budget, so card timing
-  // and reveal are untouched.
-  const BITS_FAST_MS = 42;
-  const BITS_FAST_UNTIL = 980;
-  const BITS_SETTLE_AT = 1280;
-  const BITS_DECEL = 270; // ms added at the end of the converge ramp
-
-  function startStudioScramble() {
-    const rnd = () => (Math.random() < 0.5 ? 0 : 1);
-    // Decided up-front so the landing value is a real random number the bits
-    // converge ONTO, rather than wherever the last flip happened to stop.
-    const landed = studioBits.map(rnd);
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      studioBits = landed;
-      return;
-    }
-    const start = performance.now();
-    const tick = () => {
-      const t = performance.now() - start;
-      if (t >= BITS_SETTLE_AT) {
-        studioBits = landed; // land, then hold — no further timer
-        return;
-      }
-      studioBits = studioBits.map(rnd);
-      const k =
-        t < BITS_FAST_UNTIL
-          ? 0
-          : (t - BITS_FAST_UNTIL) / (BITS_SETTLE_AT - BITS_FAST_UNTIL);
-      setTimeout(tick, BITS_FAST_MS + k * k * BITS_DECEL);
-    };
-    setTimeout(tick, BITS_FAST_MS);
-  }
+  // over each: flipping fast, slowing exponentially, then landing on a random
+  // value and holding before the scene fades. All glyphs are ModernGoth.
+  //
+  // The sequence is NOT driven from here. It is emitted as CSS keyframes at
+  // parse time by the inline script in src/pages/play.astro, because booting
+  // the game blocks this thread for ~8.8 seconds — measured on prod — which
+  // froze the flips mid-scramble and left the mark on screen long after it
+  // should have gone. A CSS animation's position is a function of wall-clock
+  // time, so it is always where it should be rather than resuming late. The
+  // BITS_* constants and the converge curve live there; keep the two in step.
 
   // All text is drawn from the in-game manual (public/manual/index.html) —
   // damage/status/terrain tables, raw vs battle stats, relics & the Anam,
@@ -1862,7 +1824,6 @@
       const pick = Math.floor(Math.random() * TOTAL_CARDS);
       loadCardIsSprite = HAS_SPRITE_CARD && pick === MANUAL_CARDS.length;
       loadCard = loadCardIsSprite ? 0 : pick;
-      startStudioScramble();
       setTimeout(() => (studioFading = true), STUDIO_MS - STUDIO_FADE_MS);
       setTimeout(() => {
         studioDone = true;
@@ -1886,19 +1847,9 @@
   // rendered its first frame. On a cold load competing with the game download
   // that was seconds after the wordmark, which is the "bits take soooo long"
   // report. Nothing visible in the studio scene waits on the worker now.
-  // Gates the bits' fade-in as well as starting the scramble, and the two must
-  // stay welded together. The fade is a CSS animation, which begins when the
-  // element is PAINTED — i.e. from the server-rendered markup — while the
-  // scramble can only start at hydration. On a slow load those drift apart and
-  // the bits fade up holding the static server value, then begin flipping once
-  // hydration lands. Driving the animation off this flag means they can only
-  // ever become visible while something is already changing them.
-  let bitsLive = $state(false);
-  $effect(() => {
-    if (bitsLive || !studioOverlay) return;
-    bitsLive = true;
-    startStudioScramble();
-  });
+  // (The old bitsLive gate is gone. It existed to weld the bits' fade-in to the
+  // hydration-time scramble start; now that both are CSS on the parse-time
+  // clock they cannot drift apart, and nothing needs to trigger them.)
 
   $effect(() => {
     if (!(allowed && loading && studioOverlay)) return;
@@ -2346,9 +2297,17 @@
            "1" only 0.40em — 26% apart — so drawing the row as a single centred
            string re-flows it on every flip and slides all eight sideways. Each
            digit owning its own position makes a flip purely a glyph swap. -->
-      {#each studioBits as b, i}
-        <text class="sm-bit" class:live={bitsLive} style="--i:{i}" x="50%" y="50%">{b}</text>
-      {/each}
+      <!-- Both glyphs exist at every position; the generated keyframes in
+           play.astro cross-fade between them. No JS drives this — see the
+           comment there for why (an 8.8s main-thread block during WASM boot
+           freezes anything on a timer). Each pair sits at its own fixed x, so a
+           flip is a pure opacity swap and nothing can shift its neighbours. -->
+      <g class="sm-bits-group">
+        {#each [0, 1, 2, 3, 4, 5, 6, 7] as i}
+          <text class="sm-bit ab-b{i} ab-0" style="--i:{i}" x="50%" y="50%">0</text>
+          <text class="sm-bit ab-b{i} ab-1" style="--i:{i}" x="50%" y="50%">1</text>
+        {/each}
+      </g>
       <text class="sm-word" x="50%" y="50%">All Byte</text>
     </svg>
   {/snippet}
@@ -2846,6 +2805,21 @@
     width: 100%;
     height: 100%;
     display: block;
+    /* The mark clears itself on the SAME parse-time clock as the bits, so a
+       wedged main thread can't leave it sitting there — it overstayed by ~9s
+       when its removal depended on a JS timer. Only the MARK fades, never the
+       dark ground: the ground has to survive until the canvas is behind it, or
+       a late hydration would show a blank screen instead of a loading one. */
+    animation: markOut var(--mark-out, 220ms) linear 1780ms both;
+    will-change: opacity;
+  }
+  @keyframes markOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
   }
   /* Geometry mirrored from drawStudio(): letterPx = clamp(H*0.14,42,80) and
      bitPx = clamp(letterPx*0.34,14,30). Held as custom properties so the
@@ -2885,12 +2859,24 @@
       calc((var(--i) - 3.5) * var(--step)),
       calc(-0.7 * var(--letter) - 0.6 * var(--bit))
     );
-    /* Hidden until `live` — see bitsLive. The server-rendered value must never
-       be seen sitting still; the first thing on screen is motion. */
+    /* Opacity is owned entirely by the generated keyframes (play.astro). The
+       0 starts visible and the 1 hidden so the very first painted frame is a
+       valid glyph rather than a gap, before the animation takes over. */
     opacity: 0;
+    /* Promote each glyph to its own layer so the opacity animation runs on the
+       COMPOSITOR. This is the whole point of the rewrite: composited opacity
+       keeps animating while the main thread is blocked, and boot blocks it for
+       nearly nine seconds. */
+    will-change: opacity;
   }
-  .studio-static-mark .sm-bit.live {
+  .studio-static-mark .sm-bit.ab-0 {
+    opacity: 1;
+  }
+  /* The row's fade-in is a separate, linear animation on the wrapper, so it can
+     ramp smoothly while the per-bit flips underneath stay hard step-end. */
+  .studio-static-mark .sm-bits-group {
     animation: bitsIn 250ms linear 150ms both;
+    will-change: opacity;
   }
   @keyframes bitsIn {
     from {

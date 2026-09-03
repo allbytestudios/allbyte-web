@@ -11,6 +11,60 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
   description="A handcrafted tactical RPG in the spirit of 90s JRPGs. Play in your browser — no install, no account."
   image="/og-play.jpg"
 >
+  <!--
+    STUDIO BIT ANIMATION — generated here, at parse time, deliberately.
+
+    Booting the game blocks the main thread for a very long time: measured on
+    prod, a single 8.8-SECOND long task while the WASM compiles. Anything driven
+    by setTimeout or requestAnimationFrame simply stops for that window, which is
+    what made the bits freeze mid-scramble and the whole scene overstay by ~9s.
+
+    So the sequence is emitted as pure CSS keyframes instead. Two consequences,
+    both of which are the point:
+      1. It starts when the element PAINTS, not at hydration — hydration is
+         itself a main-thread task that can land seconds late.
+      2. Opacity keyframes on promoted layers run on the COMPOSITOR, so they
+         keep playing while the main thread is wedged.
+    The landing value is still random per load because this runs per page view.
+
+    Constants mirror BITS_* in GodotEmbed.svelte — change one, change both.
+  -->
+  <script is:inline>
+    (function () {
+      var FAST = 42, FAST_UNTIL = 980, SETTLE_AT = 1280, DECEL = 270;
+      var TOTAL = 2000, N = 8;
+      // Flip times, sharing the component's converge curve.
+      var times = [], t = 0;
+      while (t < SETTLE_AT) {
+        times.push(t);
+        var k = t < FAST_UNTIL ? 0 : (t - FAST_UNTIL) / (SETTLE_AT - FAST_UNTIL);
+        t += FAST + k * k * DECEL;
+      }
+      var pct = function (ms) { return (ms / TOTAL * 100).toFixed(3) + "%"; };
+      var css = "";
+      for (var i = 0; i < N; i++) {
+        var zero = "", one = "";
+        for (var f = 0; f < times.length; f++) {
+          var on = Math.random() < 0.5 ? 1 : 0;      // this bit's value at this step
+          zero += pct(times[f]) + "{opacity:" + (on ? 0 : 1) + "}";
+          one  += pct(times[f]) + "{opacity:" + (on ? 1 : 0) + "}";
+        }
+        // The landed value: held from SETTLE_AT to the end of the scene.
+        var land = Math.random() < 0.5 ? 1 : 0;
+        zero += pct(SETTLE_AT) + "{opacity:" + (land ? 0 : 1) + "}";
+        one  += pct(SETTLE_AT) + "{opacity:" + (land ? 1 : 0) + "}";
+        css += "@keyframes abz" + i + "{" + zero + "}";
+        css += "@keyframes abo" + i + "{" + one + "}";
+        css += ".ab-b" + i + ".ab-0{animation:abz" + i + " " + TOTAL + "ms step-end both}";
+        css += ".ab-b" + i + ".ab-1{animation:abo" + i + " " + TOTAL + "ms step-end both}";
+      }
+      var s = document.createElement("style");
+      s.id = "ab-bitseq";
+      s.textContent = css;
+      document.head.appendChild(s);
+    })();
+  </script>
+
   <main class="play-page">
     {fixture && <span class="fixture-label">Fixture: {fixture}</span>}
     <GodotEmbed client:load {fixture} />

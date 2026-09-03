@@ -228,11 +228,11 @@ function loop() {
       }
     }
   }
-  // JRPG-style "processing" indicator: the spinner is pinned to the bottom-right
-  // corner across BOTH the AllByte studio scene AND the card scene, spinning the
-  // whole load as a thematically-consistent "still working" cue. Drawn last so
-  // it sits on top of whatever the scene rendered (cards, poison trail, Elias).
-  drawCornerSpinner(now);
+  // The corner spinner is NOT drawn here — it is a DOM element with composited
+  // CSS animations (see .load-spin in GodotEmbed.svelte). On this canvas it only
+  // existed once the worker had started, so it was absent for the whole AllByte
+  // scene and appeared partway through; in DOM it is present from the first
+  // painted frame and never stalls.
   setTimeout(loop, 16);
 }
 

@@ -2533,6 +2533,32 @@
        canvas is behind it, since that canvas then supplies the ground.
        Geometry mirrors drawStudio() in src/lib/loadScreenWorker.ts — the
        container is position:fixed/inset:0, so 14vh equals the canvas's H*0.14. -->
+  <!--
+    LOADING SPINNER — DOM, present from the FIRST PAINT.
+
+    It used to be drawn on the worker canvas, which does not exist until the
+    worker starts (hydration). So there was no spinner at all during the AllByte
+    scene, and it appeared partway through — the "pause". It also meant the gap
+    between AllByte and the first card had nothing moving in it, which read as a
+    stall rather than as loading.
+
+    Everything here animates ONLY composited properties, so it keeps running
+    through the ~8.8s main-thread block during the WASM compile:
+      - frame cycling is `transform: translateX` on a 6x-wide strip inside a
+        clipping box (NOT background-position, which is a paint property and
+        stalls under load — that was the bug in the first attempt);
+      - ring rotation is the `rotate` property, with will-change naming `rotate`
+        specifically, since it is independent of `transform`.
+    Geometry mirrors the old drawSpinner(): two nested rings off the same strip,
+    inner at 2x rate, +45deg, 1.083 scale.
+  -->
+  {#if loading}
+    <div class="load-spin" aria-hidden="true">
+      <span class="load-ring load-ring-outer"><i class="load-strip"></i></span>
+      <span class="load-ring load-ring-inner"><i class="load-strip"></i></span>
+    </div>
+  {/if}
+
   {#if showStudioMark}
     <div
       class="loading-screen studio-static"
@@ -2777,6 +2803,69 @@
      its ALPHABETIC BASELINE at H/2 + 0.3*letterPx. No text-shadow: the canvas
      draws none, and the .studio-word glow was part of why the handoff read as
      a font change. Keep this block and drawStudio() in lockstep. */
+  /* Above the studio layer (3) and the canvas (2) so it rides the WHOLE load —
+     AllByte scene, the hand-off, and the card scene alike. */
+  .load-spin {
+    position: absolute;
+    right: clamp(16px, 4.5vmin, 30px);
+    bottom: clamp(16px, 4.5vmin, 30px);
+    width: clamp(19px, 4.4vmin, 32px);
+    aspect-ratio: 1;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .load-ring {
+    position: absolute;
+    inset: 0;
+    overflow: hidden; /* clips the strip to exactly one frame */
+    will-change: rotate;
+    animation: ringSpin 14.96s linear infinite; /* SPIN_W 0.42 rad/s */
+  }
+  .load-ring-inner {
+    scale: 1.083; /* INNER_SCALE */
+    animation: ringSpinInner 7.48s linear infinite; /* 2x rate, +45deg */
+  }
+  /* 6 frames laid out horizontally; the image is stretched to fill the strip,
+     so the strip is exactly six frames wide. translateX(-100%) walks its own
+     full width, and steps(6) lands on each frame boundary. */
+  .load-strip {
+    position: absolute;
+    inset: 0 auto 0 0;
+    height: 100%;
+    width: 600%;
+    background: url("/loading-icon.png") 0 0 / 100% 100% no-repeat;
+    image-rendering: pixelated;
+    will-change: transform;
+    animation: ringFrames 0.706s steps(6) infinite; /* SPIN_FPS 8.5 over 6 */
+  }
+  @keyframes ringFrames {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes ringSpin {
+    to {
+      rotate: 360deg;
+    }
+  }
+  @keyframes ringSpinInner {
+    from {
+      rotate: 45deg;
+    }
+    to {
+      rotate: 405deg;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .load-ring,
+    .load-ring-inner {
+      animation: none;
+    }
+  }
+
   .studio-static {
     background: #050608; /* canvas DARK, not .loading-screen's #0a0e17 */
   }

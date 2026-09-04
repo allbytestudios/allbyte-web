@@ -119,6 +119,8 @@ let eliasMode: "idle" | "attack" | "victory" = "idle";
 let cardsDone = 0;
 let pcells: PCell[] = [], pwalk: PCell[] = [], pbetween: PCell[] = [];
 let phw = 0, phh = 0, pElias = { fx: 0, fy: 0 }, pGridTop = 0;
+/** Last poisonTop fraction sent to the page — only resend when it moves. */
+let lastPoisonTop = 0;
 let deathBase: Uint8ClampedArray | null = null, deathW = 0, deathH = 0;
 let scratch: OffscreenCanvas | null = null, sctx: OffscreenCanvasRenderingContext2D | null = null;
 const hasPoison = () => !!(poisonTile && emptyTile && slimeFrames.length && eIdle.length);
@@ -536,6 +538,17 @@ function ensurePoisonGeo() {
   // the y above which the card text must stay: Elias' head (tallest element) with margin
   const eliasHeadY = (baseY - phh + 4) - EANCH.idle.fy * eliasW;
   pGridTop = Math.min(baseY - 2 * phh, eliasHeadY) - H * 0.02;
+  // Publish it. The manual cards are DOM now, and they have no way to know
+  // where the poison scene begins — on a phone they were running down into
+  // Elias and the slime. This geometry is genuinely complicated (touch-pad
+  // reserve, portrait vs landscape, width vs height fit), so rather than
+  // reimplement it in CSS the page just gets the answer and clamps its card
+  // layer above it. Sent as a FRACTION so it survives any later resize.
+  const frac = Math.max(0.35, Math.min(0.95, pGridTop / H));
+  if (Math.abs(frac - lastPoisonTop) > 0.005) {
+    lastPoisonTop = frac;
+    (self as any).postMessage({ type: "poisonTop", frac });
+  }
 }
 function frameAt(frames: Frame[], total: number, elapsed: number, loop = true): ImageBitmap | null {
   if (!frames.length) return null;

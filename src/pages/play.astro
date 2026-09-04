@@ -143,6 +143,13 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
     background: #0a0e17;
     position: fixed;
     inset: 0;
+    /* Makes this the sizing container for the load screen, so its type and
+       spacing can use cq* units instead of vh/vw. Viewport units are only
+       recomputed AFTER the rotation animation finishes, which is why the
+       loading screen visibly lagged behind a rotation; a container box updates
+       immediately. Safe here because the element's size never depends on its
+       contents (fixed, inset:0). */
+    container-type: size;
     display: flex;
     flex-direction: column;
     overflow: hidden;

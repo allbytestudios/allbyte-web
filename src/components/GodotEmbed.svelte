@@ -1510,6 +1510,10 @@
   // play.astro; this one now only feeds the worker's fallback reveal path.
   const CARD_MS = 6000;
   const CARD_MIN_MS = 1000; // a card still shows ≥1s if the game is already ready
+  /** Fraction of the load-screen height at which the poison scene begins,
+   *  published by the worker. Null until it reports; the CSS default below
+   *  reserves a conservative band in the meantime. */
+  let poisonTopFrac = $state<number | null>(null);
   let studioFading = $state(false);
   let manualCardShownAt = 0;
 
@@ -1693,6 +1697,13 @@
         // Loader telemetry, on by default: one line a second with the worker's
         // real frame rate, plus a mark at each phase change. Makes "is anything
         // animating, and how fast" a console read rather than a recording.
+        if (ev.data?.type === "poisonTop") {
+          // Where the Elias/slime scene starts, as a fraction of height. The
+          // card layer clamps itself above this so its tables cannot run down
+          // into the load animation on a short screen.
+          poisonTopFrac = ev.data.frac;
+          return;
+        }
         if (ev.data?.type === "fps") {
           perfFps(ev.data.fps);
           console.log(
@@ -2632,7 +2643,11 @@
     above it is transparent now.
   -->
   {#if loading && !error && !showGate}
-    <div class="loading-screen manual-screen dom-cards" aria-hidden="true">
+    <div
+      class="loading-screen manual-screen dom-cards"
+      aria-hidden="true"
+      style={poisonTopFrac != null ? `--card-bottom:${(1 - poisonTopFrac) * 100}%` : undefined}
+    >
       {#each MANUAL_CARDS as card, i}
         <div class="manual-card dom-card-item" data-i={i}>
           <div class="manual-kicker">From the Manual</div>
@@ -2908,9 +2923,9 @@
      AllByte scene, the hand-off, and the card scene alike. */
   .load-spin {
     position: absolute;
-    right: clamp(16px, 4.5vmin, 30px);
-    bottom: clamp(16px, 4.5vmin, 30px);
-    width: clamp(19px, 4.4vmin, 32px);
+    right: clamp(16px, 4.5cqmin, 30px);
+    bottom: clamp(16px, 4.5cqmin, 30px);
+    width: clamp(19px, 4.4cqmin, 32px);
     aspect-ratio: 1;
     z-index: 5;
     pointer-events: none;
@@ -2978,7 +2993,12 @@
      cycle the base rule applies, so exactly one card is ever visible. */
   .dom-cards .dom-card-item {
     position: absolute;
-    inset: clamp(1.5rem, 5vh, 3.5rem) 1.25rem clamp(1.1rem, 3vh, 2rem);
+    /* Bottom is clamped above the poison scene. --card-bottom is supplied by
+       the worker once it has laid that scene out; until then the default
+       reserves the same ~34% the canvas cards used to, so the first card is
+       never wrong either. */
+    inset: clamp(1.5rem, 5cqh, 3.5rem) 1.25rem var(--card-bottom, 34%);
+    justify-content: center;
     opacity: 0;
     will-change: opacity;
   }
@@ -3031,8 +3051,10 @@
      bitPx = clamp(letterPx*0.34,14,30). Held as custom properties so the
      wordmark and the bit row derive from one source. */
   .studio-static-mark {
-    --letter: clamp(42px, 14vh, 80px);
-    --bit: clamp(14px, 4.76vh, 30px);
+    /* cqh, not vh: viewport units lag a rotation by the length of the
+       rotation animation, container units do not. See .play-page. */
+    --letter: clamp(42px, 14cqh, 80px);
+    --bit: clamp(14px, 4.76cqh, 30px);
     /* "All Byte" measures 3.182em at weight 600 in ModernGoth (254.56px at
        80px). Eight bits span that full width across seven gaps, so the row is
        exactly as wide as the wordmark and the outermost bits sit on its edges —

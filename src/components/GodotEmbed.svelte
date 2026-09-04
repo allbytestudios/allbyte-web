@@ -1681,10 +1681,28 @@
     try {
       const worker = new LoadScreenWorker();
       worker.onmessage = (ev) => {
-        if (ev.data?.type === "reveal") loading = false;
+        // Loader telemetry, on by default: one line a second with the worker's
+        // real frame rate, plus a mark at each phase change. Makes "is anything
+        // animating, and how fast" a console read rather than a recording.
+        if (ev.data?.type === "fps") {
+          console.log(
+            `[loader] ${String(ev.data.t).padStart(5)}ms  worker ${ev.data.fps}fps`,
+          );
+          return;
+        }
+        if (ev.data?.type === "reveal") {
+          console.log(`[loader] ${Math.round(performance.now())}ms  reveal — game visible`);
+          loading = false;
+        }
         // Studio scene is fading / done — take the overlaid wordmark with it.
-        else if (ev.data?.type === "studioFade") studioOverlayFading = true;
-        else if (ev.data?.type === "studioEnd") studioOverlay = false;
+        else if (ev.data?.type === "studioFade") {
+          console.log(`[loader] ${Math.round(performance.now())}ms  studio fading`);
+          studioOverlayFading = true;
+        }
+        else if (ev.data?.type === "studioEnd") {
+          console.log(`[loader] ${Math.round(performance.now())}ms  studio end — cards take over`);
+          studioOverlay = false;
+        }
       };
       worker.onerror = () => { workerFailed = true; };
       const off = loadCanvasEl.transferControlToOffscreen();

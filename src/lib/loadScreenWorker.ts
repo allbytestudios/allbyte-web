@@ -198,9 +198,28 @@ self.onmessage = async (e: MessageEvent) => {
   }
 };
 
+// Frame-rate reporting. The worker thread is never blocked by the WASM
+// compile, so its measured rate is the honest one — a main-thread rAF counter
+// would just report the block. Posted once a second and logged by the page, so
+// "is the load screen actually animating" is answerable from the console
+// instead of from a screen recording.
+let fpsFrames = 0;
+let fpsSince = 0;
+
 function loop() {
   if (revealed) return;
   const now = performance.now();
+  if (!fpsSince) fpsSince = now;
+  fpsFrames++;
+  if (now - fpsSince >= 1000) {
+    (self as any).postMessage({
+      type: "fps",
+      fps: Math.round((fpsFrames * 1000) / (now - fpsSince)),
+      t: Math.round(now - started),
+    });
+    fpsFrames = 0;
+    fpsSince = now;
+  }
   const t = now - started;
   if (t < cfg.studioMs) drawStudio(now, t);
   else {

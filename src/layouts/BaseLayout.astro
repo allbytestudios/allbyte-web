@@ -4,6 +4,7 @@ import MusicPlayer from "../components/MusicPlayer.svelte";
 import AuthInit from "../components/AuthInit.svelte";
 import DevAuthSwitcher from "../components/DevAuthSwitcher.svelte";
 import UpdateOverlay from "../components/UpdateOverlay.svelte";
+import PerfBeacon from "../components/PerfBeacon.svelte";
 import gameVersion from "../data/game-version.json";
 
 /** Injected by vite.define in astro.config.mjs: "<short sha>·<build time>Z". */
@@ -205,6 +206,7 @@ const imageAbs = new URL(image, SITE).href;
     <AuthInit client:load />
     <DevAuthSwitcher client:load />
     <UpdateOverlay client:load />
+    <PerfBeacon client:load />
     <slot />
     <div transition:persist="music-player">
       <MusicPlayer client:load />

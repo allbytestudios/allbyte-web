@@ -8,6 +8,7 @@
   import VirtualGamepad from "./VirtualGamepad.svelte";
   import ManualLetterboxPanel from "./ManualLetterboxPanel.svelte";
   import { initPlayAnalytics, markStartup } from "../lib/playAnalytics";
+  import { perfMark, perfFps } from "../lib/perfBeacon";
   import { initConsoleLogShipper } from "../lib/consoleLogShipper";
   import DownloadGate from "./DownloadGate.svelte";
   import { downloadState, ackDownload } from "../lib/downloadGate";
@@ -812,7 +813,12 @@
     // browser has actually put pixels up; measuring the outer one would report
     // a shell the player hasn't seen yet. This is the number the instant-shell
     // fix (2026-09-01) exists to move, and until now nothing recorded it.
-    requestAnimationFrame(() => requestAnimationFrame(() => markStartup("boot_shell_visible")));
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        markStartup("boot_shell_visible");
+        perfMark("shell");
+      }),
+    );
 
     // Set the mobile-context flag FIRST — before the iframe/WASM boots — so the
     // engine sees it at Title startup (Arc's contract). The download gate often
@@ -1685,12 +1691,14 @@
         // real frame rate, plus a mark at each phase change. Makes "is anything
         // animating, and how fast" a console read rather than a recording.
         if (ev.data?.type === "fps") {
+          perfFps(ev.data.fps);
           console.log(
             `[loader] ${String(ev.data.t).padStart(5)}ms  worker ${ev.data.fps}fps`,
           );
           return;
         }
         if (ev.data?.type === "reveal") {
+          perfMark("reveal");
           console.log(`[loader] ${Math.round(performance.now())}ms  reveal — game visible`);
           loading = false;
         }
@@ -1700,6 +1708,7 @@
           studioOverlayFading = true;
         }
         else if (ev.data?.type === "studioEnd") {
+          perfMark("cards");
           console.log(`[loader] ${Math.round(performance.now())}ms  studio end — cards take over`);
           studioOverlay = false;
         }
@@ -1744,6 +1753,7 @@
         [off],
       );
       loadWorker = worker;
+      perfMark("workerCreated");
       // When the worker was actually created, in page time. Hydration is a
       // main-thread task, so this is the number that explains a late card
       // scene: everything the worker draws is offset by it.

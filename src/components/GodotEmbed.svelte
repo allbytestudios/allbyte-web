@@ -1718,7 +1718,23 @@
           cards: builtCards,
           isMobile: isMobileViewport(),
           cfg: {
-            studioMs: STUDIO_MS,
+            // How long the worker HOLDS before starting its card scene —
+            // measured from worker init, so it must be the time REMAINING on
+            // the page's parse-time clock, not the full STUDIO_MS.
+            //
+            // The studio scene is DOM/CSS and fades on the parse clock at
+            // ~2000ms. The worker starts at hydration, which can be anywhere
+            // from 300ms to several seconds later. Passing the full STUDIO_MS
+            // made the worker hold for 2s from ITS OWN start, so cards began
+            // long after the mark had already gone — a dark gap of exactly the
+            // hydration delay. And because the card's CARD_MS timer starts when
+            // the card phase starts rather than when it becomes visible, the
+            // first card then got the remainder of its 3s instead of a full
+            // one: "it thinks it was displayed for 3s when it wasn't".
+            //
+            // Clamped at 0: if hydration lands after the mark has already
+            // faded, the worker should start drawing immediately.
+            studioMs: Math.max(0, STUDIO_MS - performance.now()),
             studioSettleMs: STUDIO_SETTLE_MS,
             studioFadeMs: STUDIO_FADE_MS,
             cardMs: CARD_MS,
@@ -1728,6 +1744,13 @@
         [off],
       );
       loadWorker = worker;
+      // When the worker was actually created, in page time. Hydration is a
+      // main-thread task, so this is the number that explains a late card
+      // scene: everything the worker draws is offset by it.
+      console.log(
+        `[loader] ${Math.round(performance.now())}ms  worker created ` +
+          `(holds ${Math.round(Math.max(0, STUDIO_MS - performance.now()))}ms, then cards)`,
+      );
 
       // The blob worker can't fetch its assets by URL under cross-origin
       // isolation (no-CORP same-origin subresources NetworkError inside it), so

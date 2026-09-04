@@ -228,7 +228,14 @@ function loop() {
       (self as any).postMessage({ type: "studioEnd" }); // page unmounts the wordmark overlay
     }
     if (cardShownAt === 0) { cardShownAt = now; }
-    drawManual(now, t);
+    // The manual cards are NOT drawn here any more — they are DOM elements
+    // rotated by CSS keyframes (see play.astro). Measured on the owner's
+    // desktop, this worker is starved to 2 fps by the WASM compile: not
+    // blocked, but slow enough that the card scene froze on whatever frame it
+    // last managed, which is the black screen. Compositor-driven CSS survives
+    // that; a worker canvas does not. Only the poison trail stays here,
+    // because its dissolve shader is real per-pixel canvas work.
+    ctx.clearRect(0, 0, W, H);
     if (hasPoison()) {
       // poison-trail transition drives card flips + reveal (AllByte + ≥1 full
       // card, cut over only at a card boundary after Elias' victory).
@@ -266,9 +273,9 @@ function drawCornerSpinner(now: number) {
 
 // ---------- studio ----------
 function drawStudio(now: number, t: number) {
+  // Transparent, not filled. The DOM layer underneath supplies the ground for
+  // the whole load screen now; this canvas draws ONLY the poison scene.
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = DARK;
-  ctx.fillRect(0, 0, W, H);
 
   // bit scramble: fast → exponential slow → settle
   if (!bitsSettled) {

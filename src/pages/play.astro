@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import GodotEmbed from "../components/GodotEmbed.svelte";
+import { MANUAL_CARDS } from "../lib/manualCards";
 
 const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
 ---
@@ -29,7 +30,7 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
 
     Constants mirror BITS_* in GodotEmbed.svelte — change one, change both.
   -->
-  <script is:inline>
+  <script is:inline define:vars={{ CARD_COUNT: MANUAL_CARDS.length }}>
     (function () {
       var FAST = 42, FAST_UNTIL = 980, SETTLE_AT = 1280, DECEL = 270;
       var TOTAL = 2000, N = 8;
@@ -58,6 +59,41 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
         css += ".ab-b" + i + ".ab-0{animation:abz" + i + " " + TOTAL + "ms step-end both}";
         css += ".ab-b" + i + ".ab-1{animation:abo" + i + " " + TOTAL + "ms step-end both}";
       }
+      // MANUAL CARD ROTATION — also CSS, also from parse time.
+      //
+      // The cards were drawn by the worker until the owner's telemetry showed
+      // it starved to 2fps by the WASM compile, freezing the card scene on a
+      // single frame for ~7 seconds. Nothing the player must see during the
+      // boot can depend on that thread. This cycles them on the compositor
+      // instead, so it holds up exactly as the spinner does.
+      //
+      // Each card gets one slot of an N x CARD_MS cycle, positioned by its
+      // animation-delay. STUDIO_MS is added to every delay so the first card
+      // arrives as the AllByte scene finishes rather than behind it. The order
+      // is shuffled per load so it is not the same reading every time.
+      // Count comes from Astro (CARD_COUNT), NOT from the DOM. This script is
+      // emitted before the component's markup, so querying for the cards here
+      // finds nothing — and failed silently, which is worse than failing loudly.
+      var CARD_MS = 3000, STUDIO_MS = 2000;
+      if (CARD_COUNT > 0) {
+        var n = CARD_COUNT;
+        var slots = [];
+        for (var c = 0; c < n; c++) slots.push(c);
+        for (var j = n - 1; j > 0; j--) {                 // Fisher-Yates
+          var k = Math.floor(Math.random() * (j + 1));
+          var tmp = slots[j]; slots[j] = slots[k]; slots[k] = tmp;
+        }
+        var slice = (100 / n).toFixed(4);
+        // Opaque for its own slice only. step-end so cards swap cleanly rather
+        // than cross-fading through one another.
+        css += "@keyframes abcard{0%{opacity:1}" + slice + "%{opacity:0}100%{opacity:0}}";
+        for (var q = 0; q < n; q++) {
+          css += '.dom-cards .dom-card-item[data-i="' + q + '"]{' +
+                 "animation:abcard " + n * CARD_MS + "ms step-end infinite " +
+                 (STUDIO_MS + slots[q] * CARD_MS) + "ms}";
+        }
+      }
+
       var s = document.createElement("style");
       s.id = "ab-bitseq";
       s.textContent = css;

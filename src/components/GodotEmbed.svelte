@@ -2610,6 +2610,50 @@
     </div>
   {/if}
 
+  <!--
+    THE MANUAL CARDS — DOM, rotated by CSS.
+
+    They used to be drawn by the worker. Measured on the owner's desktop while
+    the WASM compiles, that worker is starved to 2 fps: not blocked, but slow
+    enough that the card scene froze on whatever frame it last managed, which
+    is the ~7s of black screen. The spinner on the same page kept turning
+    throughout because it is compositor-driven CSS — the clearest possible
+    demonstration of which rendering path survives a saturated machine.
+
+    So every card is rendered here and a CSS keyframe cycles them, on the same
+    parse-time clock as the AllByte scene. Nothing about the load screen now
+    depends on the worker, which draws only the poison trail (real per-pixel
+    canvas work CSS cannot do) beneath these.
+
+    This layer also owns the GROUND for the whole load screen — the canvas
+    above it is transparent now.
+  -->
+  {#if loading && !error && !showGate}
+    <div class="loading-screen manual-screen dom-cards" aria-hidden="true">
+      {#each MANUAL_CARDS as card, i}
+        <div class="manual-card dom-card-item" data-i={i}>
+          <div class="manual-kicker">From the Manual</div>
+          <h2 class="manual-card-title">{card.title}</h2>
+          {#if card.rows}
+            <dl class="manual-rows">
+              {#each card.rows as [term, desc]}
+                <div class="manual-row">
+                  <dt>{term}</dt>
+                  <dd>{desc}</dd>
+                </div>
+              {/each}
+            </dl>
+          {/if}
+          {#if card.lines}
+            <div class="manual-lines">
+              {#each card.lines as line}<p>{line}</p>{/each}
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
+
   {#if showStudioMark}
     <div
       class="loading-screen studio-static"
@@ -2739,8 +2783,11 @@
     width: 100%;
     height: 100%;
     display: block;
-    z-index: 2;
-    background: #050608;
+    z-index: 3;
+    /* Transparent: it draws ONLY the poison trail now, and the DOM card layer
+       beneath supplies the ground. An opaque background here would hide the
+       cards entirely. */
+    background: transparent;
   }
 
   .loading-screen {
@@ -2915,6 +2962,22 @@
     .load-ring-inner {
       animation: none;
     }
+  }
+
+  /* Stack, bottom to top: DOM cards (2) -> worker canvas, transparent except
+     the poison trail (3) -> AllByte mark (4) -> spinner (5). */
+  .loading-screen.dom-cards {
+    z-index: 2;
+    pointer-events: none;
+  }
+  /* Each card is hidden by default and revealed only by its generated keyframe
+     window (play.astro). No fill-mode: before its delay elapses and after each
+     cycle the base rule applies, so exactly one card is ever visible. */
+  .dom-cards .dom-card-item {
+    position: absolute;
+    inset: clamp(1.5rem, 5vh, 3.5rem) 1.25rem clamp(1.1rem, 3vh, 2rem);
+    opacity: 0;
+    will-change: opacity;
   }
 
   .studio-static {

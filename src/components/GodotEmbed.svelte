@@ -1505,7 +1505,10 @@
   // studio scene, so nothing reads it there.
   const STUDIO_SETTLE_MS = 850;
   const STUDIO_FADE_MS = 220; // the scene fades away over this, ending at STUDIO_MS
-  const CARD_MS = 3000; // each card gets a full 3s before it rotates
+  // 6s per card (owner 2026-09-04, doubled from 3s — long enough to read a
+  // table). The DOM rotation is driven by the matching constant in
+  // play.astro; this one now only feeds the worker's fallback reveal path.
+  const CARD_MS = 6000;
   const CARD_MIN_MS = 1000; // a card still shows ≥1s if the game is already ready
   let studioFading = $state(false);
   let manualCardShownAt = 0;

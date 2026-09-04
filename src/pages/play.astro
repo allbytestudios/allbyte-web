@@ -74,7 +74,10 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
       // Count comes from Astro (CARD_COUNT), NOT from the DOM. This script is
       // emitted before the component's markup, so querying for the cards here
       // finds nothing — and failed silently, which is worse than failing loudly.
-      var CARD_MS = 3000, STUDIO_MS = 2000;
+      // 6s per card (owner 2026-09-04, doubled from 3s): the cards are
+      // reference material and 3s was not long enough to finish reading a
+      // table. Must stay in step with CARD_MS in GodotEmbed.svelte.
+      var CARD_MS = 6000, STUDIO_MS = 2000;
       if (CARD_COUNT > 0) {
         var n = CARD_COUNT;
         var slots = [];

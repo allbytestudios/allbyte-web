@@ -21,6 +21,8 @@ const WRITE_URL = "https://pdtoj70foi.execute-api.us-east-1.amazonaws.com/play";
 const PROD_HOST = "allbyte.studio";
 const SID_KEY = "ab_play_sid";
 const OWNER_KEY = "ab_play_owner";
+/** Per-device opt-in so the owner's own phone can report perf (see perfOptIn). */
+const PERF_OPTIN_KEY = "ab_perf_optin";
 /** Long tasks shorter than this are normal scheduling, not a stall. */
 const LONG_TASK_MS = 50;
 /** Give slow boots time to finish before reporting; also flushed on pagehide. */
@@ -111,11 +113,50 @@ function referrerHost(): string {
   }
 }
 
-/** Excluded from reporting: automation, and the owner's own devices. Mirrors
- *  the play funnel's rule so the two data sets agree about who is real. */
+/**
+ * Owner opt-IN, per device: visit any page with `?perf=1` to make this device
+ * report, `?perf=0` to stop.
+ *
+ * The play funnel excludes the owner because it measures acquisition and
+ * behaviour, where the owner's own visits are noise. Performance is the
+ * opposite: with almost no outside traffic the owner's phone is the most
+ * valuable data point there is, and it is the device the problems actually
+ * show up on. So the two gates are deliberately separate — opting in here does
+ * not put the owner back into the funnel.
+ *
+ * Opted-in reports carry own:1 so they can be filtered out later, once real
+ * traffic makes the distinction matter. Silently mixing them would poison the
+ * baseline exactly when it starts being worth something.
+ */
+function perfOptIn(): boolean {
+  try {
+    const q = new URLSearchParams(location.search).get("perf");
+    if (q === "1") {
+      localStorage.setItem(PERF_OPTIN_KEY, "1");
+      console.log("[perf] reporting ENABLED on this device (?perf=0 to stop)");
+    } else if (q === "0") {
+      localStorage.removeItem(PERF_OPTIN_KEY);
+      console.log("[perf] reporting disabled on this device");
+    }
+    return localStorage.getItem(PERF_OPTIN_KEY) === "1";
+  } catch {
+    // Private mode: honour the URL for this page view even though it cannot
+    // persist, so a one-off diagnostic still works.
+    try {
+      return new URLSearchParams(location.search).get("perf") === "1";
+    } catch {
+      return false;
+    }
+  }
+}
+
+/** Excluded from reporting: automation always, and the owner's own devices
+ *  unless they have explicitly opted in above. */
 function excluded(): boolean {
   try {
+    // Automation is never a useful data point, opt-in or not.
     if ((navigator as any).webdriver === true) return true;
+    if (perfOptIn()) return false;
     if (localStorage.getItem(OWNER_KEY) === "1") return true;
   } catch {
     /* storage unavailable — fall through */
@@ -172,6 +213,8 @@ function collect(): Record<string, number | string> {
     if (c?.effectiveType) out.net = String(c.effectiveType).slice(0, 8);
     if ((navigator as any).deviceMemory) out.mem = (navigator as any).deviceMemory;
     out.sw = navigator.serviceWorker?.controller ? 1 : 0;
+    // Marks this as an owner device reporting by opt-in, not organic traffic.
+    if (perfOptIn()) out.own = 1;
   } catch {
     /* partial data is still useful */
   }

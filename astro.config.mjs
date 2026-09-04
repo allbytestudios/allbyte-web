@@ -1299,6 +1299,22 @@ function marketingDistribution() {
 export default defineConfig({
   integrations: [svelte()],
   trailingSlash: "always",
+  build: {
+    // Inline the stylesheets rather than linking them.
+    //
+    // /play/ server-renders the AllByte boot shell, so it COULD paint as soon
+    // as the HTML lands (~110ms). Measured on a throttled 1.5Mbps/120ms link it
+    // painted at 666ms instead, because the render-blocking stylesheet cannot
+    // even begin loading until the HTML is parsed (291ms) and then costs
+    // another 259ms on the wire. That gap is the pause after the homepage's
+    // pixel dissolve — the browser has navigated but has nothing it may paint.
+    //
+    // The two sheets are ~35KB raw but ~6KB gzipped, so inlining trades a few
+    // KB per document for an entire blocking round trip. Worth it here: most
+    // visits are a single page (the homepage, or /play/ direct from a link),
+    // so there is little cross-page stylesheet reuse to lose.
+    inlineStylesheets: "always",
+  },
   markdown: {
     // Order matters: remarkDirective parses the `::name[...]{...}` syntax into
     // directive nodes, and our transform must run AFTER it to see them.

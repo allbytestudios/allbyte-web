@@ -36,7 +36,19 @@
   onMount(() => {
     const idle = (window as any).requestIdleCallback || ((f: () => void) => setTimeout(f, 1200));
     const cancelIdle = (window as any).cancelIdleCallback || clearTimeout;
-    const handle = idle(() => primeHeroSnapshot());
+    const handle = idle(() => {
+      primeHeroSnapshot();
+      // Warm /play/ on an idle beat during the HOMEPAGE's own load, so it is in
+      // cache long before Play is pressed. Now that stylesheets are inlined the
+      // /play/ document IS the render-critical resource — fetching it here is
+      // what lets the AllByte scene paint the moment we navigate, instead of
+      // after a round trip the dissolve has already used up its cover for.
+      // Idle, so it never competes with the homepage's own first paint.
+      // NOTE: still only the PAGE. The game packs stay behind an explicit press
+      // (prefetchGame) — the plan is clear that the homepage must not pull the
+      // full game.
+      warmPlayPage(def.id);
+    });
     let rz: ReturnType<typeof setTimeout>;
     const onResize = () => {
       invalidateHeroSnapshot();
@@ -86,6 +98,14 @@
   let transitionSeed = $state(1);
   let pendingUrl = "";
 
+  let pagePrefetched = false;
+  /** Idempotent — safe to call from hover, press and click alike. */
+  function warmPlayPage(id: string) {
+    if (pagePrefetched) return;
+    pagePrefetched = true;
+    prefetchPlayPage(`/play/?v=${encodeURIComponent(id)}`);
+  }
+
   function prefetchGame(id: string) {
     try {
       const v = versionById(id);
@@ -101,6 +121,43 @@
     }
   }
 
+  /**
+   * Warm the /play/ PAGE — not the game — while the dissolve plays.
+   *
+   * prefetchGame() above already warms index.wasm/index.pck, but nothing was
+   * warming the document itself, so when the dissolve finished the browser
+   * still had to fetch /play/, then discover and fetch its JS, CSS and font
+   * before anything could paint. That serial round-trip after the animation is
+   * the pause the owner sees, and on Android it surfaces as Chrome's page-load
+   * bar.
+   *
+   * Fetching the HTML warms the document in the HTTP cache AND lets us read its
+   * hashed subresource URLs, which are unknowable from here otherwise. The
+   * dissolve gives roughly a second of cover to do it in.
+   *
+   * Deliberately does NOT touch the game packs beyond what prefetchGame already
+   * does — the plan is explicit that the homepage must not pull the full game.
+   */
+  async function prefetchPlayPage(url: string) {
+    try {
+      const res = await fetch(url, { credentials: "same-origin" });
+      if (!res.ok) return;
+      const html = await res.text();
+      const seen = new Set<string>();
+      for (const m of html.matchAll(/(?:src|href)="(\/_astro\/[^"]+|\/fonts\/[^"]+)"/g)) {
+        seen.add(m[1]);
+      }
+      for (const href of seen) {
+        const l = document.createElement("link");
+        l.rel = "prefetch";
+        l.href = href;
+        document.head.appendChild(l);
+      }
+    } catch {
+      /* best-effort — navigation still works, just without the warm cache */
+    }
+  }
+
   function play(id: string) {
     pendingUrl = `/play/?v=${encodeURIComponent(id)}`;
     transitionSeed = Math.floor(Math.random() * 2_000_000_000) || 1;
@@ -111,6 +168,7 @@
       /* private mode — /play just skips phase 2 and shows its own intro */
     }
     prefetchGame(id);
+    warmPlayPage(id); // usually already done on press; no-op if so
     if (transitioning) return;
     transitioning = true; // renders the obscure-phase glass over the homepage
   }
@@ -129,8 +187,8 @@
     class="btn btn-primary btn-lg play-main"
     class:split={admin}
     onclick={() => play(def.id)}
-    onpointerenter={() => primeHeroSnapshot()}
-    onpointerdown={() => primeHeroSnapshot()}
+    onpointerenter={() => { primeHeroSnapshot(); warmPlayPage(def.id); }}
+    onpointerdown={() => { primeHeroSnapshot(); warmPlayPage(def.id); }}
   >
     {primaryLabel}
   </button>

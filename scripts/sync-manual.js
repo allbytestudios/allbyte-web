@@ -39,6 +39,73 @@ if (!existsSync(SRC)) {
   process.exit(0);
 }
 
+/**
+ * Clobber guard.
+ *
+ * App owns the booklet and edits public/manual/index.html directly (owner,
+ * 2026-09-06); Quinn owns gameplay and signs off that what it says is true.
+ * This script re-ingests Quinn's export and OVERWRITES that file wholesale, so
+ * a routine sync can silently revert live, verified content — Quinn's export
+ * is only rebuilt when she re-runs her render, and can be months older than the
+ * booklet.
+ *
+ * Detection uses the same self-verifying trick as the Godot obfuscator: the
+ * generated page carries a hash of itself, so a later edit is detectable
+ * without a sidecar file or any git archaeology.
+ *
+ *   pristine  — untouched since the last sync; safe to overwrite.
+ *   edited    — hash mismatch: someone changed it. Refuse.
+ *   unmarked  — predates this guard, or was hand-written. Provenance unknown,
+ *               so treat it as edited. Refuse.
+ *
+ * --force overwrites regardless, for when the export really is newer.
+ */
+const OUT_FILE = join(OUT_DIR, "index.html");
+const SYNC_MARK = /\n?<!-- sync-manual sha256:([0-9a-f]{64}) -->\s*$/;
+const FORCE = process.argv.includes("--force");
+
+const sha256 = (t) => createHash("sha256").update(t, "utf8").digest("hex");
+
+/** Append the self-hash. The hash covers the page WITHOUT the marker, so the
+ *  check can strip it and recompute cleanly. */
+const stampSync = (t) => `${t}\n<!-- sync-manual sha256:${sha256(t)} -->\n`;
+
+function syncState(text) {
+  const m = text.match(SYNC_MARK);
+  if (!m) return "unmarked";
+  return sha256(text.replace(SYNC_MARK, "")) === m[1] ? "pristine" : "edited";
+}
+
+if (existsSync(OUT_FILE) && !FORCE) {
+  const state = syncState(readFileSync(OUT_FILE, "utf8"));
+  if (state !== "pristine") {
+    const why =
+      state === "edited"
+        ? "it has been edited since the last sync"
+        : "it predates this guard, so its provenance is unknown";
+    console.error(
+      [
+        "",
+        `[sync-manual] REFUSING to overwrite public/manual/index.html — ${why}.`,
+        "",
+        "  Overwriting would replace the live booklet with Quinn's export and",
+        "  silently drop whatever the current page says.",
+        "",
+        "  If the export really is the newer of the two:",
+        "    npm run sync:manual -- --force",
+        "",
+        "  Otherwise port Quinn's changes into public/manual/index.html by hand.",
+        "  Remember it holds the booklet TWICE — the rendered .prose HTML that",
+        "  readers see, and the manual-bodies JSON the inline editor reads. Both",
+        "  must move together, and a grep of the whole file will match the JSON",
+        "  alone and look like success.",
+        "",
+      ].join("\n"),
+    );
+    process.exit(1);
+  }
+}
+
 // Map a chapter TITLE -> its section key. Title-based (not positional) so it
 // survives Quinn reordering / adding / dropping sections in the export. Most
 // specific first; each real title matches exactly one rule.
@@ -217,7 +284,8 @@ if (!/<html/i.test(html)) {
 // House rule: no em-dashes (AI tell). Strip them from all visible prose as the
 // final step — masks <script>/<style>/comments so injected code is untouched.
 html = normalizeDashes(html);
-writeFileSync(join(OUT_DIR, "index.html"), html);
+// Self-hash last, so the guard above can tell a pristine sync from a later edit.
+writeFileSync(OUT_FILE, stampSync(html));
 const total = readdirSync(ASSET_DIR).reduce((n, f) => n, 0);
 log(`de-inlined ${Object.keys(seen).length} asset(s); ${Object.keys(bodies).length} section bodies exposed.`);
 log(`wrote public/manual/index.html (${Math.round(html.length / 1024)} KB). Commit public/manual/.`);

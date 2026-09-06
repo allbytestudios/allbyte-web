@@ -58,16 +58,19 @@
   };
 
   /**
-   * Shoulder buttons — both combat features, both discrete TAPS.
+   * Shoulder buttons — three combat features. Two tap; one holds.
    *
    *   L1 → R : toggle the in-combat log
-   *   R1 → F : cycle combat speed 1 → 2 → 4 → 8 → 1
+   *   R1 → F : cycle combat speed 1 → 1.5 → 2 → 4 → back to 1
+   *   R2 → G : apply the remembered speed while held (see SHOULDER_HOLD)
    *
-   * Unlike the face buttons these do NOT hold: the keyup is fired on a short
-   * timer rather than on finger-release, so the key is never sustained no
-   * matter how long the button is pressed. That matters because both actions
-   * are edge-triggered toggles — a held key that the game happened to sample
-   * per-frame would cycle the speed continuously instead of once per tap.
+   * L1 and R1 do NOT hold: the keyup is fired on a short timer rather than on
+   * finger-release, so the key is never sustained no matter how long the
+   * button is pressed. That matters because both are edge-triggered toggles —
+   * a held key that the game happened to sample per-frame would cycle the
+   * speed continuously instead of once per tap.
+   *
+   * R2 is the deliberate exception; SHOULDER_HOLD below is what separates them.
    *
    * The delay exists so the down and up land in different frames; a pair
    * dispatched in the same tick risks being coalesced before the engine polls.

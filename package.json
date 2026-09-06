@@ -25,7 +25,7 @@
     "deploy-watcher": "node scripts/deploy-watcher.js",
     "deploy-watcher:once": "node scripts/deploy-watcher.js --once",
     "dev": "astro dev --host 0.0.0.0",
-    "build": "node scripts/sync-assets.js && astro build && node scripts/inject-sw-version.js",
+    "build": "node scripts/sync-assets.js && astro build && node scripts/inject-sw-version.js && node scripts/stamp-manual.js",
     "preview": "astro preview",
     "astro": "astro",
     "test:a11y": "pytest tests/e2e/test_accessibility.py -v",

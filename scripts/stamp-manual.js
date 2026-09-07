@@ -58,14 +58,41 @@ if (!html.includes(PLACEHOLDER)) {
   process.exit(0);
 }
 
-// Game version: what the booklet documents. Kept in the same shape the rest
-// of the site prints it in (leading "v" stripped, as the chapters never use it).
-let game = "";
+/**
+ * The game version the booklet has actually been VERIFIED against — pinned by
+ * hand, deliberately NOT read from game-version.json.
+ *
+ * "Describes version X" is a claim about content, not about build timing. If it
+ * tracked the deployed version it would re-state itself on every game promote,
+ * silently asserting that chapters nobody has re-read still match a build
+ * nobody has checked them against. That is the exact failure this booklet has
+ * already had once: a change that looked verified because the check was
+ * measuring the wrong thing.
+ *
+ * BUMP THIS ONLY after re-reading the affected chapters against the new build.
+ * It is meant to be a small act of friction.
+ *
+ * Verified 2026-09-06 against 0.8.2592 (c959ab5a): initiative trigger, turn
+ * economy, the status-stack model, the combat log, controller + battle speed,
+ * Mother Slime reach, and the auto-save indicator.
+ */
+const VERIFIED_AGAINST = "0.8.2592";
+
+// Deployed version, for the drift note below only.
+let deployed = "";
 try {
   const raw = JSON.parse(readFileSync(versionPath, "utf8"));
-  game = String(raw.version || "").replace(/^v/, "");
+  deployed = String(raw.version || "").replace(/^v/, "");
 } catch {
   warn("could not read game-version.json");
+}
+const game = VERIFIED_AGAINST;
+if (deployed && deployed !== VERIFIED_AGAINST) {
+  console.warn(
+    `[stamp-manual] NOTE: booklet verified against ${VERIFIED_AGAINST}, game now ` +
+      `${deployed}. The colophon keeps saying ${VERIFIED_AGAINST} until someone ` +
+      `re-checks the chapters and bumps VERIFIED_AGAINST.`,
+  );
 }
 
 // Commit: what confirms the deploy. CI checks out at a depth that still has

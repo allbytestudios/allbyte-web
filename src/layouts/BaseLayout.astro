@@ -280,6 +280,74 @@ const imageAbs = new URL(image, SITE).href;
           );
       }
     </script>
+
+    <!-- Autoplay video, made deterministic across every route into a page.
+         The homepage clips carry `autoplay loop muted playsinline`, but the
+         autoplay ATTRIBUTE is only honoured on the path the browser considers a
+         page load. Arrive by ClientRouter swap, by the back button, or out of
+         bfcache and the element can be inserted already-parsed, so nothing ever
+         starts it and the viewer sits looking at the poster frame — which reads
+         as "the clip is broken", not "the clip is paused" (owner, 2026-09-08).
+
+         This does not diagnose which of those paths failed; it removes the
+         question by asking for playback again on every entry, and by watching
+         visibility so a clip below the fold starts when it is actually seen
+         (Chrome only autoplays muted video once it is in view, and pauses it on
+         the way out — worth matching rather than fighting, since it is also the
+         battery-friendly behaviour).
+
+         play() is a promise that rejects when a policy declines it. That is a
+         normal outcome, not an error, so it is swallowed: a rejected play must
+         never surface as a console error on a decorative clip. -->
+    <script is:inline>
+      (function () {
+        var io = null;
+
+        function kick(v) {
+          if (!v.muted || !v.paused) return;
+          var p = v.play();
+          if (p && p.catch) p.catch(function () {});
+        }
+
+        function arm() {
+          var vids = document.querySelectorAll("video[autoplay]");
+          if (!vids.length) return;
+
+          if (!("IntersectionObserver" in window)) {
+            for (var i = 0; i < vids.length; i++) kick(vids[i]);
+            return;
+          }
+          // Rebuilt per navigation: after a swap the old observer is watching
+          // elements that are no longer in the document.
+          if (io) io.disconnect();
+          io = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (e) {
+                if (e.isIntersecting) kick(e.target);
+                else if (!e.target.paused) e.target.pause();
+              });
+            },
+            { threshold: 0.1 },
+          );
+          vids.forEach(function (v) {
+            io.observe(v);
+            // Observers fire async; a clip already on screen should not wait.
+            var r = v.getBoundingClientRect();
+            if (r.top < innerHeight && r.bottom > 0) kick(v);
+          });
+        }
+
+        document.addEventListener("astro:page-load", arm);
+        // bfcache restore fires pageshow, never astro:page-load.
+        window.addEventListener("pageshow", function (e) {
+          if (e.persisted) arm();
+        });
+        // A tab backgrounded across a nav can come back with everything paused.
+        document.addEventListener("visibilitychange", function () {
+          if (document.visibilityState === "visible") arm();
+        });
+      })();
+    </script>
   </body>
 </html>
 

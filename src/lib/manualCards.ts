@@ -43,8 +43,13 @@ export const MANUAL_CARDS: ManualCard[] = [
     lines: ["Gear in your bag does nothing until you put it on."],
   },
   {
+    // The booklet said "Mugwort is your only HP restore", which this card copied
+    // verbatim under rule 2 — and it was wrong: Cure heals too, and heals MORE,
+    // because it scales with your stats where Mugwort is a flat item. Copying the
+    // manual only protects you when the manual is right, so a card is worth
+    // sanity-checking against the game even when it is quoting the book.
     title: "Heal between fights",
-    lines: ["Mugwort is your only HP restore. Top up before the next room."],
+    lines: ["Mugwort is your only healing item. The Cure skill restores more, and grows with your stats."],
   },
   {
     title: "A winding-up enemy is an opportunity",

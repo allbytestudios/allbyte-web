@@ -1,6 +1,22 @@
 {
   "_comment": [
     "Semantic versions for the hand-written player-facing content that documents",
+    "",
+    "THE RULE (owner, 2026-09-08): the site, the booklet and the load cards show",
+    "THE GAME AS WE WANT IT PLAYED, not as the build behaves. When they differ,",
+    "the difference is RECORDED AND ROUTED TO ARC as game work. Never close the",
+    "gap by editing the site to match the build.",
+    "",
+    "The separation is the point. Quinn defines the game as intended and finds",
+    "where the build departs from it; App renders and documents it the same way.",
+    "If either side quietly rewrites itself to match whatever the build does, the",
+    "difference stops being visible to anyone and the build silently becomes the",
+    "spec. Two lists keep both directions visible:",
+    "  aheadOfLive - documented, the game has not caught up. Split by whether it",
+    "                is BUILT and waiting on a promote, or not built at all — they",
+    "                clear by different means and only the second is owed work.",
+    "  divergences - the site is right and the BUILD is wrong. These are bug",
+    "                reports for Arc, not corrections to make here.",
     "the game: the instruction booklet and the /play load-screen cards.",
     "",
     "WHAT THIS CONTENT TARGETS (owner, 2026-09-08): the EPISODE ONE DESIGN — the",
@@ -93,14 +109,6 @@
         "seenOn": null,
         "note": "Design intent only; charge damage untouched as of 2616. Clears when the balance retune lands."
       }
-    ],
-    "gameDefects": [
-      {
-        "item": "Health relic: the booklet says it increases total HP (design: +25% maxHP). It does nothing on equip today.",
-        "bead": "2611",
-        "bookletIsRight": true,
-        "note": "Arc, 2026-09-08. Do NOT reword the booklet to match; the fix rides the balance retune."
-      }
     ]
   },
   "cards": {
@@ -134,5 +142,14 @@
         "live": false
       }
     ]
-  }
+  },
+  "divergences": [
+    {
+      "item": "Health relic: the booklet says it increases total HP (design: +25% maxHP). It does nothing on equip today.",
+      "bead": "2611",
+      "bookletIsRight": true,
+      "note": "Arc, 2026-09-08. Do NOT reword the booklet to match; the fix rides the balance retune.",
+      "surface": "Booklet"
+    }
+  ]
 }

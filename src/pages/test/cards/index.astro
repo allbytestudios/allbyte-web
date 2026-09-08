@@ -18,7 +18,7 @@ const ahead = [
 // The inverse of aheadOfLive: places the booklet is right and the BUILD is
 // wrong. Listed because the failure mode under a design-spec model is someone
 // noticing the mismatch and "correcting" the booklet into documenting a bug.
-const defects = manual.gameDefects ?? [];
+const defects = (contentVersions as any).divergences ?? [];
 
 // Order the sprite lore the same way the display names read.
 const spriteEntries = Object.entries(SPRITE_LORE);
@@ -66,7 +66,7 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
           <ul class="defects">
             {defects.map((d) => (
               <li>
-                <span class="where">Game bug</span>
+                <span class="where">Game bug · {d.surface}</span>
                 {d.item}
                 {d.bead && <span class="landed">bead {d.bead}</span>}
                 <p class="dnote">{d.note}</p>

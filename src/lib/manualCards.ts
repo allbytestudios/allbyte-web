@@ -1,7 +1,27 @@
 // The /play load-screen "manual" cards — the single source of truth for both the
-// loader (GodotEmbed.svelte, drawn by the worker) AND the Dev Console review tab
-// (/test/cards/). Editing a card here changes what players see AND what the
-// console shows, so the review surface can never drift from what ships.
+// loader (GodotEmbed.svelte) AND the Dev Console review tab (/test/cards/).
+// Editing a card here changes what players see AND what the console shows, so the
+// review surface can never drift from what ships.
+//
+// HOUSE RULES for this file, learned the hard way (owner, 2026-09-08):
+//
+// 1. SHORT. This is a loading screen, not a wiki. A player reads it for a few
+//    seconds while the WASM compiles. Three or four rows is the ceiling; a
+//    six-row table is a wall nobody finishes.
+// 2. THE MANUAL'S WORDS, not a paraphrase. Where a card shows something the
+//    booklet also documents, copy the booklet — a second, breezier phrasing of
+//    the same rule is how the two drift apart. Table cards take the FIRST TWO
+//    COLUMNS of the manual's table and stop.
+// 3. EPISODE ONE ONLY. The manual marks later content with ◈. A player here
+//    cannot meet Acid, Ice, Fire or Necrotic, so teaching them their statuses
+//    spends the one moment we have on things that will not happen.
+// 4. A HINT BEATS A TABLE. The booklet's Hints chapter is already written in
+//    exactly this register — one imperative, one line of why. Prefer them.
+//
+// Previous versions of this file documented AP (actions per turn) on three
+// separate cards. AP was retired from the game; the loading screen went on
+// teaching it to every player. Anything mechanical here has to be checked
+// against the shipped build, not against memory.
 
 export interface ManualCard {
   title: string;
@@ -13,100 +33,70 @@ export interface ManualCard {
 }
 
 export const MANUAL_CARDS: ManualCard[] = [
+  // --- Hints. Straight from the booklet's Hints & Tips chapter. ------------
   {
-    // A damage type is NOT a status effect, even where they share a name
-    // (owner 2026-08-06). Poison is a damage type that may ALSO have a chance to
-    // apply Poisoned — it deals its damage either way. The statuses themselves
-    // are the next card's job; this one stays about how damage is reduced.
-    // Rows only, no `lines`: the worker renderer draws rows OR lines, never
-    // both, so prose added here would be invisible to players on /play.
+    title: "Spend it as you earn it",
+    lines: ["JP buys raw stats, SP buys the skill tree. An unspent pile is wasted power."],
+  },
+  {
+    title: "Equip what you find",
+    lines: ["Gear in your bag does nothing until you put it on."],
+  },
+  {
+    title: "Heal between fights",
+    lines: ["Mugwort is your only HP restore. Top up before the next room."],
+  },
+  {
+    title: "A winding-up enemy is an opportunity",
+    lines: ["Leave the painted cells — or stay and fill its stagger bar to break the charge."],
+  },
+  {
+    title: "Crits are on your side",
+    lines: ["Your crit chance beats most enemies'. Even fights swing your way."],
+  },
+  {
+    title: "Use your favourite skills",
+    lines: ["Skills grow with use. Lean on one and it becomes far stronger over a run."],
+  },
+  {
+    title: "Take Counterattack early",
+    lines: ["It answers the crowding most early fights are built on."],
+  },
+
+  // --- Reference. First two columns of the manual's tables, Episode One rows.
+  {
+    // Manual: Damage Types table, columns "Damage type" and "Category". The
+    // Category IS the useful half — it tells you which defense applies.
     title: "Damage types",
     rows: [
-      ["Physical", "reduced by Physical Defense"],
-      ["Everything else", "reduced by Magic Defense"],
-      ["Poison · Acid", "damage first — each may also apply its status"],
-      ["Radiant", "ignores Physical Defense AND resistance"],
-      ["Gear & effects", "can cut one specific type further"],
+      ["Physical", "Physical"],
+      ["Poison", "Magical"],
+      ["Radiant", "Magical"],
     ],
   },
   {
+    // Manual: Status Effects table, description column, verbatim. Episode One
+    // statuses only — the rest are ◈ and cannot be met yet.
     title: "Status effects",
     rows: [
-      ["Poisoned", "damage every turn; worse aim, easier to hit"],
-      ["Acid Covered", "you deal less and take more"],
-      ["Blind", "hit chance cratered (from Radiant)"],
-      ["Chilled", "movement reduced"],
-      ["Burning", "significant damage every turn"],
+      ["Poisoned", "Small damage every turn. Less likely to land hits, more likely to be hit."],
+      ["Blinded", "Much less likely to land hits, much more likely to be hit."],
     ],
   },
   {
     title: "The ground fights too",
     rows: [
-      ["Poison tile", "a chance to Poison you each step"],
-      ["Acid tile", "moderate damage + Acid Covered"],
-      ["Icy tile", "double move cost; may fall prone"],
-      ["Aflame tile", "sets you Burning, and trails fire"],
+      ["Poison", "a chance to poison you each step"],
+      ["Web", "cannot move, but can still attack"],
     ],
   },
   {
-    title: "Raw stats — the knobs you turn with JP",
-    rows: [
-      ["Strength", "physical attack, and HP"],
-      ["Constitution", "HP and physical defense"],
-      ["Dexterity", "accuracy, dodge, defense"],
-      ["Agility", "initiative and move range"],
-      ["Intelligence", "magic attack + defense (softens Radiant)"],
-      ["Wisdom", "the off-stat that feeds everything"],
-    ],
+    title: "Your turn",
+    lines: ["One move and one action, in either order. You cannot split the move around the action."],
   },
   {
-    title: "Battle stats — calculated from your build",
-    rows: [
-      ["HP", "← Constitution · what you can take"],
-      ["MP", "← Intelligence · fuels your skills"],
-      ["Initiative", "← Agility · who acts first"],
-      ["Physical Attack", "← Strength · your weapon damage"],
-      ["Magic Defense", "← Intelligence · the only softener of Radiant"],
-      ["AP", "← Speed · actions per turn, grows slowly"],
-    ],
-  },
-  {
-    title: "The shorthand",
-    rows: [
-      ["XP", "fills the bar → level up"],
-      ["JP", "spend on your raw stats"],
-      ["SP", "spend on the skill tree"],
-      ["MP", "fuels your skills"],
-      ["AP", "actions per turn"],
-      ["EP", "grows a skill through use"],
-    ],
-  },
-  {
-    title: "Skill types",
-    rows: [
-      ["Action (red)", "spends AP and MP on your turn"],
-      ["Reaction (yellow)", "fires on its own when triggered"],
-      ["Passive (blue)", "always on, costs nothing"],
-    ],
-  },
-  {
-    title: "In battle",
-    lines: ["No random encounters. Where you make contact becomes the grid."],
-    rows: [
-      ["Where you fight", "the ground you were standing on"],
-      ["Facing at contact", "sets the initiative order"],
-      ["Facing in the fight", "strike from behind to hit far more often"],
-    ],
-  },
-  {
-    title: "Growing stronger",
-    lines: ["Spend JP and SP as you earn them — an unspent pile is wasted power."],
-    rows: [
-      ["XP", "won from fights; fills to a level"],
-      ["JP", "granted each level; buys raw stats"],
-      ["SP", "granted each level; buys skill-tree nodes"],
-      ["Expertise", "earned by using a skill; makes it stronger"],
-    ],
+    title: "Where you fight",
+    lines: ["No random encounters. The ground you were standing on becomes the grid."],
   },
 ];
 

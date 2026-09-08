@@ -76,11 +76,11 @@ if (!html.includes(PLACEHOLDER)) {
  * build nobody checked them against.
  */
 let bookletVersion = "";
-let verifiedAgainst = "";
+let aheadCount = 0;
 try {
   const cv = JSON.parse(readFileSync(versionsPath, "utf8"));
   bookletVersion = String(cv.manual?.version || "");
-  verifiedAgainst = String(cv.manual?.verifiedAgainst || "");
+  aheadCount = (cv.manual?.aheadOfLive || []).length;
 } catch {
   warn("could not read content-versions.json");
 }
@@ -93,11 +93,12 @@ try {
 } catch {
   warn("could not read game-version.json");
 }
-if (deployed && verifiedAgainst && deployed !== verifiedAgainst) {
-  console.warn(
-    `[stamp-manual] NOTE: booklet ${bookletVersion} verified against ` +
-      `${verifiedAgainst}, game now ${deployed}. The colophon keeps saying ` +
-      `${verifiedAgainst} until someone re-reads the chapters and bumps ` +
+if (aheadCount) {
+  // Expected, not a problem: the booklet documents the Episode One design and
+  // the game catches up. Logged so the gap stays visible rather than forgotten.
+  console.log(
+    `[stamp-manual] booklet ${bookletVersion} documents ${aheadCount} behaviour(s) ` +
+      `not yet live on ${deployed || "the deployed build"} — see aheadOfLive in ` +
       `content-versions.json.`,
   );
 }
@@ -129,7 +130,7 @@ const date = new Date().toLocaleDateString("en-GB", {
 // code, not telemetry.
 const parts = [];
 if (bookletVersion) parts.push(`Booklet ${bookletVersion}`);
-if (verifiedAgainst) parts.push(`describes ${verifiedAgainst}`);
+parts.push("Episode One");
 parts.push(date);
 const stamp = parts.join(" · ");
 

@@ -15,7 +15,11 @@
 // 3. EPISODE ONE ONLY. The manual marks later content with ◈. A player here
 //    cannot meet Acid, Ice, Fire or Necrotic, so teaching them their statuses
 //    spends the one moment we have on things that will not happen.
-// 4. A HINT BEATS A TABLE. The booklet's Hints chapter is already written in
+// 4. THESE DOCUMENT THE DESIGN, NOT THE DEPLOYED BUILD (owner, 2026-09-08).
+//    A card describing behaviour that has not shipped yet is CORRECT; the game
+//    catches up. The trap runs the other way — seeing the game do something a
+//    card does not say and "fixing" the card to match a bug.
+// 5. A HINT BEATS A TABLE. The booklet's Hints chapter is already written in
 //    exactly this register — one imperative, one line of why. Prefer them.
 //
 // Previous versions of this file documented AP (actions per turn) on three
@@ -53,7 +57,7 @@ export const MANUAL_CARDS: ManualCard[] = [
   },
   {
     title: "A winding-up enemy is an opportunity",
-    lines: ["Leave the painted cells — or stay and fill its stagger bar to break the charge."],
+    lines: ["Break its charge and it loses its next turn. Fill the stagger bar, or leave the painted cells."],
   },
   {
     title: "Crits are on your side",

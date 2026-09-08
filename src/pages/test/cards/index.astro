@@ -4,23 +4,17 @@ import { MANUAL_CARDS, SPRITE_LORE } from "../../../lib/manualCards.ts";
 import contentVersions from "../../../data/content-versions.json";
 import gameVersion from "../../../data/game-version.json";
 
-// Cards and booklet each carry a semantic version and the game build someone
-// last re-read them against. Comparing those two answers the question this page
-// exists for: is what players are being told still true of what they are
-// playing? A git sha could not answer it — two hashes do not sort.
+// Cards and booklet document the EPISODE ONE DESIGN, not the deployed build
+// (owner, 2026-09-08) — the game catches up to them. So the useful signal here
+// is not "is this content behind the game" but "what has the game not caught up
+// with yet": a to-do for the game, not a defect in the content.
 const cards = contentVersions.cards;
 const manual = contentVersions.manual;
 const liveGame = String(gameVersion.version || "").replace(/^v/, "");
-// Staleness reads knownGoodThrough, not verifiedAgainst. "Re-read it, nothing
-// to change" is the common outcome of a review and must be recordable WITHOUT a
-// version bump — the content did not change, so its version must not move, but
-// the fact that someone looked is exactly what this signal should reflect.
-//
-// Not "wrong" — UNVERIFIED. Nobody has found an error, nobody has looked either,
-// and saying so is more honest than a green tick.
-const goodThrough = (c) => c.knownGoodThrough || c.verifiedAgainst;
-const cardsStale = Boolean(liveGame) && goodThrough(cards) !== liveGame;
-const manualStale = Boolean(liveGame) && goodThrough(manual) !== liveGame;
+const ahead = [
+  ...(manual.aheadOfLive ?? []).map((a) => ({ ...a, where: "Booklet" })),
+  ...(cards.aheadOfLive ?? []).map((a) => ({ ...a, where: "Cards" })),
+];
 
 // Order the sprite lore the same way the display names read.
 const spriteEntries = Object.entries(SPRITE_LORE);
@@ -43,27 +37,38 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
           <code>src/lib/manualCards.ts</code> — the exact source the loader draws, so
           this can't drift from what players see.
         </p>
-        <div class={`vbar ${cardsStale ? "vbar-stale" : "vbar-ok"}`}>
+        <div class={`vbar ${ahead.length ? "vbar-ahead" : "vbar-ok"}`}>
           <div class="vitem">
             <span class="vlabel">Cards</span>
             <b>{cards.version}</b>
-            <span class="vsub">written for {cards.verifiedAgainst} · checked through {goodThrough(cards)}</span>
+            <span class="vsub">{cards.target} · reviewed {cards.reviewed}</span>
           </div>
           <div class="vitem">
             <span class="vlabel">Booklet</span>
             <b>{manual.version}</b>
-            <span class="vsub">written for {manual.verifiedAgainst} · checked through {goodThrough(manual)}</span>
+            <span class="vsub">{manual.target} · reviewed {manual.reviewed}</span>
           </div>
           <div class="vitem">
             <span class="vlabel">Game live</span>
             <b>{liveGame || "unknown"}</b>
           </div>
           <p class="vnote">
-            {cardsStale || manualStale
-              ? `The game has moved past what ${cardsStale && manualStale ? "these cards and the booklet were" : cardsStale ? "these cards were" : "the booklet was"} last read against. Unverified, not necessarily wrong. Re-read it: if nothing needs changing, move knownGoodThrough and leave the version alone; if something does, fix it and bump the version too.`
-              : "Both were re-read against the build that is live."}
+            {ahead.length
+              ? `Documenting ${ahead.length} behaviour${ahead.length === 1 ? "" : "s"} the live build has not caught up with yet. Expected — these describe the designed behaviour, so they are correct, not stale. The list clears as the game ships them.`
+              : "The live build matches everything documented here."}
           </p>
         </div>
+        {ahead.length > 0 && (
+          <ul class="ahead">
+            {ahead.map((a) => (
+              <li>
+                <span class="where">{a.where}</span>
+                {a.item}
+                <span class="landed">on {a.landedOn}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         <div class="tally">
           <span>{MANUAL_CARDS.length} text cards</span>
           <span>·</span>
@@ -155,7 +160,7 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
     background: rgba(255, 255, 255, 0.02);
   }
   .vbar-ok { border-left-color: #4ade80; }
-  .vbar-stale { border-left-color: #fbbf24; }
+  .vbar-ahead { border-left-color: #60a5fa; }
   .vitem { display: flex; align-items: baseline; gap: 0.4rem; }
   .vlabel {
     font-size: 0.62rem;
@@ -166,6 +171,22 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
   .vitem b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
   .vsub { font-size: 0.72rem; opacity: 0.6; }
   .vnote { flex-basis: 100%; margin: 0.15rem 0 0; font-size: 0.8rem; opacity: 0.75; }
+  .ahead { list-style: none; margin: 0 0 0.9rem; padding: 0; font-size: 0.86rem; }
+  .ahead li {
+    padding: 0.35rem 0.6rem;
+    border-left: 2px solid #60a5fa;
+    margin-bottom: 0.3rem;
+    background: rgba(96, 165, 250, 0.06);
+  }
+  .ahead .where,
+  .ahead .landed {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin-right: 0.5rem;
+  }
+  .ahead .landed { margin: 0 0 0 0.5rem; }
   .vhist { margin: 0.6rem 0 1.4rem; font-size: 0.85rem; }
   .vhist summary { cursor: pointer; opacity: 0.75; }
   .vhist table { width: 100%; border-collapse: collapse; margin-top: 0.7rem; }

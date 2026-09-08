@@ -3,43 +3,47 @@
     "Semantic versions for the hand-written player-facing content that documents",
     "the game: the instruction booklet and the /play load-screen cards.",
     "",
-    "WHY SEMVER AND NOT A GIT SHA: a hash tells you WHICH build shipped, but two",
+    "WHAT THIS CONTENT TARGETS (owner, 2026-09-08): the EPISODE ONE DESIGN — the",
+    "game as it is meant to behave — NOT the build that happens to be deployed.",
+    "The booklet is closer to a spec than to release notes, and the game catches up",
+    "to it. This may change once Episode One is finished; for now the design is the",
+    "target.",
+    "",
+    "That inverts the staleness question. The useful signal is not 'is the manual",
+    "behind the game' but 'what has the game not caught up with yet' — which is a",
+    "known, temporary, expected state, and a to-do for the game rather than a",
+    "defect in the book. aheadOfLive is that list.",
+    "",
+    "It also means a documented behaviour that is not live is CORRECT, not wrong.",
+    "The trap it creates is the opposite one: finding the game doing something the",
+    "booklet does not say and 'fixing' the booklet to match. Arc flagged exactly",
+    "that with the Health Relic — its +25% maxHP does nothing on equip today, and",
+    "the booklet would have been wrong to describe the bug. Check whether a",
+    "difference is a game defect before treating it as a documentation error.",
+    "",
+    "WHY SEMVER AND NOT A GIT SHA: a hash tells you which build shipped, but two",
     "hashes cannot be compared — you cannot look at ec589de and 146964d and say",
-    "which is newer or how far apart they are. Version numbers sort.",
-    "",
-    "WHY NOT JUST USE THE GAME'S VERSION (the Docusaurus/ReadTheDocs pattern):",
-    "versioned docs work when the docs are rebuilt with the product. This booklet",
-    "is not — it is re-read occasionally by a person. Numbering it 0.8.2592 would",
-    "imply a review that never happened on most builds.",
-    "",
-    "THE TWO FIELDS THAT LOOK ALIKE AND ARE NOT:",
-    "  verifiedAgainst  - the build this content was WRITTEN against. Moves only",
-    "                     when the content itself changed to match a new build.",
-    "  knownGoodThrough - the newest build someone RE-READ it against and found",
-    "                     nothing to change. Moves without a version bump.",
-    "Separating them matters because 're-checked, still fine' is the common case,",
-    "and the first design had no way to record it: you would have had to fake a",
-    "version bump or leave the console amber forever. Nothing changed, so the",
-    "version must not change — but the knowledge that someone looked is exactly",
-    "what the staleness signal should be reading.",
-    "",
-    "STALENESS = live game is past knownGoodThrough. That means unverified, NOT",
-    "wrong: nobody has found an error, nobody has looked either.",
+    "which is newer. Version numbers sort.",
     "",
     "BUMP RULES (version):",
     "  major - restructured (chapters added/removed/reordered)",
     "  minor - a mechanic's description changed, or content was added",
     "  patch - wording, typos, a figure swap; nothing a player learns differently",
     "",
-    "history is append-only: what the game was at each content version, which is",
-    "the 'what was the game when the manual was X' question. Newest first."
+    "reviewed  - when a person last read this against the design.",
+    "history   - append-only; the game version at each content version, which",
+    "            answers 'what was the game when the manual was X'. Newest first."
   ],
   "manual": {
-    "version": "1.4.0",
-    "verifiedAgainst": "0.8.2592",
-    "knownGoodThrough": "0.8.2592",
+    "version": "1.5.0",
     "reviewed": "2026-09-08",
     "history": [
+      {
+        "version": "1.5.0",
+        "game": "0.8.2592",
+        "date": "2026-09-08",
+        "note": "Retargeted at the Episode One design rather than the deployed build. Interrupt now costs the whole turn; statuses tick at end of turn (which removes the last-stack-acts-free behaviour entirely); the winding-up hint now states the payoff."
+      },
       {
         "version": "1.4.0",
         "game": "0.8.2592",
@@ -52,19 +56,49 @@
         "date": "2026-09-06",
         "note": "Pre-review baseline: the booklet as it stood when the 0.8.2592 delta review began. Recorded retrospectively; earlier history predates versioning."
       }
+    ],
+    "target": "Episode One — designed behaviour",
+    "aheadOfLive": [
+      {
+        "item": "Interrupt applies Stunned — the creature loses its next turn, not just its reactions",
+        "landedOn": "develop",
+        "live": false
+      },
+      {
+        "item": "Statuses tick and decrement at the END of the affected unit's turn (was the start)",
+        "landedOn": "develop",
+        "live": false
+      },
+      {
+        "item": "Status stacks make the same status easier to land again (QB-116)",
+        "landedOn": "develop",
+        "live": false
+      }
     ]
   },
   "cards": {
-    "version": "1.0.0",
-    "verifiedAgainst": "0.8.2592",
-    "knownGoodThrough": "0.8.2592",
+    "version": "1.1.0",
     "reviewed": "2026-09-08",
     "history": [
+      {
+        "version": "1.1.0",
+        "game": "0.8.2592",
+        "date": "2026-09-08",
+        "note": "Winding-up-enemy card now states the payoff (a free turn) rather than arguing from what retreating costs."
+      },
       {
         "version": "1.0.0",
         "game": "0.8.2592",
         "date": "2026-09-08",
         "note": "Rewritten as short snippets from the booklet's Hints chapter. AP removed — it had been retired from the game while three cards still taught it. Cut to Episode One content. Cure corrected against Mugwort."
+      }
+    ],
+    "target": "Episode One — designed behaviour",
+    "aheadOfLive": [
+      {
+        "item": "Breaking a charge costs the enemy its next turn",
+        "landedOn": "develop",
+        "live": false
       }
     ]
   }

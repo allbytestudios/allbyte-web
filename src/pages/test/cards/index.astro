@@ -15,6 +15,10 @@ const ahead = [
   ...(manual.aheadOfLive ?? []).map((a) => ({ ...a, where: "Booklet" })),
   ...(cards.aheadOfLive ?? []).map((a) => ({ ...a, where: "Cards" })),
 ];
+// The inverse of aheadOfLive: places the booklet is right and the BUILD is
+// wrong. Listed because the failure mode under a design-spec model is someone
+// noticing the mismatch and "correcting" the booklet into documenting a bug.
+const defects = manual.gameDefects ?? [];
 
 // Order the sprite lore the same way the display names read.
 const spriteEntries = Object.entries(SPRITE_LORE);
@@ -58,13 +62,25 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
               : "The live build matches everything documented here."}
           </p>
         </div>
+        {defects.length > 0 && (
+          <ul class="defects">
+            {defects.map((d) => (
+              <li>
+                <span class="where">Game bug</span>
+                {d.item}
+                {d.bead && <span class="landed">bead {d.bead}</span>}
+                <p class="dnote">{d.note}</p>
+              </li>
+            ))}
+          </ul>
+        )}
         {ahead.length > 0 && (
           <ul class="ahead">
             {ahead.map((a) => (
               <li>
                 <span class="where">{a.where}</span>
                 {a.item}
-                <span class="landed">on {a.landedOn}</span>
+                <span class="landed">{a.state ?? "not yet live"}{a.seenOn ? ` · ${a.seenOn}` : ""}</span>
               </li>
             ))}
           </ul>
@@ -187,6 +203,14 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
     margin-right: 0.5rem;
   }
   .ahead .landed { margin: 0 0 0 0.5rem; }
+  .defects { list-style: none; margin: 0 0 0.9rem; padding: 0; font-size: 0.86rem; }
+  .defects li {
+    padding: 0.4rem 0.6rem;
+    border-left: 2px solid #f472b6;
+    margin-bottom: 0.3rem;
+    background: rgba(244, 114, 182, 0.07);
+  }
+  .defects .dnote { margin: 0.2rem 0 0; font-size: 0.78rem; opacity: 0.7; }
   .vhist { margin: 0.6rem 0 1.4rem; font-size: 0.85rem; }
   .vhist summary { cursor: pointer; opacity: 0.75; }
   .vhist table { width: 100%; border-collapse: collapse; margin-top: 0.7rem; }

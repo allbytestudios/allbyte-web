@@ -35,9 +35,15 @@
     "            answers 'what was the game when the manual was X'. Newest first."
   ],
   "manual": {
-    "version": "1.6.0",
+    "version": "1.6.1",
     "reviewed": "2026-09-08",
     "history": [
+      {
+        "version": "1.6.1",
+        "game": "0.8.2592",
+        "date": "2026-09-08",
+        "note": "No prose change. Records which ahead-of-live items are built-and-waiting versus not-built, and opens a game-defects list for places the booklet is right and the build is wrong."
+      },
       {
         "version": "1.6.0",
         "game": "0.8.2592",
@@ -67,23 +73,33 @@
     "aheadOfLive": [
       {
         "item": "Interrupt applies Stunned — the creature loses its next turn, not just its reactions",
-        "landedOn": "develop",
-        "live": false
+        "state": "built, awaiting promote",
+        "seenOn": "develop 2616"
       },
       {
         "item": "Statuses tick and decrement at the END of the affected unit's turn (was the start)",
-        "landedOn": "develop",
-        "live": false
+        "state": "built, awaiting promote",
+        "seenOn": "develop 2616",
+        "note": "Verified live by Quinn on 2615: the stack is still on the unit while it acts and only ticks at end of turn, so the old last-stack-acts-free window is genuinely gone."
       },
       {
         "item": "Status stacks make the same status easier to land again (QB-116)",
-        "landedOn": "develop",
-        "live": false
+        "state": "built, awaiting promote",
+        "seenOn": "develop"
       },
       {
-        "item": "A landed charged attack hits far harder than an ordinary one (damage tuning in the balance retune)",
-        "landedOn": "design",
-        "live": false
+        "item": "A landed charged attack hits far harder than an ordinary one",
+        "state": "not built — owed by the game",
+        "seenOn": null,
+        "note": "Design intent only; charge damage untouched as of 2616. Clears when the balance retune lands."
+      }
+    ],
+    "gameDefects": [
+      {
+        "item": "Health relic: the booklet says it increases total HP (design: +25% maxHP). It does nothing on equip today.",
+        "bead": "2611",
+        "bookletIsRight": true,
+        "note": "Arc, 2026-09-08. Do NOT reword the booklet to match; the fix rides the balance retune."
       }
     ]
   },

@@ -5,32 +5,67 @@
     "",
     "WHY SEMVER AND NOT A GIT SHA: a hash tells you WHICH build shipped, but two",
     "hashes cannot be compared — you cannot look at ec589de and 146964d and say",
-    "which is newer or how far apart they are. Version numbers sort, so 'the cards",
-    "are 1.0.0 and the booklet is 1.4.0' is a fact you can read at a glance.",
+    "which is newer or how far apart they are. Version numbers sort.",
     "",
-    "verifiedAgainst is the claim that matters: the game build whose behaviour",
-    "someone actually re-read this content against. When the deployed game moves",
-    "past it, the content is not wrong — it is UNVERIFIED, which is a different",
-    "and more honest thing to say. Both surfaces show that state rather than",
-    "silently implying freshness.",
+    "WHY NOT JUST USE THE GAME'S VERSION (the Docusaurus/ReadTheDocs pattern):",
+    "versioned docs work when the docs are rebuilt with the product. This booklet",
+    "is not — it is re-read occasionally by a person. Numbering it 0.8.2592 would",
+    "imply a review that never happened on most builds.",
     "",
-    "BUMP RULES:",
-    "  major - the content was restructured (chapters added/removed/reordered)",
+    "THE TWO FIELDS THAT LOOK ALIKE AND ARE NOT:",
+    "  verifiedAgainst  - the build this content was WRITTEN against. Moves only",
+    "                     when the content itself changed to match a new build.",
+    "  knownGoodThrough - the newest build someone RE-READ it against and found",
+    "                     nothing to change. Moves without a version bump.",
+    "Separating them matters because 're-checked, still fine' is the common case,",
+    "and the first design had no way to record it: you would have had to fake a",
+    "version bump or leave the console amber forever. Nothing changed, so the",
+    "version must not change — but the knowledge that someone looked is exactly",
+    "what the staleness signal should be reading.",
+    "",
+    "STALENESS = live game is past knownGoodThrough. That means unverified, NOT",
+    "wrong: nobody has found an error, nobody has looked either.",
+    "",
+    "BUMP RULES (version):",
+    "  major - restructured (chapters added/removed/reordered)",
     "  minor - a mechanic's description changed, or content was added",
     "  patch - wording, typos, a figure swap; nothing a player learns differently",
-    "Bump verifiedAgainst ONLY after re-reading against that build. It is meant",
-    "to take deliberate effort; that friction is the whole point."
+    "",
+    "history is append-only: what the game was at each content version, which is",
+    "the 'what was the game when the manual was X' question. Newest first."
   ],
   "manual": {
     "version": "1.4.0",
     "verifiedAgainst": "0.8.2592",
+    "knownGoodThrough": "0.8.2592",
     "reviewed": "2026-09-08",
-    "note": "Initiative trigger, turn economy, status stacking, combat log, controller + battle speed, Mother Slime reach, auto-save indicator, Cure vs Mugwort."
+    "history": [
+      {
+        "version": "1.4.0",
+        "game": "0.8.2592",
+        "date": "2026-09-08",
+        "note": "Initiative trigger corrected, turn economy added, status-stacking model rewritten, combat log expanded with its figure, controller + battle speed added, Mother Slime reach 1→2, auto-save indicator, Cure vs Mugwort."
+      },
+      {
+        "version": "1.3.0",
+        "game": "0.8.2592",
+        "date": "2026-09-06",
+        "note": "Pre-review baseline: the booklet as it stood when the 0.8.2592 delta review began. Recorded retrospectively; earlier history predates versioning."
+      }
+    ]
   },
   "cards": {
     "version": "1.0.0",
     "verifiedAgainst": "0.8.2592",
+    "knownGoodThrough": "0.8.2592",
     "reviewed": "2026-09-08",
-    "note": "Rewritten as short snippets from the booklet's Hints chapter; AP removed (retired from the game); Episode One content only."
+    "history": [
+      {
+        "version": "1.0.0",
+        "game": "0.8.2592",
+        "date": "2026-09-08",
+        "note": "Rewritten as short snippets from the booklet's Hints chapter. AP removed — it had been retired from the game while three cards still taught it. Cut to Episode One content. Cure corrected against Mugwort."
+      }
+    ]
   }
 }

@@ -11,10 +11,16 @@ import gameVersion from "../../../data/game-version.json";
 const cards = contentVersions.cards;
 const manual = contentVersions.manual;
 const liveGame = String(gameVersion.version || "").replace(/^v/, "");
-// Not "wrong" — UNVERIFIED. The distinction matters: nobody has found an error,
-// nobody has looked either, and saying so is more honest than a green tick.
-const cardsStale = Boolean(liveGame) && cards.verifiedAgainst !== liveGame;
-const manualStale = Boolean(liveGame) && manual.verifiedAgainst !== liveGame;
+// Staleness reads knownGoodThrough, not verifiedAgainst. "Re-read it, nothing
+// to change" is the common outcome of a review and must be recordable WITHOUT a
+// version bump — the content did not change, so its version must not move, but
+// the fact that someone looked is exactly what this signal should reflect.
+//
+// Not "wrong" — UNVERIFIED. Nobody has found an error, nobody has looked either,
+// and saying so is more honest than a green tick.
+const goodThrough = (c) => c.knownGoodThrough || c.verifiedAgainst;
+const cardsStale = Boolean(liveGame) && goodThrough(cards) !== liveGame;
+const manualStale = Boolean(liveGame) && goodThrough(manual) !== liveGame;
 
 // Order the sprite lore the same way the display names read.
 const spriteEntries = Object.entries(SPRITE_LORE);
@@ -41,12 +47,12 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
           <div class="vitem">
             <span class="vlabel">Cards</span>
             <b>{cards.version}</b>
-            <span class="vsub">verified against {cards.verifiedAgainst} · {cards.reviewed}</span>
+            <span class="vsub">written for {cards.verifiedAgainst} · checked through {goodThrough(cards)}</span>
           </div>
           <div class="vitem">
             <span class="vlabel">Booklet</span>
             <b>{manual.version}</b>
-            <span class="vsub">verified against {manual.verifiedAgainst} · {manual.reviewed}</span>
+            <span class="vsub">written for {manual.verifiedAgainst} · checked through {goodThrough(manual)}</span>
           </div>
           <div class="vitem">
             <span class="vlabel">Game live</span>
@@ -54,8 +60,8 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
           </div>
           <p class="vnote">
             {cardsStale || manualStale
-              ? `The game has moved past what ${cardsStale && manualStale ? "these cards and the booklet were" : cardsStale ? "these cards were" : "the booklet was"} last read against. Not necessarily wrong — unverified. Re-read, then bump src/data/content-versions.json.`
-              : "Cards and booklet were both last read against the build that is live. Bump content-versions.json when either is re-reviewed."}
+              ? `The game has moved past what ${cardsStale && manualStale ? "these cards and the booklet were" : cardsStale ? "these cards were" : "the booklet was"} last read against. Unverified, not necessarily wrong. Re-read it: if nothing needs changing, move knownGoodThrough and leave the version alone; if something does, fix it and bump the version too.`
+              : "Both were re-read against the build that is live."}
           </p>
         </div>
         <div class="tally">
@@ -66,6 +72,25 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
           <span>1 living-sprite card ({spriteEntries.length} possible characters)</span>
         </div>
       </header>
+
+      <details class="vhist">
+        <summary>Version history — what the game was at each content version</summary>
+        <table>
+          <thead><tr><th>Content</th><th>Version</th><th>Game at the time</th><th>Date</th><th>What changed</th></tr></thead>
+          <tbody>
+            {[["Booklet", manual], ["Cards", cards]].flatMap(([label, c]) =>
+              (c.history ?? []).map((h) => (
+                <tr>
+                  <td>{label}</td>
+                  <td class="mono">{h.version}</td>
+                  <td class="mono">{h.game}</td>
+                  <td class="mono">{h.date}</td>
+                  <td>{h.note}</td>
+                </tr>
+              )))}
+          </tbody>
+        </table>
+      </details>
 
       <section class="grid">
         {MANUAL_CARDS.map((card, i) => (
@@ -141,6 +166,25 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
   .vitem b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
   .vsub { font-size: 0.72rem; opacity: 0.6; }
   .vnote { flex-basis: 100%; margin: 0.15rem 0 0; font-size: 0.8rem; opacity: 0.75; }
+  .vhist { margin: 0.6rem 0 1.4rem; font-size: 0.85rem; }
+  .vhist summary { cursor: pointer; opacity: 0.75; }
+  .vhist table { width: 100%; border-collapse: collapse; margin-top: 0.7rem; }
+  .vhist th {
+    text-align: left;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    font-weight: 400;
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid var(--rule, rgba(167, 243, 208, 0.2));
+  }
+  .vhist td {
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--rule, rgba(167, 243, 208, 0.12));
+    vertical-align: top;
+  }
+  .vhist .mono { font-variant-numeric: tabular-nums; white-space: nowrap; }
 </style>
 
 <style>

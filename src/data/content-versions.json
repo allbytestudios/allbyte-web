@@ -35,9 +35,15 @@
     "            answers 'what was the game when the manual was X'. Newest first."
   ],
   "manual": {
-    "version": "1.5.0",
+    "version": "1.6.0",
     "reviewed": "2026-09-08",
     "history": [
+      {
+        "version": "1.6.0",
+        "game": "0.8.2592",
+        "date": "2026-09-08",
+        "note": "Charging stated as a two-sided gamble: what the charging unit spends, what breaking it costs them, what landing it costs you, and that committing to break a charge puts you in reach of the rest of the room. Stagger bar documented as a readout of damage still required; Scan now says it names the exact figure."
+      },
       {
         "version": "1.5.0",
         "game": "0.8.2592",
@@ -73,13 +79,24 @@
         "item": "Status stacks make the same status easier to land again (QB-116)",
         "landedOn": "develop",
         "live": false
+      },
+      {
+        "item": "A landed charged attack hits far harder than an ordinary one (damage tuning in the balance retune)",
+        "landedOn": "design",
+        "live": false
       }
     ]
   },
   "cards": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "reviewed": "2026-09-08",
     "history": [
+      {
+        "version": "1.2.0",
+        "game": "0.8.2592",
+        "date": "2026-09-08",
+        "note": "Winding-up card names both sides of the trade and points at Scan."
+      },
       {
         "version": "1.1.0",
         "game": "0.8.2592",

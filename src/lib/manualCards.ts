@@ -57,7 +57,7 @@ export const MANUAL_CARDS: ManualCard[] = [
   },
   {
     title: "A winding-up enemy is an opportunity",
-    lines: ["Break its charge and it loses its next turn. Fill the stagger bar, or leave the painted cells."],
+    lines: ["Break its charge and it loses the next turn too — but you must stand in reach of everything else. Scan shows the damage needed."],
   },
   {
     title: "Crits are on your side",

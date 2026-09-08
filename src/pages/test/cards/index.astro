@@ -1,6 +1,20 @@
 ---
 import ConsoleLayout from "../../../layouts/ConsoleLayout.astro";
 import { MANUAL_CARDS, SPRITE_LORE } from "../../../lib/manualCards.ts";
+import contentVersions from "../../../data/content-versions.json";
+import gameVersion from "../../../data/game-version.json";
+
+// Cards and booklet each carry a semantic version and the game build someone
+// last re-read them against. Comparing those two answers the question this page
+// exists for: is what players are being told still true of what they are
+// playing? A git sha could not answer it — two hashes do not sort.
+const cards = contentVersions.cards;
+const manual = contentVersions.manual;
+const liveGame = String(gameVersion.version || "").replace(/^v/, "");
+// Not "wrong" — UNVERIFIED. The distinction matters: nobody has found an error,
+// nobody has looked either, and saying so is more honest than a green tick.
+const cardsStale = Boolean(liveGame) && cards.verifiedAgainst !== liveGame;
+const manualStale = Boolean(liveGame) && manual.verifiedAgainst !== liveGame;
 
 // Order the sprite lore the same way the display names read.
 const spriteEntries = Object.entries(SPRITE_LORE);
@@ -23,6 +37,27 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
           <code>src/lib/manualCards.ts</code> — the exact source the loader draws, so
           this can't drift from what players see.
         </p>
+        <div class={`vbar ${cardsStale ? "vbar-stale" : "vbar-ok"}`}>
+          <div class="vitem">
+            <span class="vlabel">Cards</span>
+            <b>{cards.version}</b>
+            <span class="vsub">verified against {cards.verifiedAgainst} · {cards.reviewed}</span>
+          </div>
+          <div class="vitem">
+            <span class="vlabel">Booklet</span>
+            <b>{manual.version}</b>
+            <span class="vsub">verified against {manual.verifiedAgainst} · {manual.reviewed}</span>
+          </div>
+          <div class="vitem">
+            <span class="vlabel">Game live</span>
+            <b>{liveGame || "unknown"}</b>
+          </div>
+          <p class="vnote">
+            {cardsStale || manualStale
+              ? `The game has moved past what ${cardsStale && manualStale ? "these cards and the booklet were" : cardsStale ? "these cards were" : "the booklet was"} last read against. Not necessarily wrong — unverified. Re-read, then bump src/data/content-versions.json.`
+              : "Cards and booklet were both last read against the build that is live. Bump content-versions.json when either is re-reviewed."}
+          </p>
+        </div>
         <div class="tally">
           <span>{MANUAL_CARDS.length} text cards</span>
           <span>·</span>
@@ -80,6 +115,33 @@ const rowCount = MANUAL_CARDS.reduce((n, c) => n + (c.rows?.length ?? c.lines?.l
       </section>
     </div>
 </ConsoleLayout>
+
+<style>
+  .vbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    align-items: baseline;
+    margin: 0.9rem 0 0.2rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--rule, rgba(167, 243, 208, 0.25));
+    border-left-width: 3px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .vbar-ok { border-left-color: #4ade80; }
+  .vbar-stale { border-left-color: #fbbf24; }
+  .vitem { display: flex; align-items: baseline; gap: 0.4rem; }
+  .vlabel {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.65;
+  }
+  .vitem b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+  .vsub { font-size: 0.72rem; opacity: 0.6; }
+  .vnote { flex-basis: 100%; margin: 0.15rem 0 0; font-size: 0.8rem; opacity: 0.75; }
+</style>
 
 <style>
   .cards-shell {

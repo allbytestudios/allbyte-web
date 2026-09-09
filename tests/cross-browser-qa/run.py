@@ -319,8 +319,27 @@ def _public_gameplay(context, public_url: str, engine_name: str) -> tuple[dict, 
     # The value comes from the environment and is never written down here.
     # Without it the stage reports "skipped", not "pass" — a stage that cannot
     # run must not look like one that ran and succeeded.
-    token = os.environ.get("GAME_DEBUG_TOKEN", "").strip()
+    # Accept either name. Arc's deploy gate already stages through
+    # GATE_DEBUG_TOKEN; inventing a second name for the same secret invites the
+    # owner setting one and not the other, which would skip forever in silence.
+    token = (
+        os.environ.get("GATE_DEBUG_TOKEN")
+        or os.environ.get("GAME_DEBUG_TOKEN")
+        or ""
+    ).strip()
     if not token:
+        # Locally, skipping is fine — the secret is not expected on a dev box.
+        # In CI it IS expected, so a missing token is a misconfiguration, and
+        # reporting "skipped" forever would be the same silent gap this whole
+        # audit was about: a check that quietly stopped running.
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            stages["movement"] = "fail"
+            print(
+                f"  [{engine_name}] movement: FAIL — no debug token in CI. Set the "
+                f"GATE_DEBUG_TOKEN secret; movement cannot run without it.",
+                flush=True,
+            )
+            return stages, logs
         stages["movement"] = "skipped"
         print(
             f"  [{engine_name}] movement: SKIPPED — no GAME_DEBUG_TOKEN "

@@ -84,7 +84,7 @@ jobs:
           # cheat backdoors and are deliberately token-gated on the anonymous
           # public build — boot and new_game run without it, so the anonymous
           # path stays covered. Absent, movement reports "skipped", not "pass".
-          GAME_DEBUG_TOKEN: ${{ secrets.GAME_DEBUG_TOKEN }}
+          GATE_DEBUG_TOKEN: ${{ secrets.GATE_DEBUG_TOKEN }}
 
       - name: Locate report dir
         id: report

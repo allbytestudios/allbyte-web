@@ -85,25 +85,38 @@ def assert_controls_forward(page, timeout_s: float = 60, min_delta_px: float = 1
     page.evaluate("window._triggerNewGame = true")
     if not _wait(page, lambda s: s.get("scene") not in (None, "Title"), timeout_s):
         return False
-    # Advance the monologue. Click count is unknown and may change with the
-    # script, so click until the scene moves on rather than assuming a number.
+    # Advance the monologue AND whatever dialogue follows it. The click count is
+    # unknown and the script may change, so drive on the game's own state rather
+    # than a fixed number of clicks: keep clicking while it is still showing the
+    # monologue or holding a dialogue open, and stop once input is armed.
+    #
+    # Getting this wrong is subtle. Landing in EliasHouse is NOT the same as being
+    # able to move — the intro can leave a dialogue up, which reports
+    # inputBlockedReasons ['dialogue', 'player_locked'] while the scene reads
+    # EliasHouse and looks ready.
     end = time.time() + timeout_s
-    while time.time() < end and _gs(page).get("scene") == "WordsOnBlack":
+    while time.time() < end:
+        st = _gs(page)
+        if st.get("readyForInput") and not st.get("isLocked") and not st.get("inDialogue"):
+            break
+        if st.get("scene") in (None, "", "Title") and time.time() > end - 5:
+            break
         try:
             page.mouse.click(550, 400)
         except Exception:
             pass
-        time.sleep(1.0)
-    if _gs(page).get("scene") in (None, "Title", "WordsOnBlack"):
+        time.sleep(0.8)
+    st = _gs(page)
+    if st.get("scene") in (None, "", "Title", "WordsOnBlack"):
         return False
-    # Input arms a beat after the scene loads; readyForInput is the game's own
-    # signal for that, so wait on it rather than on a fixed sleep.
-    if not _wait(page, lambda s: s.get("readyForInput") and not s.get("isLocked"), 30):
+    if not st.get("readyForInput") or st.get("isLocked"):
         return False
-    try:
-        page.click("canvas", position={"x": 400, "y": 300})
-    except Exception:
-        pass
+
+    # NO canvas click here, deliberately. The canvas already carries tabindex="0"
+    # and is document.activeElement from load — clicking it to "focus" it focuses
+    # nothing and instead delivers a real in-game click, which can open a dialogue
+    # and lock input. That is what made this look like a WebKit-only movement bug
+    # (2026-09-09): with the click, webkit failed; without it, webkit moves 43px.
     for key in ("KeyS", "KeyW", "KeyA", "KeyD"):
         s0 = _gs(page)
         x0, y0 = s0.get("playerX") or 0, s0.get("playerY") or 0

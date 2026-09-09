@@ -61,6 +61,66 @@ def start_new_game(page, timeout_s: float = 30) -> bool:
     )
 
 
+def assert_controls_forward(page, timeout_s: float = 60, min_delta_px: float = 10.0) -> bool:
+    """Reach a playable scene BY PLAYING, then prove real keys move the player.
+
+    Title -> New Game -> click through the WordsOnBlack monologue -> EliasHouse ->
+    hold a direction key. No save injection and no _test* mutation hooks, so this
+    needs no debug token and exercises exactly what an anonymous player does.
+
+    This replaces the injection-based assert_controls for the public build. That
+    one existed because the monologue could not be advanced ("flag hooks can't
+    fire its transition"), which forced a jump PAST it via _testImportSave — a
+    cheat backdoor that is correctly token-gated on the anonymous build. The
+    owner's 2026-09-09 change made the monologue click-progressable, so the
+    obstacle is gone and the honest path is available again.
+
+    Real keypresses, not a hook: a hook proves the movement CODE runs, whereas a
+    key proves a player can actually move. The old driver avoided the keyboard to
+    keep Playwright quirks out of the signal; that trade made sense when input
+    was not otherwise reachable, and no longer does.
+    """
+    if not _wait(page, lambda s: s.get("ready") and s.get("scene") == "Title", timeout_s):
+        return False
+    page.evaluate("window._triggerNewGame = true")
+    if not _wait(page, lambda s: s.get("scene") not in (None, "Title"), timeout_s):
+        return False
+    # Advance the monologue. Click count is unknown and may change with the
+    # script, so click until the scene moves on rather than assuming a number.
+    end = time.time() + timeout_s
+    while time.time() < end and _gs(page).get("scene") == "WordsOnBlack":
+        try:
+            page.mouse.click(550, 400)
+        except Exception:
+            pass
+        time.sleep(1.0)
+    if _gs(page).get("scene") in (None, "Title", "WordsOnBlack"):
+        return False
+    # Input arms a beat after the scene loads; readyForInput is the game's own
+    # signal for that, so wait on it rather than on a fixed sleep.
+    if not _wait(page, lambda s: s.get("readyForInput") and not s.get("isLocked"), 30):
+        return False
+    try:
+        page.click("canvas", position={"x": 400, "y": 300})
+    except Exception:
+        pass
+    for key in ("KeyS", "KeyW", "KeyA", "KeyD"):
+        s0 = _gs(page)
+        x0, y0 = s0.get("playerX") or 0, s0.get("playerY") or 0
+        try:
+            page.keyboard.down(key)
+            time.sleep(0.9)
+            page.keyboard.up(key)
+        except Exception:
+            continue
+        time.sleep(0.5)
+        s1 = _gs(page)
+        x1, y1 = s1.get("playerX") or 0, s1.get("playerY") or 0
+        if ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5 > min_delta_px:
+            return True  # a wall may block one direction; any real move proves input
+    return False
+
+
 def assert_controls(page, timeout_s: float = 25, min_delta_px: float = 10.0) -> bool:
     """Load the first movable scene (EliasHouse) and prove input moves the player.
     Avoids the WordsOnBlack cutscene entirely (flag hooks can't fire its transition).

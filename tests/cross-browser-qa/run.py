@@ -60,7 +60,7 @@ REPORTS_DIR = BASE / "reports"
 # the NEW GAME + MOVEMENT stages — no keyboard, so a real input failure can't be
 # confused with a Playwright keyboard quirk. Verified across all 3 engines.
 sys.path.insert(0, str((BASE.parent / "e2e").resolve()))
-from game_driver import start_new_game, assert_controls, _wait  # noqa: E402
+from game_driver import start_new_game, assert_controls_forward, _wait  # noqa: E402
 
 # The real user path (iframe + COEP + download gate).
 TARGET_URLS = {
@@ -301,62 +301,24 @@ def _public_gameplay(context, public_url: str, engine_name: str) -> tuple[dict, 
     except Exception:
         pass
 
-    # MOVEMENT on a fresh page — assert_controls imports its own EliasHouse save
-    # and force-loads it, independent of the New-Game run above.
+    # MOVEMENT on a fresh page, BY PLAYING — New Game, click through the
+    # monologue, then real keypresses. No debug token and no save injection.
     #
-    # Save injection (_testImportSave/_testLoadGame) is a CHEAT BACKDOOR and is
-    # deliberately gated behind ?debug=<token> on the anonymous public build
-    # (Quinn, 2026-09-09). That gating is the security model working: New Game is
-    # a real player action and stays ungated; injecting arbitrary save state is
-    # not, and must never be reachable anonymously. Un-gating it to make this
-    # stage pass would have been a real security regression.
-    #
-    # So this stage — and ONLY this stage — carries the token. It runs the same
-    # shipped bytes and the same movement code; the token unlocks the setup hook,
-    # not the behaviour under test. The anonymous path stays covered by the
-    # boot + new_game stages above, which never see a token.
-    #
-    # The value comes from the environment and is never written down here.
-    # Without it the stage reports "skipped", not "pass" — a stage that cannot
-    # run must not look like one that ran and succeeded.
-    # Accept either name. Arc's deploy gate already stages through
-    # GATE_DEBUG_TOKEN; inventing a second name for the same secret invites the
-    # owner setting one and not the other, which would skip forever in silence.
-    token = (
-        os.environ.get("GATE_DEBUG_TOKEN")
-        or os.environ.get("GAME_DEBUG_TOKEN")
-        or ""
-    ).strip()
-    if not token:
-        # Locally, skipping is fine — the secret is not expected on a dev box.
-        # In CI it IS expected, so a missing token is a misconfiguration, and
-        # reporting "skipped" forever would be the same silent gap this whole
-        # audit was about: a check that quietly stopped running.
-        if os.environ.get("GITHUB_ACTIONS") == "true":
-            stages["movement"] = "fail"
-            print(
-                f"  [{engine_name}] movement: FAIL — no debug token in CI. Set the "
-                f"GATE_DEBUG_TOKEN secret; movement cannot run without it.",
-                flush=True,
-            )
-            return stages, logs
-        stages["movement"] = "skipped"
-        print(
-            f"  [{engine_name}] movement: SKIPPED — no GAME_DEBUG_TOKEN "
-            f"(save injection is token-gated on the public build)",
-            flush=True,
-        )
-    else:
-        sep = "&" if "?" in public_url else "?"
-        movement_url = f"{public_url}{sep}debug={token}"
-        p2 = context.new_page()
-        if _goto_retry(p2, movement_url) and _wait(p2, lambda s: s.get("ready"), ready_to):
-            if assert_controls(p2, timeout_s=ctl_to):
-                stages["movement"] = "pass"
-        try:
-            p2.close()
-        except Exception:
-            pass
+    # The previous version injected a save via _testImportSave, which is a cheat
+    # backdoor and correctly token-gated on the anonymous public build. That
+    # forced a choice between un-gating a backdoor (a security regression) and
+    # putting a secret in CI. Neither is needed: the monologue became
+    # click-progressable on 2026-09-09, so the real player path is reachable
+    # again — and testing it with actual keys proves a player can move, which a
+    # hook never did.
+    p2 = context.new_page()
+    if _goto_retry(p2, public_url) and _wait(p2, lambda s: s.get("ready"), ready_to):
+        if assert_controls_forward(p2, timeout_s=max(ctl_to, 60)):
+            stages["movement"] = "pass"
+    try:
+        p2.close()
+    except Exception:
+        pass
 
     return stages, logs
 
@@ -402,12 +364,7 @@ def test_engine(
             and not any(x in l for x in FATAL_PATTERNS)
         ]
 
-        # "skipped" is not "pass" and must never be reported as one — but it is
-        # not a failure either. A stage that could not run (no token) should not
-        # turn the matrix red, or the red stops meaning anything and we are back
-        # to a signal nobody trusts. It stays visible in the per-stage output and
-        # in results.json; only a genuine "fail" counts against the run.
-        stages_ok = all(v != "fail" for v in stages.values())
+        stages_ok = all(v == "pass" for v in stages.values())
         overall = "ok" if (embed["status"] == "ok" and stages_ok and not fatal) else "failed"
 
         return {

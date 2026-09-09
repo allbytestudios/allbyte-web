@@ -80,11 +80,6 @@ jobs:
             --target prod
         env:
           PYTHONUNBUFFERED: "1"
-          # Unlocks the save-injection hooks the MOVEMENT stage needs. Those are
-          # cheat backdoors and are deliberately token-gated on the anonymous
-          # public build — boot and new_game run without it, so the anonymous
-          # path stays covered. Absent, movement reports "skipped", not "pass".
-          GATE_DEBUG_TOKEN: ${{ secrets.GATE_DEBUG_TOKEN }}
 
       - name: Locate report dir
         id: report

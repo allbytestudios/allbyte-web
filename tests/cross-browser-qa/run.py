@@ -195,6 +195,15 @@ def _goto_retry(page, url: str, attempts: int = NAV_ATTEMPTS) -> bool:
     return False
 
 
+def _is_slow(engine_name: str) -> bool:
+    """Whether to budget generously. This is about the ENVIRONMENT as much as the
+    engine: firefox is slower everywhere, and the Linux CI runners have no GPU
+    (chromium runs on swiftshader on top of that), so every wait is longer there
+    than on macOS or a dev box. Single definition so the budgets can't drift
+    apart between the embed check and the gameplay stages."""
+    return engine_name == "firefox" or os.environ.get("RUNNER_OS") == "Linux"
+
+
 def _play_embed(context, play_url: str, out_dir: Path, engine_name: str, boot_timeout_s: int) -> dict:
     """Real user path: /play/ → click through the download gate → the game
     iframe mounts and boots to a scene. Returns status + scene + iframe logs."""
@@ -206,21 +215,57 @@ def _play_embed(context, play_url: str, out_dir: Path, engine_name: str, boot_ti
     if not _goto_retry(page, play_url):
         return {"status": "navigation_failed", "scene": None, "logs": [], "screenshot": None}
 
-    # Fresh browser → the download gate holds the iframe until "Continue". Click
-    # it. If it's absent (already acked / suppressed) the iframe renders anyway.
+    # Fresh browser → the download gate holds the iframe until "Continue". The
+    # gate is a REAL gate: /play/ withholds the iframe src until it is acked, so
+    # missing this click guarantees no_iframe. The old 8s wait was tight enough on
+    # a slow runner that the button could render late, the click be silently
+    # skipped, and the run then blame "no iframe" for what was really "never
+    # acked the gate" — that is the ubuntu webkit flake (passes some runs, fails
+    # others on the same check, gameplay green either way).
+    slow = _is_slow(engine_name)
+    gate_to = 20_000 if slow else 8_000
+    frame_to = 40_000 if slow else 15_000
+
+    gate = "absent"
     try:
-        page.wait_for_selector(".dl-go", timeout=8_000)
+        page.wait_for_selector(".dl-go", timeout=gate_to)
         page.click(".dl-go")
+        gate = "clicked"
     except Exception:
-        pass
+        gate = "not_seen"
 
     try:
-        handle = page.wait_for_selector("iframe", timeout=15_000)
+        handle = page.wait_for_selector("iframe", timeout=frame_to)
         iframe = handle.content_frame()
     except Exception:
         iframe = None
     if iframe is None:
-        return {"status": "no_iframe", "scene": None, "logs": [], "screenshot": None}
+        # Second chance: if the gate is on screen now, it simply rendered later
+        # than the first wait allowed. Ack it and wait again before failing.
+        try:
+            if page.query_selector(".dl-go"):
+                page.click(".dl-go")
+                gate = "clicked_late"
+                handle = page.wait_for_selector("iframe", timeout=frame_to)
+                iframe = handle.content_frame()
+        except Exception:
+            iframe = None
+    if iframe is None:
+        shot_name = None
+        try:
+            shot = out_dir / f"{engine_name}-no-iframe.png"
+            page.screenshot(path=str(shot))
+            shot_name = shot.name
+        except Exception:
+            pass
+        # Carry the gate state: "no_iframe" alone cannot tell these apart.
+        return {
+            "status": "no_iframe",
+            "gate": gate,
+            "scene": None,
+            "logs": events[-50:],
+            "screenshot": shot_name,
+        }
 
     iframe.on("console", lambda m: events.append(f"[iframe:{m.type}] {m.text}"))
 
@@ -281,14 +326,10 @@ def _public_gameplay(
     logs: list[str] = []
     mdetail: dict = {}
 
-    # Firefox is markedly slower on the CI runners — give the pack-loading /
-    # movement stages extra headroom so they don't time out on perf alone.
-    # "slow" is about the ENVIRONMENT as much as the engine. Firefox is slower
-    # everywhere, but the Linux CI runners have no GPU and chromium is launched
-    # with swiftshader on top, so the whole forward-play journey (boot, new game,
-    # monologue, dialogue, move) takes far longer there than on macOS or a dev
-    # box. Budgeting by engine alone passed on macOS and timed out on ubuntu.
-    slow = engine_name == "firefox" or os.environ.get("RUNNER_OS") == "Linux"
+    # Give the pack-loading / movement stages headroom so they don't fail on perf
+    # alone. See _is_slow: budgeting by engine alone passed on macOS and timed
+    # out on ubuntu.
+    slow = _is_slow(engine_name)
     ready_to = 90 if slow else 60
     ng_to = 60 if slow else 30
     ctl_to = 45 if slow else 25
@@ -365,7 +406,11 @@ def test_engine(
         boot_to = 90 if engine_name == "firefox" else BOOT_TIMEOUT_S
         ctx1 = _qa_new_context(browser, viewport={"width": 1280, "height": 900})
         embed = _play_embed(ctx1, play_url, out_dir, engine_name, boot_to)
-        print(f"  [{engine_name}] /play/ embed: {embed['status']} scene={embed['scene']}", flush=True)
+        print(
+            f"  [{engine_name}] /play/ embed: {embed['status']} scene={embed['scene']}"
+            + (f" gate={embed['gate']}" if embed.get("gate") else ""),
+            flush=True,
+        )
         try:
             ctx1.close()
         except Exception:

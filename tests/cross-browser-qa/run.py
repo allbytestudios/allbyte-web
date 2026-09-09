@@ -48,6 +48,7 @@ import argparse
 import os
 import json
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -195,6 +196,42 @@ def _goto_retry(page, url: str, attempts: int = NAV_ATTEMPTS) -> bool:
     return False
 
 
+def _resolve_game_frame(page, timeout_ms: int):
+    """Return the game's Frame, or None if it truly never mounts.
+
+    wait_for_selector("iframe") + content_frame() is not enough: WebKit can hand
+    back the element while content_frame() is still None because the frame has
+    not committed its navigation yet, so a mounted, BOOTING game reported as
+    "no_iframe". That is the ubuntu webkit flake — its logs show the site loader,
+    Godot 4.6.2 starting and TestBridge going ready, i.e. the embed was working
+    and only the harness's frame lookup failed.
+
+    So: poll instead of one-shotting it, and fall back to page.frames, which sees
+    the child frame regardless of the element handle's state.
+    """
+    end = time.time() + timeout_ms / 1000.0
+    while time.time() < end:
+        try:
+            h = page.query_selector("iframe")
+            if h is not None:
+                cf = h.content_frame()
+                if cf is not None:
+                    return cf
+        except Exception:
+            pass
+        try:
+            for f in page.frames:
+                if f is page.main_frame:
+                    continue
+                url = (f.url or "")
+                if "/godot/" in url or url.endswith("index.html"):
+                    return f
+        except Exception:
+            pass
+        time.sleep(0.4)
+    return None
+
+
 def _is_slow(engine_name: str) -> bool:
     """Whether to budget generously. This is about the ENVIRONMENT as much as the
     engine: firefox is slower everywhere, and the Linux CI runners have no GPU
@@ -234,11 +271,7 @@ def _play_embed(context, play_url: str, out_dir: Path, engine_name: str, boot_ti
     except Exception:
         gate = "not_seen"
 
-    try:
-        handle = page.wait_for_selector("iframe", timeout=frame_to)
-        iframe = handle.content_frame()
-    except Exception:
-        iframe = None
+    iframe = _resolve_game_frame(page, frame_to)
     if iframe is None:
         # Second chance: if the gate is on screen now, it simply rendered later
         # than the first wait allowed. Ack it and wait again before failing.
@@ -246,8 +279,7 @@ def _play_embed(context, play_url: str, out_dir: Path, engine_name: str, boot_ti
             if page.query_selector(".dl-go"):
                 page.click(".dl-go")
                 gate = "clicked_late"
-                handle = page.wait_for_selector("iframe", timeout=frame_to)
-                iframe = handle.content_frame()
+                iframe = _resolve_game_frame(page, frame_to)
         except Exception:
             iframe = None
     if iframe is None:
@@ -267,7 +299,12 @@ def _play_embed(context, play_url: str, out_dir: Path, engine_name: str, boot_ti
             "screenshot": shot_name,
         }
 
-    iframe.on("console", lambda m: events.append(f"[iframe:{m.type}] {m.text}"))
+    # A Frame taken from page.frames does not necessarily expose .on(), and the
+    # console listener is a nicety — never let it sink an otherwise-good run.
+    try:
+        iframe.on("console", lambda m: events.append(f"[iframe:{m.type}] {m.text}"))
+    except Exception:
+        pass
 
     scene = None
     elapsed = 0
@@ -462,7 +499,14 @@ def test_engine(
             "boot_elapsed_s": embed.get("boot_elapsed_s"),
             "stages": stages,
             "movement_detail": mdetail,
-            "play_embed": {"status": embed["status"], "scene": embed.get("scene")},
+            # Keep the gate state in the artifact, not just the console line —
+            # results.json is what survives to the /test/ console, and
+            # "no_iframe" on its own cannot say whether the gate was ever acked.
+            "play_embed": {
+                "status": embed["status"],
+                "scene": embed.get("scene"),
+                "gate": embed.get("gate"),
+            },
             "screenshot": embed.get("screenshot"),
             "iframe_log_count": len(all_logs),
             "fatal_log_count": len(fatal),

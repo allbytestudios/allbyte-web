@@ -390,7 +390,9 @@ def test_engine(
                 f"{mdetail.get('failed_at', 'unknown')} "
                 f"state={mdetail.get('state')} "
                 f"blocked={mdetail.get('inputBlockedReasons')} "
-                f"deltas={mdetail.get('deltas_px')}",
+                f"deltas={mdetail.get('deltas_px')} "
+                f"clicks={mdetail.get('intro_clicks')} "
+                f"in_event_s={mdetail.get('seconds_in_event')}",
                 flush=True,
             )
 

@@ -112,18 +112,64 @@ def assert_controls_forward(page, timeout_s: float = 60, min_delta_px: float = 1
     # able to move — the intro can leave a dialogue up, which reports
     # inputBlockedReasons ['dialogue', 'player_locked'] while the scene reads
     # EliasHouse and looks ready.
+    # Click ONLY what a click actually advances, and wait out what runs on its own
+    # clock. A cutscene/fade is not click-gated: clicking into one delivers real
+    # in-game input at a moment the game has not armed, which is the same mistake
+    # as the canvas "focus" click that faked a WebKit movement bug (2026-09-09).
+    #
+    # ubuntu chromium sat in ['player_locked','in_event','event_in_progress',
+    # 'fading'] for the full 240s budget while macOS chromium — same swiftshader
+    # args — passed, so this distinguishes "the harness is poking a cutscene" from
+    # "the event genuinely stalls on this runner". If it still stalls, that is a
+    # game/platform finding for Arc rather than something to paper over here.
+    TRANSIENT = ("in_event", "event_in_progress", "fading")
     end = time.time() + timeout_s
+    clicks = 0
+    event_s = 0.0
+    last_sig, last_change = None, time.time()
     while time.time() < end:
         st = _gs(page)
         if st.get("readyForInput") and not st.get("isLocked") and not st.get("inDialogue"):
             break
         if st.get("scene") in (None, "", "Title") and time.time() > end - 5:
             break
-        try:
-            page.mouse.click(550, 400)
-        except Exception:
-            pass
-        time.sleep(0.8)
+        blocked = st.get("inputBlockedReasons") or []
+        in_transient = any(r in blocked for r in TRANSIENT)
+
+        sig = (st.get("scene"), st.get("inDialogue"), tuple(blocked))
+        if sig != last_sig:
+            last_sig, last_change = sig, time.time()
+        stuck_s = time.time() - last_change
+
+        if st.get("inDialogue") or st.get("scene") == "WordsOnBlack":
+            # Genuinely click-gated: advance it.
+            try:
+                page.mouse.click(550, 400)
+                clicks += 1
+            except Exception:
+                pass
+            time.sleep(0.8)
+        elif in_transient:
+            # An event or fade owns the screen. Let it finish.
+            event_s += 0.5
+            time.sleep(0.5)
+        elif stuck_s > 6:
+            # Not click-gated by any state we recognise, and nothing has changed
+            # for 6s — nudge it rather than hang. Keeps unknown click-gated
+            # screens advanceable without poking events.
+            try:
+                page.mouse.click(550, 400)
+                clicks += 1
+            except Exception:
+                pass
+            last_change = time.time()
+            time.sleep(0.8)
+        else:
+            time.sleep(0.5)
+
+    if detail is not None:
+        detail["intro_clicks"] = clicks
+        detail["seconds_in_event"] = round(event_s, 1)
     st = _gs(page)
     if st.get("scene") in (None, "", "Title", "WordsOnBlack"):
         return _fail("stuck_in_intro", st)

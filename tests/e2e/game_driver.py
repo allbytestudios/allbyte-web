@@ -61,7 +61,7 @@ def start_new_game(page, timeout_s: float = 30) -> bool:
     )
 
 
-def assert_controls_forward(page, timeout_s: float = 60, min_delta_px: float = 10.0) -> bool:
+def assert_controls_forward(page, timeout_s: float = 60, min_delta_px: float = 10.0, detail=None) -> bool:
     """Reach a playable scene BY PLAYING, then prove real keys move the player.
 
     Title -> New Game -> click through the WordsOnBlack monologue -> EliasHouse ->
@@ -80,11 +80,29 @@ def assert_controls_forward(page, timeout_s: float = 60, min_delta_px: float = 1
     keep Playwright quirks out of the signal; that trade made sense when input
     was not otherwise reachable, and no longer does.
     """
-    if not _wait(page, lambda s: s.get("ready") and s.get("scene") == "Title", timeout_s):
+    # Every exit below records WHERE it died into `detail`. A bare False makes a
+    # red stage undiagnosable from CI logs — which is exactly the hole that had
+    # ubuntu failing while macOS passed with no way to tell the two apart
+    # (2026-09-09). The verdict is still the bool; this only adds the reason.
+    def _fail(where, st=None):
+        if detail is not None:
+            st = st if st is not None else {}
+            detail["failed_at"] = where
+            detail["state"] = {
+                k: st.get(k)
+                for k in (
+                    "scene", "ready", "readyForInput", "isLocked",
+                    "inDialogue", "playerX", "playerY",
+                )
+            }
+            detail["inputBlockedReasons"] = st.get("inputBlockedReasons")
         return False
+
+    if not _wait(page, lambda s: s.get("ready") and s.get("scene") == "Title", timeout_s):
+        return _fail("title_never_reached", _gs(page))
     page.evaluate("window._triggerNewGame = true")
     if not _wait(page, lambda s: s.get("scene") not in (None, "Title"), timeout_s):
-        return False
+        return _fail("new_game_never_left_title", _gs(page))
     # Advance the monologue AND whatever dialogue follows it. The click count is
     # unknown and the script may change, so drive on the game's own state rather
     # than a fixed number of clicks: keep clicking while it is still showing the
@@ -108,15 +126,19 @@ def assert_controls_forward(page, timeout_s: float = 60, min_delta_px: float = 1
         time.sleep(0.8)
     st = _gs(page)
     if st.get("scene") in (None, "", "Title", "WordsOnBlack"):
-        return False
+        return _fail("stuck_in_intro", st)
     if not st.get("readyForInput") or st.get("isLocked"):
-        return False
+        return _fail("input_never_armed", st)
 
     # NO canvas click here, deliberately. The canvas already carries tabindex="0"
     # and is document.activeElement from load — clicking it to "focus" it focuses
     # nothing and instead delivers a real in-game click, which can open a dialogue
     # and lock input. That is what made this look like a WebKit-only movement bug
     # (2026-09-09): with the click, webkit failed; without it, webkit moves 43px.
+    # Record the best delta seen. "Pressed keys, player did not move" and "never
+    # got far enough to press a key" are completely different failures, and the
+    # distance separates a wall-blocked nudge from no input at all.
+    deltas = {}
     for key in ("KeyS", "KeyW", "KeyA", "KeyD"):
         s0 = _gs(page)
         x0, y0 = s0.get("playerX") or 0, s0.get("playerY") or 0
@@ -129,9 +151,16 @@ def assert_controls_forward(page, timeout_s: float = 60, min_delta_px: float = 1
         time.sleep(0.5)
         s1 = _gs(page)
         x1, y1 = s1.get("playerX") or 0, s1.get("playerY") or 0
-        if ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5 > min_delta_px:
+        moved = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
+        deltas[key] = round(moved, 1)
+        if moved > min_delta_px:
+            if detail is not None:
+                detail["moved_px"] = round(moved, 1)
+                detail["moved_with"] = key
             return True  # a wall may block one direction; any real move proves input
-    return False
+    if detail is not None:
+        detail["deltas_px"] = deltas
+    return _fail("keys_did_not_move_player", _gs(page))
 
 
 def assert_controls(page, timeout_s: float = 25, min_delta_px: float = 10.0) -> bool:

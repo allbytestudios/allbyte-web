@@ -268,12 +268,18 @@ def _play_embed(context, play_url: str, out_dir: Path, engine_name: str, boot_ti
     }
 
 
-def _public_gameplay(context, public_url: str, engine_name: str) -> tuple[dict, list[str]]:
+def _public_gameplay(
+    context, public_url: str, engine_name: str, out_dir: Path
+) -> tuple[dict, list[str], dict]:
     """Gate-free public build: BOOT (reach Title) → NEW GAME (start_new_game)
     → MOVEMENT (assert_controls). Hook-driven via game_driver. Returns the
     stage verdicts + the game's console logs for classification."""
+    # NOTE: `stages` is verdict-only — run() does all(v == "pass" for v in
+    # stages.values()), so anything non-verdict added here would silently break
+    # the pass/fail decision. Diagnostics ride in `mdetail` instead.
     stages = {"boot": "fail", "new_game": "fail", "movement": "fail"}
     logs: list[str] = []
+    mdetail: dict = {}
 
     # Firefox is markedly slower on the CI runners — give the pack-loading /
     # movement stages extra headroom so they don't time out on perf alone.
@@ -324,14 +330,26 @@ def _public_gameplay(context, public_url: str, engine_name: str) -> tuple[dict, 
         # and only then moves. Reusing ctl_to (25-45s) was sized for the teleport
         # and passed locally on a fast box while timing out on CI runners — the
         # classic "works on my machine" shape. Budget the whole journey instead.
-        if assert_controls_forward(p2, timeout_s=240 if slow else 150):
+        if assert_controls_forward(p2, timeout_s=240 if slow else 150, detail=mdetail):
             stages["movement"] = "pass"
+        else:
+            # Keep the evidence for a red movement stage: the driver says where it
+            # died, and the screenshot says what the player was looking at. Without
+            # these a CI failure is only reproducible by guessing.
+            try:
+                shot = out_dir / f"{engine_name}-movement-fail.png"
+                p2.screenshot(path=str(shot))
+                mdetail["screenshot"] = shot.name
+            except Exception:
+                pass
+    else:
+        mdetail["failed_at"] = "public_build_never_became_ready"
     try:
         p2.close()
     except Exception:
         pass
 
-    return stages, logs
+    return stages, logs, mdetail
 
 
 def test_engine(
@@ -354,7 +372,7 @@ def test_engine(
             pass
 
         ctx2 = _qa_new_context(browser, viewport={"width": 1280, "height": 900})
-        stages, pub_logs = _public_gameplay(ctx2, public_url, engine_name)
+        stages, pub_logs, mdetail = _public_gameplay(ctx2, public_url, engine_name, out_dir)
         try:
             ctx2.close()
         except Exception:
@@ -364,6 +382,17 @@ def test_engine(
             f"new_game={stages['new_game']} movement={stages['movement']}",
             flush=True,
         )
+        # Print the reason inline. CI logs are the only artifact anyone reads when
+        # a job goes red, so the diagnosis has to be in them, not just results.json.
+        if stages["movement"] != "pass" and mdetail:
+            print(
+                f"  [{engine_name}] movement failed at "
+                f"{mdetail.get('failed_at', 'unknown')} "
+                f"state={mdetail.get('state')} "
+                f"blocked={mdetail.get('inputBlockedReasons')} "
+                f"deltas={mdetail.get('deltas_px')}",
+                flush=True,
+            )
 
         # Classify logs from BOTH the /play/ iframe and the public build.
         all_logs = (embed.get("logs") or []) + (pub_logs or [])
@@ -385,6 +414,7 @@ def test_engine(
             "scene": embed.get("scene"),
             "boot_elapsed_s": embed.get("boot_elapsed_s"),
             "stages": stages,
+            "movement_detail": mdetail,
             "play_embed": {"status": embed["status"], "scene": embed.get("scene")},
             "screenshot": embed.get("screenshot"),
             "iframe_log_count": len(all_logs),

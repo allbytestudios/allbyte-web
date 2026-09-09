@@ -277,7 +277,12 @@ def _public_gameplay(context, public_url: str, engine_name: str) -> tuple[dict, 
 
     # Firefox is markedly slower on the CI runners — give the pack-loading /
     # movement stages extra headroom so they don't time out on perf alone.
-    slow = engine_name == "firefox"
+    # "slow" is about the ENVIRONMENT as much as the engine. Firefox is slower
+    # everywhere, but the Linux CI runners have no GPU and chromium is launched
+    # with swiftshader on top, so the whole forward-play journey (boot, new game,
+    # monologue, dialogue, move) takes far longer there than on macOS or a dev
+    # box. Budgeting by engine alone passed on macOS and timed out on ubuntu.
+    slow = engine_name == "firefox" or os.environ.get("RUNNER_OS") == "Linux"
     ready_to = 90 if slow else 60
     ng_to = 60 if slow else 30
     ctl_to = 45 if slow else 25

@@ -70,7 +70,13 @@ function publicReleases() {
     } catch { continue; }
     if (!version) continue;
     if (!version.startsWith("v")) version = "v" + version;
-    if (out.length && out[out.length - 1].version === version) continue;
+    // Dedupe on the VERSION, not just consecutive repeats. A build can ship,
+    // be superseded, then ship again (2442 -> 2356 -> 2442 on 2026-08-20/21),
+    // and the consecutive-only check let the second copy through — the public
+    // feed then listed the same release twice with an identical 361-change body.
+    // Keep the FIRST occurrence: the changelog records when content first
+    // reached players, and a re-ship carries no new content to announce.
+    if (out.some((r) => r.version === version)) continue;
     out.push({ version, date: iso.slice(0, 10), num: buildNum(version) });
   }
   return out;

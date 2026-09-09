@@ -40,12 +40,19 @@ def start_new_game(page, timeout_s: float = 30) -> bool:
     """
     if not _wait(page, lambda s: s.get("ready") and s.get("scene") == "Title", timeout_s):
         return False
-    # open the difficulty/Save screen (auto-focuses Save in newGame mode)
     page.evaluate("window._triggerNewGame = true")
-    if not _wait(page, lambda s: s.get("optionsShown") is True, 10):
-        return False
-    # commit Save -> WordsOnBlack intro + Laria pack load
-    page.evaluate("window._testOpenMenu = 'options_save'")
+    # The difficulty/Save screen used to sit between Title and the intro, and this
+    # waited on optionsShown to catch it. Difficulty was pinned to Medium and the
+    # screen removed, so New Game now goes straight to the WordsOnBlack monologue
+    # — the wait could never be satisfied and every run failed here, even though
+    # the game had in fact started (verified on prod 0.8.2642: _triggerNewGame is
+    # consumed, scene becomes WordsOnBlack, the Laria pack loads).
+    #
+    # Tolerate BOTH shapes rather than swapping one hard assumption for another:
+    # if the screen appears, commit it; if it does not, carry on. The success
+    # condition below is the real test either way.
+    if _wait(page, lambda s: s.get("optionsShown") is True, 3):
+        page.evaluate("window._testOpenMenu = 'options_save'")
     return _wait(
         page,
         lambda s: s.get("scene") not in (None, "Title")

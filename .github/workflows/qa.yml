@@ -125,6 +125,19 @@ jobs:
             s3://${{ secrets.AWS_S3_BUCKET }}/test-snapshot/qa-runs/${RUN_ID}/ \
             --content-type "application/json" || true
 
+      # continue-on-error above exists so the report still uploads on a failure —
+      # the artifacts are most valuable exactly when something broke. But nothing
+      # re-asserted the outcome afterwards, so a harness printing FAIL on every
+      # engine still reported the job green. That hid new_game/movement failing
+      # across every engine and both OSes for days (2026-09-08 onward) and made
+      # "Deploy QA: success" worthless. Upload first, then fail honestly.
+      - name: Fail the job if the harness failed
+        if: steps.harness.outcome == 'failure'
+        run: |
+          echo "cross-browser harness reported failure for ${{ matrix.os }}/${{ matrix.engine }}"
+          echo "report uploaded to test-snapshot/qa-runs/${{ needs.preflight.outputs.run_id }}/"
+          exit 1
+
   controllers:
     needs: preflight
     runs-on: ubuntu-latest

@@ -156,6 +156,29 @@ async function main() {
   // minutes (6 "changelog: refresh from deploy manifest" commits in 6 hours,
   // 2026-08-07). Only rewrite when the RELEASES actually changed; otherwise
   // keep the previous file byte-for-byte, timestamp included.
+  // Freshness canary. The real failure in Aug-Sep 2026 was not that the manifest
+  // broke — it was that nothing NOTICED for a month: the public feed sat frozen
+  // at 2026-08-05 while nine releases shipped, and the only evidence was a log
+  // line no one read. This runs BEFORE the unchanged-early-return on purpose,
+  // because "frozen" IS the unchanged case — a canary that stays quiet exactly
+  // when the thing it guards has stopped would be worse than none.
+  try {
+    const deployed = JSON.parse(
+      readFileSync(join(REPO, "src", "data", "game-version.json"), "utf8"),
+    ).version;
+    const newest = out.length ? out[0].version : null;
+    if (deployed && newest && deployed !== newest) {
+      console.warn(
+        `[deploy-history] ⚠ newest changelog release is ${newest}, but the ` +
+          `deployed game is ${deployed} — no manifest entry for the live build. ` +
+          `The deploy emitter has probably stopped appending; the feed will silently ` +
+          `stay behind until it is fixed.`,
+      );
+    }
+  } catch {
+    /* no game-version.json to compare against — nothing to assert */
+  }
+
   let prev = null;
   try { prev = JSON.parse(readFileSync(OUT, "utf8")); } catch { /* first run */ }
   if (prev && JSON.stringify(prev.releases) === JSON.stringify(out)) {

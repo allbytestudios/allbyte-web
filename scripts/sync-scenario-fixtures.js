@@ -91,9 +91,34 @@ let copied = 0;
 let missing = 0;
 
 for (const r of rows) {
-  const fixtureId = r.fixtureId || r.play_param;
+  // Quinn's spine rows carry `url` ("quinn/saves/boss_str_smite.json") where this
+  // contract wants `fixtureId` ("boss_str_smite"). On 2026-09-08 that mismatch
+  // silently dropped 13 of 14 rows — the launcher had been near-empty for weeks
+  // and the skip only showed in a log nobody was reading. Deriving the id from
+  // the url basename closes that, and the failure mode is safe: findSave() looks
+  // the name up in the fixture library and omits the row with a warning if it is
+  // not there, so a bad derivation can never load the WRONG save.
+  //
+  // Deliberately NOT silent — a derived id is announced, because a contract that
+  // quietly repairs itself is one nobody notices has drifted.
+  let fixtureId = r.fixtureId || r.play_param;
+  if (!fixtureId && typeof r.url === "string") {
+    const base = r.url.split("/").pop()?.replace(/\.json$/i, "");
+    if (base && SAFE.test(base)) {
+      fixtureId = base;
+      log(`row '${r.id || base}' has no fixtureId — derived '${base}' from url.`);
+    }
+  }
   if (!fixtureId || !SAFE.test(fixtureId)) {
     log(`skip row with no usable fixtureId: ${JSON.stringify(r).slice(0, 80)}`);
+    continue;
+  }
+  if (!r.packs) {
+    // The save JSON does not record which packs it needs, so this is the one
+    // field nobody downstream can reconstruct. A row without it would render and
+    // then fail to load, which is worse than not rendering.
+    log(`⚠ '${fixtureId}' has no packs — omitting (would render but not load).`);
+    missing++;
     continue;
   }
   const src = findSave(fixtureId);

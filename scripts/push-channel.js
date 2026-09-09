@@ -63,7 +63,34 @@ const DEV_CHANNELS = new Set(["develop", "beta-debug", "alpha-debug", "staging"]
 function die(msg) { console.error(`[push-channel] ERROR: ${msg}`); process.exit(1); }
 function run(cmd) {
   if (dryRun) { console.log(`[dry-run] ${cmd}`); return; }
-  console.log(`> ${cmd}`); execSync(cmd, { stdio: "inherit" });
+  console.log(`> ${cmd}`);
+  try {
+    execSync(cmd, { stdio: "inherit" });
+  } catch (e) {
+    // `aws s3 sync` exits 2 for WARNINGS — a file it could not read, typically a
+    // symlink it cannot follow — even when every real object transferred. Exit 1
+    // is a genuine failure; 2 is "finished, with grumbles".
+    //
+    // Treating 2 as fatal is what stranded a half-deploy on 2026-09-09: a
+    // symlink pointing at a container path made sync exit 2 AFTER the base files
+    // had uploaded, so prod ran a new .pck against the previous engine while
+    // channels.json still advertised the old build. A partial upload that aborts
+    // is strictly worse than one that finishes, because the bytes players fetch
+    // have already changed and nothing downstream gets a chance to reconcile it.
+    //
+    // So: carry on, loudly. The sha256 verification upstream already proves WHAT
+    // we are uploading; this only decides whether a warning stops us mid-flight.
+    const isAwsSync = /^aws s3 (sync|cp)/.test(cmd.trim());
+    if (isAwsSync && e.status === 2) {
+      console.warn(
+        "[push-channel] ⚠ aws exited 2 (warnings, e.g. an unreadable symlink) — " +
+          "objects transferred; continuing so the deploy is not left half-applied. " +
+          "Check the warning above if something is missing.",
+      );
+      return;
+    }
+    throw e;
+  }
 }
 function capture(cmd) { return execSync(cmd, { encoding: "utf8" }).trim(); }
 function sha256(path) { return createHash("sha256").update(readFileSync(path)).digest("hex"); }
@@ -228,7 +255,7 @@ run(
     `--cache-control "public, max-age=31536000, immutable" ` +
     `--exclude "index.html" --exclude "index.wasm" ` +
     `--exclude "build_manifest.json" --exclude "DEPLOY_READY" ` +
-    `--exclude "*.gz" --exclude ".gitkeep" --exclude "packs/*"`
+    `--exclude "*.gz" --exclude ".gitkeep" --exclude "packs/*" --exclude "packs"`
 );
 run(`aws s3 cp "${baseIndex}" s3://${bucket}/${DEST}/index.html --region ${region} --cache-control "public, max-age=0, must-revalidate" --content-type "text/html"`);
 if (existsSync(baseWasm)) {

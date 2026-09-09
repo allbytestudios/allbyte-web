@@ -313,7 +313,13 @@ def _public_gameplay(context, public_url: str, engine_name: str) -> tuple[dict, 
     # hook never did.
     p2 = context.new_page()
     if _goto_retry(p2, public_url) and _wait(p2, lambda s: s.get("ready"), ready_to):
-        if assert_controls_forward(p2, timeout_s=max(ctl_to, 60)):
+        # Forward play needs a far bigger budget than the injection path it
+        # replaced: that teleported straight into a movable scene, this boots,
+        # starts a new game, clicks through the monologue, waits out a dialogue
+        # and only then moves. Reusing ctl_to (25-45s) was sized for the teleport
+        # and passed locally on a fast box while timing out on CI runners — the
+        # classic "works on my machine" shape. Budget the whole journey instead.
+        if assert_controls_forward(p2, timeout_s=240 if slow else 150):
             stages["movement"] = "pass"
     try:
         p2.close()

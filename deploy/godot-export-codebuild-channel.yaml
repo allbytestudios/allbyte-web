@@ -17,13 +17,18 @@ Description: >
 #       SiteBucket=... DistributionId=... SecureTemplateBucket=...
 # Deployable once Arc lands the shared buildspec.web.yml (DEBUG/ALPHA -> preset) on
 # develop and confirms the hermetic release export. develop is branch-triggered;
-# alpha/beta/beta-debug are TAG-triggered (release/<channel>/vX.Y.Z). alpha-debug
-# (/godot/ root, legacy) is intentionally NOT a cloud channel here.
+# alpha/beta/beta-debug are TAG-triggered (release/<channel>/vX.Y.Z).
+#
+# alpha-debug was REMOVED 2026-09-10 along with its stack
+# (allbyte-studio-godot-alpha-debug, deleted) and its S3 prefix. There is one
+# export and the dev surface is unlocked by ?debug=<token> at call time, so a
+# second build only re-creates the drift that left it on 0.8.2592 while prod ran
+# 0.8.2642. Do not re-add a debug channel here — add a param, not a build.
 
 Parameters:
   Channel:
     Type: String
-    AllowedValues: [develop, alpha, alpha-debug, beta, beta-debug]
+    AllowedValues: [develop, alpha, beta, beta-debug]
     Description: >
       Build channel id. Everything else (S3 prefix, DEBUG/ALPHA env, promote flag,
       trigger ref) is derived from the ChannelMatrix mapping — matching Arc's
@@ -63,7 +68,7 @@ Parameters:
     Default: "true"
     Description: >
       Whether this project auto-triggers on its webhook (develop=branch push,
-      alpha/beta=release tags). Deploy the BUTTON-driven channels (alpha, alpha-debug)
+      alpha/beta=release tags). Deploy the BUTTON-driven channel (alpha)
       with "false" so StartBuild from the demo-promote orchestrator is the ONLY path —
       no tag auto-promote to the public demo.
 
@@ -75,7 +80,6 @@ Mappings:
   ChannelMatrix:
     develop:    { Prefix: develop,    Debug: "true",  Alpha: "true",  Promote: "false", TriggerRef: "^refs/heads/develop$" }
     alpha:      { Prefix: public,     Debug: "false", Alpha: "true",  Promote: "true",  TriggerRef: "^refs/tags/release/alpha/.*$" }
-    alpha-debug: { Prefix: alpha-debug, Debug: "true", Alpha: "true", Promote: "false", TriggerRef: "^refs/tags/never/.*$" }
     beta:       { Prefix: beta,       Debug: "false", Alpha: "false", Promote: "true",  TriggerRef: "^refs/tags/release/beta/.*$" }
     beta-debug: { Prefix: beta-debug, Debug: "true",  Alpha: "false", Promote: "false", TriggerRef: "^refs/tags/release/beta-debug/.*$" }
 
@@ -215,7 +219,7 @@ Resources:
           - { Name: DISTRIBUTION_ID, Value: !Ref DistributionId }
           # Deploy channel id (matches gameVersions.ts / push-channel --channel):
           # push-channel resolves the S3 prefix from it (alpha -> public,
-          # alpha-debug -> alpha-debug). cloud_export derives the PRESET from DEBUG/ALPHA.
+          # cloud_export derives the PRESET from DEBUG/ALPHA.
           - { Name: CHANNEL, Value: !Ref Channel }
           # Boot gate: cloud_export runs boot_check.py behind this → a release
           # artifact that doesn't reach gameState.ready FAILS the build (never ships).
@@ -237,7 +241,7 @@ Resources:
         BuildSpec: buildspec.web.yml
       SourceVersion: !Ref SourceVersion
       # Webhook only for auto-triggered channels (develop=branch, beta=tags).
-      # Button-driven channels (alpha, alpha-debug) deploy with EnableWebhook=false
+      # The button-driven channel (alpha) deploys with EnableWebhook=false
       # → no Triggers → StartBuild (the demo-promote orchestrator) is the sole path.
       Triggers: !If
         - WebhookOn

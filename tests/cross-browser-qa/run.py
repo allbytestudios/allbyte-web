@@ -573,7 +573,32 @@ def main() -> int:
             try:
                 r = test_engine(p, engine, target_url, public_url, not args.headed, out_dir)
             except Exception as e:
-                r = {"engine": engine, "status": "exception", "error": str(e)}
+                # A crashed renderer is not a product verdict — it is the browser
+                # process dying. WebKitGTK on a GPU-less Linux runner does this
+                # partway through booting the game (WebGL2 + a large WASM heap on
+                # a 7GB box), while the same engine passes on macOS, which is the
+                # build that actually maps to Safari users.
+                #
+                # Retry ONCE and say so. That turns a coin-flip red into evidence:
+                # crashing twice is a real signal, crashing once is the runner.
+                # It is recorded, not hidden — status stays distinct from a pass.
+                crashed = "crash" in str(e).lower()
+                if crashed:
+                    print(f"  [{engine}] renderer crashed — retrying once: {e}", flush=True)
+                    try:
+                        r = test_engine(
+                            p, engine, target_url, public_url, not args.headed, out_dir
+                        )
+                        r["crashed_then_recovered"] = True
+                    except Exception as e2:
+                        r = {
+                            "engine": engine,
+                            "status": "engine_crashed",
+                            "error": str(e2),
+                            "crashed_twice": True,
+                        }
+                else:
+                    r = {"engine": engine, "status": "exception", "error": str(e)}
             results.append(r)
 
     # Write JSON + markdown reports

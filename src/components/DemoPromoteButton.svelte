@@ -109,10 +109,10 @@
     <div class="card">
       <h3>Promote develop → live</h3>
       <p class="lead">
-        Rebuilds the <b>release</b> (public <b>Demo</b>, debug compiled out) and <b>Demo&nbsp;Debug</b>
-        variants from develop's current commit and deploys each. The public Demo goes
-        live once its boot-smoke passes.{#if liveVersion} Prod is currently on
-        <code>{liveVersion}</code>.{/if}
+        Rebuilds the <b>Demo</b> from develop's current commit and deploys it. One build
+        for everyone — the dev surface is unlocked by a <code>?debug</code> token, not by a
+        separate download. It goes live once its boot-smoke passes.{#if liveVersion} Prod is
+        currently on <code>{liveVersion}</code>.{/if}
       </p>
 
       {#if !result}
@@ -159,10 +159,12 @@
       {#if error}<p class="err">Couldn’t promote: {error}</p>{/if}
 
       <p class="note">
-        develop stays the debug test lane; this doesn’t touch it. Each target boot-smoke-gates —
-        a build that doesn’t boot never reaches its channel. Both lanes
-        (<code>allbyte-godot-alpha</code>, <code>allbyte-godot-alpha-debug</code>) are deployed;
-        “Waiting on build project” would mean one had gone missing.
+        develop stays the debug test lane; this doesn’t touch it. The build boot-smoke-gates —
+        one that doesn’t boot never reaches the channel. A single lane
+        (<code>allbyte-godot-alpha</code>) is deployed; “Waiting on build project” would mean
+        it had gone missing. The old <code>alpha-debug</code> lane was retired 2026-09-10: it
+        only advanced when someone remembered to promote it, so it drifted ~50 builds behind
+        prod while every scenario jump loaded it.
       </p>
     </div>
   {/if}

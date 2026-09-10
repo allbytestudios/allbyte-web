@@ -53,7 +53,9 @@ const channel = argVal("--channel");
 
 // --- resolve the manifest ----------------------------------------------------
 if (!manifestPath) {
-  if (!channel) die("pass --channel <alpha|alpha-debug|beta> or --manifest <path>");
+  if (!channel) die("pass --channel <alpha> or --manifest <path>");
+  // alpha-debug retired 2026-09-10: one build, ?debug=<token> is the dev surface.
+  if (channel === "alpha-debug") die("channel 'alpha-debug' is RETIRED — one build now; the debug surface is a ?debug=<token> param, not a separate deploy");
   if (!existsSync(EXPORT_ROOT)) die(`EXPORT_ROOT not found: ${EXPORT_ROOT} (set EXPORT_ROOT env)`);
   // Newest build_manifest.json under EXPORT_ROOT/*/ whose channel matches.
   const candidates = [];
@@ -99,7 +101,7 @@ if (pc.status !== 0) die(`push-channel failed (exit ${pc.status}) — NOT finali
 // beta version (forcing a full ~75MB re-download against unchanged public
 // assets) and publish beta releases to the public changelog. Beta stays
 // self-versioned via its ?v= URLs, exactly like the dev channels.
-const FINALIZE_CHANNELS = new Set(["alpha", "alpha-debug"]);
+const FINALIZE_CHANNELS = new Set(["alpha"]);  // alpha-debug retired 2026-09-10
 if (!FINALIZE_CHANNELS.has(manifest.channel)) {
   console.log(`[promote] ✅ ${manifest.channel} ${manifest.version || ""} promoted. (finalize skipped — only ${[...FINALIZE_CHANNELS].join("/")} stamp game-version.json + changelog.)`);
   process.exit(0);

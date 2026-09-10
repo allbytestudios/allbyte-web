@@ -60,6 +60,20 @@ const promote = process.argv.includes("--promote");
 // Dev channels deploy freely; every other (live/player-facing) channel needs --promote.
 const DEV_CHANNELS = new Set(["develop", "beta-debug", "alpha-debug", "staging"]);
 
+// RETIRED 2026-09-10: alpha-debug is no longer a build.
+//
+// There is ONE export (since 0.8.2440) and the dev surface is unlocked by
+// ?debug=<token> at call time. The site stopped routing anywhere else on
+// 2026-09-10 — /play/?channel=alpha-debug now loads /godot/public/. Deploying a
+// second artifact just burns CodeBuild minutes and re-creates the drift that
+// left QA on 0.8.2592 while prod ran 0.8.2642.
+//
+// Hard-fail rather than warn: a silent parallel deploy is exactly what went
+// unnoticed for ~50 builds.
+const RETIRED_CHANNELS = new Map([
+  ["alpha-debug", "one build now — the debug surface is a ?debug=<token> param, not a separate deploy"],
+]);
+
 function die(msg) { console.error(`[push-channel] ERROR: ${msg}`); process.exit(1); }
 function run(cmd) {
   if (dryRun) { console.log(`[dry-run] ${cmd}`); return; }
@@ -80,7 +94,7 @@ function run(cmd) {
     //
     // So: carry on, loudly. The sha256 verification upstream already proves WHAT
     // we are uploading; this only decides whether a warning stops us mid-flight.
-    const isAwsSync = /^aws s3 (sync|cp)/.test(cmd.trim());
+    const isAwsSync = /^aws s3 (sync|cp)\s/.test(cmd.trim());
     if (isAwsSync && e.status === 2) {
       console.warn(
         "[push-channel] ⚠ aws exited 2 (warnings, e.g. an unreadable symlink) — " +
@@ -121,6 +135,7 @@ catch (e) { die(`manifest is not valid JSON: ${e.message}`); }
 // --- channel resolution + promote guard --------------------------------
 const channel = manifest.channel;
 if (!channel || !/^[a-z0-9-]+$/.test(channel)) die(`manifest channel '${channel}' missing or not a safe slug`);
+if (RETIRED_CHANNELS.has(channel)) die(`channel '${channel}' is RETIRED — ${RETIRED_CHANNELS.get(channel)}`);
 const DESTS = channelDestMap();
 const DEST = DESTS[channel];
 if (!DEST) die(`channel '${channel}' is not a known build in gameVersions.ts (${Object.keys(DESTS).join(", ")})`);

@@ -1023,8 +1023,19 @@
     // device's console without USB debugging. Never ships public logs. Followed the
     // debug build from /godot/develop/ to /godot/alpha-debug/ when develop was
     // retired (2026-08-17) — keyed off the channel table so it can't drift again.
-    const debugPath = versionById(DEBUG_CHANNEL_ID)?.path ?? "";
-    if (typeof gameUrl === "string" && debugPath && gameUrl.startsWith(debugPath.replace(/index\.html$/, ""))) {
+    //
+    // Gated on the SESSION, not the path. It used to compare gameUrl against the
+    // debug channel's path, which worked only while that was a separate subdir.
+    // Now that one build serves everyone (2026-09-10), a path test would match
+    // every visitor and ship the public's console logs — so require all three:
+    // an explicit debug channel link, the token that actually unlocks the dev
+    // surface, and a verified admin. Never ships public logs.
+    const dq = new URLSearchParams(window.location.search);
+    const isDebugSession =
+      (dq.get("channel") || dq.get("v")) === DEBUG_CHANNEL_ID &&
+      !!dq.get("debug") &&
+      isAdmin(auth.currentUser);
+    if (isDebugSession) {
       logShipOff = initConsoleLogShipper(
         () => {
           try {

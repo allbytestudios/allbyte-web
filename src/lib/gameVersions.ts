@@ -39,6 +39,22 @@ export type ChannelId = "alpha" | "alpha-debug";
  */
 export const DEBUG_CHANNEL_ID: ChannelId = "alpha-debug";
 
+/**
+ * The `?debug=<token>` currently in the address bar, if any.
+ *
+ * With one build for everyone, the dev surface is unlocked by TOKEN rather than
+ * by loading a different artifact — so a deep-link into it (scenario jump, save
+ * tree jump) has to carry the owner's token forward, or the game boots dormant
+ * and the jump silently no-ops at the gate.
+ *
+ * The token is never stored in this repo and never persisted here: it is read
+ * from the URL the owner is already on and forwarded verbatim.
+ */
+export function currentDebugToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("debug");
+}
+
 export interface GameVersion {
   id: ChannelId;
   label: string;
@@ -56,12 +72,19 @@ export interface GameVersion {
 export const GAME_VERSIONS: GameVersion[] = [
   // prod — what every visitor gets.
   { id: "alpha",       label: "Episode One",        path: "/godot/public/index.html",      minTier: "default", available: true },
-  // prod debug — same content, TestBridge hooks + debug HUD. This is the build
-  // every scenario / save-tree jump targets (the hooks are what make the jump
-  // work), so it must stay the one debug channel we keep. Sits on its own
-  // isolated subdir with a least-priv deploy role (2026-07-14); available:false
-  // because the pipeline publishes its availability at RUNTIME via channels.json.
-  { id: "alpha-debug", label: "Episode One (Debug)", path: "/godot/alpha-debug/index.html", minTier: "legend",  available: false },
+  // prod debug — the SAME single deploy as prod. There is one build (0.8.2440+)
+  // and the dev surface is unlocked by ?debug=<token> at call time, NOT by
+  // loading a different artifact. So this id maps to the public path too: it
+  // survives only as the wire-format marker that a link WANTS the debug surface
+  // (scenario + save-tree jumps, the console log shipper), never as a separate
+  // download.
+  //
+  // It pointed at /godot/alpha-debug/index.html until 2026-09-10, which quietly
+  // undid the single-build design: every scenario and save-tree jump loaded a
+  // separately-deployed artifact that only got promoted when someone remembered
+  // to. It had drifted to 0.8.2592 while prod ran 0.8.2642 — ~50 builds of QA
+  // against stale code. Owner: "1 deploy with param".
+  { id: "alpha-debug", label: "Episode One (Debug)", path: "/godot/public/index.html", minTier: "legend",  available: false },
 ];
 
 export function isUnlocked(v: GameVersion, user: AuthUser): boolean {

@@ -62,7 +62,15 @@ const BUILD_VERSION = "__BUILD_VERSION__";
 // gzip WASM naturally. (Cross-browser tested: caching a gzip-encoded response
 // verbatim replays fine on Chromium/Firefox/WebKit, so the strip is defensive,
 // not load-bearing — see tests/e2e/test_wasm_gzip_cache.py.)
-const CACHE_SCHEMA = "s2";
+// Bumped to "s3" 2026-09-12: two DIFFERENT builds shipped under the same
+// BUILD_VERSION (0.8.2663-d82d96cb then 0.8.2663-4e72d2dc — WEB_VERSION did not
+// increment across 4 commits). CACHE_NAME keys on BUILD_VERSION, so returning
+// users would have kept serving the older build's wasm/pck forever. Bumping the
+// schema is the only lever the web side has to force the new assets out; it
+// costs every returning user a ~33MB re-download, which is why it is reserved
+// for exactly this case. The real fix is game-side: bump WEB_VERSION per
+// shipped build (see APP_CLAUDE_WEB_VERSION_BUMP.md).
+const CACHE_SCHEMA = "s3";
 const CACHE_NAME = `chronicles-godot-${CACHE_SCHEMA}-${BUILD_VERSION}`;
 
 self.addEventListener("install", (event) => {

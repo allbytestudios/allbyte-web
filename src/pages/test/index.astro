@@ -1,6 +1,7 @@
 ---
 import ConsoleLayout from "../../layouts/ConsoleLayout.astro";
 import ConsoleOverview from "../../components/ConsoleOverview.svelte";
+import WorkshopPlaytime from "../../components/WorkshopPlaytime.svelte";
 ---
 
 <ConsoleLayout
@@ -9,6 +10,7 @@ import ConsoleOverview from "../../components/ConsoleOverview.svelte";
 
   active="roadmap"
 >
+  <WorkshopPlaytime client:only="svelte" />
   <ConsoleOverview client:only="svelte" />
 </ConsoleLayout>
 

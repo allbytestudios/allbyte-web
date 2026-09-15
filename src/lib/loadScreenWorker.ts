@@ -416,6 +416,195 @@ function drawManual(now: number, t: number) {
 
 function spaced(s: string): string { return s.split("").join(" "); }
 
+// --- Pure-JS GIF decoder (frames + delays) ----------------------------------
+// decodeGif() below reaches for WebCodecs ImageDecoder first, which ONLY
+// Chromium ships. On Safari AND Firefox it is undefined, so every sprite fell
+// through to createImageBitmap(blob) — a SINGLE static frame. Symptom (owner,
+// Safari, 2026-09-14): Elias moves across the load screen but never plays his
+// attack or victory, because those clips were one frame each. Measured:
+// ImageDecoder is "function" on chromium and "undefined" on webkit, in both
+// the window and a worker.
+//
+// So decode GIFs ourselves rather than depend on an engine-specific API.
+// Standard GIF87a/89a: LZW + per-frame disposal, composited onto a full-size
+// RGBA buffer so partial frames (what most sprite exporters emit) land right.
+type GifFrame = { data: ImageData; dur: number };
+
+function gifLzw(minCodeSize: number, data: Uint8Array, pixelCount: number): Uint8Array {
+  const MAX = 4096;
+  const clear = 1 << minCodeSize;
+  const eoi = clear + 1;
+  const prefix = new Int32Array(MAX);
+  const suffix = new Uint8Array(MAX);
+  const stack = new Uint8Array(MAX + 1);
+  const out = new Uint8Array(pixelCount);
+  for (let i = 0; i < clear; i++) suffix[i] = i;
+  let codeSize = minCodeSize + 1;
+  let codeMask = (1 << codeSize) - 1;
+  let available = clear + 2;
+  let datum = 0, bits = 0, first = 0, top = 0, bi = 0, oldCode = -1, pi = 0;
+  while (pi < pixelCount) {
+    if (top === 0) {
+      if (bits < codeSize) {
+        if (bi >= data.length) break;
+        datum += data[bi++] << bits;
+        bits += 8;
+        continue;
+      }
+      let code = datum & codeMask;
+      datum >>= codeSize;
+      bits -= codeSize;
+      if (code === eoi || code > available) break;
+      if (code === clear) {
+        codeSize = minCodeSize + 1;
+        codeMask = (1 << codeSize) - 1;
+        available = clear + 2;
+        oldCode = -1;
+        continue;
+      }
+      if (oldCode === -1) {
+        stack[top++] = suffix[code];
+        oldCode = code;
+        first = code;
+        continue;
+      }
+      const inCode = code;
+      if (code === available) {
+        stack[top++] = first;
+        code = oldCode;
+      }
+      while (code > clear) {
+        stack[top++] = suffix[code];
+        code = prefix[code];
+      }
+      first = suffix[code] & 0xff;
+      stack[top++] = first;
+      if (available < MAX) {
+        prefix[available] = oldCode;
+        suffix[available] = first;
+        available++;
+        if ((available & codeMask) === 0 && available < MAX) {
+          codeSize++;
+          codeMask += available;
+        }
+      }
+      oldCode = inCode;
+    }
+    top--;
+    out[pi++] = stack[top];
+  }
+  return out;
+}
+
+function gifInterlaceRows(h: number): number[] {
+  const rows: number[] = [];
+  for (let y = 0; y < h; y += 8) rows.push(y);
+  for (let y = 4; y < h; y += 8) rows.push(y);
+  for (let y = 2; y < h; y += 4) rows.push(y);
+  for (let y = 1; y < h; y += 2) rows.push(y);
+  return rows;
+}
+
+function decodeGifBytes(buf: ArrayBuffer): GifFrame[] {
+  const b = new Uint8Array(buf);
+  if (b.length < 13 || b[0] !== 0x47 || b[1] !== 0x49 || b[2] !== 0x46) return [];
+  let p = 6;
+  const rd8 = () => b[p++];
+  const rd16 = () => b[p++] | (b[p++] << 8);
+  const gw = rd16(), gh = rd16();
+  const packed = rd8();
+  p += 2; // background colour index + pixel aspect ratio
+  let gct: Uint8Array | null = null;
+  if (packed & 0x80) {
+    const n = 1 << ((packed & 7) + 1);
+    gct = b.subarray(p, p + n * 3);
+    p += n * 3;
+  }
+  const readSubBlocks = (): Uint8Array => {
+    const parts: Uint8Array[] = [];
+    let len: number, total = 0;
+    while (p < b.length && (len = rd8())) {
+      parts.push(b.subarray(p, p + len));
+      p += len;
+      total += len;
+    }
+    const out = new Uint8Array(total);
+    let o = 0;
+    for (const part of parts) { out.set(part, o); o += part.length; }
+    return out;
+  };
+
+  const frames: GifFrame[] = [];
+  const canvas = new Uint8ClampedArray(gw * gh * 4);
+  let saved: Uint8ClampedArray | null = null;
+  let delay = 100, transparent = -1, disposal = 0;
+
+  while (p < b.length) {
+    const block = rd8();
+    if (block === 0x3b) break;                 // trailer
+    if (block === 0x21) {                      // extension
+      const label = rd8();
+      if (label === 0xf9) {                    // graphic control extension
+        const size = rd8();                    // always 4
+        const flags = b[p];
+        disposal = (flags >> 2) & 7;
+        transparent = (flags & 1) ? b[p + 3] : -1;
+        delay = ((b[p + 1] | (b[p + 2] << 8)) || 10) * 10;
+        p += size;
+        rd8();                                 // block terminator
+      } else {
+        readSubBlocks();
+      }
+      continue;
+    }
+    if (block !== 0x2c) break;                 // not an image descriptor
+    const ix = rd16(), iy = rd16(), iw = rd16(), ih = rd16();
+    const ipacked = rd8();
+    let ct = gct;
+    if (ipacked & 0x80) {
+      const n = 1 << ((ipacked & 7) + 1);
+      ct = b.subarray(p, p + n * 3);
+      p += n * 3;
+    }
+    const interlaced = !!(ipacked & 0x40);
+    const minCodeSize = rd8();
+    const idx = gifLzw(minCodeSize, readSubBlocks(), iw * ih);
+    if (disposal === 3) saved = canvas.slice();
+    const rows = interlaced ? gifInterlaceRows(ih) : null;
+    for (let y = 0; y < ih; y++) {
+      const dy = iy + (rows ? rows[y] : y);
+      if (dy < 0 || dy >= gh) continue;
+      for (let x = 0; x < iw; x++) {
+        const ci = idx[y * iw + x];
+        if (ci === transparent || !ct) continue;
+        const dx = ix + x;
+        if (dx < 0 || dx >= gw) continue;
+        const o = (dy * gw + dx) * 4, c = ci * 3;
+        canvas[o] = ct[c];
+        canvas[o + 1] = ct[c + 1];
+        canvas[o + 2] = ct[c + 2];
+        canvas[o + 3] = 255;
+      }
+    }
+    frames.push({ data: new ImageData(canvas.slice(), gw, gh), dur: delay });
+    if (disposal === 2) {                      // restore to background
+      for (let y = 0; y < ih; y++) {
+        const dy = iy + y;
+        if (dy < 0 || dy >= gh) continue;
+        for (let x = 0; x < iw; x++) {
+          const dx = ix + x;
+          if (dx < 0 || dx >= gw) continue;
+          const o = (dy * gw + dx) * 4;
+          canvas[o] = canvas[o + 1] = canvas[o + 2] = canvas[o + 3] = 0;
+        }
+      }
+    } else if (disposal === 3 && saved) {
+      canvas.set(saved);
+    }
+  }
+  return frames;
+}
+
 // Decode an animated GIF to frames (ImageDecoder / WebCodecs, on the worker
 // thread). Falls back to a single static frame if ImageDecoder is unavailable
 // (e.g. Safari) or decoding fails.
@@ -438,6 +627,19 @@ async function decodeGif(buf: ArrayBuffer): Promise<Frame[]> {
   } catch {
     /* fall through */
   }
+  // Every non-Chromium engine lands here. Decode the GIF ourselves so the clip
+  // animates instead of freezing on frame 1.
+  try {
+    const gf = decodeGifBytes(buf);
+    if (gf.length > 0) {
+      const out: Frame[] = [];
+      for (const f of gf) out.push({ bmp: await createImageBitmap(f.data), dur: f.dur });
+      if (out.length) return out;
+    }
+  } catch {
+    /* fall through to the static frame */
+  }
+  // Last resort only: one static frame, still better than an empty sprite.
   try {
     return [{ bmp: await createImageBitmap(new Blob([buf], { type: "image/gif" })), dur: 1000 }];
   } catch {

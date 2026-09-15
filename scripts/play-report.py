@@ -54,8 +54,8 @@ def scan(table: str) -> list[dict]:
     cmd = [
         "aws", "dynamodb", "scan", "--table-name", table,
         # `ref` and `auto` are DynamoDB reserved words — both need aliasing.
-        "--projection-expression", "sessionId,ts,ev,scene,dev,#r,dur,bot,#a,ctx",
-        "--expression-attribute-names", '{"#r":"ref","#a":"auto"}',
+        "--projection-expression", "sessionId,ts,ev,scene,dev,#r,dur,bot,#a,ctx,#o",
+        "--expression-attribute-names", '{"#r":"ref","#a":"auto","#o":"owner"}',
         "--output", "json",
     ]
     out = subprocess.run(cmd, capture_output=True, text=True)
@@ -72,7 +72,7 @@ def build_sessions(items: list[dict]) -> dict:
     s: dict = collections.defaultdict(
         lambda: {
             "ts": [], "scenes": [], "dev": None, "ref": None, "ctx": None,
-            "dur": 0, "bot": False, "auto": False, "evs": collections.Counter(),
+            "dur": 0, "bot": False, "auto": False, "owner": False, "evs": collections.Counter(),
         }
     )
     for it in items:
@@ -96,6 +96,8 @@ def build_sessions(items: list[dict]) -> dict:
             rec["bot"] = True
         if val(it, "auto", "N") or val(it, "auto", "S"):
             rec["auto"] = True
+        if val(it, "owner", "N") or val(it, "owner", "S"):
+            rec["owner"] = True
         sc = val(it, "scene")
         if ev == "scene" and sc:
             rec["scenes"].append((ts, sc))
@@ -163,8 +165,9 @@ def main() -> int:
     dropped = {k: v for k, v in window.items() if k in set(args.exclude_session)}
     bots = {k: v for k, v in window.items() if v["bot"] and k not in dropped}
     autos = {k: v for k, v in window.items() if v["auto"] and not v["bot"] and k not in dropped}
+    owners = {k: v for k, v in window.items() if v["owner"] and not v["bot"] and not v["auto"] and k not in dropped}
     real = {k: v for k, v in window.items()
-            if not v["bot"] and not v["auto"] and k not in dropped}
+            if not v["bot"] and not v["auto"] and not v["owner"] and k not in dropped}
 
     players = {k: v for k, v in real.items() if ordered(v, True)}
     nonboot = {k: v for k, v in real.items() if not ordered(v, True)}

@@ -199,6 +199,52 @@ def main() -> int:
     w("\nDevice: " + ", ".join(f"`{k}`={c}" for k, c in
                                collections.Counter(v["dev"] or "(none)" for v in real.values()).most_common()) + "\n")
 
+    # NEW vs RETURNING, inferred. The game does not yet emit a continue marker
+    # (s:new_game_confirmed exists; s:continue_confirmed is the one section-6
+    # startup event still outstanding - bead zkvy, P3), so this is a PROXY: a
+    # session that reached a world scene without any new-game marker almost
+    # certainly pressed Continue, i.e. it had a save from an earlier visit.
+    #
+    # Validated against a real case: 2026-09-15 22:37 went Title -> MainSquare
+    # with NO WordsOnBlack intro, 47 min after a session that DID play the intro,
+    # same browser and referrer. Skipping the intro means a save was loaded.
+    #
+    # It UNDERCOUNTS: a returning player who starts over looks new, and one who
+    # returns on a different device has no save. Treat it as a floor.
+    newish, returning = [], []
+    for sid, rec in players.items():
+        marks = {sc for _, sc in rec["scenes"]}
+        if "m:newgame" in marks or "s:new_game_confirmed" in marks:
+            newish.append(sid)
+        else:
+            returning.append(sid)
+    w("## New vs returning (inferred)")
+    w("")
+    w(f"- **{len(newish)} started a new game**")
+    # Split on duration. A 5-second "no new-game marker" session is far more
+    # likely a reload landing mid-game (or owner testing from before IP flagging
+    # existed) than a person who came back to continue. Reporting the raw count
+    # as "returning players" would overstate it several-fold.
+    CREDIBLE_S = 60
+    cred = [k for k in returning if players[k]["dur"] >= CREDIBLE_S]
+    brief = [k for k in returning if players[k]["dur"] < CREDIBLE_S]
+    w(f"- **{len(returning)} reached a world scene with no new-game marker**"
+      f" ({len(cred)} credible, {len(brief)} brief) - i.e. they loaded a save rather than starting over.")
+    if cred:
+        w(f"\n**Credible returns** (played >= {CREDIBLE_S}s):")
+        for sid in sorted(cred, key=lambda k: -max(players[k]["ts"])):
+            rec = players[sid]
+            w(f"  - {ts_str(max(rec['ts']))} - played {fmt_dur(rec['dur'])} - {rec['dev']} - via `{rec['ref']}`")
+    if brief:
+        w(f"\n**Brief** (< {CREDIBLE_S}s - likely a reload landing mid-game, or owner"
+          f" testing predating IP flagging; counted but not trusted):")
+        for sid in sorted(brief, key=lambda k: -max(players[k]["ts"])):
+            rec = players[sid]
+            w(f"  - {ts_str(max(rec['ts']))} - {fmt_dur(rec['dur'])} - {rec['dev']} - via `{rec['ref']}`")
+    w("")
+    w("Proxy, not ground truth: it undercounts anyone who replays from scratch or returns on another device. Shipping `s:continue_confirmed` (bead zkvy) would make this exact instead of inferred.")
+    w("")
+
     w("## Sessions that played\n")
     for sid, rec in sorted(players.items(), key=lambda kv: -max(kv[1]["ts"])):
         game = ordered(rec, True)

@@ -7,12 +7,12 @@
   import { TIER_META } from "../lib/testIndex";
   import {
     fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat,
-    fetchUserAnalytics, fetchBudgetStatus, fetchSiteTraffic, claimOwnerIp,
+    fetchUserAnalytics, fetchBudgetStatus, fetchSiteTraffic, claimOwnerIp, fetchPlayFunnel,
   } from "../lib/testDataSource";
   import { fetchBeadsIssues } from "../lib/beadsSource";
   import { epicsOnly, isOpen, isClosed } from "../lib/beadsTypes";
   import { milestonesOrdered, milestoneIdFromLabels } from "../lib/milestones";
-  import type { UserAnalytics, BudgetStatus, SiteTraffic, SiteTrafficDay, ClaimOwnerIpResult } from "../lib/testDataSource";
+  import type { UserAnalytics, BudgetStatus, SiteTraffic, SiteTrafficDay, ClaimOwnerIpResult, PlayFunnel } from "../lib/testDataSource";
   import { subscribeToFile } from "../lib/testEvents";
   import usageData from "../data/claude-usage.json";
   import usageHistory from "../data/claude-usage-history.json";
@@ -166,6 +166,26 @@
   let bdIssues = $state<BdIssue[]>([]);
   let userAnalytics = $state<UserAnalytics | null>(null);
   let budgetStatus = $state<BudgetStatus | null>(null);
+  let playFunnel = $state<PlayFunnel | null>(null);
+
+  // Playtime overlay for the Game Serves chart. Indexed by date so it aligns
+  // with whatever slice the traffic chart is showing, and tolerant of days the
+  // funnel has no row for (no play that day = 0, not a gap in the line).
+  //
+  // Why it rides on Game Serves and not the Users chart: serves say the game was
+  // HANDED OVER, playtime says someone actually played it. Side by side they
+  // answer "are people playing, or just loading?" — pairing playtime with
+  // account signups would answer nothing while registrations are ~0.
+  let playByDate = $derived.by(() => {
+    const m = new Map<string, { mins: number; players: number }>();
+    for (const d of playFunnel?.daily ?? []) {
+      m.set(d.date, {
+        mins: Math.round((d.played_s ?? 0) / 60),
+        players: d.played_sessions ?? 0,
+      });
+    }
+    return m;
+  });
   let siteTraffic = $state<SiteTraffic | null>(null);
   let claimIpResult = $state<ClaimOwnerIpResult | null>(null);
   let claimIpBusy = $state(false);
@@ -209,13 +229,17 @@
   }
 
   async function loadAnalytics() {
-    const [ua, bs, st] = await Promise.all([
+    // Order matters: this is positional destructuring, so a new fetch inserted
+    // mid-array silently reassigns everything after it.
+    const [ua, bs, pf, st] = await Promise.all([
       fetchUserAnalytics().catch(() => null),
       fetchBudgetStatus().catch(() => null),
+      fetchPlayFunnel().catch(() => null),
       fetchSiteTraffic().catch(() => null),
     ]);
     userAnalytics = ua;
     budgetStatus = bs;
+    playFunnel = pf;
     siteTraffic = st;
   }
 
@@ -552,7 +576,7 @@
     {/each}
   {/snippet}
 
-  {#snippet trafficChart(label: string, dataset: SiteTrafficDay[])}
+  {#snippet trafficChart(label: string, dataset: SiteTrafficDay[], withPlay: boolean)}
     {@const traffic = dataset.slice(-rangeDays(graphRange))}
     {@const seg = trafficSegment}
     {@const isolated = seg !== "all"}
@@ -562,10 +586,15 @@
     {@const segColor = seg === "bots" ? COLOR_BOTS : seg === "owner" ? COLOR_OWNER : COLOR_OTHER}
     {@const visMax = Math.max(...traffic.map(d => segValue(d, seg)), 1)}
     {@const total7d = traffic.slice(-7).reduce((s, d) => s + segValue(d, seg), 0)}
+    {@const play = traffic.map(d => playByDate.get(d.date) ?? { mins: 0, players: 0 })}
+    {@const playMax = Math.max(...play.map(p => p.mins), 1)}
+    {@const playAny = withPlay && play.some(p => p.mins > 0 || p.players > 0)}
+    {@const play7d = play.slice(-7).reduce((a, p) => a + p.mins, 0)}
+    {@const players7d = play.slice(-7).reduce((a, p) => a + p.players, 0)}
     <div class="users-chart-section">
       <h3 class="section-title">
         {label}
-        <span class="section-subtitle">{total7d.toLocaleString()} (7 days){isolated ? ` · ${segLabel(seg)} only` : ""}</span>
+        <span class="section-subtitle">{total7d.toLocaleString()} (7 days){isolated ? ` · ${segLabel(seg)} only` : ""}{playAny ? ` · ${players7d} played ${play7d >= 60 ? (play7d / 60).toFixed(1) + "h" : play7d + "m"}` : ""}</span>
       </h3>
       <div class="users-chart">
         <svg viewBox="0 0 700 140" class="users-svg">
@@ -616,6 +645,37 @@
               <text x={x} y={136} fill="var(--ink-soft)" font-size="9" text-anchor="middle">{chartDateLabel(d.date, graphRange)}</text>
             {/if}
           {/each}
+          <!-- Playtime rides its OWN scale (right gutter): minutes and serve
+               counts have no common unit, so sharing the left axis would make
+               one of them unreadable. -->
+          {#if playAny}
+            <polyline
+              fill="none"
+              stroke="var(--gilt)"
+              stroke-width="2"
+              points={traffic.map((d, i) => {
+                const x = 50 + i * (600 / (traffic.length - 1 || 1));
+                const mins = playByDate.get(d.date)?.mins ?? 0;
+                return `${x},${120 - (mins / playMax) * 100}`;
+              }).join(" ")}
+            />
+            {#each traffic as d, i}
+              {@const x = 50 + i * (600 / (traffic.length - 1 || 1))}
+              {@const p = playByDate.get(d.date) ?? { mins: 0, players: 0 }}
+              {@const y = 120 - (p.mins / playMax) * 100}
+              {#if p.players > 0}
+                <circle cx={x} cy={y} r="2.5" fill="var(--gilt)">
+                  <title>{d.date}: {p.players} player{p.players === 1 ? "" : "s"}, {p.mins} min played</title>
+                </circle>
+                {#if chartShowPerPointDetails(traffic.length)}
+                  <text x={x} y={y - 6} fill="var(--gilt)" font-size="9" text-anchor="middle">{p.players}</text>
+                {/if}
+              {/if}
+            {/each}
+            {#each [0, 1] as frac}
+              <text x="656" y={120 - frac * 100 + 3} fill="var(--gilt)" font-size="9" text-anchor="start" opacity="0.8">{Math.round(playMax * frac)}m</text>
+            {/each}
+          {/if}
         </svg>
         <div class="users-chart-legend">
           {#if isolated}
@@ -624,6 +684,9 @@
             <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OWNER}"></span> Owner</span>
             <span class="legend-item"><span class="legend-dot" style="background: {COLOR_BOTS}"></span> Bots / crawlers</span>
             <span class="legend-item"><span class="legend-dot" style="background: {COLOR_OTHER}"></span> Other visitors</span>
+          {/if}
+          {#if playAny}
+            <span class="legend-item"><span class="legend-dot" style="background: var(--gilt)"></span> Playtime (min, right axis) · dot = players that day</span>
           {/if}
         </div>
       </div>
@@ -646,10 +709,10 @@
       {/if}
     </div>
     {#if siteTraffic?.dailyWebappServes?.length}
-      {@render trafficChart("Webapp Serves", siteTraffic.dailyWebappServes)}
+      {@render trafficChart("Webapp Serves", siteTraffic.dailyWebappServes, false)}
     {/if}
     {#if siteTraffic?.dailyGameServes?.length}
-      {@render trafficChart("Game Serves", siteTraffic.dailyGameServes)}
+      {@render trafficChart("Game Serves", siteTraffic.dailyGameServes, true)}
     {/if}
     {#if siteTraffic?.devices && Object.keys(siteTraffic.devices).length}
       {@const devs = Object.entries(siteTraffic.devices).sort((a, b) => b[1] - a[1])}

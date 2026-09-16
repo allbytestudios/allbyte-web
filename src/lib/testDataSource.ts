@@ -223,6 +223,46 @@ export async function fetchUserAnalytics(signal?: AbortSignal): Promise<UserAnal
   }
 }
 
+/** One day of play-funnel activity. Playtime counts ONLY sessions that got past
+ *  Title, so a bounce contributes 0 rather than dragging the figure to noise.
+ *  Bots, known automation and owner-flagged sessions are already removed
+ *  server-side, so nothing here needs filtering client-side. */
+export interface PlayFunnelDay {
+  date: string;
+  sessions: number;
+  booted: number;
+  past?: number;
+  bots?: number;
+  played_s?: number;
+  played_sessions?: number;
+  longest_s?: number;
+}
+export interface PlayFunnel {
+  daily?: PlayFunnelDay[];
+  median_played?: number;
+  automationSessions?: number;
+  botSessions?: number;
+  ownerSessions?: number;
+}
+
+/** Admin-only play-depth funnel. Its own stack + API host (play-analytics.yaml),
+ *  hence the absolute URL rather than API_BASE, and it wants the bearer token
+ *  explicitly — the /admin/stats/* routes ride a cookie session instead. */
+const PLAY_FUNNEL_URL = "https://pdtoj70foi.execute-api.us-east-1.amazonaws.com/funnel";
+export async function fetchPlayFunnel(signal?: AbortSignal): Promise<PlayFunnel | null> {
+  try {
+    const res = await fetch(PLAY_FUNNEL_URL, {
+      signal,
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${localStorage.getItem("allbyte_token") ?? ""}` },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export interface BudgetStatus {
   spent: number;
   budget: number;

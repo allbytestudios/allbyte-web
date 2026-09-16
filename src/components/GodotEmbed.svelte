@@ -1011,6 +1011,10 @@
           event: g.lastTriggeredEventId ?? null,
           moving: !!g.isMoving,
           newGame: !!g.newGameStarted,
+          // Title's Continue button is enabled only when a save exists, so this
+          // is "this browser has played before" — observable at Title, before
+          // the player chooses anything, and with no identifier of any kind.
+          continueAvailable: !!g.titleContinueEnabled,
           dialogue: !!g.inDialogue,
           touch: touchAcceptSeen,
         };

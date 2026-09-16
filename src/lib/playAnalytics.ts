@@ -104,6 +104,14 @@ export interface PlayState {
    * "never even tried to start" from "started, then lost to the pack download".
    */
   newGame?: boolean;
+  /**
+   * `gameState.titleContinueEnabled` — the Title screen's Continue button is
+   * enabled only when a save exists, so a TRUE reading at Title means this
+   * browser has played before. That is the returning-player signal, and it
+   * needs no persistent identifier: the game already knows, we just read it.
+   * Measured false on a fresh profile, true once a save exists.
+   */
+  continueAvailable?: boolean;
   /** `gameState.inDialogue` — talked to someone; the first real interaction. */
   dialogue?: boolean;
   /**
@@ -355,6 +363,11 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
   const dev = deviceClass();
   const startTs = Date.now();
   const seen = new Set<string>();
+  // Latched when a save is seen at Title BEFORE any new game this session.
+  // Declared HERE, not at module scope: `seen` resets per init and this must
+  // too, or an Astro ClientRouter navigation away from /play/ and back would
+  // carry a stale true and label a fresh session as returning.
+  let sawSaveAtTitle = false;
   let lastScene = "";
   let ended = false;
   let poller: ReturnType<typeof setInterval> | null = null;
@@ -431,9 +444,25 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
       else startup("first_world_scene_ready");
     }
     if (st.touch) stage("m:touch");
+    // RETURNING vs NEW, without tracking anyone.
+    //
+    // At Title, Continue is enabled only if a save exists — so a save seen
+    // BEFORE any new game means this browser played before. Latched, because
+    // starting a new game enables Continue too, and that must not retroactively
+    // relabel a first-time player as returning.
+    if (!sawSaveAtTitle && st.continueAvailable && !st.newGame && /title/i.test(st.scene || "")) {
+      sawSaveAtTitle = true;
+      stage("m:returning");
+    }
     if (st.newGame) {
       stage("m:newgame");
       startup("new_game_confirmed");
+    }
+    // Left Title into a world scene, having had a save and never pressing New
+    // Game = they pressed Continue. This is the §6 continue_confirmed event,
+    // derivable page-side after all rather than needing a game-side emit.
+    if (sawSaveAtTitle && !st.newGame && st.scene && !/title/i.test(st.scene)) {
+      startup("continue_confirmed");
     }
     if (st.moving) {
       stage("m:moved");

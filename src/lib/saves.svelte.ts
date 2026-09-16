@@ -391,11 +391,27 @@ export async function uploadSavesFile(file: File): Promise<string | null> {
   }
 }
 
-// === Server sync (Hero/Legend only) ===
+// === Server sync (ANY signed-in account) ===
 
+/**
+ * Cloud-save eligibility. Owner 2026-09-16: any signed-in account, not just
+ * Hero/Legend.
+ *
+ * Two reasons it widened. First, it is the only real fix for silent save loss:
+ * web saves live in IndexedDB (/userfs), and Safari's ITP evicts ALL
+ * script-writable storage after ~7 days without a first-party visit — so a
+ * Safari/iOS player who steps away for a week loses their progress with no
+ * warning. A server copy survives that; local export/import is the answer only
+ * for players who never sign in. Second, it gives an actual reason to create an
+ * account, and since auth is Patreon-only, "signed in" costs a player nothing:
+ * a Patreon account with no pledge logs in fine and lands on the free tier.
+ *
+ * Kept as a named predicate rather than inlining `!!auth.currentUser`, because
+ * the gate is likely to move again (per-tier quotas, slot limits) and there are
+ * seven call sites that must agree.
+ */
 function isSyncTier(): boolean {
-  const tier = auth.currentUser?.tier;
-  return tier === "hero" || tier === "legend";
+  return !!auth.currentUser;
 }
 
 /** Push current sync state to the game. Best-effort — only fires once the

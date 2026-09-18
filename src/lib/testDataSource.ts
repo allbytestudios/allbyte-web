@@ -206,6 +206,10 @@ export interface UserAnalytics {
   activeSubscriptions: { initiate: number; hero: number; legend: number };
   oauthUsers: number;
   emailPasswordUsers: number;
+  /** Owner + test accounts, excluded server-side from every figure above.
+   *  Surfaced so the exclusion is auditable rather than invisible. Optional:
+   *  a cached response from before 2026-09-18 will not carry it. */
+  internalAccounts?: number;
   dailyHistory: { date: string; total: number; new: number }[];
 }
 

@@ -546,7 +546,7 @@
         <div class="users-chart-legend">
           <span class="legend-item"><span class="legend-dot" style="background: var(--sem-info)"></span> Total users</span>
           <span class="legend-item"><span class="legend-dot" style="background: var(--crimson)"></span> New signups</span>
-          <span class="legend-item" style="color: var(--ink-soft)">{userAnalytics.oauthUsers} OAuth · {userAnalytics.emailPasswordUsers} email</span>
+          <span class="legend-item" style="color: var(--ink-soft)">{userAnalytics.oauthUsers} OAuth · {userAnalytics.emailPasswordUsers} email{userAnalytics.internalAccounts ? ` · ${userAnalytics.internalAccounts} owner/test excluded` : ""}</span>
         </div>
       </div>
     </div>

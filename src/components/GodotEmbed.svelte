@@ -130,7 +130,41 @@
     const loaded = norm(loadedVersion);
     const expected = norm(EXPECTED_BUILD);
     if (!loaded || !expected || loaded === expected) return;
-    hardResetAndReload(`loaded build ${loaded} != expected ${expected}`);
+    // DIRECTION MATTERS. A stale service-worker cache serves an OLD build, so
+    // only "loaded is OLDER than expected" is a staleness signal.
+    //
+    // "loaded is NEWER than expected" means the GAME shipped and the webapp has
+    // not caught up yet — exactly the window between a cloud promote and the
+    // finalize commit that restamps game-version.json. That window is hours
+    // wide in practice (the finalize cron is documented ~10 min but observed
+    // running ~2h apart), and during it every returning visitor was nuking its
+    // caches and reloading, then loading the very same new build again. That is
+    // the owner's "double loader": two full loads, a wasted ~75MB re-download,
+    // and no problem actually fixed.
+    //
+    // The dev-host early-return above already skips the check for precisely
+    // this reason ("locally the loaded build is routinely NEWER than expected —
+    // which is normal development, not a stale cache"). The same reasoning
+    // applies to prod during the promote window; it was simply never extended.
+    //
+    // The protection is unchanged: the boot-hang case this exists to prevent is
+    // a cache serving OLD assets, which still self-heals.
+    const parts = (v: string) => v.split(".").map((n) => parseInt(n, 10) || 0);
+    const cmp = (a: number[], b: number[]) => {
+      for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        const d = (a[i] || 0) - (b[i] || 0);
+        if (d !== 0) return d;
+      }
+      return 0;
+    };
+    if (cmp(parts(loaded), parts(expected)) > 0) {
+      console.info(
+        `[freshness] loaded build ${loaded} is NEWER than expected ${expected} — ` +
+        `webapp is behind a promote, not a stale cache. Not reloading.`,
+      );
+      return;
+    }
+    hardResetAndReload(`loaded build ${loaded} is OLDER than expected ${expected}`);
   }
 
   // Case 2 — MISMATCHED PAIR crash (Arc 2026-06-28): a cached old index.wasm

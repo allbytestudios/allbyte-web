@@ -1499,6 +1499,51 @@
   let studioDone = $state(false);
   let sceneReady = $state(false);
   let studioTimerStarted = false;
+
+  // --- input gate --------------------------------------------------------
+  // Owner 2026-09-18: "the game took click input before it rendered". The
+  // loading overlay covers the iframe visually, but a covering div only stops
+  // POINTER events — keyboard goes to whatever is focused, and the game canvas
+  // carries tabindex="0" and focuses itself on load. So keys reached a game
+  // that had not drawn a frame, and any click landing the instant the overlay
+  // lifted hit a Title that was still painting.
+  //
+  // `inert` on the iframe is the fix: measured on chromium, webkit AND firefox,
+  // it blocks clicks AND keyboard into the embedded document, and releases
+  // cleanly when removed. A pointer-events shield would have left the keyboard
+  // hole open.
+  //
+  // Armed on `loading` flipping false — every path that clears it intends to
+  // show the game — plus a grace period, so input can never be permanently
+  // dead even if a title-ready signal is missed. Re-armed from scratch on a
+  // reload, which sets loading = true again.
+  const INPUT_GRACE_MS = 1000; // owner: "ideally even a second after title shows"
+  let inputArmed = $state(false);
+
+  $effect(() => {
+    if (loading) {
+      inputArmed = false;
+      return;
+    }
+    const t = setTimeout(() => { inputArmed = true; }, INPUT_GRACE_MS);
+    return () => clearTimeout(t);
+  });
+
+  $effect(() => {
+    const el = iframeEl;
+    if (!el) return;
+    el.toggleAttribute("inert", !inputArmed);
+    if (!inputArmed) return;
+    // An inert subtree cannot hold focus, so the canvas's own focus() during
+    // boot was dropped. Restore it on arming or the first keypress would go
+    // nowhere and the player would have to click before the keyboard worked.
+    try {
+      const cv = el.contentDocument?.querySelector("canvas") as HTMLElement | null;
+      cv?.focus({ preventScroll: true });
+    } catch {
+      /* cross-origin or torn down — the click path still focuses it */
+    }
+  });
   // Set by the game's `allbyte_title_ready` postMessage — the title is fully
   // INTERACTIVE, not merely "its scene node exists". We hold the loader up until
   // this so the title-music (Arc gates Anthem4 on our loader_reveal) starts in
@@ -2529,6 +2574,7 @@
         src={gameSrc(gameUrl)}
         title="The Chronicles of Nesis"
         class="game-frame"
+        inert={!inputArmed}
         onload={onLoad}
         onerror={onError}
         allow="cross-origin-isolated; fullscreen"

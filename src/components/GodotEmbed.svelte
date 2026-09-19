@@ -1467,6 +1467,9 @@
   // the contentWindow guard so it fires regardless of iframe state.
   const BOOT_ABSOLUTE_MS = 120000;
   let lastProgressAt = Date.now();
+  // Highest console-log count seen inside the booting iframe. Growth is the
+  // liveness signal the byte counter cannot provide once downloading is done.
+  let lastEngineLogCount = 0;
   let loadElapsed = $state(0);
   let loadStatus = $state("Starting...");
   let loadLogTail = $state<string[]>([]);
@@ -2137,7 +2140,12 @@
     if (
       !recoveryTriggered &&
       !isNonDefaultBuild() &&
-      Date.now() - loadStart > BOOT_ABSOLUTE_MS
+      Date.now() - loadStart > BOOT_ABSOLUTE_MS &&
+      // Even at the hard ceiling, never nuke a boot that is demonstrably still
+      // working. A slow connection plus a cold WASM compile can legitimately
+      // pass two minutes, and reloading costs that player the entire download
+      // again for nothing.
+      Date.now() - lastProgressAt > 20000
     ) {
       hardResetAndReload("boot watchdog: no scene within the hard ceiling (stale cached assets?)");
       return;
@@ -2217,6 +2225,34 @@
       }
     } catch {
       /* iframe still booting / not accessible yet */
+    }
+
+    // ENGINE LIVENESS = PROGRESS. `lastProgressAt` used to move only on
+    // downloaded BYTES, so the stall watchdog measured "time since the last
+    // byte". That is wrong for the phase after the download completes: a cold
+    // first run still has to compile ~9MB of WASM and mount the packs, with no
+    // bytes arriving at all. On a first-ever visit there is no compiled-WASM
+    // code cache, so that phase is slow — and when it ran past BOOT_STALL_MS
+    // the watchdog declared a stall, nuked the caches and reloaded. The player
+    // saw the studio screen a second time and loaded the whole game again.
+    //
+    // That is the owner's "brand new user or browser ALWAYS double loads":
+    // second load is fast because the browser now has the compiled module
+    // cached, so it never stalls — which is exactly why it looks like the
+    // reload "fixed" something. It fixed nothing; the first attempt was healthy
+    // and still downloading/compiling.
+    //
+    // The engine logs continuously while it boots, so a growing console is
+    // proof of life even when no bytes move and no scene exists yet.
+    try {
+      const w = iframeEl?.contentWindow as any;
+      const n = w?._consoleLogs?.length ?? 0;
+      if (n > lastEngineLogCount) {
+        lastEngineLogCount = n;
+        lastProgressAt = Date.now(); // engine is alive and working
+      }
+    } catch {
+      /* iframe unreadable — the byte-based signal above still applies */
     }
 
     // Game has reported a scene. The scene NODE existing isn't the same as the

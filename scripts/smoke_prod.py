@@ -114,14 +114,30 @@ def game_version():
     webapp (the download gate keys on it) and injects into sw.js. Prefer the
     committed value over the working tree, which sync-assets.js re-stamps on
     local builds. Returns None if unreadable."""
-    try:
-        import subprocess
-        return json.loads(subprocess.check_output(
-            ["git", "show", "HEAD:src/data/game-version.json"],
-            cwd=os.path.dirname(VERSION_FILE), text=True, stderr=subprocess.DEVNULL,
-        ))["version"]
-    except Exception:
-        pass
+    import subprocess
+    repo = os.path.dirname(VERSION_FILE)
+
+    def _at(ref):
+        try:
+            return json.loads(subprocess.check_output(
+                ["git", "show", f"{ref}:src/data/game-version.json"],
+                cwd=repo, text=True, stderr=subprocess.DEVNULL,
+            ))["version"]
+        except Exception:
+            return None
+
+    # Prefer origin/main over local HEAD. CI deploys origin/main, and after a
+    # game promote the finalize workflow commits the new version THERE — so a
+    # local checkout that has not pulled reports the OLD version and this check
+    # fails against a perfectly healthy prod. That false alarm fired twice
+    # (2026-09-15, 2026-09-19) before being fixed; a smoke test that cries wolf
+    # trains you to ignore the one time it is real.
+    head, origin = _at("HEAD"), _at("origin/main")
+    if origin and head and origin != head:
+        print(f"[smoke] note: local HEAD has {head}, origin/main has {origin} — "
+              f"using origin/main (what CI deployed). `git pull` to sync.")
+    if origin or head:
+        return origin or head
     try:
         return json.load(open(VERSION_FILE, encoding="utf-8"))["version"]
     except Exception:

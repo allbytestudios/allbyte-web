@@ -72,7 +72,8 @@ def build_sessions(items: list[dict]) -> dict:
     s: dict = collections.defaultdict(
         lambda: {
             "ts": [], "scenes": [], "dev": None, "ref": None, "ctx": None,
-            "dur": 0, "bot": False, "auto": False, "owner": False, "evs": collections.Counter(),
+            "dur": 0, "bot": False, "auto": False, "owner": False, "played_page": False,
+            "evs": collections.Counter(),
         }
     )
     for it in items:
@@ -98,6 +99,15 @@ def build_sessions(items: list[dict]) -> dict:
             rec["auto"] = True
         if val(it, "owner", "N") or val(it, "owner", "S"):
             rec["owner"] = True
+        # Did this session actually touch /play/? perfBeacon.ts writes to the
+        # SAME table with the same session id from EVERY page on the site
+        # (measured 2026-09-21: /play/ 44, / 33, /test/ 13, devlogs,
+        # /changelog/), so a changelog reader was being reported as "arrived at
+        # /play/ and never booted" — inflating arrivals and depressing every
+        # rate below them. `open` is emitted only on /play/ and a `scene`
+        # beacon can only come from a running game; a perf row proves neither.
+        if ev in ("open", "scene"):
+            rec["played_page"] = True
         sc = val(it, "scene")
         if ev == "scene" and sc:
             rec["scenes"].append((ts, sc))
@@ -166,8 +176,12 @@ def main() -> int:
     bots = {k: v for k, v in window.items() if v["bot"] and k not in dropped}
     autos = {k: v for k, v in window.items() if v["auto"] and not v["bot"] and k not in dropped}
     owners = {k: v for k, v in window.items() if v["owner"] and not v["bot"] and not v["auto"] and k not in dropped}
+    offsite = {k: v for k, v in window.items()
+               if not v["played_page"] and not v["bot"] and not v["auto"]
+               and not v["owner"] and k not in dropped}
     real = {k: v for k, v in window.items()
-            if not v["bot"] and not v["auto"] and not v["owner"] and k not in dropped}
+            if v["played_page"] and not v["bot"] and not v["auto"]
+            and not v["owner"] and k not in dropped}
 
     players = {k: v for k, v in real.items() if ordered(v, True)}
     nonboot = {k: v for k, v in real.items() if not ordered(v, True)}
@@ -189,7 +203,8 @@ def main() -> int:
       f"longest **{fmt_dur(max(played_secs) if played_secs else 0)}**.")
     w(f"- {len(nonboot)} sessions arrived but never reached a game scene.")
     w(f"- Excluded: {len(bots)} datacenter bot, {len(autos)} known-automation, "
-      f"{len(dropped)} manually dropped.\n")
+      f"{len(owners)} owner, {len(offsite)} off-/play/ (perf beacons from other "
+      f"pages share this table), {len(dropped)} manually dropped.\n")
     w("> `ref=internal` means a SAME-SITE referrer — someone clicking Play from the "
       "homepage. Those are real players and are counted here.\n")
 

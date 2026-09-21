@@ -114,12 +114,16 @@ const EANCH = {
 };
 let isMobile = false;
 let scenePhase: "run" | "attack" | "victory" | "pause" = "run";
-// Real load progress, 0..1. `pctShown` eases toward `pctTarget` so the lumpy
-// transfer-size samples become a glide instead of teleporting the slime.
+// Real load progress, 0..1, quantised to trail cells below.
 // `pctDriven` stays false until the page actually sends a progress message, so
 // an older page (or a failure to post) still gets the original timed walk
 // rather than a slime frozen on cell one.
-let pctTarget = 0, pctShown = 0, pctDriven = false;
+let pctTarget = 0, pctDriven = false;
+// The slime's position as a CELL index (fractional only while he is mid-stride
+// between two cells). Quantising to cells is what stops him halting halfway:
+// he walks to a cell and stands on it until the load crosses the next
+// threshold.
+let cellShown = 0;
 let sceneT0 = 0, sceneStarted = false;
 let eliasMode: "idle" | "attack" | "victory" = "idle";
 let cardsDone = 0;
@@ -883,12 +887,21 @@ function poisonScene(now: number): boolean {
   if (scenePhase === "run") {
     let prog: number;
     if (pctDriven) {
-      // Ease toward the real percentage. The step is deliberately gentle: the
-      // worker is starved to ~2fps during the WASM compile, so a large jump
-      // applied in one of those rare frames would read as a teleport.
-      pctShown += (pctTarget - pctShown) * 0.12;
-      if (pctTarget >= 1 && pctTarget - pctShown < 0.01) pctShown = 1; // land exactly on the last cell
-      prog = clamp(pctShown, 0, 1);
+      // THE TRAIL IS THE BAR, AND ITS CELLS ARE THE TICKS (owner 2026-09-21).
+      // The load percentage is quantised to a cell index, so the slime walks to
+      // a cell and STANDS ON IT until the next threshold is crossed. Feeding a
+      // continuous percentage straight in left him halted mid-stride between
+      // two cells, which reads as the animation having stalled rather than as
+      // progress waiting.
+      const LAST = Math.max(1, pwalk.length - 1);
+      // +1e-6 so a percentage landing exactly on a boundary claims that cell.
+      const cellTarget = Math.min(LAST, Math.floor(pctTarget * LAST + 1e-6));
+      // Ease the walk between cells rather than teleporting: the worker is
+      // starved to ~2fps during the WASM compile, so a jump applied on one of
+      // those rare frames would snap him across the grid.
+      cellShown += (cellTarget - cellShown) * 0.14;
+      if (Math.abs(cellTarget - cellShown) < 0.02) cellShown = cellTarget; // rest exactly on the cell
+      prog = clamp(cellShown / LAST, 0, 1);
     } else {
       prog = clamp(dt / PZ.RUN, 0, 1);
     }

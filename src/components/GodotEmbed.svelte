@@ -2863,7 +2863,10 @@
       <span class="load-ring load-ring-outer"><i class="load-strip"></i></span>
       <span class="load-ring load-ring-inner"><i class="load-strip"></i></span>
     </div>
-    <!-- Percent + bar. Lives beside the spinner, NOT inside a card layer: the
+    <!-- Percent readout ONLY. There is deliberately no track/fill bar: the
+         slime walking the poison cells IS the progress bar (owner 2026-09-21),
+         and a second bar over the top of it just competed with the thing it
+         was duplicating. Lives beside the spinner, NOT inside a card layer: the
          cards are aria-hidden decoration that swap between variants, while this
          must be present on every loading path. aria-live is off because it
          updates constantly; the progressbar role exposes the value on demand. -->
@@ -2877,9 +2880,6 @@
       aria-valuenow={loadPctFloor}
       aria-label="Loading the game"
     >
-      <div class="load-pct-track">
-        <div class="load-pct-fill" style="width: {loadPctFloor}%"></div>
-      </div>
       <div class="load-pct-text">
         {loadPctFloor}%<span class="load-pct-phase"
           >{loadPctFloor >= 100 ? " · entering Nesis" : loadPctFloor >= HOLD_PCT ? " · almost there" : " · loading"}</span
@@ -3654,25 +3654,7 @@
     z-index: 3;
     pointer-events: none;
   }
-  .load-pct-track {
-    width: 100%;
-    height: 3px;
-    border-radius: 2px;
-    background: rgba(224, 231, 255, 0.16);
-    overflow: hidden;
-  }
-  .load-pct-fill {
-    height: 100%;
-    background: #e0e7ff;
-    border-radius: 2px;
-    /* The whole reason a byte bar is viable again. Transfer-size samples land
-       in lumps, so width jumps; the transition turns each jump into a glide.
-       It is a COMPOSITOR property, so it keeps animating through the ~8.8s
-       main-thread block during the WASM compile, when no JS can run and the
-       percentage text is necessarily frozen. */
-    transition: width 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
-  }
-  .load-pct-text {
+      .load-pct-text {
     font-family: "Courier New", monospace;
     font-size: 0.72rem;
     letter-spacing: 0.08em;
@@ -3681,11 +3663,6 @@
   }
   .load-pct-phase {
     opacity: 0.72;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .load-pct-fill {
-      transition: none;
-    }
   }
   .load-dot {
     width: 9px;

@@ -114,6 +114,12 @@ const EANCH = {
 };
 let isMobile = false;
 let scenePhase: "run" | "attack" | "victory" | "pause" = "run";
+// Real load progress, 0..1. `pctShown` eases toward `pctTarget` so the lumpy
+// transfer-size samples become a glide instead of teleporting the slime.
+// `pctDriven` stays false until the page actually sends a progress message, so
+// an older page (or a failure to post) still gets the original timed walk
+// rather than a slime frozen on cell one.
+let pctTarget = 0, pctShown = 0, pctDriven = false;
 let sceneT0 = 0, sceneStarted = false;
 let eliasMode: "idle" | "attack" | "victory" = "idle";
 let cardsDone = 0;
@@ -197,6 +203,17 @@ self.onmessage = async (e: MessageEvent) => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // width/height reset the transform
   } else if (m.type === "scene") {
     sceneReady = true;
+  } else if (m.type === "progress") {
+    // Owner 2026-09-21: the slime's walk IS the progress bar. Its position
+    // along the poison trail tracks the real load percentage, so reaching the
+    // final cell means the game is ready — Elias strikes, plays victory, and we
+    // cut to Title. Previously the walk was on a fixed timer and looped, which
+    // looked like progress without being any.
+    const v = Number((m as any).pct);
+    if (Number.isFinite(v)) {
+      pctTarget = clamp(v / 100, 0, 1);
+      pctDriven = true; // a real signal arrived — stop using the timer fallback
+    }
   }
 };
 
@@ -749,7 +766,11 @@ function ensurePoisonGeo() {
   const frac = Math.max(0.35, Math.min(0.95, pGridTop / H));
   if (Math.abs(frac - lastPoisonTop) > 0.005) {
     lastPoisonTop = frac;
-    (self as any).postMessage({ type: "poisonTop", frac });
+    // `baseFrac` is the trail's BASELINE (the row of cells the slime walks),
+    // so the page can centre the percentage text directly beneath the walk
+    // instead of guessing at this geometry in CSS. Same reasoning as frac: the
+    // layout maths lives here, the page just gets the answer.
+    (self as any).postMessage({ type: "poisonTop", frac, baseFrac: Math.min(0.995, baseY / H) });
   }
 }
 function frameAt(frames: Frame[], total: number, elapsed: number, loop = true): ImageBitmap | null {
@@ -860,7 +881,17 @@ function poisonScene(now: number): boolean {
   if (!sceneStarted) { sceneStarted = true; sceneT0 = now; scenePhase = "run"; eliasMode = "idle"; }
   const dt = now - sceneT0;
   if (scenePhase === "run") {
-    const prog = clamp(dt / PZ.RUN, 0, 1);
+    let prog: number;
+    if (pctDriven) {
+      // Ease toward the real percentage. The step is deliberately gentle: the
+      // worker is starved to ~2fps during the WASM compile, so a large jump
+      // applied in one of those rare frames would read as a teleport.
+      pctShown += (pctTarget - pctShown) * 0.12;
+      if (pctTarget >= 1 && pctTarget - pctShown < 0.01) pctShown = 1; // land exactly on the last cell
+      prog = clamp(pctShown, 0, 1);
+    } else {
+      prog = clamp(dt / PZ.RUN, 0, 1);
+    }
     setPoisonFills(prog); drawPoisonGrid(); drawSlimeWalking(now, prog); drawElias(now);
     if (prog >= 1) { scenePhase = "attack"; sceneT0 = now; eliasMode = "attack"; deathBase = null; }
   } else if (scenePhase === "attack") {
@@ -871,8 +902,16 @@ function poisonScene(now: number): boolean {
     if (dt >= PZ.DEATH) {
       cardsDone++;
       deathBase = null;
-      if (sceneReady && cardsDone >= 1) { scenePhase = "victory"; sceneT0 = now; eliasMode = "victory"; }
-      else { cardIdx = pickCard(cardIdx); cardShownAt = now; scenePhase = "pause"; sceneT0 = now; eliasMode = "idle"; }
+      // Progress-driven: the slime only ever reaches the last cell when the
+      // load is genuinely done, so its death IS the finish — go straight to
+      // victory. Looping back to "run" here would restart a walk whose
+      // progress is already 1, producing an endless death cycle.
+      if (pctDriven ? pctTarget >= 1 : (sceneReady && cardsDone >= 1)) {
+        scenePhase = "victory"; sceneT0 = now; eliasMode = "victory";
+      } else {
+        cardIdx = pickCard(cardIdx); cardShownAt = now;
+        scenePhase = "pause"; sceneT0 = now; eliasMode = "idle";
+      }
     }
   } else if (scenePhase === "victory") {
     for (const c of pwalk) c.fill = 1; drawPoisonGrid(); drawElias(now);

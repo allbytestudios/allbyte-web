@@ -257,6 +257,16 @@
     // they don't double-stack.
     window.dispatchEvent(new CustomEvent("music-player:pause"));
     loadStart = Date.now(); // count load time from consent, not page arrival
+    // Same for the progress ramp. The poller can tick while the download gate
+    // is still on screen, and a clock started there would finish the 2s ramp
+    // before the indicator is ever visible — the bar would simply appear at its
+    // ceiling. Measured exactly that twice before pinning it here.
+    pctClockStart = Date.now();
+    // And reset the floor. It is monotonic by design, so a creep that ran
+    // during the gate left it already at the ceiling and no clock reset could
+    // bring it back down — the bar still appeared at 49%. The load genuinely
+    // begins here, so the progress does too.
+    loadPctFloor = 0;
     lastProgressAt = Date.now(); // reset the boot-watchdog grace window too
     // Rendering the iframe is what sets its src and starts the engine fetching
     // — the page-observable start of engine bring-up. (When the gate was
@@ -1494,6 +1504,64 @@
   const EXPECTED_DOWNLOAD_BYTES = 36879516 + 24929996; // WASM + index.pck
   let bytesDownloaded = $state(0);
   let filesDownloaded = $state(0);
+
+  // --- player-facing load progress (owner 2026-09-21) ----------------------
+  // "The loading is just animations" — nothing told the player how far along
+  // they were, which matters most on mobile where the first load is a ~60MB
+  // download and the only feedback was a spinner. iOS sessions in the funnel
+  // stop at s:game_download_start and never come back; abandonment with no
+  // progress indicator is the obvious suspect.
+  //
+  // A byte bar was tried and removed on 2026-08-03 because transfer-size
+  // samples arrive in big lumps and it read choppy. Two things fix that here:
+  //   - the fill sits on a CSS transition, so a lump becomes a glide, and it
+  //     keeps gliding on the compositor even while the main thread is blocked
+  //     by the WASM compile (the ~8.8s freeze where JS cannot update anything);
+  //   - the value is MONOTONIC. Resource timings can re-report and shrink a
+  //     naive percentage; a bar that goes backwards destroys trust in it.
+  //
+  // Milestones cover the phases bytes cannot: a warm cache reports
+  // transferSize 0 for everything, so without them a returning player would
+  // watch 0% until the game simply appeared.
+  // Owner spec 2026-09-21, three bands:
+  //   0 → CREEP_CEIL   time-based "we're working". resource-timing only reports
+  //                    transferSize when a file FINISHES, so a single ~37MB
+  //                    index.wasm reads zero for its whole download — measured
+  //                    on a throttled 6Mbps load, the bar sat at 0% for 51
+  //                    seconds. This band is honest motion, not fake progress:
+  //                    it never claims more than roughly half.
+  //   CREEP_CEIL → 96  REAL download progress, mapped into what is left.
+  //   96               HOLD. Nothing may pass 96 until the title is confirmed
+  //                    interactive; the WASM compile and pack mount move no
+  //                    bytes, so this is where an honest bar has to wait.
+  //   100              confirmed ready, reveal follows.
+  //
+  // The ceiling is randomised per load so the creep does not always stall on
+  // the same number, which reads as a stuck bar rather than an estimate.
+  const CREEP_CEIL = 41 + Math.floor(Math.random() * 9); // 41..49
+  const CREEP_MS = 2000; // reach the ceiling this fast, then wait on real bytes
+  const HOLD_PCT = 96;
+  let pctClockStart = 0; // set on the first progress tick, so the ramp is seen
+  let loadPctFloor = $state(0);
+  function bumpPct(v: number, confirmed = false) {
+    if (!Number.isFinite(v)) return;
+    // The hold is enforced HERE rather than at each call site, so no future
+    // caller can accidentally sail past 96 before the title is confirmed. Only
+    // an explicitly `confirmed` bump may reach 100.
+    const capped = confirmed ? Math.min(100, v) : Math.min(HOLD_PCT, v);
+    if (capped <= loadPctFloor) return;
+    loadPctFloor = capped;
+    // The slime's walk along the poison trail IS the bar (owner 2026-09-21):
+    // its cell tracks this percentage, so it steps onto the final cell exactly
+    // when the game is ready, Elias strikes, plays victory, and we cut to
+    // Title. The worker eases between values — it is starved to ~2fps during
+    // the WASM compile, so raw jumps would read as teleports.
+    try {
+      loadWorker?.postMessage({ type: "progress", pct: loadPctFloor });
+    } catch {
+      /* worker gone — the canvas falls back to its own timed walk */
+    }
+  }
   // (byte-based progress bar removed 2026-08-03 — it read choppy because
   // transfer-size samples arrive in big lumps. Progress is now conveyed by the
   // rotating cards + a steady 3-dot "still working" indicator. bytesDownloaded
@@ -1611,6 +1679,10 @@
    *  published by the worker. Null until it reports; the CSS default below
    *  reserves a conservative band in the meantime. */
   let poisonTopFrac = $state<number | null>(null);
+  /** Baseline of the poison trail as a fraction of height — where the slime
+   *  walks. The percentage text is centred just under it so the two read as one
+   *  indicator rather than a caption floating somewhere else. */
+  let poisonBaseFrac = $state<number | null>(null);
   let studioFading = $state(false);
   let manualCardShownAt = 0;
 
@@ -1799,6 +1871,7 @@
           // card layer clamps itself above this so its tables cannot run down
           // into the load animation on a short screen.
           poisonTopFrac = ev.data.frac;
+          if (typeof ev.data.baseFrac === "number") poisonBaseFrac = ev.data.baseFrac;
           return;
         }
         if (ev.data?.type === "fps") {
@@ -2203,6 +2276,15 @@
           // §6.3 should read a cached launch (and `warm=1` in meta confirms it).
           if (totalBytes > 0) markStartup("game_download_start");
           if (totalBytes >= EXPECTED_DOWNLOAD_BYTES) markStartup("game_download_complete");
+          // Bytes drive the first 85% only. The remaining 15% belongs to the
+          // WASM compile and pack mount, which move no bytes at all — a bar
+          // that hit 100% there and then sat for ten seconds would be worse
+          // than no bar.
+          // Real bytes own everything above the creep ceiling, mapped into
+          // CREEP_CEIL..HOLD so a completed download lands exactly on the hold
+          // rather than on 100 — the compile and pack mount still follow.
+          const frac = Math.min(1, totalBytes / EXPECTED_DOWNLOAD_BYTES);
+          bumpPct(Math.round(CREEP_CEIL + frac * (HOLD_PCT - CREEP_CEIL)));
           // Owner spec (2026-06-01): web reports transport-level progress,
           // game owns the visible loading UI. Emit the postMessage so Arc's
           // Chronicles boot shell can drive a real progress bar instead of
@@ -2255,6 +2337,32 @@
       /* iframe unreadable — the byte-based signal above still applies */
     }
 
+    // TIME CREEP. resource-timing only reports transferSize once a file has
+    // FINISHED, so a single ~37MB index.wasm reads zero for its entire
+    // download: measured on a throttled 6Mbps cold load, the bar sat at 0% for
+    // 51 seconds and then jumped to 35%. Fifty-one seconds of no feedback is
+    // the exact thing this indicator exists to remove, and it is what made the
+    // previous byte bar read as broken.
+    //
+    // So: an asymptotic estimate supplies motion from the first second, and
+    // real bytes overtake it whenever they land (bumpPct keeps the maximum, so
+    // truth always wins and the value never goes backwards). It approaches ~80
+    // and never reaches it on its own, so it cannot claim the download is done
+    // — only real progress can push past that.
+    // Linear ramp to the ceiling over CREEP_MS (owner: "0 to 45% in say 2
+    // seconds — safely less than a fast download"). Deliberately quick: on a
+    // fast connection real bytes overtake it almost immediately, so the creep
+    // is only ever visible as the opening move; on a slow one it gives instant
+    // feedback instead of a frozen 0%.
+    // Clock the ramp from the FIRST TICK, not from consent. Between the gate
+    // click and this indicator being on screen the iframe has to mount and the
+    // worker start; on a slow connection that is more than CREEP_MS, so a
+    // consent-based clock finished the ramp before anyone could see it and the
+    // bar simply appeared at 42%. Measured exactly that on a 6Mbps run.
+    if (pctClockStart === 0) pctClockStart = Date.now();
+    const secs = Math.max(0, (Date.now() - pctClockStart) / 1000);
+    bumpPct(Math.round(CREEP_CEIL * Math.min(1, (secs * 1000) / CREEP_MS)));
+
     // Game has reported a scene. The scene NODE existing isn't the same as the
     // title being interactive — the fixed build sends `allbyte_title_ready` when
     // it truly is, and we hold the loader up until then so the title-music
@@ -2264,6 +2372,7 @@
     if (scene) {
       if (sceneFirstSeenAt === 0) {
         sceneFirstSeenAt = Date.now();
+        bumpPct(HOLD_PCT); // engine up, scene exists — hold here until interactive
         // Verify the SW served the CURRENT build, not a stale cached one.
         checkBuildFreshness((iframeEl?.contentWindow as any)?.gameState?.version);
       }
@@ -2276,6 +2385,7 @@
       loadStatus = `Ready: ${scene}`;
       loadPanelVisible = false;
       sceneReady = true;
+      bumpPct(100, true); // title is interactive — only confirmed bump may pass the hold — the reveal follows immediately
       loadWorker?.postMessage({ type: "scene" }); // worker decides when to reveal
       maybeReveal(); // DOM-loader fallback path
       startKbNudge(scene);
@@ -2752,6 +2862,29 @@
     <div class="load-spin" aria-hidden="true">
       <span class="load-ring load-ring-outer"><i class="load-strip"></i></span>
       <span class="load-ring load-ring-inner"><i class="load-strip"></i></span>
+    </div>
+    <!-- Percent + bar. Lives beside the spinner, NOT inside a card layer: the
+         cards are aria-hidden decoration that swap between variants, while this
+         must be present on every loading path. aria-live is off because it
+         updates constantly; the progressbar role exposes the value on demand. -->
+    <div
+      class="load-pct"
+      style={poisonBaseFrac != null ? `top:${poisonBaseFrac * 100}%` : undefined}
+      class:anchored={poisonBaseFrac != null}
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow={loadPctFloor}
+      aria-label="Loading the game"
+    >
+      <div class="load-pct-track">
+        <div class="load-pct-fill" style="width: {loadPctFloor}%"></div>
+      </div>
+      <div class="load-pct-text">
+        {loadPctFloor}%<span class="load-pct-phase"
+          >{loadPctFloor >= 100 ? " · entering Nesis" : loadPctFloor >= HOLD_PCT ? " · almost there" : " · loading"}</span
+        >
+      </div>
     </div>
   {/if}
 
@@ -3500,6 +3633,59 @@
     justify-content: center;
     gap: 0.7rem;
     margin: 0 auto;
+  }
+  .load-pct {
+    width: min(320px, 62vw);
+    margin: 0.85rem auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  /* Anchored under the slime's trail: the walk IS the bar, so the number reads
+     as its label rather than a separate widget. `top` comes from the worker's
+     measured baseline (it owns that geometry); the translate drops it just
+     below the cells the slime steps on. */
+  .load-pct.anchored {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, 0.9rem);
+    margin: 0;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .load-pct-track {
+    width: 100%;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(224, 231, 255, 0.16);
+    overflow: hidden;
+  }
+  .load-pct-fill {
+    height: 100%;
+    background: #e0e7ff;
+    border-radius: 2px;
+    /* The whole reason a byte bar is viable again. Transfer-size samples land
+       in lumps, so width jumps; the transition turns each jump into a glide.
+       It is a COMPOSITOR property, so it keeps animating through the ~8.8s
+       main-thread block during the WASM compile, when no JS can run and the
+       percentage text is necessarily frozen. */
+    transition: width 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .load-pct-text {
+    font-family: "Courier New", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: rgba(224, 231, 255, 0.62);
+    font-variant-numeric: tabular-nums;
+  }
+  .load-pct-phase {
+    opacity: 0.72;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .load-pct-fill {
+      transition: none;
+    }
   }
   .load-dot {
     width: 9px;

@@ -770,11 +770,16 @@ function ensurePoisonGeo() {
   const frac = Math.max(0.35, Math.min(0.95, pGridTop / H));
   if (Math.abs(frac - lastPoisonTop) > 0.005) {
     lastPoisonTop = frac;
-    // `baseFrac` is the trail's BASELINE (the row of cells the slime walks),
-    // so the page can centre the percentage text directly beneath the walk
-    // instead of guessing at this geometry in CSS. Same reasoning as frac: the
-    // layout maths lives here, the page just gets the answer.
-    (self as any).postMessage({ type: "poisonTop", frac, baseFrac: Math.min(0.995, baseY / H) });
+    // `trailBottomFrac` is the BOTTOM EDGE of the walked cells, not their
+    // centre. The cells are iso diamonds extending phh above and below cy, so
+    // publishing the centre put the percentage text on top of the tiles — which
+    // is exactly what the owner saw. Same reasoning as frac: this layout maths
+    // lives here, so the page gets the answer rather than guessing in CSS.
+    (self as any).postMessage({
+      type: "poisonTop",
+      frac,
+      trailBottomFrac: Math.min(0.995, (baseY + phh) / H),
+    });
   }
 }
 function frameAt(frames: Frame[], total: number, elapsed: number, loop = true): ImageBitmap | null {

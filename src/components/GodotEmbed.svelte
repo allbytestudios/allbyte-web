@@ -1679,9 +1679,10 @@
    *  published by the worker. Null until it reports; the CSS default below
    *  reserves a conservative band in the meantime. */
   let poisonTopFrac = $state<number | null>(null);
-  /** Baseline of the poison trail as a fraction of height — where the slime
-   *  walks. The percentage text is centred just under it so the two read as one
-   *  indicator rather than a caption floating somewhere else. */
+  /** BOTTOM EDGE of the poison trail as a fraction of height (not the cell
+   *  centre — the iso tiles extend below it, and anchoring to the centre put
+   *  the text on top of them). The percentage sits just under this so the walk
+   *  and its number read as one indicator. */
   let poisonBaseFrac = $state<number | null>(null);
   let studioFading = $state(false);
   let manualCardShownAt = 0;
@@ -1871,7 +1872,7 @@
           // card layer clamps itself above this so its tables cannot run down
           // into the load animation on a short screen.
           poisonTopFrac = ev.data.frac;
-          if (typeof ev.data.baseFrac === "number") poisonBaseFrac = ev.data.baseFrac;
+          if (typeof ev.data.trailBottomFrac === "number") poisonBaseFrac = ev.data.trailBottomFrac;
           return;
         }
         if (ev.data?.type === "fps") {
@@ -3649,7 +3650,7 @@
   .load-pct.anchored {
     position: absolute;
     left: 50%;
-    transform: translate(-50%, 0.9rem);
+    transform: translate(-50%, 0.45rem);
     margin: 0;
     z-index: 3;
     pointer-events: none;

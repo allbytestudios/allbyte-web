@@ -110,20 +110,52 @@ def build_sessions(items: list[dict]) -> dict:
             rec["played_page"] = True
         sc = val(it, "scene")
         if ev == "scene" and sc:
-            rec["scenes"].append((ts, sc))
+            # Keep the beacon's own `dur` — seconds since the game page opened,
+            # i.e. GAME TIME at the moment that scene was reported. Using it
+            # rather than deriving from `ts` means the timeline survives clock
+            # skew and matches what the player actually experienced.
+            try:
+                at = int(val(it, "dur", "N") or 0)
+            except (TypeError, ValueError):
+                at = 0
+            rec["scenes"].append((ts, sc, at))
     return s
 
 
 def ordered(rec: dict, games_only: bool = False) -> list[str]:
-    out: list[str] = []
-    for _, sc in sorted(rec["scenes"]):
+    return [sc for sc, _, _ in timeline(rec, games_only)]
+
+
+def timeline(rec: dict, games_only: bool = False) -> list[tuple[str, int, int]]:
+    """(scene, arrived_at_seconds, seconds_spent) in visit order.
+
+    Consecutive repeats of the same scene collapse into one entry, keeping the
+    FIRST arrival — the beacon poller re-reports the current scene every few
+    seconds, so without that a single room becomes a dozen identical rows.
+
+    `seconds_spent` is the gap to the next DISTINCT scene, which is what shows
+    where a player lingered versus walked straight through. The last scene has
+    no successor, so it takes the session's total duration as its end.
+    """
+    rows: list[tuple[str, int, int]] = []
+    for _, sc, at in sorted(rec["scenes"], key=lambda x: (x[0], x[2])):
         if not sc:
             continue
         if games_only and sc.startswith(NOISE_PREFIX):
             continue
-        if not out or out[-1] != sc:
-            out.append(sc)
+        if rows and rows[-1][0] == sc:
+            continue
+        rows.append((sc, at, 0))
+    out: list[tuple[str, int, int]] = []
+    for i, (sc, at, _) in enumerate(rows):
+        end = rows[i + 1][1] if i + 1 < len(rows) else rec.get("dur", at)
+        out.append((sc, at, max(0, end - at)))
     return out
+
+
+def clock(sec: int) -> str:
+    """m:ss elapsed-since-start, the form a player would recognise."""
+    return f"{sec // 60}:{sec % 60:02d}"
 
 
 def suspicious(rec: dict) -> list[str]:
@@ -228,7 +260,7 @@ def main() -> int:
     # returns on a different device has no save. Treat it as a floor.
     newish, returning = [], []
     for sid, rec in players.items():
-        marks = {sc for _, sc in rec["scenes"]}
+        marks = {sc for _, sc, _ in rec["scenes"]}
         if "m:newgame" in marks or "s:new_game_confirmed" in marks:
             newish.append(sid)
         else:
@@ -269,7 +301,23 @@ def main() -> int:
             w(f"- ⚠️ **SUSPICIOUS:** {'; '.join(flags)}")
         w(f"- session `{sid}` · beacons {dict(rec['evs'])}"
           + (f" · context `{rec['ctx']}`" if rec["ctx"] else ""))
-        w(f"- **Reached:** {' → '.join(game)}\n")
+        # Timed route, not just an arrow chain. The gap between scenes is the
+        # useful signal: it separates "walked through" from "stuck here for six
+        # minutes", which is what a balance or navigation problem looks like
+        # from the outside.
+        rows = timeline(rec, True)
+        if rows:
+            w("- **Route** (game time · time in scene):")
+            w("")
+            w("  | at | scene | spent |")
+            w("  |---:|---|---:|")
+            for sc, at, spent in rows:
+                w(f"  | {clock(at)} | {sc} | {fmt_dur(spent) if spent else '—'} |")
+            longest = max(rows, key=lambda r: r[2])
+            if longest[2] >= 60:
+                w("")
+                w(f"  Longest stay: **{longest[0]}** ({fmt_dur(longest[2])}).")
+        w("")
     if not players:
         w("_None in this window._\n")
 

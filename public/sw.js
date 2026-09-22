@@ -70,7 +70,18 @@ const BUILD_VERSION = "__BUILD_VERSION__";
 // costs every returning user a ~33MB re-download, which is why it is reserved
 // for exactly this case. The real fix is game-side: bump WEB_VERSION per
 // shipped build (see APP_CLAUDE_WEB_VERSION_BUMP.md).
-const CACHE_SCHEMA = "s3";
+// Bumped to "s4" 2026-09-22. SECOND occurrence of the same root cause: two
+// different game builds shipped under the same BUILD_VERSION —
+// 0.8.2693-b374-dbdfd680 then 0.8.2693-b374-7047ea3c, FORTY-FOUR commits
+// apart, including a MayorsHouse nav fix that unblocks the opening story beat.
+// CACHE_NAME keys on BUILD_VERSION, so returning players would have kept
+// serving the old build and never seen any of it.
+//
+// Deliberately NOT fixed by putting the sha back into BUILD_VERSION: that was
+// removed on 2026-06-01 because it made every WEB commit (a CSS tweak, a typo)
+// blow away the user's cached game. The right discriminator is the GAME build,
+// not the web commit — see APP_CLAUDE_WEB_VERSION_BUMP.md.
+const CACHE_SCHEMA = "s4";
 const CACHE_NAME = `chronicles-godot-${CACHE_SCHEMA}-${BUILD_VERSION}`;
 
 self.addEventListener("install", (event) => {

@@ -57,9 +57,15 @@
     "            answers 'what was the game when the manual was X'. Newest first."
   ],
   "manual": {
-    "version": "1.6.1",
-    "reviewed": "2026-09-08",
+    "version": "1.7.0",
+    "reviewed": "2026-09-22",
     "history": [
+      {
+        "version": "1.7.0",
+        "game": "0.8.2693",
+        "date": "2026-09-22",
+        "note": "Running removed from combat (owner: the mechanic was too buggy and was cut). Dropped the Running section, the Run row from the combat HUD table, and Run from the ';' / Circle bindings, which now read Cancel - Back only. Minor, not major: a mechanic's description changed; no chapter was added, removed or reordered."
+      },
       {
         "version": "1.6.1",
         "game": "0.8.2592",
@@ -93,6 +99,12 @@
     ],
     "target": "Episode One — designed behaviour",
     "aheadOfLive": [
+      {
+        "item": "Run/flee is gone from combat entirely - no HUD button, no binding, no Running rules",
+        "state": "built, awaiting promote",
+        "seenOn": "develop (Combat HUD: remove Run button + widen End)",
+        "note": "Prod 0.8.2693 still ships the Run button, so the booklet is ahead of the live build here. Clears on the next promote - nothing is owed by the game."
+      },
       {
         "item": "Interrupt applies Stunned — the creature loses its next turn, not just its reactions",
         "state": "built, awaiting promote",

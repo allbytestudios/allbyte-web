@@ -330,11 +330,19 @@ def main() -> int:
         w(f"- `{k}` — {c} session{'s' if c != 1 else ''}")
     w("")
     for sid, rec in sorted(nonboot.items(), key=lambda kv: -max(kv[1]["ts"])):
-        seq = ordered(rec)
+        rows = timeline(rec)
         flags = suspicious(rec)
         w(f"- {ts_str(max(rec['ts']))} · open {fmt_dur(rec['dur'])} · {rec['dev']} · via `{rec['ref']}`"
-          f" · last=`{seq[-1] if seq else 'NONE'}`"
+          f" · last=`{rows[-1][0] if rows else 'NONE'}`"
           + (f" · ⚠️ {'; '.join(flags)}" if flags else ""))
+        # Timed startup markers for the sessions that never made it. WHEN they
+        # dropped is the whole question for these: stalling at
+        # s:game_download_start after 2s is someone bouncing off the download,
+        # while the same marker at 90s is a slow connection they waited out and
+        # then abandoned. The two need different fixes.
+        if rows:
+            w("    " + " → ".join(f"{sc} `{clock(at)}`" for sc, at, _ in rows[:8])
+              + (" …" if len(rows) > 8 else ""))
 
     flagged = {k: v for k, v in real.items() if suspicious(v)}
     w(f"\n## Flagged for a human look ({len(flagged)})\n")

@@ -962,7 +962,31 @@
         if (visible) reArmFullscreen();
       };
       document.addEventListener("visibilitychange", onVisible);
-      visibilityOff = () => document.removeEventListener("visibilitychange", onVisible);
+      // Owner 2026-09-23: locking the phone left the game's music playing.
+      // Only the GAME can stop it — Godot 4 keeps its AudioContext inside the
+      // module closure, so the parent has no handle to suspend (checked: no
+      // GodotAudio global, only Godot/Engine). So the web side's job is to make
+      // sure the pause SIGNAL is never missed, and the game acts on it.
+      //
+      // visibilitychange alone is not enough on mobile. iOS Safari does not
+      // reliably fire it on screen lock, and a backgrounded wrapper can have it
+      // throttled — which is exactly the case the owner hit. pagehide and blur
+      // cover the paths it misses; the game gets the same message from all
+      // three and can treat it idempotently.
+      const onHide = () => {
+        try {
+          iframeEl?.contentWindow?.postMessage(
+            { type: "allbyte:visibility", visible: false }, "*",
+          );
+        } catch {}
+      };
+      window.addEventListener("pagehide", onHide);
+      window.addEventListener("blur", onHide);
+      visibilityOff = () => {
+        document.removeEventListener("visibilitychange", onVisible);
+        window.removeEventListener("pagehide", onHide);
+        window.removeEventListener("blur", onHide);
+      };
       // Rotation re-nudge (owner 2026-08-27: rotating portrait -> landscape on
       // the loading screen left the picture stuck in the left half).
       //

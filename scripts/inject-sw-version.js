@@ -62,17 +62,86 @@ if (!existsSync(versionPath)) {
   process.exit(1);
 }
 
-let version;
+let committed;
 try {
   const data = JSON.parse(readFileSync(versionPath, "utf8"));
-  version = data.version;
-  if (!version || typeof version !== "string") {
+  committed = data.version;
+  if (!committed || typeof committed !== "string") {
     throw new Error(`game-version.json has no usable "version" string`);
   }
 } catch (err) {
   console.error(`[inject-sw-version] could not read version: ${err.message}`);
   process.exit(1);
 }
+
+/**
+ * THE VERSION STAMPED HERE MUST BE WHAT IS ACTUALLY DEPLOYED, so it is read
+ * from the live channels.json — not from the committed file.
+ *
+ * The race this removes (it is subtle and it bit us): a game promote runs
+ * push-channel.js, which stamps the LIVE sw.js correctly and invalidates it, so
+ * players are fine immediately. But the committed game-version.json still says
+ * the OLD version until finalize-demo.yml catches up (10-min cron). Any site
+ * deploy landing inside that window rebuilt sw.js from the stale committed
+ * value and OVERWROTE the correct live stamp — reverting every returning player
+ * to a cache key for a game that is no longer deployed, which is the
+ * stale-cache boot hang. push-channel.js:315 warns about exactly this.
+ *
+ * Shortening the cron or firing a dispatch from CodeBuild would only make the
+ * window smaller. Reading the deployed value instead makes the revert
+ * IMPOSSIBLE: whatever order the deploys land in, sw.js is stamped with what is
+ * serving. The committed file stays useful (the footer, and the fallback here)
+ * but is no longer load-bearing for the cache key.
+ *
+ * Fallback is deliberate and loud: a build with no network (offline laptop, or
+ * the very first deploy before channels.json exists) uses the committed value
+ * rather than failing, because a correct-but-stale stamp is recoverable while a
+ * failed build blocks everything. Set SW_VERSION_SOURCE=committed to force the
+ * old behaviour.
+ */
+const CHANNELS_URL = process.env.CHANNELS_URL || "https://allbyte.studio/godot/channels.json";
+
+/** channels.json carries "0.8.2756-913371dd"; sw.js wants the bare "v0.8.2756". */
+function normalize(raw, likeCommitted) {
+  const bare = String(raw).replace(/^v/, "").split("-")[0];
+  return likeCommitted.startsWith("v") ? `v${bare}` : bare;
+}
+
+async function resolveDeployedVersion() {
+  if (process.env.SW_VERSION_SOURCE === "committed") {
+    console.log(`[inject-sw-version] SW_VERSION_SOURCE=committed — using ${committed}`);
+    return committed;
+  }
+  try {
+    const res = await fetch(CHANNELS_URL, {
+      headers: { "Cache-Control": "no-cache" },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const live = (json.channels || json)?.alpha?.version;
+    if (!live) throw new Error("no alpha channel version in channels.json");
+    const resolved = normalize(live, committed);
+    if (resolved !== committed) {
+      // Expected right after a game promote, before finalize commits.
+      console.log(
+        `[inject-sw-version] deployed is ${resolved}, committed is ${committed} — ` +
+          `stamping the DEPLOYED version (prevents reverting sw.js to a version nobody serves)`
+      );
+    } else {
+      console.log(`[inject-sw-version] deployed matches committed (${resolved})`);
+    }
+    return resolved;
+  } catch (err) {
+    console.warn(
+      `[inject-sw-version] could not read deployed version from ${CHANNELS_URL} ` +
+        `(${err.message}) — falling back to committed ${committed}`
+    );
+    return committed;
+  }
+}
+
+const version = await resolveDeployedVersion();
 
 const sw = readFileSync(swPath, "utf8");
 if (!sw.includes(PLACEHOLDER)) {

@@ -135,14 +135,32 @@ async function checkVersions() {
   if (!swV || !deployed) {
     return record("version coherence", false, `could not read stamps (sw=${swV} deployed=${deployed})`);
   }
-  const ok = bare(swV) === bare(deployed) && (!committed || bare(committed) === bare(deployed));
+
+  // THE LOAD-BEARING INVARIANT is sw.js == deployed. That pair decides whether a
+  // returning player's cache key matches the bytes being served, i.e. whether
+  // they boot or hang.
+  //
+  // The committed value lagging is a DIFFERENT, benign condition: it is the
+  // normal state in the window between a game promote and finalize-demo
+  // reconciling it, and inject-sw-version.js now reads the deployed version
+  // directly so a lagging commit can no longer be stamped into sw.js. Failing on
+  // it would make this check go red during correct operation — the exact way a
+  // check turns into noise and stops being read.
+  const swMatchesDeployed = bare(swV) === bare(deployed);
   record(
-    "version coherence",
-    ok,
-    ok
-      ? `all on ${bare(deployed)}`
-      : `MISMATCH committed=${bare(committed)} sw.js=${bare(swV)} deployed=${bare(deployed)}`,
+    "version coherence (sw.js == deployed)",
+    swMatchesDeployed,
+    swMatchesDeployed
+      ? `both on ${bare(deployed)}`
+      : `MISMATCH sw.js=${bare(swV)} deployed=${bare(deployed)} — returning players will hang`,
   );
+
+  if (committed && bare(committed) !== bare(deployed)) {
+    console.log(
+      `  [note] committed game-version.json is ${bare(committed)}, deployed is ${bare(deployed)} — ` +
+        `expected right after a game promote; finalize-demo reconciles it (<=10min, or dispatch it)`,
+    );
+  }
 }
 
 // 3. Pages respond. Reachability only — content assertions rot.

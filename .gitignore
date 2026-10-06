@@ -87,3 +87,8 @@ tests/ai-eval/results/
 # Rendered dev-only into /test/marketing-queue/ (never ships to the public CDN
 # or this public repo). See DevlogDistributionPanel in here.
 /private/
+
+# Local Godot build version written by sync-assets.js — diagnostic only, never
+# deployed. The DEPLOYED version lives in src/data/game-version.json, which the
+# finalize path owns (see the comment in scripts/sync-assets.js).
+src/data/game-version.local.json

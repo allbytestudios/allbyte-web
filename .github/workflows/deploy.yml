@@ -88,66 +88,24 @@ jobs:
             --paths "/*"
 
       - name: Verify deployment
+        # One script, not sixty lines of inline bash. It replaced a step that
+        # checked the homepage, /play/, HSTS and the /godot/ isolation headers —
+        # all of that is still covered, plus the checks the old step could not
+        # make: version coherence across committed/sw.js/deployed (the
+        # stale-cache class of bug), robots.txt and the sitemap being REAL files
+        # rather than the CDN's index.html fallback, and the search-visibility
+        # rules actually having shipped.
+        #
+        # Deliberately shallow and fast: no browser, no game. Gameplay
+        # assertions on every deploy went red for reasons unrelated to
+        # deploying, and a check that is usually noise gets ignored.
+        #
+        # Writes a table to the run summary, so each deploy leaves a readable
+        # record. Run the same checks locally any time: npm run verify:deploy
         run: |
           echo "Waiting for CloudFront invalidation to propagate..."
           sleep 15
-
-          # Test homepage
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://allbyte.studio)
-          if [ "$STATUS" != "200" ]; then
-            echo "FAIL: Homepage returned $STATUS"
-            exit 1
-          fi
-          echo "PASS: Homepage returned 200"
-
-          # Test self-hosting redirect (follows redirect to devlog/studio/)
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L https://allbyte.studio/self-hosting-with-claude/)
-          if [ "$STATUS" != "200" ]; then
-            echo "FAIL: Self-hosting redirect returned $STATUS"
-            exit 1
-          fi
-          echo "PASS: Self-hosting redirect returned 200"
-
-          # Test play page
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://allbyte.studio/play/)
-          if [ "$STATUS" != "200" ]; then
-            echo "FAIL: Play page returned $STATUS"
-            exit 1
-          fi
-          echo "PASS: Play page returned 200"
-
-          # Test HTTPS headers.
-          # HSTS is applied site-wide via the CloudFront ResponseHeadersPolicy,
-          # so check it on the homepage.
-          HEADERS=$(curl -sI https://allbyte.studio)
-          if echo "$HEADERS" | grep -qi "strict-transport-security"; then
-            echo "PASS: HSTS header present"
-          else
-            echo "FAIL: Missing HSTS header"
-            exit 1
-          fi
-
-          # COOP/COEP cross-origin isolation is applied ONLY to /godot/* (the
-          # WASM iframe content) by GodotHeadersFunction in cloudformation.yaml
-          # — NOT the wrapper pages. So verify them on a /godot/ path, not the
-          # homepage. (Checking the homepage was the long-standing bug that made
-          # every deploy conclude "failure" and silently skip the Deploy QA run.)
-          GODOT_HEADERS=$(curl -sI https://allbyte.studio/godot/index.html)
-          if echo "$GODOT_HEADERS" | grep -qi "cross-origin-opener-policy: same-origin"; then
-            echo "PASS: COOP header present on /godot/"
-          else
-            echo "FAIL: Missing COOP header on /godot/"
-            exit 1
-          fi
-
-          if echo "$GODOT_HEADERS" | grep -qi "cross-origin-embedder-policy: require-corp"; then
-            echo "PASS: COEP header present on /godot/"
-          else
-            echo "FAIL: Missing COEP header on /godot/"
-            exit 1
-          fi
-
-          echo "All integration tests passed!"
+          node scripts/verify-deploy.mjs --sha "${{ github.sha }}"
 
       - name: Notify subscribers of new content
         run: |

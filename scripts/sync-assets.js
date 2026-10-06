@@ -63,9 +63,52 @@ if (manifest.chroniclesProject && existsSync(manifest.chroniclesProject)) {
 }
 
 mkdirSync(join(ROOT, "src/data"), { recursive: true });
+
+// game-version.json means "the game version DEPLOYED TO PROD" — sw.js keys its
+// cache on it and the footer reports it. It does NOT mean "the version in the
+// Godot tree on this laptop".
+//
+// This script used to overwrite it from the local project on every single
+// build, which made any ordinary site build a writer of a deployment fact. The
+// failure that caused: a site deploy would silently carry whatever version the
+// local game tree happened to sit at (seen 2026-10-06: local 0.8.2791 against a
+// deployed 0.8.2756). Ship that and sw.js re-keys to a version that was never
+// deployed — every returning player re-downloads ~60MB, the footer misreports
+// what is running, and checkBuildFreshness sees "loaded older than expected"
+// and starts self-healing against a build that is actually correct. Catching it
+// meant hand-inspecting this file before every push, which is exactly the chore
+// this comment exists to end.
+//
+// So the DEPLOYED value has exactly one writer: the finalize path
+// (finalize-channel.js / finalize-web-deploy.js / finalize-demo.yml), which
+// reads the live channels.json — the only source that knows what is actually
+// serving. This script now only BOOTSTRAPS the file when it is missing, which
+// is the fresh-clone case; it never overwrites a real value.
+const versionPath = join(ROOT, "src/data/game-version.json");
+if (!existsSync(versionPath)) {
+  writeFileSync(versionPath, JSON.stringify({ version, buildDate }, null, 2));
+  console.log(`game-version.json bootstrapped at ${version} (file was missing)`);
+} else {
+  const current = (() => {
+    try {
+      return JSON.parse(readFileSync(versionPath, "utf-8")).version;
+    } catch {
+      return null;
+    }
+  })();
+  if (current !== version) {
+    console.log(
+      `local game build is ${version}; deployed (committed) is ${current} — ` +
+        `leaving game-version.json alone (finalize owns it, see comment in this script)`
+    );
+  }
+}
+
+// The local value still gets written, just somewhere that cannot ship: handy
+// when working out whether the laptop's export matches prod. Gitignored.
 writeFileSync(
-  join(ROOT, "src/data/game-version.json"),
-  JSON.stringify({ version, buildDate }, null, 2)
+  join(ROOT, "src/data/game-version.local.json"),
+  JSON.stringify({ version, buildDate, note: "LOCAL Godot tree — not deployed. Diagnostic only." }, null, 2)
 );
 
 // --- 2. Sync music ---

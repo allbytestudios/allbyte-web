@@ -6,6 +6,7 @@ import DevAuthSwitcher from "../components/DevAuthSwitcher.svelte";
 import UpdateOverlay from "../components/UpdateOverlay.svelte";
 import PerfBeacon from "../components/PerfBeacon.svelte";
 import gameVersion from "../data/game-version.json";
+import { isNoIndexPath } from "../lib/seo.mjs";
 
 /** Injected by vite.define in astro.config.mjs: "<short sha>·<build time>Z". */
 const SITE_BUILD: string = __SITE_BUILD__;
@@ -19,6 +20,11 @@ interface Props {
   description?: string;
   image?: string;
   type?: string;
+  /** Force `noindex` for a page whose URL alone can't reveal it should be
+   *  hidden — a DRAFT devlog post being the case this exists for. Paths that
+   *  are categorically non-player (Dev Console, admin, changelog) are detected
+   *  automatically by isNoIndexPath() and need no prop. */
+  noindex?: boolean;
 }
 
 const {
@@ -27,6 +33,7 @@ const {
   description = "A handcrafted tactical RPG in the spirit of 90s JRPGs from AllByte Studios — play free in your browser.",
   image = "/og-image.jpg",
   type = "website",
+  noindex = false,
 } = Astro.props;
 
 const cardTitle = ogTitle ?? title;
@@ -35,6 +42,13 @@ const cardTitle = ogTitle ?? title;
 const SITE = "https://allbyte.studio";
 const canonical = new URL(Astro.url.pathname, SITE).href;
 const imageAbs = new URL(image, SITE).href;
+
+// Search visibility. Either the path is categorically non-player (Dev Console,
+// admin, engineering changelog — see src/lib/seo.mjs, shared with the sitemap
+// filter) or the page declared itself unfinished via the `noindex` prop.
+// "follow" rather than "nofollow" on purpose: don't list the page, but do let
+// crawlers traverse its links so the public pages it points at still benefit.
+const robots = noindex || isNoIndexPath(Astro.url.pathname) ? "noindex,follow" : null;
 ---
 
 <!doctype html>
@@ -46,6 +60,7 @@ const imageAbs = new URL(image, SITE).href;
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/png" href="/icon.png" />
     <link rel="canonical" href={canonical} />
+    {robots && <meta name="robots" content={robots} />}
 
     <!-- Open Graph + Twitter link-preview cards. Platforms (Bluesky, Threads,
          X, Discord, etc.) render a thumbnail card from these when a link is

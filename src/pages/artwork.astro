@@ -19,8 +19,16 @@ function formatTrackName(name: string): string {
     .trim();
 }
 
-const title = "Artwork — AllByte Studios";
-const description = "Hand-crafted sprites, animations, screenshots, and recordings from The Chronicles of Nesis.";
+// Title and description name the SOUNDTRACK explicitly, because this page is
+// where the music lives: /music/ was folded in here (2026-06-18) and is now a
+// redirect stub, so this is the only indexable home for it. The music tab's
+// content was already server-rendered and crawlable, but neither the title nor
+// the description contained the word "soundtrack" — so the page could not be
+// found by anyone searching for it, which made the music effectively invisible
+// despite being indexed.
+const title = "Art & Soundtrack — The Chronicles of Nesis | AllByte Studios";
+const description =
+  "The handcrafted art and original soundtrack of The Chronicles of Nesis: sprites, animations, screenshots, and the game's music, composed and drawn by hand.";
 
 interface ScreenshotItem {
   id: string;

@@ -1,12 +1,55 @@
 import { defineConfig } from "astro/config";
 import svelte from "@astrojs/svelte";
+import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
-import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, writeFileSync, realpathSync, watch as fsWatch } from "node:fs";
+import { createReadStream, existsSync, statSync, appendFileSync, readFileSync, writeFileSync, realpathSync, watch as fsWatch, readdirSync } from "node:fs";
 import { join, normalize, resolve, sep, relative } from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import chokidar from "chokidar";
 import remarkDirective from "remark-directive";
 import remarkWalkthroughDirectives from "./scripts/remark-walkthrough-directives.mjs";
+import { isNoIndexPath } from "./src/lib/seo.mjs";
+
+// Draft devlog URLs, derived from frontmatter at BUILD time.
+//
+// Drafts are deliberately BUILT and deployed — an admin previews them in place
+// at their real URL, with the body CSS-gated behind body.is-admin (see
+// devlog/[...slug].astro). So they are reachable, which is exactly why they
+// must be kept out of the sitemap and carry noindex: a half-written post is the
+// worst possible thing for a stranger to meet in search results.
+//
+// Scanned rather than hand-listed so un-drafting a post removes it from this
+// set automatically, with no second place to remember to edit. The route is
+// /devlog/<file-id>/ (flat .md files, slug === post.id) and trailingSlash is
+// "always", so the trailing slash here is not optional.
+function draftDevlogPaths() {
+  const dir = new URL("./src/content/devlogs/", import.meta.url);
+  let files = [];
+  try {
+    files = readdirSync(dir).filter((f) => f.endsWith(".md") || f.endsWith(".mdx"));
+  } catch {
+    return new Set(); // no collection dir (fresh clone / partial checkout)
+  }
+  const drafts = new Set();
+  for (const file of files) {
+    let raw = "";
+    try {
+      raw = readFileSync(new URL(file, dir), "utf8");
+    } catch {
+      continue;
+    }
+    // Only inspect the frontmatter block — "draft: true" appearing in prose
+    // (these posts discuss drafting) must not pull a published post out.
+    const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw);
+    if (!fm) continue;
+    if (/^draft:\s*true\s*$/m.test(fm[1])) {
+      drafts.add(`/devlog/${file.replace(/\.mdx?$/, "")}/`);
+    }
+  }
+  return drafts;
+}
+
+const DRAFT_DEVLOG_PATHS = draftDevlogPaths();
 
 // SITE build stamp — distinct from the GAME version in game-version.json.
 // The two move independently: a site deploy ships new Astro/Svelte output while
@@ -1297,7 +1340,65 @@ function marketingDistribution() {
 }
 
 export default defineConfig({
-  integrations: [svelte()],
+  // Required for sitemap generation and absolute URLs. Kept identical to the
+  // SITE constant BaseLayout uses for canonical/OG tags — if one moves, move both.
+  site: "https://allbyte.studio",
+  integrations: [
+    svelte(),
+    // Sitemap: the public, indexable surface only.
+    //
+    // The filter is a PREDICATE, not a maintained blocklist — adding a page
+    // under /test/ or drafting a devlog post removes it from the sitemap with
+    // no edit here. It shares isNoIndexPath() with the <meta name="robots">
+    // tag in BaseLayout, so a page can never be noindex-ed and simultaneously
+    // advertised for crawling.
+    sitemap({
+      // /manual/ is a hand-authored static page under public/, not an Astro
+      // route, so route discovery cannot see it — and it is one of the most
+      // player-facing pages on the site (the hero links straight to it). Listed
+      // explicitly rather than left out.
+      customPages: ["https://allbyte.studio/manual/"],
+      filter: (page) => {
+        // `page` is an absolute URL; compare on pathname only.
+        let path = page;
+        try {
+          path = new URL(page).pathname;
+        } catch {
+          /* already a path */
+        }
+        if (isNoIndexPath(path)) return false;
+        if (DRAFT_DEVLOG_PATHS.has(path)) return false;
+        return true;
+      },
+      // Relative emphasis across the pages that ARE indexed (owner 2026-10-06).
+      // The order is deliberate and reflects what the site is FOR: playing the
+      // game comes first, the Game Manual second, art/soundtrack visible but
+      // behind both. Everything studio- or engineering-flavoured is not in this
+      // file at all.
+      //
+      // Be clear-eyed about what this buys: Google has stated publicly that it
+      // ignores <priority>, so this does NOT move Google rankings. Bing and
+      // smaller crawlers do still read it, and it costs nothing to state the
+      // intent accurately. The levers that actually decide "manual over
+      // everything else" are internal linking and titles — which is why the
+      // manual sits in the hero CTA, is labelled "Game Manual" in both footer
+      // navs, and now carries "Game Manual" in its <title>.
+      serialize: (item) => {
+        const path = new URL(item.url).pathname;
+        const priority =
+          path === "/" || path === "/play/"
+            ? 1.0
+            : path === "/manual/"
+              ? 0.9
+              : path === "/artwork/"
+                ? 0.8
+                : ["/walkthrough/", "/chronicles_of_nesis/", "/fonts/"].includes(path)
+                  ? 0.6
+                  : 0.5;
+        return { ...item, priority };
+      },
+    }),
+  ],
   trailingSlash: "always",
   build: {
     // Inline the stylesheets rather than linking them.

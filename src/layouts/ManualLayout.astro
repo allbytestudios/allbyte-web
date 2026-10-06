@@ -25,11 +25,14 @@ interface Props {
   description?: string;
   /** Route to mark current in the nav, e.g. "/changelog/". */
   active?: string;
+  /** Forwarded to BaseLayout — used by DRAFT devlog posts, which are built and
+   *  reachable for in-place admin preview but must stay out of search. */
+  noindex?: boolean;
 }
-const { title, description, active } = Astro.props;
+const { title, description, active, noindex } = Astro.props;
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout title={title} description={description} noindex={noindex}>
   <div class="manual-page">
     <ManualHeader active={active} />
 
@@ -40,7 +43,7 @@ const { title, description, active } = Astro.props;
         <a href="/play/">Play</a>
         <a href="/#pitch">Gameplay</a>
         <a href="/#creation">Characters</a>
-        <a href="/manual/">Manual</a>
+        <a href="/manual/">Game Manual</a>
         <a href="/walkthrough/">Strategy Guide</a>
         <a href="/#studio">Studio</a>
       </div>

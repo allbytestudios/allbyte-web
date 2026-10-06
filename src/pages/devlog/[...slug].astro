@@ -36,6 +36,7 @@ const seriesLabel = categoryLabels[post.data.devlog] ?? categoryLabel;
   title={`${post.data.title} — AllByte Studios`}
   description={post.data.description}
   active="/devlog/"
+  noindex={post.data.draft}
 >
   <main class="article">
     {post.data.draft && (

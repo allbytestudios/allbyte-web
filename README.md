@@ -7,10 +7,17 @@ download, no install.
 
 **Live:** [allbyte.studio](https://allbyte.studio) · **Play it now:** [allbyte.studio/play](https://allbyte.studio/play/)
 
-The site embodies a "High‑Tech Artisan" split identity: **AI‑assisted
-engineering** (code, infrastructure, QA, automation) paired with **100 %
-handcrafted** art, music, and typography. That contrast runs through the whole
-product — including the landing page, which is literally split down the middle.
+The studio works to a "High‑Tech Artisan" principle: **AI‑assisted engineering**
+(code, infrastructure, QA, automation) paired with **100 % handcrafted** art,
+music, and typography. AI never touches the art, the music, or the typeface.
+
+That division is how the studio is *built*, not how the site is *laid out*. An
+earlier landing page staged it literally — a vertical split‑screen, "The Engine"
+against "The Heart" — and that design is retired. The homepage is now a single
+illuminated‑manual presentation of the game itself, and the engineering material
+sits one deliberate step off the player's path (a quiet studio link, not a peer
+of "play the game"). The contrast is still the honest description of the work; it
+is no longer a navigation metaphor.
 
 > **Game developers:** this repo doubles as a small set of open-source Godot
 > tools — [see the index](#-open-source-tools-for-godot-developers). The flagship is the
@@ -56,12 +63,13 @@ The pipeline's own supporting scripts (deploy, analytics, smoke tests) live unde
 ### Public site
 | Page | What it is |
 |------|-----------|
-| [`/`](https://allbyte.studio/) | **Bilateral landing** — a vertical split‑screen: "The Engine" (dark, technical, monospace) vs "The Heart" (warm, artisan, ModernGoth serif). Panels expand on hover; stacks on mobile. |
-| [`/play`](https://allbyte.studio/play/) | **Play in browser** — the Godot 4 WebAssembly build, running in a cross‑origin‑isolated iframe. Tier‑aware build picker (Alpha / Beta / debug). |
+| [`/`](https://allbyte.studio/) | **Landing page** — an illuminated‑manual presentation of the game: hero video, the world, four gameplay pillars, the cast, and a small studio section at the foot. |
+| [`/play`](https://allbyte.studio/play/) | **Play in browser** — the Godot 4 WebAssembly build in a cross‑origin‑isolated iframe. One public build for everyone; a boot watchdog with stale‑cache self‑heal, mobile tap‑to‑fullscreen, and anonymous play‑depth beacons. |
+| [`/manual`](https://allbyte.studio/manual/) | **Instruction booklet** — a 90s‑boxed‑set manual teaching the game's systems. |
 | [`/chronicles_of_nesis`](https://allbyte.studio/chronicles_of_nesis/) | The game's story/pitch page. |
 | [`/walkthrough`](https://allbyte.studio/walkthrough/) | A scene‑by‑scene visual map of the game (video + stills of every scene, magazine‑scroll layout). |
 | [`/artwork`](https://allbyte.studio/artwork/) | Sprite gallery — Allies / Enemies / Bosses, animated GIFs generated from sprite sheets. |
-| [`/music`](https://allbyte.studio/music/) | Original soundtrack with a persistent cross‑page music player. |
+| [`/artwork#music`](https://allbyte.studio/artwork/#music) | Original soundtrack, with a music player that persists across page navigation. (Folded into Artwork in June 2026; `/music/` is now a redirect stub.) |
 | [`/fonts`](https://allbyte.studio/fonts/) | Showcase of **ModernGoth**, the studio's hand‑built typeface. |
 
 ### Devlog
@@ -160,28 +168,44 @@ install, no store, no 30 % platform cut. The catches, and how they're handled he
    against casual extraction; a determined runtime attacker can still dump the
    key from a live browser — that's inherent to shipping playable code.)*
 
-3. **You want more than one build.** The pipeline models **channels** — a
-   content axis (Demo, free vs Beta+, members) × a debug axis (players vs
-   Legend/dev builds), plus a bleeding‑edge `develop` channel. Each channel is a
-   path under `/godot/`; which builds are live is published at **runtime** via
-   `/godot/channels.json`, so nothing needs a rebuild to flip a build on.
+3. **You may want more than one build — and you probably want fewer than you
+   think.** The pipeline models **channels**: each is a path under `/godot/`, and
+   which ones are live is published at **runtime** via `/godot/channels.json`, so
+   flipping a build live never needs a source change or a rebuild.
 
    | channel | label | who | how it's gated |
    |---------|-------|-----|----------------|
    | `alpha` | **Demo** | everyone, free | not gated |
-   | `alpha-debug` | Demo (Debug) | Legend+ | client‑side only (debug chrome, low stakes) |
-   | `beta` | Beta | Initiate+ | **CloudFront signed cookies** — enforced at the edge, per asset fetch |
-   | `beta-debug` | Beta (Debug) | Legend+ | dev lane, deliberately open |
-   | `develop` | Develop (Debug) | Legend+ | dev lane, deliberately open |
+
+   **That table used to have five rows**, across a content axis (free vs
+   members) and a debug axis (players vs dev builds). It is down to one, and the
+   reduction is the most useful thing in this section.
+
+   A separate debug build only advanced when someone remembered to promote it.
+   It sat ~50 builds behind production while QA ran against it, so every bug it
+   reported was archaeology. The fix was not better discipline — it was deleting
+   the artifact: there is now **one** build, and the dev surface inside it is
+   unlocked by a `?debug=<token>` parameter the game authorises at call time,
+   dormant otherwise. **If a second build exists only to expose a different
+   featureset, make it a parameter, not a deploy.** Every extra channel is
+   another thing that silently rots while you trust it.
+
+   The multi-channel machinery is still here and still works — reach for it when
+   channels genuinely carry *different content*, not different flags.
 
 4. **Paid content needs a server‑side gate — a client tier check is UI, not
    security.** Two real gates here: gated zone `.pck`s live in a **private
    bucket** and are fetched via short‑lived presigned URLs from a
-   tier‑checking Lambda (`GET /pck-url`); the Beta base build sits behind a
+   tier‑checking Lambda (`GET /pck-url`); and a whole channel can be put behind a
    CloudFront behavior with **trusted key groups** — a small endpoint verifies
    your membership tier and issues signed cookies, and the CDN itself refuses
-   anonymous requests. The webapp only decides what to *offer*; the edge
-   decides what to *serve*.
+   anonymous requests. The webapp only decides what to *offer*; the edge decides
+   what to *serve*.
+
+   Both are built and deployed. Note that **the second one is currently gating
+   nothing**: Episode One is free to everyone, so there is no members‑only build
+   for the edge gate to protect. It is kept wired because the expensive part of
+   edge gating is standing it up, not turning it on.
 
 5. **Every deploy proves itself.** Each channel deploy ends with a smoke that
    actually boots the deployed bytes in a headless browser and asserts the
@@ -316,7 +340,7 @@ node scripts/push-channel.js --manifest <path> [--promote] [--dry-run]
 src/
   pages/        Astro routes (see Feature tour)
   components/   Svelte islands + Astro components
-  layouts/      BaseLayout, Bilateral, Footer
+  layouts/      BaseLayout, ManualLayout (manual/devlog), ConsoleLayout (/test/)
   lib/          reactive stores (auth, saves), data layer, gameVersions, tiers
   content/      devlog Markdown collections
   data/         generated game/version/asset metadata (committed)

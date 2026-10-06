@@ -80,11 +80,21 @@ const GAME_VERSION: string = gameVersion.version;
     <div class="tag">Building Big Worlds with Small Teams</div>
     <p class="sub">Independent games, open development, and the technology behind them, shared as they’re made.</p>
   </div>
+  <!-- Only the player-facing card stays in the homepage flow. Art & Music is
+       the game's own sprites, soundtrack and typeface — it reinforces Nesis
+       rather than pulling toward engineering, so it earns its place here.
+
+       The Development Journal and Builder's Workshop are NOT deleted and NOT
+       hidden: they moved to the quiet line below, which is the secondary
+       studio path. Someone who wants studio/engineering material still finds
+       it one scroll from the bottom; a prospective player is no longer offered
+       it as a peer of "play the game". -->
   <div class="bts">
-    <a class="btscard" href="/devlog/"><div class="sigil">✒</div><h4>Development Journal</h4><p>The decisions, dead ends, and breakthroughs behind the game.</p><span class="cta">Read Devlogs</span></a>
     <a class="btscard" href="/artwork/"><div class="sigil">✦</div><h4>Art &amp; Music Collection</h4><p>Sprites, soundtrack, font design, and visual development. Handcrafted.</p><span class="cta">Explore</span></a>
-    <a class="btscard" href="/test/"><div class="sigil">⚙</div><h4>Builder’s Workshop <span class="relic-dot"></span></h4><p>Tools, systems, and architecture behind The Chronicles of Nesis.</p><span class="cta">Enter</span></a>
   </div>
+  <p class="studiolinks">
+    More from the studio: <a href="/devlog/">Development Journal</a> &middot; <a href="/test/">Builder’s Workshop</a>
+  </p>
 </div></section>
 
 {SIGNUP_ENABLED && (
@@ -103,7 +113,9 @@ const GAME_VERSION: string = gameVersion.version;
 )}
 
 <footer><div class="wrap">
-  <div class="fnav"><a href="/play/">Play</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="/manual/">Manual</a><a href="/walkthrough/">Strategy Guide</a><a href="#studio">Studio</a></div>
+  <!-- "Game Manual", not "Manual": on its own in a nav row, "Manual" reads as a
+       mode or a setting rather than a thing to read (owner 2026-10-06). -->
+  <div class="fnav"><a href="/play/">Play</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="/manual/">Game Manual</a><a href="/walkthrough/">Strategy Guide</a><a href="#studio">Studio</a></div>
   <div class="cr">The Chronicles of Nesis · © AllByte Studios · Made and shared in the open.</div>
   <!-- Build stamp. Site and game versions ship independently, so both are
        shown: knowing one never tells you the other, which is exactly what
@@ -232,7 +244,17 @@ const GAME_VERSION: string = gameVersion.version;
   .studioline .who{ font-family:"AllByteCustom",Georgia,serif; color:var(--crimson); font-size:1.7rem; }
   .studioline .tag{ font-family:"AllByteCustom",Georgia,serif; color:var(--gilt-deep); letter-spacing:.03em; font-size:1.05rem; margin-top:.15rem; }
   .studioline .sub{ color:var(--ink-soft); max-width:52ch; margin:.6rem auto 0; font-size:.98rem; }
-  .bts{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.1rem; margin-top:1.8rem; }
+  /* auto-fit + justify-content:center so the section reads correctly with the
+     single remaining card (a fixed 3-column grid left-aligned it at a third
+     width, which looked like two cards had failed to load) and still composes
+     if another player-facing card is ever added. */
+  .bts{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,340px)); justify-content:center; gap:1.1rem; margin-top:1.8rem; }
+  /* The secondary studio path: deliberately typographic, not a card — present
+     for anyone looking for it, invisible to anyone who isn't. */
+  .studiolinks{ margin:1.5rem 0 0; text-align:center; font-size:.9rem; color:var(--ink-soft); }
+  .studiolinks a{ color:var(--ink-soft); text-decoration:none; border-bottom:1px solid var(--rule); padding-bottom:1px; }
+  .studiolinks a:hover{ color:var(--crimson); border-bottom-color:var(--gilt); }
+  .studiolinks a:focus-visible{ outline:2px solid var(--crimson); outline-offset:3px; }
   .btscard{ display:block; text-decoration:none; color:inherit; cursor:pointer; background:var(--panel); border:1px solid var(--rule); box-shadow:inset 0 0 0 3px var(--paperblend); border-radius:2px; padding:1.3rem 1.3rem; transition:transform .18s,box-shadow .2s; }
   .btscard:hover{ transform:translateY(-3px); box-shadow:inset 0 0 0 3px var(--paperblend),0 10px 24px var(--shadow); }
   .btscard .sigil{ font-size:1.4rem; color:var(--gilt); } .btscard h4{ font-family:"AllByteCustom",Georgia,serif; color:var(--ink); font-size:1.34rem; letter-spacing:.01em; margin:.4rem 0 .35rem; }

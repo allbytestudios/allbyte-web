@@ -52,6 +52,7 @@
   },
   "homepage": "https://github.com/allbytestudios/allbyte-web#readme",
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
     "@astrojs/svelte": "^8.0.4",
     "@tailwindcss/vite": "^4.2.2",
     "@zumer/snapdom": "^2.23.2",

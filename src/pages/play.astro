@@ -6,8 +6,15 @@ import { MANUAL_CARDS } from "../lib/manualCards";
 const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
 ---
 
+<!-- The page title deliberately differs from the homepage's. Both pages carried
+     the identical "The Chronicles of Nesis | AllByte Studios", which made them
+     compete for the same query and left the search engine to guess which one a
+     player wanted — and /play/ is the primary destination (owner 2026-10-06),
+     so it should not be the one that loses that coin flip. It now leads with
+     the verb and the terms someone actually types: play, free, browser.
+     ogTitle keeps the link-preview card clean, which is what it is for. -->
 <BaseLayout
-  title="The Chronicles of Nesis | AllByte Studios"
+  title="Play The Chronicles of Nesis — Free Tactical RPG in Your Browser"
   ogTitle="The Chronicles of Nesis"
   description="A handcrafted tactical RPG in the spirit of 90s JRPGs. Play in your browser — no install, no account."
   image="/og-play.jpg"

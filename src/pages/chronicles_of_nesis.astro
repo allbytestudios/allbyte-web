@@ -11,8 +11,14 @@ const fixture = Astro.url.searchParams.get("fixture") ?? undefined;
 ---
 
 <BaseLayout
-  title="Play Chronicles of Nesis — AllByte Studios"
-  description="Play Chronicles of Nesis — a tactical turn-based RPG in your browser. No download required."
+  {/* This is the story/pitch page, not the game itself. It previously opened
+      with "Play Chronicles of Nesis" and a near-identical description to
+      /play/, so the two competed for the same high-intent query — and /play/
+      is the one a searcher wanting to play should land on (owner 2026-10-06).
+      This now leads on world and story, which is what the page is actually
+      about and what it can genuinely win. */}
+  title="The World of Nesis — Story & Setting | The Chronicles of Nesis"
+  description="The world, the story, and the cast of The Chronicles of Nesis: a handcrafted tactical RPG set in a world slowly losing its own history."
 >
   <main class="play-page">
     <nav class="play-nav">

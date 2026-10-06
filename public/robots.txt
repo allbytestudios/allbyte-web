@@ -1,0 +1,22 @@
+# AllByte Studios — https://allbyte.studio
+#
+# Until now there was no robots.txt at all: CloudFront answered /robots.txt with
+# the homepage HTML and a 200, so every crawler received an HTML document where
+# it expected directives, and the site shipped no sitemap reference.
+#
+# DELIBERATELY NO "Disallow" FOR THE HIDDEN PAGES. The Dev Console, admin,
+# changelog and draft devlog posts are kept out of search with
+# <meta name="robots" content="noindex,follow"> instead — and a crawler has to
+# be allowed to FETCH a page to see that tag. Disallowing them would do the
+# opposite of what it looks like: Google can still index a disallowed URL it
+# finds linked elsewhere, it just indexes it blind, with no content and no way
+# to ever read the noindex. Allow + noindex is what actually removes a page.
+#
+# See src/lib/seo.mjs for the single list those pages are derived from.
+# Anything genuinely sensitive is gated by auth, not by this file — robots.txt
+# is a request to well-behaved crawlers, never access control.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://allbyte.studio/sitemap-index.xml

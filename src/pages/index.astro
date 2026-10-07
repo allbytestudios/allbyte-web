@@ -115,7 +115,13 @@ const GAME_VERSION: string = gameVersion.version;
 <footer><div class="wrap">
   <!-- "Game Manual", not "Manual": on its own in a nav row, "Manual" reads as a
        mode or a setting rather than a thing to read (owner 2026-10-06). -->
-  <div class="fnav"><a href="/play/">Play</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="/manual/">Game Manual</a><a href="/walkthrough/">Strategy Guide</a><a href="#studio">Studio</a></div>
+  {/* Strategy Guide (/walkthrough/) pulled from player-facing nav 2026-10-07:
+      not finished, and offering it beside the Game Manual split attention
+      between a complete thing and an incomplete one. The page still exists and
+      is still linked from the Dev Console; it is just not advertised.
+      An Astro expression comment, not an HTML one, so it is not sent to the
+      browser on every page load. */}
+  <div class="fnav"><a href="/play/">Play</a><a href="#pitch">Gameplay</a><a href="#creation">Characters</a><a href="/manual/">Game Manual</a><a href="#studio">Studio</a></div>
   <div class="cr">The Chronicles of Nesis · © AllByte Studios · Made and shared in the open.</div>
   <!-- Build stamp. Site and game versions ship independently, so both are
        shown: knowing one never tells you the other, which is exactly what

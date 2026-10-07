@@ -61,6 +61,12 @@ export const NOINDEX_PREFIXES = [
  * dead-ends as though they were content.
  */
 export const NOINDEX_PATHS = [
+  // Strategy Guide — unfinished (owner 2026-10-07). Its links were pulled from
+  // the player-facing navs for exactly that reason, and leaving it indexed would
+  // undo the point: search would keep landing strangers on it directly, which is
+  // worse than a link someone chose to click. Still public, still reachable by
+  // URL, still linked from the Dev Console. Remove this line when it ships.
+  "/walkthrough/",
   // Redirect stub only: Music folded into /artwork/#music on 2026-06-18. The
   // page is a meta-refresh whose canonical already points at /artwork/, so
   // listing it would ask Google to index a doorway to another page. It already

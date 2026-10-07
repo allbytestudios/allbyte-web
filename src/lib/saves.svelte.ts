@@ -1,598 +1,378 @@
-import { auth } from "./auth.svelte.ts";
-
-const API = "https://api.allbyte.studio";
-
-export interface SavesSnapshot {
-  saves: Record<string, string>;  // { slot_1: '{...}', slot_2: '{...}', ... }
-  options: string;
-  keymapping: string;
-}
-
-export type SyncStatus = "idle" | "syncing" | "synced" | "error" | "unsynced";
-
+﻿import { auth } from './auth.svelte.ts';
+import { MAX_TRANSFER_BYTES, parseBackup, parseSnapshot, SaveRequests, type Snapshot } from './save-transfer';
+const API = 'https://api.allbyte.studio';
+export interface SavesSnapshot extends Snapshot {}
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'unsynced';
 class SaveStore {
-  /** Last known snapshot from the game (in-memory cache). */
-  current = $state<SavesSnapshot>({ saves: {}, options: "", keymapping: "" });
-  /** Server sync status (Hero/Legend only). */
-  syncStatus = $state<SyncStatus>("idle");
+  current = $state<SavesSnapshot>({ saves: {}, options: '', keymapping: '' });
+  syncStatus = $state<SyncStatus>('idle');
   lastSyncedAt = $state<number | null>(null);
-  /** Whether the game has signaled allbyte:ready */
   gameReady = $state(false);
-  /** Wire protocol version reported by the game in its ready message. */
   protocolVersion = $state<number | null>(null);
-  /** Number of save slots the game declares it supports (12 currently). */
   maxSaveSlots = $state<number | null>(null);
-  /** Result of the most recent load-complete ack from the game. */
-  lastLoadResult = $state<{
-    acceptedSlots: number[];
-    rejectedSlots: { slot: number | string; reason: string }[];
-  } | null>(null);
-  /** Last error message, if any */
+  saveCapabilities = $state<{ correlatedRequests?: boolean; atomicImport?: boolean; importConfirmation?: boolean }>({});
+  lastLoadResult = $state<{ acceptedSlots: number[]; rejectedSlots: { slot: number | string; reason: string }[] } | null>(null);
   errorMessage = $state<string | null>(null);
 }
-
 export const saves = new SaveStore();
-
+const requests = new SaveRequests();
 let iframeRef: HTMLIFrameElement | null = null;
-let pendingPushTimer: ReturnType<typeof setTimeout> | null = null;
-let exitCallback: (() => void) | null = null;
-/** Hidden file input used to satisfy the browser's "import" picker.
- *  Game triggers it through the same-origin window function below — the call
- *  must originate from inside the iframe to preserve user-gesture context. */
 let importFileInput: HTMLInputElement | null = null;
-/** Messages queued while the game is still booting (before ready). */
-const preReadyQueue: any[] = [];
-
-export interface SaveBridgeOptions {
-  /** Called when the game posts `allbyte:request-exit` (game's own exit button).
-   *  Web shows no confirm — game handles that. */
-  onExit?: () => void;
+let exitCallback: (() => void) | null = null;
+let sessionId = '';
+let generation = 0;
+let mutation = 0;
+let busy = false;
+let pickerOpen = false;
+let unknownImportId = '';
+let unknownImportAccount = '';
+let pendingPushTimer: ReturnType<typeof setTimeout> | null = null;
+let cloudQueue: Promise<unknown> = Promise.resolve();
+let revisionAccount = '';
+let serverRevision: number | null = null;
+let cloudConflict = false;
+// Account-scoped restore intent survives reload until its conditional upload is
+// acknowledged. Never persist a host copy of the slot payload here.
+function restoreKey(account: string) { return `allbyte_save_restore_v1:${account}`; }
+function restoreIntent(account: string): { revision: number | null } | null {
+  const raw = localStorage.getItem(restoreKey(account));
+  if (!raw) return null;
+  const parsed = JSON.parse(raw);
+  if (parsed.revision !== null && (!Number.isSafeInteger(parsed.revision) || parsed.revision < 0)) throw Error('Invalid pending cloud restore record');
+  return parsed;
 }
-
-/**
- * Initialize the save bridge: set up window message listener and remember the iframe ref.
- * Call this when the play overlay mounts.
- */
+export interface SaveBridgeOptions { onExit?: () => void }
+function context() {
+  const account = auth.currentUser?.userId ?? '';
+  if (revisionAccount !== account) { revisionAccount = account; serverRevision = null; cloudConflict = false; }
+  return { account, generation, mutation };
+}
+function valid(c: ReturnType<typeof context>) {
+  return c.account === (auth.currentUser?.userId ?? '') && c.generation === generation && c.mutation === mutation;
+}
+function sameSession(c: ReturnType<typeof context>) {
+  return c.account === (auth.currentUser?.userId ?? '') && c.generation === generation;
+}
+function cloudSerial<T>(work: () => Promise<T>): Promise<T> {
+  const next = cloudQueue.then(work, work);
+  cloudQueue = next.catch(() => undefined);
+  return next;
+}
+function postToGame(message: object) {
+  if (!iframeRef?.contentWindow) return;
+  if (import.meta.env.DEV) (window as any).__saves_test?.sentMessages.push(message);
+  iframeRef.contentWindow.postMessage({ protocolVersion: 2, ...message }, new URL(iframeRef.src || window.location.href, window.location.href).origin);
+}
+function reportTransfer(status: string, message: string) {
+  saves.errorMessage = status === 'error' ? message : null;
+  postToGame({ type: 'allbyte:save-transfer-result', status, message });
+}
+function requireProtocol() {
+  if (!saves.gameReady || saves.protocolVersion !== 2 || !sessionId || saves.saveCapabilities.correlatedRequests !== true) throw Error('This game build does not support reliable save transfer yet.');
+}
+async function freshSnapshot(): Promise<Snapshot> {
+  requireProtocol();
+  const requestId = crypto.randomUUID();
+  const reply = requests.wait(requestId, 'allbyte:all-saves', sessionId, 5000);
+  postToGame({ type: 'allbyte:request-saves', requestId, sessionId });
+  return parseSnapshot(await reply, saves.maxSaveSlots ?? 12);
+}
 export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBridgeOptions = {}) {
+  teardownSaveBridge();
   iframeRef = iframe;
   exitCallback = options.onExit ?? null;
-  saves.gameReady = false;
-  if (typeof window === "undefined") return;
-  window.addEventListener("message", handleGameMessage);
-  // Broadcast page visibility to the game so it can pause audio/state when
-  // the phone screen turns off or the tab is backgrounded. Game-side
-  // handler is Arc/Port's — until they wire it, this is a no-op. The web
-  // MusicPlayer pauses its own audio independently via the same
-  // visibilitychange event.
-  document.addEventListener("visibilitychange", broadcastVisibility);
-
-  // Hidden file input lives in the parent document. Game triggers it via
-  // window.allbyteRequestImport (same-origin direct call) so the click()
-  // happens inside the user-gesture context — postMessage would not work
-  // for file pickers (gesture doesn't propagate across the message queue).
-  importFileInput = document.createElement("input");
-  importFileInput.type = "file";
-  importFileInput.accept = "application/json,.json";
-  importFileInput.style.position = "absolute";
-  importFileInput.style.left = "-9999px";
-  importFileInput.addEventListener("change", handleImportFileChosen);
+  if (typeof window === 'undefined') return;
+  window.addEventListener('message', handleGameMessage);
+  document.addEventListener('visibilitychange', broadcastVisibility);
+  importFileInput = document.createElement('input');
+  importFileInput.type = 'file';
+  importFileInput.accept = 'application/json,.json';
+  importFileInput.style.position = 'absolute';
+  importFileInput.style.left = '-9999px';
+  importFileInput.addEventListener('change', handleImportFileChosen);
+  importFileInput.addEventListener('cancel', handlePickerCancel);
   document.body.appendChild(importFileInput);
-
-  // Game calls these directly via JavaScriptBridge.eval("parent.allbyteRequest*()").
-  // Direct calls preserve user activation; postMessage would not.
-  (window as any).allbyteRequestExit = () => {
-    if (exitCallback) exitCallback();
-  };
-  (window as any).allbyteRequestExport = () => {
-    downloadSavesFile();
-  };
+  (window as any).allbyteRequestExit = () => exitCallback?.();
+  (window as any).allbyteRequestExport = () => void downloadSavesFile();
+  // Synchronous call preserves browser activation when Godot forwards a gesture.
   (window as any).allbyteRequestImport = () => {
-    if (importFileInput) importFileInput.click();
+    try {
+      requireProtocol();
+      if (busy || pickerOpen || unknownImportId) throw Error('A save transfer is already pending.');
+      if (typeof navigator !== 'undefined' && navigator.userActivation && !navigator.userActivation.isActive) throw Error('The browser needs an active click to open the chooser. Select Import with a mouse or touch.');
+      pickerOpen = true;
+      importFileInput?.click();
+    } catch (e) { pickerOpen = false; reportTransfer('error', (e as Error).message); }
   };
-
-  // Test hook: expose state and a postMessage interceptor for Playwright tests
-  (window as any).__saves_test = {
-    store: saves,
-    getCurrent: () => saves.current,
-    getSyncStatus: () => saves.syncStatus,
-    getMaxSaveSlots: () => saves.maxSaveSlots,
-    getProtocolVersion: () => saves.protocolVersion,
-    getLastLoadResult: () => saves.lastLoadResult,
-    getErrorMessage: () => saves.errorMessage,
-    isGameReady: () => saves.gameReady,
-    getPreReadyQueueLength: () => preReadyQueue.length,
-    /** Cloud-sync eligibility (Hero/Legend) — for cloud-save tests. */
-    getIsSyncTier: () => isSyncTier(),
-    /** Force the current user's tier — cloud-save tests only. Needed because
-     *  dev initAuth auto-logs in as admin and never hits the mocked /auth/me. */
+  if (import.meta.env.DEV) (window as any).__saves_test = {
+    store: saves, getCurrent: () => saves.current, getSyncStatus: () => saves.syncStatus,
+    getMaxSaveSlots: () => saves.maxSaveSlots, getProtocolVersion: () => saves.protocolVersion,
+    getLastLoadResult: () => saves.lastLoadResult, getErrorMessage: () => saves.errorMessage,
+    isGameReady: () => saves.gameReady, getPreReadyQueueLength: () => 0,
+    getIsSyncTier: () => !!auth.currentUser, sentMessages: [],
     setTestTier: (tier: string) => {
-      if (!import.meta.env.DEV) return; // dev/test only — never mutate tier in prod
-      auth.currentUser = auth.currentUser
-        ? { ...auth.currentUser, tier }
-        : ({ userId: "test", email: "test@allbyte.studio", username: "test", tier, stripeCustomerId: null, notificationPreferences: null } as any);
+      auth.currentUser = auth.currentUser ? { ...auth.currentUser, tier } :
+        { userId: 'test', email: 'test@allbyte.studio', username: 'test', tier,
+          stripeCustomerId: null, notificationPreferences: null } as any;
     },
-    /** Sent messages from parent → game, captured for tests */
-    sentMessages: [] as any[],
   };
 }
-
 export function teardownSaveBridge() {
-  iframeRef = null;
-  exitCallback = null;
-  saves.gameReady = false;
-  saves.protocolVersion = null;
-  saves.maxSaveSlots = null;
-  saves.lastLoadResult = null;
-  preReadyQueue.length = 0;
-  if (typeof window === "undefined") return;
-  window.removeEventListener("message", handleGameMessage);
-  document.removeEventListener("visibilitychange", broadcastVisibility);
-  if (importFileInput) {
-    importFileInput.removeEventListener("change", handleImportFileChosen);
-    importFileInput.remove();
-    importFileInput = null;
-  }
+  generation++; mutation++; requests.cancel();
+  iframeRef = null; exitCallback = null; sessionId = ''; busy = false; pickerOpen = false;
+  unknownImportId = ''; serverRevision = null; cloudConflict = false;
+  saves.gameReady = false; saves.protocolVersion = null; saves.maxSaveSlots = null;
+  saves.saveCapabilities = {};
+  saves.lastLoadResult = null; saves.current = { saves: {}, options: '', keymapping: '' };
+  saves.syncStatus = 'idle'; saves.lastSyncedAt = null; saves.errorMessage = null;
+  if (pendingPushTimer) clearTimeout(pendingPushTimer);
+  pendingPushTimer = null;
+  if (typeof window === 'undefined') return;
+  window.removeEventListener('message', handleGameMessage);
+  document.removeEventListener('visibilitychange', broadcastVisibility);
+  importFileInput?.removeEventListener('change', handleImportFileChosen);
+  importFileInput?.removeEventListener('cancel', handlePickerCancel);
+  importFileInput?.remove(); importFileInput = null;
   delete (window as any).allbyteRequestExit;
   delete (window as any).allbyteRequestExport;
   delete (window as any).allbyteRequestImport;
-  if (pendingPushTimer) {
-    clearTimeout(pendingPushTimer);
-    pendingPushTimer = null;
-  }
+  delete (window as any).__saves_test;
 }
-
-/** Send the current page visibility to the game. Posted on every
- *  visibilitychange so the game can pause audio + sims when backgrounded
- *  and resume when foregrounded. No queueing — out-of-date visibility
- *  state would be worse than skipping while the game is still booting. */
-function broadcastVisibility() {
-  if (typeof document === "undefined") return;
-  postToGame({
-    type: "allbyte:visibility",
-    visible: document.visibilityState === "visible",
-  });
-}
-
-/** Called when the user picks a file in the browser's file picker (triggered
- *  by the game via allbyteRequestImport). Basic shape check, then forward to
- *  the game via allbyte:load-saves. Full validation belongs to the game. */
+function broadcastVisibility() { postToGame({ type: 'allbyte:visibility', visible: document.visibilityState === 'visible' }); }
+function handlePickerCancel() { pickerOpen = false; reportTransfer('cancelled', ''); }
 async function handleImportFileChosen(e: Event) {
   const input = e.target as HTMLInputElement;
-  const file = input.files?.[0];
-  input.value = ""; // reset so picking the same file again still fires
-  if (!file) return;
-  const err = await uploadSavesFile(file);
-  if (err) {
-    saves.errorMessage = err;
-  }
+  pickerOpen = false;
+  const file = input.files?.[0]; input.value = '';
+  if (file) await uploadSavesFile(file);
 }
-
 function handleGameMessage(e: MessageEvent) {
   const data = e.data;
-  if (!data || typeof data !== "object" || typeof data.type !== "string") return;
-  if (!data.type.startsWith("allbyte:")) return;
-
-  // Optional source check: if we have an iframe ref, only accept messages from it.
-  // Test bypass: window.__saves_test_skip_source_check === true allows tests to
-  // dispatch synthetic MessageEvents without setting up a real iframe source.
-  const testSkip = typeof window !== "undefined" && (window as any).__saves_test_skip_source_check === true;
-  if (!testSkip && iframeRef && e.source !== iframeRef.contentWindow) return;
-
+  if (!iframeRef || !data || typeof data !== 'object' || typeof data.type !== 'string') return;
+  const origin = new URL(iframeRef.src || window.location.href, window.location.href).origin;
+  const bypass = import.meta.env.DEV && (window as any).__saves_test_skip_source_check === true;
+  if (!bypass && (e.source !== iframeRef.contentWindow || e.origin !== origin)) return;
+  const saveMessage = ['allbyte:all-saves', 'allbyte:load-complete', 'allbyte:load-pending', 'allbyte:save-changed'].includes(data.type);
+  if (saveMessage && (!sessionId || data.sessionId !== sessionId || data.protocolVersion !== 2)) return;
+  if (requests.accept(data)) return;
   switch (data.type) {
-    // Game-initiated requests. Prefer direct calls (window.allbyteRequest*) over
-    // postMessage for export / import — only those can preserve user activation
-    // for the browser's file picker / download. We still accept postMessage so
-    // game code can pick whichever style fits, but import via postMessage will
-    // silently no-op the file picker on most browsers.
-    case "allbyte:request-exit":
-      if (exitCallback) exitCallback();
+    case 'allbyte:request-exit': exitCallback?.(); return;
+    case 'allbyte:request-export-saves': void downloadSavesFile(); return;
+    case 'allbyte:request-import-saves': (window as any).allbyteRequestImport?.(); return;
+    case 'allbyte:ready': {
+      if (typeof data.sessionId !== 'string' || !data.sessionId || data.protocolVersion !== 2 ||
+          !Number.isInteger(data.maxSaveSlots) || data.maxSaveSlots < 1 || data.maxSaveSlots > 12) return;
+      if (sessionId === data.sessionId && saves.gameReady) return;
+      requests.cancel(); generation++; sessionId = data.sessionId; busy = false; pickerOpen = false; cloudConflict = false;
+      unknownImportId = ''; serverRevision = null;
+      saves.gameReady = true; saves.protocolVersion = 2; saves.maxSaveSlots = data.maxSaveSlots;
+      saves.saveCapabilities = data.saveCapabilities ?? {};
+      saves.current = { saves: {}, options: '', keymapping: '' };
+      broadcastSyncStatus(); broadcastAccount();
+      if (auth.currentUser) void syncFromServer();
+      else {
+        const c = context();
+        void freshSnapshot().then(snapshot => { if (valid(c)) saves.current = snapshot; })
+          .catch(e => { if (valid(c)) reportTransfer('error', e.message); });
+      }
       return;
-    case "allbyte:request-export-saves":
-      downloadSavesFile();
+    }
+    case 'allbyte:save-changed': {
+      if (!Number.isInteger(data.slotId) || data.slotId < 1 || data.slotId > (saves.maxSaveSlots ?? 12) || typeof data.data !== 'string') return;
+      mutation++; saves.current.saves[`slot_${data.slotId}`] = data.data;
+      if (auth.currentUser) schedulePushToServer();
       return;
-    case "allbyte:request-import-saves":
-      if (importFileInput) importFileInput.click();
+    }
+    case 'allbyte:load-complete':
+      if (unknownImportId && data.requestId === unknownImportId && unknownImportAccount === (auth.currentUser?.userId ?? '')) {
+        try {
+          if (data.ok) saves.current = parseSnapshot(data.snapshot, saves.maxSaveSlots ?? 12);
+          else if (unknownImportAccount) localStorage.removeItem(restoreKey(unknownImportAccount));
+          unknownImportId = '';
+          if (data.ok && auth.currentUser) schedulePushToServer();
+        } catch (e) { reportTransfer('error', (e as Error).message); }
+      }
       return;
-
-    case "allbyte:ready":
-      saves.gameReady = true;
-      if (typeof data.protocolVersion === "number") {
-        saves.protocolVersion = data.protocolVersion;
-      }
-      if (typeof data.maxSaveSlots === "number") {
-        saves.maxSaveSlots = data.maxSaveSlots;
-      }
-      // Drain any messages queued while we were waiting
-      flushPreReadyQueue();
-      // Send the current sync-status snapshot so any in-game indicator can
-      // render the correct state immediately rather than wait for the next
-      // sync event.
-      broadcastSyncStatus();
-      broadcastAccount();
-      // On ready, request the current snapshot to populate our cache
-      requestSavesFromGame();
-      // For Hero/Legend, also pull from server and merge
-      if (isSyncTier()) {
-        syncFromServer();
-      }
-      break;
-
-    case "allbyte:save-changed":
-      if (typeof data.slotId === "number" && typeof data.data === "string") {
-        saves.current.saves[`slot_${data.slotId}`] = data.data;
-        // Trigger debounced server push (Hero/Legend only)
-        if (isSyncTier()) {
-          schedulePushToServer();
-        }
-      }
-      break;
-
-    case "allbyte:all-saves":
-      if (data.saves && typeof data.saves === "object") {
-        saves.current = {
-          saves: { ...data.saves },
-          options: typeof data.options === "string" ? data.options : "",
-          keymapping: typeof data.keymapping === "string" ? data.keymapping : "",
-        };
-      }
-      // Wake any export that's waiting on a fresh snapshot.
-      resolveAllSavesWaiters();
-      break;
-
-    case "allbyte:load-complete":
-      saves.lastLoadResult = {
-        acceptedSlots: Array.isArray(data.acceptedSlots) ? data.acceptedSlots : [],
-        rejectedSlots: Array.isArray(data.rejectedSlots) ? data.rejectedSlots : [],
-      };
-      if (saves.lastLoadResult.rejectedSlots.length > 0) {
-        const reasons = saves.lastLoadResult.rejectedSlots
-          .map((r) => `slot ${r.slot}: ${r.reason}`)
-          .join("; ");
-        saves.errorMessage = `Some saves were rejected: ${reasons}`;
-      }
-      break;
   }
 }
-
-function flushPreReadyQueue() {
-  while (preReadyQueue.length > 0) {
-    const msg = preReadyQueue.shift();
-    if (msg) postToGame(msg);
+export async function requestSavesFromGame() {
+  const c = context(); const snapshot = await freshSnapshot();
+  if (!valid(c)) throw Error('Game or account changed during snapshot request');
+  saves.current = snapshot; return snapshot;
+}
+export async function loadSavesIntoGame(snapshot: Partial<SavesSnapshot>, opts: { source?: 'local' | 'cloud' | 'import'; cloudSlots?: string[] } = {}) {
+  requireProtocol();
+  if (saves.saveCapabilities.atomicImport !== true || saves.saveCapabilities.importConfirmation !== true) throw Error('This game build does not support confirmed durable imports.');
+  const c = context(); const requestId = crypto.randomUUID();
+  if (opts.source === 'import') { unknownImportId = requestId; unknownImportAccount = c.account; }
+  const reply = requests.wait(requestId, 'allbyte:load-complete', sessionId, 120000);
+  postToGame({ type: 'allbyte:load-saves', ...snapshot, requestId, sessionId,
+    source: opts.source ?? 'local', cloudSlots: opts.cloudSlots ?? [] });
+  let result;
+  try { result = await reply; }
+  catch (e) { if (sameSession(c) && opts.source === 'import') unknownImportId = requestId; throw e; }
+  if (!(opts.source === 'import' ? sameSession(c) : valid(c))) throw Error('Game or account changed during save transfer');
+  if (typeof result.ok !== 'boolean') throw Error('Import result unknown: malformed game acknowledgment.');
+  saves.lastLoadResult = { acceptedSlots: result.acceptedSlots ?? [], rejectedSlots: result.rejectedSlots ?? [] };
+  if (!result.ok) {
+    if (opts.source === 'import') unknownImportId = '';
+    throw Error(result.reason === 'cancelled' ? 'Import cancelled' : `Import failed: ${result.reason || 'unknown error'}`);
   }
+  saves.current = parseSnapshot(result.snapshot, saves.maxSaveSlots ?? 12);
+  if (opts.source === 'import') unknownImportId = '';
+  return result;
 }
-
-function postToGame(message: any) {
-  // Test hook: capture sent messages for inspection
-  if (typeof window !== "undefined" && (window as any).__saves_test) {
-    (window as any).__saves_test.sentMessages.push(message);
-  }
-  if (!iframeRef || !iframeRef.contentWindow) return;
-  iframeRef.contentWindow.postMessage(message, "*");
-}
-
-/**
- * Send a message to the game, but queue it if the game hasn't signaled ready yet.
- * The protocol contract requires we don't send request-saves or load-saves before ready.
- */
-function postToGameWhenReady(message: any) {
-  if (saves.gameReady) {
-    postToGame(message);
-  } else {
-    preReadyQueue.push(message);
-  }
-}
-
-export function requestSavesFromGame() {
-  postToGameWhenReady({ type: "allbyte:request-saves" });
-}
-
-export function loadSavesIntoGame(
-  snapshot: Partial<SavesSnapshot>,
-  opts: { source?: "local" | "cloud" | "import"; cloudSlots?: string[] } = {},
-) {
-  postToGameWhenReady({
-    type: "allbyte:load-saves",
-    saves: snapshot.saves || {},
-    options: snapshot.options,
-    keymapping: snapshot.keymapping,
-    // Additive (2026-07-16): where this payload came from, and which slot
-    // keys specifically carry cloud-synced data — the game badges those in
-    // its Load menu so the player can tell a cloud save from a local one.
-    source: opts.source ?? "local",
-    cloudSlots: opts.cloudSlots ?? [],
-  });
-  // Update local cache
-  if (snapshot.saves) {
-    saves.current.saves = { ...saves.current.saves, ...snapshot.saves };
-  }
-  if (snapshot.options !== undefined) saves.current.options = snapshot.options;
-  if (snapshot.keymapping !== undefined) saves.current.keymapping = snapshot.keymapping;
-}
-
-/** Resolvers waiting for the next `allbyte:all-saves` from the game. */
-const allSavesWaiters: Array<() => void> = [];
-
-function resolveAllSavesWaiters() {
-  while (allSavesWaiters.length > 0) {
-    const r = allSavesWaiters.shift();
-    if (r) r();
-  }
-}
-
-/** Resolve on the next `allbyte:all-saves`, or after `timeoutMs` — whichever
- *  comes first. Lets export download as soon as the game answers instead of
- *  after a fixed wait, while still degrading gracefully on a build whose
- *  WebBridge doesn't (yet) respond to `request-saves`. */
-function waitForAllSaves(timeoutMs: number): Promise<void> {
-  return new Promise((resolve) => {
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      resolve();
-    };
-    allSavesWaiters.push(finish);
-    setTimeout(finish, timeoutMs);
-  });
-}
-
-/**
- * Trigger a download of the current saves as a JSON file.
- * Asks the game for a fresh snapshot and waits for its `allbyte:all-saves`
- * reply (resolving early the moment it lands), then downloads. Falls back to
- * the cached snapshot if the game doesn't answer in time — e.g. an older build
- * whose WebBridge has no `request-saves` responder yet.
- */
 export async function downloadSavesFile() {
-  requestSavesFromGame();
-  await waitForAllSaves(1500);
-  const payload = {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    ...saves.current,
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `chronicles-of-nesis-saves-${Date.now()}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  // Do NOT revoke synchronously. Chromium starts the download asynchronously
-  // after the click, and revoking the blob URL first cancels it — the file
-  // never lands and nothing surfaces an error. Defer past the hand-off.
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  if (busy || pickerOpen || unknownImportId) return reportTransfer('error', 'A save transfer is already pending.');
+  const c = context(); busy = true;
+  try {
+    const snapshot = await freshSnapshot();
+    if (!valid(c)) throw Error('Game or account changed during export');
+    const payload = { version: 1, game: 'chronicles-of-nesis', exportedAt: new Date().toISOString(), ...snapshot };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a'); a.href = url;
+    a.download = `chronicles-of-nesis-saves-${Date.now()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    reportTransfer('success', 'Save download started.');
+  } catch (e) { if (c.generation === generation) reportTransfer('error', (e as Error).message); }
+  finally { if (c.generation === generation) busy = false; }
 }
-
-/**
- * Read a user-uploaded saves file, parse, and inject into the game via postMessage.
- * Returns null on success, error message on failure.
- */
 export async function uploadSavesFile(file: File): Promise<string | null> {
+  if (busy || unknownImportId) { reportTransfer('error', 'A save transfer is already pending.'); return 'A save transfer is already pending.'; }
+  busy = true; mutation++;
+  if (pendingPushTimer) clearTimeout(pendingPushTimer);
+  pendingPushTimer = null;
+  const c = context();
+  let markedRestore = false;
   try {
-    const text = await file.text();
-    const parsed = JSON.parse(text);
-    if (!parsed || typeof parsed !== "object" || !parsed.saves) {
-      return "File doesn't look like a valid Chronicles of Nesis save file";
-    }
-    loadSavesIntoGame({
-      saves: parsed.saves,
-      options: parsed.options,
-      keymapping: parsed.keymapping,
+    requireProtocol();
+    if (file.size > MAX_TRANSFER_BYTES) throw Error('Save file is too large');
+    const snapshot = parseBackup(await file.text(), saves.maxSaveSlots ?? 12);
+    await cloudSerial(async () => {
+      if (!valid(c)) throw Error('Game or account changed during import');
+      if (c.account) {
+        if (cloudConflict) throw Error('Resolve the existing cloud conflict before importing another backup.');
+        if (serverRevision === null) {
+          try { await fetchServerSaves(c); }
+          catch (e) { if (!valid(c)) throw e; }
+        }
+        if (!valid(c)) throw Error('Game or account changed during import');
+        localStorage.setItem(restoreKey(c.account), JSON.stringify({ revision: serverRevision }));
+        markedRestore = true;
+      }
+      // Settings remain off until the game offers an explicit opt-in control.
+      await loadSavesIntoGame({ saves: snapshot.saves }, { source: 'import' });
     });
-    // For Hero/Legend, push to server too
-    if (isSyncTier()) {
-      schedulePushToServer();
-    }
+    if (sameSession(c) && auth.currentUser) schedulePushToServer();
     return null;
-  } catch (e: any) {
-    return e?.message || "Failed to read file";
-  }
+  } catch (e) {
+    const message = (e as Error).message;
+    if (markedRestore && !unknownImportId && sameSession(c)) localStorage.removeItem(restoreKey(c.account));
+    if (c.generation === generation) reportTransfer(message === 'Import cancelled' ? 'cancelled' : 'error', message);
+    return message === 'Import cancelled' ? null : message;
+  } finally { if (c.generation === generation) busy = false; }
 }
-
-// === Server sync (ANY signed-in account) ===
-
-/**
- * Cloud-save eligibility. Owner 2026-09-16: any signed-in account, not just
- * Hero/Legend.
- *
- * Two reasons it widened. First, it is the only real fix for silent save loss:
- * web saves live in IndexedDB (/userfs), and Safari's ITP evicts ALL
- * script-writable storage after ~7 days without a first-party visit — so a
- * Safari/iOS player who steps away for a week loses their progress with no
- * warning. A server copy survives that; local export/import is the answer only
- * for players who never sign in. Second, it gives an actual reason to create an
- * account, and since auth is Patreon-only, "signed in" costs a player nothing:
- * a Patreon account with no pledge logs in fine and lands on the free tier.
- *
- * Kept as a named predicate rather than inlining `!!auth.currentUser`, because
- * the gate is likely to move again (per-tier quotas, slot limits) and there are
- * seven call sites that must agree.
- */
-function isSyncTier(): boolean {
-  return !!auth.currentUser;
-}
-
-/** Push current sync state to the game. Best-effort — only fires once the
- *  game is ready (no queueing; an out-of-date sync indicator is worse than a
- *  silent gap, since the next state change will broadcast again anyway). */
 function broadcastSyncStatus() {
-  if (!saves.gameReady) return;
-  postToGame({
-    type: "allbyte:sync-status",
-    status: saves.syncStatus,
-    lastSyncedAt: saves.lastSyncedAt,
-    errorMessage: saves.errorMessage,
-  });
+  if (saves.gameReady) postToGame({ type: 'allbyte:sync-status', status: saves.syncStatus,
+    lastSyncedAt: saves.lastSyncedAt, errorMessage: saves.errorMessage });
 }
-
-/** Wrap a sync-status assignment so the game always sees the new value. */
-function setSyncStatus(s: SyncStatus, errorMessage: string | null = null) {
-  saves.syncStatus = s;
-  if (errorMessage !== null) saves.errorMessage = errorMessage;
-  broadcastSyncStatus();
+function setSyncStatus(status: SyncStatus, message: string | null = null) {
+  saves.syncStatus = status; saves.errorMessage = message; broadcastSyncStatus();
 }
-
-/** Additive (2026-07-16): who's signed in, their tier, and whether cloud
- *  saves are active — the game renders this in its pause menu (owner ask).
- *  Guests get username:null / tier:"default" / cloudSaves:false. */
 function broadcastAccount() {
-  if (!saves.gameReady) return;
   const u = auth.currentUser;
-  postToGame({
-    type: "allbyte:account",
-    username: u?.username ?? null,
-    tier: u?.tier ?? "default",
-    cloudSaves: isSyncTier(),
-  });
+  postToGame({ type: 'allbyte:account', username: u?.username ?? null, tier: u?.tier ?? 'default', cloudSaves: !!u });
 }
-
 function getAuthHeaders(): Record<string, string> {
-  const token = localStorage.getItem("allbyte_token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const token = localStorage.getItem('allbyte_token'); return token ? { Authorization: `Bearer ${token}` } : {};
 }
-
-async function fetchServerSaves(): Promise<{ saves: string; updatedAt: string } | null> {
-  try {
-    const resp = await fetch(`${API}/saves`, {
-      headers: getAuthHeaders(),
-    });
-    if (resp.status === 404) return null;
-    if (!resp.ok) {
-      saves.errorMessage = `Sync error (${resp.status})`;
-      return null;
-    }
-    return await resp.json();
-  } catch (e: any) {
-    saves.errorMessage = e?.message || "Network error";
-    return null;
-  }
+function playerSlotsOnly(all: Record<string, string>) {
+  return Object.fromEntries(Object.entries(all).filter(([key, value]) => /^slot_[1-9]\d*$/.test(key) && Number(key.slice(5)) <= (saves.maxSaveSlots ?? 12) && typeof value === 'string'));
 }
-
-/** Only player slots (1..maxSaveSlots) may ever reach the cloud. Scenario
- *  jumps import through a scratch slot (99) that DAL's snapshot already
- *  excludes — this filter is the defensive second layer (owner ruling
- *  2026-07-16: fixture loads must never overwrite cloud saves). */
-function playerSlotsOnly(all: Record<string, string>): Record<string, string> {
-  const max = saves.maxSaveSlots ?? 12;
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(all)) {
-    const m = /^slot_(\d+)$/.exec(k);
-    if (m && Number(m[1]) >= 1 && Number(m[1]) <= max) out[k] = v;
-  }
-  return out;
+async function fetchServerSaves(c: ReturnType<typeof context>): Promise<Snapshot | null> {
+  const response = await fetch(`${API}/saves`, { headers: getAuthHeaders() });
+  if (!valid(c)) throw Error('Account or saves changed during cloud request');
+  if (response.status !== 404 && !response.ok) throw Error(`Cloud download failed (${response.status})`);
+  const data = await response.json();
+  if (!valid(c)) throw Error('Account or saves changed during cloud request');
+  if (!Number.isSafeInteger(data.revision) || data.revision < 0) throw Error('Cloud API needs the revision-support update before syncing.');
+  serverRevision = data.revision;
+  return response.status === 404 ? null : parseSnapshot(JSON.parse(data.saves), saves.maxSaveSlots ?? 12);
 }
-
 async function pushServerSaves(): Promise<boolean> {
-  if (!isSyncTier()) return false;
-  setSyncStatus("syncing");
+  const c = context();
+  if (!c.account || busy || unknownImportId || cloudConflict || !saves.gameReady) return false;
+  setSyncStatus('syncing');
   try {
-    const blob = JSON.stringify({ ...saves.current, saves: playerSlotsOnly(saves.current.saves) });
-    const resp = await fetch(`${API}/saves`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-      body: JSON.stringify({ saves: blob }),
-    });
-    if (!resp.ok) {
-      setSyncStatus("error", `Upload failed (${resp.status})`);
-      return false;
+    const intent = restoreIntent(c.account);
+    if (intent && intent.revision === null) {
+      cloudConflict = true;
+      throw Error('Saves were imported locally while cloud was unavailable. Confirm which copy to keep before syncing.');
     }
-    const data = await resp.json();
-    saves.lastSyncedAt = data.updatedAt ? Date.parse(data.updatedAt) : Date.now();
-    setSyncStatus("synced", "");
-    return true;
-  } catch (e: any) {
-    setSyncStatus("error", e?.message || "Network error");
-    return false;
-  }
+    if (intent) serverRevision = intent.revision;
+    else if (serverRevision === null) await fetchServerSaves(c);
+    if (!valid(c) || busy || unknownImportId) return false;
+    const snapshot = await freshSnapshot();
+    if (!valid(c) || busy || unknownImportId) return false;
+    const response = await fetch(`${API}/saves`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ saves: JSON.stringify({ ...snapshot, saves: playerSlotsOnly(snapshot.saves) }), expectedRevision: serverRevision }),
+    });
+    if (!valid(c)) { serverRevision = null; return false; }
+    if (response.status === 409) {
+      cloudConflict = true;
+      throw Error('Cloud saves changed elsewhere. Local saves are kept; resolve the conflict before uploading.');
+    }
+    if (!response.ok) throw Error(`Cloud upload failed (${response.status}). Saves remain local.`);
+    const result = await response.json();
+    if (!valid(c)) { serverRevision = null; return false; }
+    if (!Number.isSafeInteger(result.revision)) throw Error('Cloud returned an invalid revision');
+    serverRevision = result.revision;
+    if (intent) localStorage.removeItem(restoreKey(c.account));
+    saves.lastSyncedAt = Date.parse(result.updatedAt) || Date.now();
+    setSyncStatus('synced'); return true;
+  } catch (e) { if (valid(c)) setSyncStatus('error', (e as Error).message); return false; }
 }
-
 function schedulePushToServer() {
   if (pendingPushTimer) clearTimeout(pendingPushTimer);
-  setSyncStatus("unsynced");
+  setSyncStatus('unsynced'); const c = context();
   pendingPushTimer = setTimeout(() => {
     pendingPushTimer = null;
-    pushServerSaves();
+    if (valid(c)) void cloudSerial(() => valid(c) ? pushServerSaves() : Promise.resolve(false));
   }, 5000);
 }
-
-/**
- * Pull server saves and merge into the game (per-slot last-write-wins by timestamp).
- * Called automatically on game ready for Hero/Legend users.
- */
-export async function syncFromServer() {
-  if (!isSyncTier()) return;
-  setSyncStatus("syncing");
-  const server = await fetchServerSaves();
-  if (!server) {
-    // No server saves yet — push current state up
-    setSyncStatus("idle");
-    if (Object.keys(saves.current.saves).length > 0) {
-      pushServerSaves();
-    }
-    return;
-  }
-
-  let serverSnapshot: SavesSnapshot;
-  try {
-    serverSnapshot = JSON.parse(server.saves);
-  } catch {
-    setSyncStatus("error", "Server save data corrupted");
-    return;
-  }
-
-  // Per-slot merge using embedded timestamps
-  const merged: Record<string, string> = { ...saves.current.saves };
-  let serverHasNewer = false;
-  const cloudSlots: string[] = []; // slots whose winning copy came from the server
-  for (const [slotKey, serverSlotJson] of Object.entries(serverSnapshot.saves || {})) {
-    if (typeof serverSlotJson !== "string" || !serverSlotJson) continue;
-    const localSlotJson = merged[slotKey];
-    if (!localSlotJson) {
-      merged[slotKey] = serverSlotJson;
-      serverHasNewer = true;
-      cloudSlots.push(slotKey);
-      continue;
-    }
+export function syncFromServer(): Promise<void> {
+  const c = context();
+  return cloudSerial(async () => {
+    if (!c.account || !valid(c) || busy || unknownImportId || cloudConflict) return;
+    setSyncStatus('syncing');
     try {
-      const localTs = JSON.parse(localSlotJson)?.timestamp || 0;
-      const serverTs = JSON.parse(serverSlotJson)?.timestamp || 0;
-      if (serverTs > localTs) {
-        merged[slotKey] = serverSlotJson;
-        serverHasNewer = true;
-        cloudSlots.push(slotKey);
+      if (restoreIntent(c.account)) { await pushServerSaves(); return; }
+      const local = await freshSnapshot();
+      if (!valid(c)) return;
+      saves.current = local;
+      const server = await fetchServerSaves(c);
+      if (!valid(c) || busy || unknownImportId) return;
+      if (!server) { await pushServerSaves(); return; }
+      const merged = { ...local.saves }; const cloudSlots: string[] = [];
+      for (const [key, value] of Object.entries(server.saves)) {
+        let newer = !merged[key];
+        if (!newer) {
+          try {
+            const remoteTime = JSON.parse(value)?.timestamp; const localTime = JSON.parse(merged[key])?.timestamp;
+            newer = Number.isFinite(remoteTime) && Number.isFinite(localTime) && remoteTime > localTime;
+          } catch { continue; }
+        }
+        if (newer) { merged[key] = value; cloudSlots.push(key); }
       }
-    } catch {
-      // If we can't parse, keep the local one
-    }
-  }
-
-  if (serverHasNewer) {
-    // Inject merged state into the game, naming the cloud-sourced slots so
-    // the Load menu can badge them.
-    loadSavesIntoGame(
-      {
-        saves: merged,
-        options: serverSnapshot.options,
-        keymapping: serverSnapshot.keymapping,
-      },
-      { source: "cloud", cloudSlots },
-    );
-  }
-
-  saves.lastSyncedAt = server.updatedAt ? Date.parse(server.updatedAt) : Date.now();
-  setSyncStatus("synced");
+      if (cloudSlots.length) await loadSavesIntoGame({ saves: merged }, { source: 'cloud', cloudSlots });
+      if (valid(c)) setSyncStatus('synced');
+    } catch (e) { if (valid(c)) setSyncStatus('error', (e as Error).message); }
+  });
 }
-
-/**
- * Force an immediate push to the server (cancels any debounced timer).
- * Used by the "Sync now" button.
- */
-export async function syncToServerNow(): Promise<boolean> {
-  if (pendingPushTimer) {
-    clearTimeout(pendingPushTimer);
-    pendingPushTimer = null;
-  }
-  return await pushServerSaves();
+export function syncToServerNow(): Promise<boolean> {
+  const c = context();
+  if (pendingPushTimer) clearTimeout(pendingPushTimer);
+  pendingPushTimer = null; return cloudSerial(() => valid(c) ? pushServerSaves() : Promise.resolve(false));
 }

@@ -1,7 +1,7 @@
 # Web ↔ Game Boundary
 
-**Status:** Phase 1 (web side complete; awaiting game-side UI from Arc/Port).
-**Last updated:** 2026-05-31.
+**Status:** Save protocol 2 host implementation; coordinated game/browser acceptance required.
+**Last updated:** 2026-10-07.
 
 This is the canonical reference for what lives on the web side
 (`allbyte-web`) versus the game side (Chronicles of Nesis, Godot 4 web
@@ -25,7 +25,7 @@ postMessage; we use both where appropriate.
 |---|---|---|
 | Iframe lifecycle (mount, unmount, fullscreen) | **Web** | The play container is a Svelte component on the page. |
 | Auth state, user tier, JWT | **Web** | Lives in localStorage + reactive Svelte store. Game receives derived state. |
-| Save data caching | **Web** | Held in `saves.svelte.ts` so it survives game unmount and can be uploaded to the user's server-side save (Hero/Legend tier). |
+| Save data caching | **Web** | An acknowledged mirror in `saves.svelte.ts`, cleared on teardown; stale account responses are discarded. Cloud sync is available to all signed-in accounts. |
 | Server sync (push/pull saves to DynamoDB) | **Web** | Hits the backend Lambda directly. Game gets sync status as a derived signal. |
 | Browser file picker for save import | **Web** | Mobile browsers gate file-picker access on user-gesture context; the only way to preserve it across the boundary is a direct same-origin call. See ["Direct calls vs postMessage"](#direct-calls-vs-postmessage) below. |
 | Browser file download for save export | **Web** | Same gesture-context constraint. |
@@ -49,10 +49,11 @@ context. Messages have the shape `{ type: "allbyte:<verb>", ...payload }`.
 
 | Type | Payload | Web action |
 |---|---|---|
-| `allbyte:ready` | `protocolVersion: number, maxSaveSlots: number` | Marks bridge ready, drains the pre-ready queue, broadcasts current sync status, requests current saves, kicks off server sync for Hero/Legend. |
-| `allbyte:save-changed` | `slotId: number, data: string` | Updates web's cache; schedules a debounced push to the server. |
-| `allbyte:all-saves` | `saves: Record<string,string>, options: string, keymapping: string` | Replaces web's full cache (e.g., response to `request-saves`). |
-| `allbyte:load-complete` | `acceptedSlots: number[], rejectedSlots: {slot, reason}[]` | Records the load result; surfaces rejection reasons via `errorMessage`. |
+| `allbyte:ready` | `protocolVersion: 2, sessionId, maxSaveSlots, saveCapabilities` | Negotiate capabilities, broadcast account/status, request fresh saves before cloud merge. Older builds cannot use reliable transfer. |
+| `allbyte:save-changed` | `protocolVersion: 2, sessionId, slotId: number, data: string` | Updates web's cache; schedules a debounced push to the server. |
+| `allbyte:all-saves` | `protocolVersion: 2, sessionId, requestId, saves, options, keymapping` | Resolves only the matching snapshot request. Unrequested snapshots are ignored. |
+| `allbyte:load-complete` | `protocolVersion: 2, sessionId, requestId, ok, reason, status, acceptedSlots, rejectedSlots, snapshot` | Successful durable acknowledgment replaces the mirror; failed/cancelled operations preserve it. |
+| `allbyte:load-pending` | `protocolVersion: 2, sessionId, requestId, status` | Game is awaiting confirmation; no host mutation or upload. |
 | `allbyte:request-exit` | — | Fallback path for the same direct call below. Web closes the iframe. |
 | `allbyte:request-export-saves` | — | Fallback. Will silently fail the browser download on iOS Safari — use direct call. |
 | `allbyte:request-import-saves` | — | Fallback. Will silently fail the file picker on most browsers — use direct call. |
@@ -62,7 +63,8 @@ context. Messages have the shape `{ type: "allbyte:<verb>", ...payload }`.
 | Type | Payload | Game responsibility |
 |---|---|---|
 | `allbyte:request-saves` | — | Reply with `allbyte:all-saves`. |
-| `allbyte:load-saves` | `saves, options, keymapping` | Load these into game slots. Reply with `allbyte:load-complete`. |
+| `allbyte:load-saves` | `protocolVersion: 2, sessionId, requestId, source, saves, cloudSlots` | Validate complete candidate, confirm imports, commit durably, refresh UI, reply with `allbyte:load-complete`. Settings omitted until game opt-in exists. |
+| `allbyte:save-transfer-result` | `status, message` | Game displays host picker/read/download failures and download-start feedback. |
 | `allbyte:sync-status` | `status: "idle"\|"syncing"\|"synced"\|"error"\|"unsynced"`, `lastSyncedAt: number\|null`, `errorMessage: string\|null` | Update any in-game sync indicator. Broadcast on every state change and once on `ready`. |
 | `allbyte:visibility` | `visible: boolean` | Page visibility (phone screen on/off, tab background/foreground). Game should pause audio + sims when `visible: false` and resume when `visible: true`. Broadcast on every `document.visibilitychange`. |
 | `allbyte:update-available` | — | A new build of the site has been detected (new service worker activated). Game should record this flag and apply the update at a safe moment — typically when the user is on the Title screen — by calling `parent.allbyteApplyUpdate()`. Web will NOT auto-reload by itself, so the game decides when. |
@@ -73,8 +75,9 @@ context. Messages have the shape `{ type: "allbyte:<verb>", ...payload }`.
 Used **only** for actions that require user-gesture context — the browser
 won't open a file picker or trigger a download otherwise. Because the
 iframe is same-origin with the parent, `JavaScriptBridge.eval()` from
-GDScript can call into the parent window directly, preserving the touch
-event's activation chain.
+GDScript can call into the parent window directly. This preserves activation
+only if the browser still considers the gesture active; verify actual Godot
+mouse, touch, keyboard and controller paths. Same-origin alone is insufficient.
 
 GDScript pattern:
 
@@ -87,8 +90,8 @@ JavaScriptBridge.eval("parent.allbyteRequestImport()")
 | Function | Web behavior |
 |---|---|
 | `parent.allbyteRequestExit()` | Tears down the play iframe; user returns to landing page. |
-| `parent.allbyteRequestExport()` | Asks the game for fresh save state via `allbyte:request-saves`, waits briefly, then triggers a browser download of `chronicles-of-nesis-saves-<ts>.json`. |
-| `parent.allbyteRequestImport()` | Opens a hidden `<input type="file">` browser dialog. On file pick, web does a basic shape check (parsed as JSON, has top-level `saves` object), then sends to game via `allbyte:load-saves`. Game does full schema validation. |
+| `parent.allbyteRequestExport()` | Asks the game for fresh save state via `allbyte:request-saves`, requires a matching fresh reply within five seconds, then triggers a browser download of `chronicles-of-nesis-saves-<ts>.json`. |
+| `parent.allbyteRequestImport()` | Opens a hidden `<input type="file">` browser dialog. On file pick, web validates the versioned envelope and size, then sends saves only with a correlated `allbyte:load-saves`. Game validates, confirms and commits before host/cloud updates. |
 | `parent.allbyteApplyUpdate()` | Brief "Updating..." overlay, then `location.reload()`. Game should call this when an update is pending AND it's a safe moment (Title screen). |
 | `parent.allbyteUpdatePending` | Boolean property the game can poll on Title screen ready. True if a new build has been detected since this page loaded. |
 
@@ -100,7 +103,7 @@ These three functions exist on `window` for the lifetime of `initSaveBridge`
 Use `parent.allbyteRequest*()` for gesture-dependent actions. Use
 postMessage for everything else. Both forms exist for `exit`,
 `export-saves`, and `import-saves`, but the direct call is the only one
-that reliably works on iOS Safari.
+that can preserve user activation; actual iOS behavior remains an acceptance gate.
 
 The postMessage fallback exists for symmetry — if Arc/Port wires it that
 way, exit/export will still work on permissive browsers, but import will
@@ -109,10 +112,12 @@ silently fail to open the picker.
 ## Validation expectations
 
 - **Web** does a *basic shape check* on imported files: must parse as JSON,
-  must have a top-level `saves` object. No per-slot validation.
+  must have version 1 and an object of canonical manual-slot keys with opaque string payloads. Bound file/bundle size to 8 MiB; reject explicit wrong-game identifiers and unsupported versions. No nested slot-schema validation. Unknown envelope metadata is not restored; slot strings remain intact.
 - **Game** does full schema validation. If a slot fails validation, surface
   via `allbyte:load-complete`'s `rejectedSlots` so the web cache stays
   consistent.
+- **Host lifecycle** rejects wrong source/origin/session, clears pending requests on teardown, and never exports a cached fallback. Import timeout means result unknown; block subsequent transfers/uploads until a late result is reconciled.
+- **Cloud** uses conditional revisions, serialized requests and account/session/mutation checks. Pending restore intent survives reload; cloud failures preserve local saves. Conflict resolution must be explicit, never an automatic timestamp merge over a restore.
 
 This split is owner spec: "Basic shape should be confirmed, but not full
 schema validation."

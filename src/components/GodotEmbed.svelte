@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { subscribeToFile } from "../lib/testEvents";
-  import { initSaveBridge, teardownSaveBridge } from "../lib/saves.svelte.ts";
+  import { initSaveBridge, teardownSaveBridge, isNativeFilePromptActive, isNativeFilePromptRecovery, traceSaveVisibility } from "../lib/saves.svelte.ts";
+  import { installGameVisibility } from "../lib/native-file-prompt";
   import { initDevSession, teardownDevSession } from "../lib/devSession";
   import { auth } from "../lib/auth.svelte.ts";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
@@ -479,7 +480,13 @@
 
   /** The iframe src: the resolved build plus the admin-only debug passthrough. */
   function gameSrc(base: string): string {
-    return `${base}?t=${Date.now()}${debugParam()}`;
+    let copilot = "";
+    if (import.meta.env.DEV && typeof window !== "undefined" &&
+        /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
+      const id = new URLSearchParams(window.location.search).get("copilot");
+      if (id && /^\d{1,9}$/.test(id)) copilot = `&copilot=${id}`;
+    }
+    return `${base}?t=${Date.now()}${debugParam()}${copilot}`;
   }
   let gameUrl = $state<string | null>(resolveGameUrlOrHold());
 
@@ -560,6 +567,7 @@
   let creditsSignupOff: (() => void) | null = null;
   let creditsSignupOpen = $state(false);
   let visibilityOff: (() => void) | null = null;
+  let visibilityBridge = $state<ReturnType<typeof installGameVisibility> | null>(null);
   let fsChangeOff: (() => void) | null = null;
 
   // --- In-game bug report → DOM text-entry overlay (native mobile keyboard) ---
@@ -793,6 +801,7 @@
   let userOptedOutFullscreen = $state(false);
   let mobileFs = $state(false); // mobile viewport (set on mount) — gates the button
   function tryEnterFullscreen() {
+    if (isNativeFilePromptActive()) return; // never consume a chooser's gesture
     if (fullscreenDone || fsPending) return;
     if (userOptedOutFullscreen) return; // user chose windowed — reenter via the button
     if (!isMobileViewport()) return;
@@ -941,51 +950,38 @@
       // deliberate exit sets userOptedOut → the user stays windowed.
       const onFsChange = () => {
         isFullscreen = !!document.fullscreenElement;
-        if (!isFullscreen && fullscreenDone && document.visibilityState === "visible") {
+        if (!isFullscreen && isNativeFilePromptRecovery()) {
+          reArmFullscreen(); // native exit does not revoke the user's preference
+        } else if (!isFullscreen && fullscreenDone && document.visibilityState === "visible") {
           userOptedOutFullscreen = true;
         }
       };
       document.addEventListener("fullscreenchange", onFsChange);
       fsChangeOff = () => document.removeEventListener("fullscreenchange", onFsChange);
-      // Returning from the app switcher drops fullscreen — re-arm so the next tap
-      // re-enters it (see reArmFullscreen). visibilitychange→visible is the signal.
-      const onVisible = () => {
-        const visible = document.visibilityState === "visible";
-        // Feed the game's hidden-time accumulator (window._allbyteHiddenAccumMs,
-        // maintained by the game's shim) so mobile background time isn't counted
-        // toward playtime. GodotEmbed is the reliable app-pause signal for mobile
-        // wrappers where the iframe's own visibilitychange can be throttled/missed.
-        // Contract: { type:"allbyte:visibility", visible:bool }; the shim folds it in.
+      // Balance desktop blur with focus, including native pickers that never
+      // change visibility. A focused iframe still belongs to the visible page.
+      const visibility = installGameVisibility(window, document, visible => {
         try {
-          iframeEl?.contentWindow?.postMessage({ type: "allbyte:visibility", visible }, "*");
+          if (iframeEl?.contentWindow) {
+            const origin = new URL(iframeEl.src || window.location.href, window.location.href).origin;
+            iframeEl.contentWindow.postMessage({ type: "allbyte:visibility", visible }, origin);
+            traceSaveVisibility(visible);
+          }
         } catch {}
         if (visible) reArmFullscreen();
+      });
+      visibilityBridge = visibility;
+      const onNativeReturn = (event: Event) => {
+        if (event.type !== "allbyte:native-file-prompt-settled" && (event as CustomEvent).detail?.phase !== "returned") return;
+        visibility.refresh();
+        reArmFullscreen(); // offer re-entry; returning is not itself activation
       };
-      document.addEventListener("visibilitychange", onVisible);
-      // Owner 2026-09-23: locking the phone left the game's music playing.
-      // Only the GAME can stop it — Godot 4 keeps its AudioContext inside the
-      // module closure, so the parent has no handle to suspend (checked: no
-      // GodotAudio global, only Godot/Engine). So the web side's job is to make
-      // sure the pause SIGNAL is never missed, and the game acts on it.
-      //
-      // visibilitychange alone is not enough on mobile. iOS Safari does not
-      // reliably fire it on screen lock, and a backgrounded wrapper can have it
-      // throttled — which is exactly the case the owner hit. pagehide and blur
-      // cover the paths it misses; the game gets the same message from all
-      // three and can treat it idempotently.
-      const onHide = () => {
-        try {
-          iframeEl?.contentWindow?.postMessage(
-            { type: "allbyte:visibility", visible: false }, "*",
-          );
-        } catch {}
-      };
-      window.addEventListener("pagehide", onHide);
-      window.addEventListener("blur", onHide);
+      window.addEventListener("allbyte:native-file-prompt", onNativeReturn);
+      window.addEventListener("allbyte:native-file-prompt-settled", onNativeReturn);
       visibilityOff = () => {
-        document.removeEventListener("visibilitychange", onVisible);
-        window.removeEventListener("pagehide", onHide);
-        window.removeEventListener("blur", onHide);
+        visibility();
+        window.removeEventListener("allbyte:native-file-prompt", onNativeReturn);
+        window.removeEventListener("allbyte:native-file-prompt-settled", onNativeReturn);
       };
       // Rotation re-nudge (owner 2026-08-27: rotating portrait -> landscape on
       // the loading screen left the picture stuck in the left half).
@@ -1245,6 +1241,23 @@
     if (iframeEl) {
       initSaveBridge(iframeEl, { onExit: handleExit });
     }
+  });
+
+  // Focus returning directly to the game frame need not focus the parent Window.
+  // Balance a prior host blur through that frame's focus and trusted input too.
+  $effect(() => {
+    const frame = iframeEl;
+    const visibility = visibilityBridge;
+    if (!frame || !visibility) return;
+    let remove: (() => void) | undefined;
+    const watch = () => {
+      remove?.();
+      try { if (frame.contentWindow) remove = visibility.watch(frame.contentWindow); }
+      catch { /* Cross-origin games retain the host lifecycle notifications. */ }
+    };
+    watch();
+    frame.addEventListener('load', watch);
+    return () => { frame.removeEventListener('load', watch); remove?.(); };
   });
 
   // --- Dev-session bridge (admin + debug token only) -------------------------

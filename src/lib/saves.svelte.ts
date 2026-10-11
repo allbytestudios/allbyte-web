@@ -1,6 +1,6 @@
 ﻿import { auth } from './auth.svelte.ts';
 import { MAX_TRANSFER_BYTES, parseBackup, parseSnapshot, SaveRequests, type Snapshot } from './save-transfer';
-const API = 'https://api.allbyte.studio';
+import { NativeFilePrompt, restoreGameFocus, type PromptEvent } from './native-file-prompt';
 export interface SavesSnapshot extends Snapshot {}
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'unsynced';
 class SaveStore {
@@ -17,34 +17,80 @@ class SaveStore {
 export const saves = new SaveStore();
 const requests = new SaveRequests();
 let iframeRef: HTMLIFrameElement | null = null;
-let importFileInput: HTMLInputElement | null = null;
+let nativePrompt: NativeFilePrompt | null = null;
+let removeFrameLoadListener: (() => void) | null = null;
 let exitCallback: (() => void) | null = null;
 let sessionId = '';
 let generation = 0;
 let mutation = 0;
 let busy = false;
-let pickerOpen = false;
 let unknownImportId = '';
 let unknownImportAccount = '';
-let pendingPushTimer: ReturnType<typeof setTimeout> | null = null;
-let cloudQueue: Promise<unknown> = Promise.resolve();
-let revisionAccount = '';
-let serverRevision: number | null = null;
-let cloudConflict = false;
-// Account-scoped restore intent survives reload until its conditional upload is
-// acknowledged. Never persist a host copy of the slot payload here.
-function restoreKey(account: string) { return `allbyte_save_restore_v1:${account}`; }
-function restoreIntent(account: string): { revision: number | null } | null {
-  const raw = localStorage.getItem(restoreKey(account));
-  if (!raw) return null;
-  const parsed = JSON.parse(raw);
-  if (parsed.revision !== null && (!Number.isSafeInteger(parsed.revision) || parsed.revision < 0)) throw Error('Invalid pending cloud restore record');
-  return parsed;
+let stopTraceListeners: (() => void) | null = null;
+let traceSequence = 0;
+let traceInputs = 0;
+const traceEntries: Record<string, unknown>[] = [];
+const traceInstance = import.meta.env.DEV ? crypto.randomUUID() : '';
+function elementKind(doc: Document | null) {
+  const el = doc?.activeElement;
+  if (!el) return 'none';
+  if (el === doc?.body) return 'body';
+  if (el === doc?.documentElement) return 'document';
+  if (el.tagName === 'CANVAS') return 'canvas';
+  if (el.tagName === 'IFRAME') return 'iframe';
+  if (el.tagName === 'INPUT' && (el as HTMLInputElement).type === 'file') return 'file_input';
+  return 'other_control';
 }
+function trace(event: string, fields: Record<string, unknown> = {}) {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return;
+  try {
+    let game: Record<string, unknown> = { accessible: false };
+    try {
+      const doc = iframeRef?.contentDocument;
+      if (doc) game = { accessible: true, visible: doc.visibilityState, focused: doc.hasFocus(), activeElement: elementKind(doc),
+        version: String((iframeRef?.contentWindow as any)?.gameState?.version ?? 'unknown') };
+    } catch {}
+    traceEntries.push({ sequence: ++traceSequence, time: Date.now(), event,
+      instanceId: traceInstance, sessionId, requestId: unknownImportId || null,
+      ...nativePrompt?.diagnosticState, busy, ...fields,
+      host: { visible: document.visibilityState, focused: document.hasFocus(), activeElement: elementKind(document),
+        siteBuild: String((window as any).__SITE_BUILD ?? 'unknown'),
+        iframePath: iframeRef ? new URL(iframeRef.src, window.location.href).pathname : null }, game });
+    if (traceEntries.length > 256) traceEntries.shift();
+  } catch { /* Diagnostics must never interfere with a save operation. */ }
+}
+function traceMessage(event: string, data: any, rejection?: string) {
+  if (!import.meta.env.DEV) return;
+  const id = (value: unknown) => typeof value === 'string' ? value.slice(0, 128) : null;
+  trace(event, { type: id(data.type), requestId: id(data.requestId), messageSessionId: id(data.sessionId),
+    messagePromptId: id(data.promptId), rejection, ok: typeof data.ok === 'boolean' ? data.ok : undefined,
+    reason: typeof data.reason === 'string' && /^[a-z_]{1,64}$/.test(data.reason) ? data.reason : undefined });
+}
+function recoverNativeFocus(stage: string) {
+  restoreGameFocus(document, iframeRef, result => trace('focus_attempt', { stage, ...result }));
+}
+export function traceSaveVisibility(visible: boolean) {
+  trace('visibility_sent', { visible });
+}
+// Cloud saves are retired for now. Manual transfers never consult cloud state.
 export interface SaveBridgeOptions { onExit?: () => void }
+export function isNativeFilePromptActive() { return nativePrompt?.active ?? false; }
+export function isNativeFilePromptRecovery() { return nativePrompt?.recovering ?? false; }
+function handleNativePrompt(event: PromptEvent) {
+  if (event.phase === 'opening') traceInputs = 0;
+  trace('native_prompt', { ...event });
+  if (event.phase === 'returned') recoverNativeFocus('returned');
+  postToGame({ type: 'allbyte:native-file-prompt', sessionId, ...event });
+  window.dispatchEvent(new CustomEvent('allbyte:native-file-prompt', { detail: event }));
+  if (event.outcome === 'cancelled') reportTransfer('cancelled', '');
+}
+function handleNativeSettled() {
+  trace('input_removed');
+  recoverNativeFocus('settled');
+  window.dispatchEvent(new CustomEvent('allbyte:native-file-prompt-settled'));
+}
 function context() {
   const account = auth.currentUser?.userId ?? '';
-  if (revisionAccount !== account) { revisionAccount = account; serverRevision = null; cloudConflict = false; }
   return { account, generation, mutation };
 }
 function valid(c: ReturnType<typeof context>) {
@@ -53,13 +99,9 @@ function valid(c: ReturnType<typeof context>) {
 function sameSession(c: ReturnType<typeof context>) {
   return c.account === (auth.currentUser?.userId ?? '') && c.generation === generation;
 }
-function cloudSerial<T>(work: () => Promise<T>): Promise<T> {
-  const next = cloudQueue.then(work, work);
-  cloudQueue = next.catch(() => undefined);
-  return next;
-}
 function postToGame(message: object) {
   if (!iframeRef?.contentWindow) return;
+  traceMessage('message_sent', message);
   if (import.meta.env.DEV) (window as any).__saves_test?.sentMessages.push(message);
   iframeRef.contentWindow.postMessage({ protocolVersion: 2, ...message }, new URL(iframeRef.src || window.location.href, window.location.href).origin);
 }
@@ -82,34 +124,74 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBr
   iframeRef = iframe;
   exitCallback = options.onExit ?? null;
   if (typeof window === 'undefined') return;
+  if (import.meta.env.DEV) {
+    const read = () => JSON.parse(JSON.stringify(traceEntries));
+    Object.defineProperty(window, '__allbyteSaveTrace', { configurable: true,
+      value: Object.freeze({ read, schemaVersion: 1 }) });
+    const cleanups: (() => void)[] = [];
+    const listen = (target: EventTarget, type: string, fn: EventListener) => {
+      target.addEventListener(type, fn, true);
+      cleanups.push(() => { try { target.removeEventListener(type, fn, true); } catch {} });
+    };
+    for (const type of ['focus', 'blur', 'pageshow', 'pagehide']) listen(window, type, () => trace('host_' + type));
+    for (const type of ['visibilitychange', 'fullscreenchange']) listen(document, type, () => trace('host_' + type));
+    const watch = () => {
+      try {
+        if (!iframe?.contentWindow) return;
+        for (const type of ['focus', 'blur']) listen(iframe.contentWindow, type, () => trace('game_' + type));
+        for (const type of ['pointerdown', 'keydown']) listen(iframe.contentWindow, type, event => {
+          if (!event.isTrusted || !nativePrompt?.diagnosticState.promptId || traceInputs >= 8) return;
+          traceInputs++;
+          trace('game_input_capture', { inputType: type, repeat: !!(event as KeyboardEvent).repeat });
+        });
+      } catch {}
+    };
+    watch();
+    iframe?.addEventListener('load', watch);
+    stopTraceListeners = () => { iframe?.removeEventListener('load', watch); cleanups.forEach(fn => fn()); };
+    trace('bridge_initialized');
+  }
   window.addEventListener('message', handleGameMessage);
-  document.addEventListener('visibilitychange', broadcastVisibility);
-  importFileInput = document.createElement('input');
-  importFileInput.type = 'file';
-  importFileInput.accept = 'application/json,.json';
-  importFileInput.style.position = 'absolute';
-  importFileInput.style.left = '-9999px';
-  importFileInput.addEventListener('change', handleImportFileChosen);
-  importFileInput.addEventListener('cancel', handlePickerCancel);
-  document.body.appendChild(importFileInput);
+  nativePrompt = new NativeFilePrompt(window, document, handleNativePrompt,
+    file => { trace('file_selected', { bytes: file.size }); void uploadSavesFile(file); }, handleNativeSettled);
+  let removeFrameInteractions: (() => void) | undefined;
+  const watchFrame = () => {
+    removeFrameInteractions?.();
+    try { if (iframe?.contentWindow) removeFrameInteractions = nativePrompt?.watchInteractions(iframe.contentWindow); }
+    catch { /* Unsupported cross-origin embedding still uses host return events. */ }
+  };
+  const frameLoaded = () => {
+    // A chooser belongs to one loaded document. Retire it even if the new game
+    // never reaches ready, so an old OS callback cannot target the new frame.
+    nativePrompt?.destroy();
+    nativePrompt = new NativeFilePrompt(window, document, handleNativePrompt,
+      file => { trace('file_selected', { bytes: file.size }); void uploadSavesFile(file); }, handleNativeSettled);
+    watchFrame();
+  };
+  watchFrame();
+  iframe?.addEventListener('load', frameLoaded);
+  removeFrameLoadListener = () => { iframe?.removeEventListener('load', frameLoaded); removeFrameInteractions?.(); };
   (window as any).allbyteRequestExit = () => exitCallback?.();
   (window as any).allbyteRequestExport = () => void downloadSavesFile();
   // Synchronous call preserves browser activation when Godot forwards a gesture.
   (window as any).allbyteRequestImport = () => {
+    trace('import_invoked', { activation: typeof navigator !== 'undefined' ? navigator.userActivation?.isActive : undefined });
     try {
       requireProtocol();
-      if (busy || pickerOpen || unknownImportId) throw Error('A save transfer is already pending.');
-      if (typeof navigator !== 'undefined' && navigator.userActivation && !navigator.userActivation.isActive) throw Error('The browser needs an active click to open the chooser. Select Import with a mouse or touch.');
-      pickerOpen = true;
-      importFileInput?.click();
-    } catch (e) { pickerOpen = false; reportTransfer('error', (e as Error).message); }
+      if (busy || isNativeFilePromptActive() || unknownImportId) throw Error('A save transfer is already pending.');
+      if (typeof navigator !== 'undefined' && navigator.userActivation && !navigator.userActivation.isActive) throw Error('The browser needs a recent keyboard, mouse or touch action to open the file chooser.');
+      if (!nativePrompt) throw Error('The file chooser is unavailable.');
+      nativePrompt.open();
+      trace('chooser_accepted');
+      return true;
+    } catch (e) { trace('chooser_refused'); reportTransfer('error', (e as Error).message); return false; }
   };
   if (import.meta.env.DEV) (window as any).__saves_test = {
     store: saves, getCurrent: () => saves.current, getSyncStatus: () => saves.syncStatus,
     getMaxSaveSlots: () => saves.maxSaveSlots, getProtocolVersion: () => saves.protocolVersion,
     getLastLoadResult: () => saves.lastLoadResult, getErrorMessage: () => saves.errorMessage,
     isGameReady: () => saves.gameReady, getPreReadyQueueLength: () => 0,
-    getIsSyncTier: () => !!auth.currentUser, sentMessages: [],
+    getIsSyncTier: () => false, sentMessages: [],
     setTestTier: (tier: string) => {
       auth.currentUser = auth.currentUser ? { ...auth.currentUser, tier } :
         { userId: 'test', email: 'test@allbyte.studio', username: 'test', tier,
@@ -118,43 +200,41 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBr
   };
 }
 export function teardownSaveBridge() {
+  trace('bridge_teardown');
+  stopTraceListeners?.(); stopTraceListeners = null;
+  nativePrompt?.destroy();
+  nativePrompt = null;
+  removeFrameLoadListener?.();
+  removeFrameLoadListener = null;
   generation++; mutation++; requests.cancel();
-  iframeRef = null; exitCallback = null; sessionId = ''; busy = false; pickerOpen = false;
-  unknownImportId = ''; serverRevision = null; cloudConflict = false;
+  iframeRef = null; exitCallback = null; sessionId = ''; busy = false;
+  unknownImportId = '';
   saves.gameReady = false; saves.protocolVersion = null; saves.maxSaveSlots = null;
   saves.saveCapabilities = {};
   saves.lastLoadResult = null; saves.current = { saves: {}, options: '', keymapping: '' };
   saves.syncStatus = 'idle'; saves.lastSyncedAt = null; saves.errorMessage = null;
-  if (pendingPushTimer) clearTimeout(pendingPushTimer);
-  pendingPushTimer = null;
   if (typeof window === 'undefined') return;
   window.removeEventListener('message', handleGameMessage);
-  document.removeEventListener('visibilitychange', broadcastVisibility);
-  importFileInput?.removeEventListener('change', handleImportFileChosen);
-  importFileInput?.removeEventListener('cancel', handlePickerCancel);
-  importFileInput?.remove(); importFileInput = null;
   delete (window as any).allbyteRequestExit;
   delete (window as any).allbyteRequestExport;
   delete (window as any).allbyteRequestImport;
-  delete (window as any).__saves_test;
-}
-function broadcastVisibility() { postToGame({ type: 'allbyte:visibility', visible: document.visibilityState === 'visible' }); }
-function handlePickerCancel() { pickerOpen = false; reportTransfer('cancelled', ''); }
-async function handleImportFileChosen(e: Event) {
-  const input = e.target as HTMLInputElement;
-  pickerOpen = false;
-  const file = input.files?.[0]; input.value = '';
-  if (file) await uploadSavesFile(file);
+  if (import.meta.env.DEV) delete (window as any).__saves_test;
 }
 function handleGameMessage(e: MessageEvent) {
   const data = e.data;
   if (!iframeRef || !data || typeof data !== 'object' || typeof data.type !== 'string') return;
   const origin = new URL(iframeRef.src || window.location.href, window.location.href).origin;
   const bypass = import.meta.env.DEV && (window as any).__saves_test_skip_source_check === true;
-  if (!bypass && (e.source !== iframeRef.contentWindow || e.origin !== origin)) return;
+  if (!bypass && (e.source !== iframeRef.contentWindow || e.origin !== origin)) {
+    // Do not copy untrusted payload identifiers into diagnostics.
+    trace('message_rejected', { rejection: e.source !== iframeRef.contentWindow ? 'source' : 'origin' }); return;
+  }
   const saveMessage = ['allbyte:all-saves', 'allbyte:load-complete', 'allbyte:load-pending', 'allbyte:save-changed'].includes(data.type);
-  if (saveMessage && (!sessionId || data.sessionId !== sessionId || data.protocolVersion !== 2)) return;
-  if (requests.accept(data)) return;
+  if (saveMessage && (!sessionId || data.sessionId !== sessionId || data.protocolVersion !== 2)) {
+    traceMessage('message_rejected', data, 'session_or_protocol'); return;
+  }
+  traceMessage('message_received', data);
+  if (requests.accept(data)) { traceMessage('request_matched', data); return; }
   switch (data.type) {
     case 'allbyte:request-exit': exitCallback?.(); return;
     case 'allbyte:request-export-saves': void downloadSavesFile(); return;
@@ -163,14 +243,20 @@ function handleGameMessage(e: MessageEvent) {
       if (typeof data.sessionId !== 'string' || !data.sessionId || data.protocolVersion !== 2 ||
           !Number.isInteger(data.maxSaveSlots) || data.maxSaveSlots < 1 || data.maxSaveSlots > 12) return;
       if (sessionId === data.sessionId && saves.gameReady) return;
-      requests.cancel(); generation++; sessionId = data.sessionId; busy = false; pickerOpen = false; cloudConflict = false;
-      unknownImportId = ''; serverRevision = null;
+      // Retire a prior session's chooser before accepting another game's files.
+      if (sessionId && sessionId !== data.sessionId) {
+        nativePrompt?.destroy();
+        nativePrompt = new NativeFilePrompt(window, document, handleNativePrompt,
+          file => { trace('file_selected', { bytes: file.size }); void uploadSavesFile(file); }, handleNativeSettled);
+        try { if (iframeRef.contentWindow) nativePrompt.watchInteractions(iframeRef.contentWindow); } catch {}
+      }
+      requests.cancel(); generation++; sessionId = data.sessionId; busy = false;
+      unknownImportId = '';
       saves.gameReady = true; saves.protocolVersion = 2; saves.maxSaveSlots = data.maxSaveSlots;
       saves.saveCapabilities = data.saveCapabilities ?? {};
       saves.current = { saves: {}, options: '', keymapping: '' };
       broadcastSyncStatus(); broadcastAccount();
-      if (auth.currentUser) void syncFromServer();
-      else {
+      {
         const c = context();
         void freshSnapshot().then(snapshot => { if (valid(c)) saves.current = snapshot; })
           .catch(e => { if (valid(c)) reportTransfer('error', e.message); });
@@ -180,16 +266,13 @@ function handleGameMessage(e: MessageEvent) {
     case 'allbyte:save-changed': {
       if (!Number.isInteger(data.slotId) || data.slotId < 1 || data.slotId > (saves.maxSaveSlots ?? 12) || typeof data.data !== 'string') return;
       mutation++; saves.current.saves[`slot_${data.slotId}`] = data.data;
-      if (auth.currentUser) schedulePushToServer();
       return;
     }
     case 'allbyte:load-complete':
       if (unknownImportId && data.requestId === unknownImportId && unknownImportAccount === (auth.currentUser?.userId ?? '')) {
         try {
           if (data.ok) saves.current = parseSnapshot(data.snapshot, saves.maxSaveSlots ?? 12);
-          else if (unknownImportAccount) localStorage.removeItem(restoreKey(unknownImportAccount));
           unknownImportId = '';
-          if (data.ok && auth.currentUser) schedulePushToServer();
         } catch (e) { reportTransfer('error', (e as Error).message); }
       }
       return;
@@ -210,12 +293,13 @@ export async function loadSavesIntoGame(snapshot: Partial<SavesSnapshot>, opts: 
     source: opts.source ?? 'local', cloudSlots: opts.cloudSlots ?? [] });
   let result;
   try { result = await reply; }
-  catch (e) { if (sameSession(c) && opts.source === 'import') unknownImportId = requestId; throw e; }
+  catch (e) { trace('import_ack_unresolved', { requestId }); if (sameSession(c) && opts.source === 'import') unknownImportId = requestId; throw e; }
   if (!(opts.source === 'import' ? sameSession(c) : valid(c))) throw Error('Game or account changed during save transfer');
   if (typeof result.ok !== 'boolean') throw Error('Import result unknown: malformed game acknowledgment.');
   saves.lastLoadResult = { acceptedSlots: result.acceptedSlots ?? [], rejectedSlots: result.rejectedSlots ?? [] };
   if (!result.ok) {
     if (opts.source === 'import') unknownImportId = '';
+    if (result.reason === 'empty_import') throw Error('This backup contains no saved game slots to import. Settings and controls are not imported.');
     throw Error(result.reason === 'cancelled' ? 'Import cancelled' : `Import failed: ${result.reason || 'unknown error'}`);
   }
   saves.current = parseSnapshot(result.snapshot, saves.maxSaveSlots ?? 12);
@@ -223,11 +307,14 @@ export async function loadSavesIntoGame(snapshot: Partial<SavesSnapshot>, opts: 
   return result;
 }
 export async function downloadSavesFile() {
-  if (busy || pickerOpen || unknownImportId) return reportTransfer('error', 'A save transfer is already pending.');
+  if (busy || isNativeFilePromptActive() || unknownImportId) return reportTransfer('error', 'A save transfer is already pending.');
   const c = context(); busy = true;
   try {
     const snapshot = await freshSnapshot();
     if (!valid(c)) throw Error('Game or account changed during export');
+    const slotCount = Object.keys(snapshot.saves).length;
+    trace('export_snapshot', { slotCount });
+    if (slotCount === 0) throw Error('No saved game slots to export. Save your game in a numbered slot first; autosave and quicksave are not included.');
     const payload = { version: 1, game: 'chronicles-of-nesis', exportedAt: new Date().toISOString(), ...snapshot };
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
     const a = document.createElement('a'); a.href = url;
@@ -241,34 +328,19 @@ export async function downloadSavesFile() {
 export async function uploadSavesFile(file: File): Promise<string | null> {
   if (busy || unknownImportId) { reportTransfer('error', 'A save transfer is already pending.'); return 'A save transfer is already pending.'; }
   busy = true; mutation++;
-  if (pendingPushTimer) clearTimeout(pendingPushTimer);
-  pendingPushTimer = null;
   const c = context();
-  let markedRestore = false;
   try {
     requireProtocol();
     if (file.size > MAX_TRANSFER_BYTES) throw Error('Save file is too large');
     const snapshot = parseBackup(await file.text(), saves.maxSaveSlots ?? 12);
-    await cloudSerial(async () => {
-      if (!valid(c)) throw Error('Game or account changed during import');
-      if (c.account) {
-        if (cloudConflict) throw Error('Resolve the existing cloud conflict before importing another backup.');
-        if (serverRevision === null) {
-          try { await fetchServerSaves(c); }
-          catch (e) { if (!valid(c)) throw e; }
-        }
-        if (!valid(c)) throw Error('Game or account changed during import');
-        localStorage.setItem(restoreKey(c.account), JSON.stringify({ revision: serverRevision }));
-        markedRestore = true;
-      }
-      // Settings remain off until the game offers an explicit opt-in control.
-      await loadSavesIntoGame({ saves: snapshot.saves }, { source: 'import' });
-    });
-    if (sameSession(c) && auth.currentUser) schedulePushToServer();
+    trace('backup_validated', { slotCount: Object.keys(snapshot.saves).length });
+    if (Object.keys(snapshot.saves).length === 0) throw Error('This backup contains no saved game slots to import. Settings and controls are not imported.');
+    if (!valid(c)) throw Error('Game or account changed during import');
+    // The game confirms affected slots before committing. Cloud state is irrelevant.
+    await loadSavesIntoGame({ saves: snapshot.saves }, { source: 'import' });
     return null;
   } catch (e) {
     const message = (e as Error).message;
-    if (markedRestore && !unknownImportId && sameSession(c)) localStorage.removeItem(restoreKey(c.account));
     if (c.generation === generation) reportTransfer(message === 'Import cancelled' ? 'cancelled' : 'error', message);
     return message === 'Import cancelled' ? null : message;
   } finally { if (c.generation === generation) busy = false; }
@@ -277,102 +349,10 @@ function broadcastSyncStatus() {
   if (saves.gameReady) postToGame({ type: 'allbyte:sync-status', status: saves.syncStatus,
     lastSyncedAt: saves.lastSyncedAt, errorMessage: saves.errorMessage });
 }
-function setSyncStatus(status: SyncStatus, message: string | null = null) {
-  saves.syncStatus = status; saves.errorMessage = message; broadcastSyncStatus();
-}
 function broadcastAccount() {
   const u = auth.currentUser;
-  postToGame({ type: 'allbyte:account', username: u?.username ?? null, tier: u?.tier ?? 'default', cloudSaves: !!u });
+  postToGame({ type: 'allbyte:account', username: u?.username ?? null, tier: u?.tier ?? 'default', cloudSaves: false });
 }
-function getAuthHeaders(): Record<string, string> {
-  const token = localStorage.getItem('allbyte_token'); return token ? { Authorization: `Bearer ${token}` } : {};
-}
-function playerSlotsOnly(all: Record<string, string>) {
-  return Object.fromEntries(Object.entries(all).filter(([key, value]) => /^slot_[1-9]\d*$/.test(key) && Number(key.slice(5)) <= (saves.maxSaveSlots ?? 12) && typeof value === 'string'));
-}
-async function fetchServerSaves(c: ReturnType<typeof context>): Promise<Snapshot | null> {
-  const response = await fetch(`${API}/saves`, { headers: getAuthHeaders() });
-  if (!valid(c)) throw Error('Account or saves changed during cloud request');
-  if (response.status !== 404 && !response.ok) throw Error(`Cloud download failed (${response.status})`);
-  const data = await response.json();
-  if (!valid(c)) throw Error('Account or saves changed during cloud request');
-  if (!Number.isSafeInteger(data.revision) || data.revision < 0) throw Error('Cloud API needs the revision-support update before syncing.');
-  serverRevision = data.revision;
-  return response.status === 404 ? null : parseSnapshot(JSON.parse(data.saves), saves.maxSaveSlots ?? 12);
-}
-async function pushServerSaves(): Promise<boolean> {
-  const c = context();
-  if (!c.account || busy || unknownImportId || cloudConflict || !saves.gameReady) return false;
-  setSyncStatus('syncing');
-  try {
-    const intent = restoreIntent(c.account);
-    if (intent && intent.revision === null) {
-      cloudConflict = true;
-      throw Error('Saves were imported locally while cloud was unavailable. Confirm which copy to keep before syncing.');
-    }
-    if (intent) serverRevision = intent.revision;
-    else if (serverRevision === null) await fetchServerSaves(c);
-    if (!valid(c) || busy || unknownImportId) return false;
-    const snapshot = await freshSnapshot();
-    if (!valid(c) || busy || unknownImportId) return false;
-    const response = await fetch(`${API}/saves`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({ saves: JSON.stringify({ ...snapshot, saves: playerSlotsOnly(snapshot.saves) }), expectedRevision: serverRevision }),
-    });
-    if (!valid(c)) { serverRevision = null; return false; }
-    if (response.status === 409) {
-      cloudConflict = true;
-      throw Error('Cloud saves changed elsewhere. Local saves are kept; resolve the conflict before uploading.');
-    }
-    if (!response.ok) throw Error(`Cloud upload failed (${response.status}). Saves remain local.`);
-    const result = await response.json();
-    if (!valid(c)) { serverRevision = null; return false; }
-    if (!Number.isSafeInteger(result.revision)) throw Error('Cloud returned an invalid revision');
-    serverRevision = result.revision;
-    if (intent) localStorage.removeItem(restoreKey(c.account));
-    saves.lastSyncedAt = Date.parse(result.updatedAt) || Date.now();
-    setSyncStatus('synced'); return true;
-  } catch (e) { if (valid(c)) setSyncStatus('error', (e as Error).message); return false; }
-}
-function schedulePushToServer() {
-  if (pendingPushTimer) clearTimeout(pendingPushTimer);
-  setSyncStatus('unsynced'); const c = context();
-  pendingPushTimer = setTimeout(() => {
-    pendingPushTimer = null;
-    if (valid(c)) void cloudSerial(() => valid(c) ? pushServerSaves() : Promise.resolve(false));
-  }, 5000);
-}
-export function syncFromServer(): Promise<void> {
-  const c = context();
-  return cloudSerial(async () => {
-    if (!c.account || !valid(c) || busy || unknownImportId || cloudConflict) return;
-    setSyncStatus('syncing');
-    try {
-      if (restoreIntent(c.account)) { await pushServerSaves(); return; }
-      const local = await freshSnapshot();
-      if (!valid(c)) return;
-      saves.current = local;
-      const server = await fetchServerSaves(c);
-      if (!valid(c) || busy || unknownImportId) return;
-      if (!server) { await pushServerSaves(); return; }
-      const merged = { ...local.saves }; const cloudSlots: string[] = [];
-      for (const [key, value] of Object.entries(server.saves)) {
-        let newer = !merged[key];
-        if (!newer) {
-          try {
-            const remoteTime = JSON.parse(value)?.timestamp; const localTime = JSON.parse(merged[key])?.timestamp;
-            newer = Number.isFinite(remoteTime) && Number.isFinite(localTime) && remoteTime > localTime;
-          } catch { continue; }
-        }
-        if (newer) { merged[key] = value; cloudSlots.push(key); }
-      }
-      if (cloudSlots.length) await loadSavesIntoGame({ saves: merged }, { source: 'cloud', cloudSlots });
-      if (valid(c)) setSyncStatus('synced');
-    } catch (e) { if (valid(c)) setSyncStatus('error', (e as Error).message); }
-  });
-}
-export function syncToServerNow(): Promise<boolean> {
-  const c = context();
-  if (pendingPushTimer) clearTimeout(pendingPushTimer);
-  pendingPushTimer = null; return cloudSerial(() => valid(c) ? pushServerSaves() : Promise.resolve(false));
-}
+// Compatibility entry points: cloud synchronization is intentionally disabled.
+export async function syncFromServer(): Promise<void> {}
+export async function syncToServerNow(): Promise<boolean> { return false; }

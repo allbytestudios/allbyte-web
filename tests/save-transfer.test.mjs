@@ -29,14 +29,16 @@ async function harness(signedIn = false) {
   const messages = [];
   let downloads = 0;
   globalThis.window = { location: { href: 'https://host.test/play/' },
-    addEventListener: (type, fn) => listeners.set(type, fn), removeEventListener: type => listeners.delete(type) };
+    addEventListener: (type, fn) => listeners.set(type, fn), removeEventListener: type => listeners.delete(type),
+    dispatchEvent: event => { listeners.get(event.type)?.(event); return true; } };
   globalThis.document = { visibilityState: 'visible', body: { appendChild() {} },
     addEventListener() {}, removeEventListener() {}, createElement: tag => ({ style: {},
       addEventListener() {}, removeEventListener() {}, remove() {}, click() { if (tag === 'a') downloads++; } }) };
   const storage = new Map([['allbyte_token', 'test-token']]);
   globalThis.localStorage = { getItem: key => storage.get(key) ?? null,
     setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) };
-  const iframe = { src: 'https://host.test/godot/index.html', contentWindow: { postMessage: (data, origin) => messages.push({ ...data, origin }) } };
+  const iframe = { src: 'https://host.test/godot/index.html', addEventListener() {}, removeEventListener() {},
+    contentWindow: { postMessage: (data, origin) => messages.push({ ...data, origin }) } };
   const mod = await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].text + `\n// ${counter++}`).toString('base64')}`);
   active = mod;
   mod.initSaveBridge(iframe);
@@ -57,6 +59,7 @@ test('production rejects wrong source, origin and dev bypass', async () => {
   h.ready(); h.reply(h.messages.find(m => m.type === 'allbyte:request-saves'));
   await h.tick(); assert.equal(h.mod.saves.gameReady, true);
   assert.equal(window.__saves_test, undefined);
+  assert.equal(window.__allbyteSaveTrace, undefined);
   assert(h.messages.every(m => m.origin === 'https://host.test'));
 });
 
@@ -70,6 +73,21 @@ test('export ignores unrelated and previous-session snapshots', async () => {
   await h.tick(); assert.equal(h.downloads(), 0);
   h.reply(request, snapshot('fresh')); await pending;
   assert.equal(h.downloads(), 1);
+});
+
+test('empty export downloads nothing and a later occupied snapshot can be exported', async () => {
+  const h = await harness(); h.ready();
+  h.reply(h.messages.find(m => m.type === 'allbyte:request-saves')); await h.tick();
+  const emptyExport = h.mod.downloadSavesFile();
+  h.reply(h.messages.filter(m => m.type === 'allbyte:request-saves').at(-1), { saves: {}, options: '', keymapping: '' });
+  await emptyExport;
+  assert.equal(h.downloads(), 0);
+  assert.match(h.mod.saves.errorMessage, /numbered slot.*autosave and quicksave/);
+  const populatedExport = h.mod.downloadSavesFile();
+  h.reply(h.messages.filter(m => m.type === 'allbyte:request-saves').at(-1), snapshot('populated'));
+  await populatedExport;
+  assert.equal(h.downloads(), 1);
+  assert.equal(h.mod.saves.errorMessage, null);
 });
 
 test('import waits for durable ack, excludes settings and accepts authoritative snapshot', async () => {
@@ -104,12 +122,18 @@ test('teardown cancels an export without downloading cached data', async () => {
   assert.equal(h.downloads(), 0); assert.deepEqual(h.mod.saves.current.saves, {});
 });
 
-test('cloud network failure never becomes an empty-cloud upload', async () => {
-  const h = await harness(true); const calls = [];
-  globalThis.fetch = async (url, opts) => { calls.push(opts?.method ?? 'GET'); throw Error('offline'); };
-  h.ready(); await h.tick(); h.reply(h.messages.find(m => m.type === 'allbyte:request-saves'));
-  await h.tick(); await h.tick();
-  assert.deepEqual(calls, ['GET']); assert.equal(h.mod.saves.syncStatus, 'error');
+test('empty and settings-only backups never reach game and do not lock out another import', async () => {
+  const h=await harness(); h.ready(); h.reply(h.messages.find(m=>m.type==='allbyte:request-saves')); await h.tick();
+  for (const options of ['', '{"volume":0}']) {
+    const error=await h.mod.uploadSavesFile(new File([JSON.stringify({version:1,saves:{},options})],'empty.json'));
+    assert.match(error,/no saved game slots/);
+  }
+  assert.equal(h.messages.filter(m=>m.type==='allbyte:load-saves').length,0);
+  assert.equal(JSON.parse(h.mod.saves.current.saves.slot_1).value,'original');
+  const pending=h.mod.uploadSavesFile(new File([JSON.stringify({version:1,...snapshot('valid')})],'valid.json'));
+  await h.tick(); const request=h.messages.find(m=>m.type==='allbyte:load-saves'); assert(request);
+  h.send({type:'allbyte:load-complete',requestId:request.requestId,ok:true,snapshot:snapshot('valid')});
+  assert.equal(await pending,null);
 });
 
 test('request timeout removes waiter and teardown rejects pending operations', async () => {
@@ -126,66 +150,28 @@ test('wrong-game, oversized and noncanonical slot files are rejected', () => {
   assert.throws(() => parseBackup(JSON.stringify({ version: 1, saves: { slot_01: '{}' } })), /slot/);
 });
 
-test('account changes discard in-flight cloud responses', async () => {
-  const h = await harness(true);
-  let resolveFetch;
-  globalThis.fetch = () => new Promise(resolve => { resolveFetch = resolve; });
-  h.ready(); await h.tick(); h.reply(h.messages.find(m => m.type === 'allbyte:request-saves'));
-  await h.tick();
-  __saveAuth.currentUser = { userId: 'b' };
-  resolveFetch(new Response(JSON.stringify({ revision: 1, saves: JSON.stringify(snapshot('wrong-account')) })));
-  await h.tick();
-  assert.equal(h.messages.filter(m => m.type === 'allbyte:load-saves').length, 0);
-  assert.equal(JSON.parse(h.mod.saves.current.saves.slot_1).value, 'original');
-});
-
-test('cloud conflict preserves local data and prevents automatic retries', async () => {
-  const h = await harness(true); const methods = [];
-  globalThis.fetch = async (_url, options) => {
-    methods.push(options?.method ?? 'GET');
-    return options?.method === 'PUT' ? new Response('{}', { status: 409 }) :
-      new Response(JSON.stringify({ revision: 3, saves: JSON.stringify(snapshot()) }));
-  };
-  h.ready(); await h.tick(); h.reply(h.messages.find(m => m.type === 'allbyte:request-saves'));
-  await h.tick(); await h.tick();
-  const pending = h.mod.syncToServerNow(); await h.tick();
-  h.reply(h.messages.filter(m => m.type === 'allbyte:request-saves').at(-1));
-  assert.equal(await pending, false);
-  assert.match(h.mod.saves.errorMessage, /changed elsewhere/);
+test('signed-in manual import ignores legacy cloud restore state and never contacts cloud', async () => {
+  const h = await harness(true); const calls = [];
+  globalThis.fetch = async (...args) => { calls.push(args); throw Error('cloud unavailable'); };
+  const marker = JSON.stringify({ revision: null });
+  localStorage.setItem('allbyte_save_restore_v1:a', marker);
+  h.ready(); h.reply(h.messages.find(m => m.type === 'allbyte:request-saves')); await h.tick();
+  assert.equal(h.messages.find(m => m.type === 'allbyte:account').cloudSaves, false);
+  await h.mod.syncFromServer(); assert.equal(await h.mod.syncToServerNow(), false);
+  for (const value of ['restored', 'second-import']) {
+    const pending = h.mod.uploadSavesFile(new File([JSON.stringify({ version: 1, ...snapshot(value) })], 'saves.json'));
+    await h.tick(); const request = h.messages.filter(m => m.type === 'allbyte:load-saves').at(-1);
+    assert(request); assert.equal(request.source, 'import');
+    assert.notEqual(JSON.parse(h.mod.saves.current.saves.slot_1).value, value);
+    h.send({ type: 'allbyte:load-complete', requestId: request.requestId, ok: true, snapshot: snapshot(value) });
+    assert.equal(await pending, null);
+    assert.equal(JSON.parse(h.mod.saves.current.saves.slot_1).value, value);
+  }
+  h.send({type:'allbyte:save-changed', slotId:1, data:snapshot('local').saves.slot_1});
   assert.equal(await h.mod.syncToServerNow(), false);
-  assert.deepEqual(methods, ['GET', 'PUT']);
-});
-
-test('pending restore after reload uploads local snapshot without timestamp merging', async () => {
-  const h = await harness(true); const methods = [];
-  localStorage.setItem('allbyte_save_restore_v1:a', JSON.stringify({ revision: 4 }));
-  globalThis.fetch = async (_url, options) => {
-    methods.push(options.method);
-    const body = JSON.parse(options.body);
-    assert.equal(body.expectedRevision, 4);
-    assert.equal(JSON.parse(JSON.parse(body.saves).saves.slot_1).value, 'restored');
-    return new Response(JSON.stringify({ revision: 5, updatedAt: new Date().toISOString() }));
-  };
-  h.ready(); await h.tick();
-  h.reply(h.messages.find(m => m.type === 'allbyte:request-saves'), snapshot('restored'));
-  await h.tick(); await h.tick();
-  assert.deepEqual(methods, ['PUT']);
-  assert.equal(localStorage.getItem('allbyte_save_restore_v1:a'), null);
-});
-
-test('signed-in offline import still commits locally and keeps restore intent', async () => {
-  const h = await harness(true);
-  globalThis.fetch = async () => { throw Error('offline'); };
-  h.ready(); await h.tick(); h.reply(h.messages.find(m => m.type === 'allbyte:request-saves'));
-  await h.tick(); await h.tick();
-  const pending = h.mod.uploadSavesFile(new File([JSON.stringify({ version: 1, ...snapshot('restored') })], 'saves.json'));
-  await h.tick(); await h.tick();
-  const request = h.messages.find(m => m.type === 'allbyte:load-saves');
-  assert(request);
-  h.send({ type: 'allbyte:load-complete', requestId: request.requestId, ok: true, snapshot: snapshot('restored') });
-  assert.equal(await pending, null);
-  assert.equal(JSON.parse(localStorage.getItem('allbyte_save_restore_v1:a')).revision, null);
-  assert.equal(JSON.parse(h.mod.saves.current.saves.slot_1).value, 'restored');
+  assert.deepEqual(calls, []);
+  assert.equal(localStorage.getItem('allbyte_save_restore_v1:a'), marker);
+  assert.equal(h.mod.saves.syncStatus, 'idle');
 });
 
 test('replacing iframe session cancels pending transfer and allows a new one', async () => {

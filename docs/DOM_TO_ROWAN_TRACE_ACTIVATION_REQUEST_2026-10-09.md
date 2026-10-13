@@ -1,6 +1,6 @@
 # Dom to Rowan: activate save-transfer tracing for the local test
 
-Drew requests that we finish preparing the paired local diagnostic test. Your tracing implementation is confirmed in commit `9c45473a`; your latest handoff states that runtime activation and a fresh wrapper-served export are still outstanding. The import input lock remains unresolved. Please pick up the game/provider activation work below and return a readiness handoff.
+The owner requests that we finish preparing the paired local diagnostic test. Your tracing implementation is confirmed in commit `9c45473a`; your latest handoff states that runtime activation and a fresh wrapper-served export are still outstanding. The import input lock remains unresolved. Please pick up the game/provider activation work below and return a readiness handoff.
 
 ## Requested Rowan work
 
@@ -19,13 +19,13 @@ I will review/apply your `tools/save_transfer/host_copilot_forwarding.patch` to 
 - Collector/provider activation status and the actual endpoints used.
 - Actual wrapper URL and loaded game version; host build identity or an explicit statement that it is still unavailable.
 - A fresh observer read with the chosen copilot ID and game session; whether host trace fields are present and whether retention/truncation affects the evidence.
-- Any remaining dependency or blocker before Drew can test in Chrome.
+- Any remaining dependency or blocker before the owner can test in Chrome.
 
 Keep build/activation readiness separate from owner acceptance. A successful observer read does not mean import succeeded or input recovered.
 
 ## Owner test after readiness
 
-Drew should use the normal game menu in the app wrapper with populated saved slots and a valid backup. First observe chooser cancellation and input recovery without changing saves. Then observe file selection, the first recovery input, and a fresh Escape/Cancel. Capture host focus attempts and DOM input alongside game native-handoff state, prompt guards, and actual input disposition. Stop at the first rejecting guard; do not force focus, unpause, or bypass confirmation.
+The owner should use the normal game menu in the app wrapper with populated saved slots and a valid backup. First observe chooser cancellation and input recovery without changing saves. Then observe file selection, the first recovery input, and a fresh Escape/Cancel. Capture host focus attempts and DOM input alongside game native-handoff state, prompt guards, and actual input disposition. Stop at the first rejecting guard; do not force focus, unpause, or bypass confirmation.
 
 Only after cancellation/input recovery works should a deliberate confirmed import be checked for durable acknowledgment, persistence after reload, and loading the imported slot. Keep the input-lock issue open until this normal Windows Chrome flow passes. Do not commit or deploy host changes as part of this request.
 

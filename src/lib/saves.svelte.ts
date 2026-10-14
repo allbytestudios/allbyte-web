@@ -29,6 +29,7 @@ let unknownImportAccount = '';
 let stopTraceListeners: (() => void) | null = null;
 let traceSequence = 0;
 let traceInputs = 0;
+let traceStateMessages = 0;
 const traceEntries: Record<string, unknown>[] = [];
 const traceInstance = import.meta.env.DEV ? crypto.randomUUID() : '';
 function elementKind(doc: Document | null) {
@@ -43,6 +44,14 @@ function elementKind(doc: Document | null) {
 }
 function trace(event: string, fields: Record<string, unknown> = {}) {
   if (!import.meta.env.DEV || typeof window === 'undefined') return;
+  // `allbyte:state` arrives at a rate set by the game, and it bursts: measured
+  // 2026-10-14, 252 of the ring's 256 entries were state pings inside six
+  // seconds, while a quiet Title posts 3 in thirty. A burst therefore evicted
+  // the transfer events the ring exists to preserve — right when a transfer is
+  // the thing being diagnosed — and buried them in the console besides. Count
+  // them instead; every entry below carries the running total, so "is the game
+  // still talking" stays answerable at any rate without the flood.
+  if (event === 'message_received' && fields.type === 'allbyte:state') { traceStateMessages++; return; }
   try {
     let game: Record<string, unknown> = { accessible: false };
     try {
@@ -50,13 +59,25 @@ function trace(event: string, fields: Record<string, unknown> = {}) {
       if (doc) game = { accessible: true, visible: doc.visibilityState, focused: doc.hasFocus(), activeElement: elementKind(doc),
         version: String((iframeRef?.contentWindow as any)?.gameState?.version ?? 'unknown') };
     } catch {}
+    const host = { visible: document.visibilityState, focused: document.hasFocus(), activeElement: elementKind(document),
+      siteBuild: String((window as any).__SITE_BUILD ?? 'unknown'),
+      iframePath: iframeRef ? new URL(iframeRef.src, window.location.href).pathname : null };
     traceEntries.push({ sequence: ++traceSequence, time: Date.now(), event,
       instanceId: traceInstance, sessionId, requestId: unknownImportId || null,
-      ...nativePrompt?.diagnosticState, busy, ...fields,
-      host: { visible: document.visibilityState, focused: document.hasFocus(), activeElement: elementKind(document),
-        siteBuild: String((window as any).__SITE_BUILD ?? 'unknown'),
-        iframePath: iframeRef ? new URL(iframeRef.src, window.location.href).pathname : null }, game });
+      ...nativePrompt?.diagnosticState, busy, stateMsgs: traceStateMessages, ...fields, host, game });
     if (traceEntries.length > 256) traceEntries.shift();
+    // Mirror every event to the console as ONE greppable line. The ring above
+    // keeps the full record, but nothing surfaced it, so the wrapper half of a
+    // save transfer was invisible from a browser session or a driven console
+    // capture — diagnosing "did the bridge even get called?" required
+    // monkey-patching allbyteRequestImport (Arc 2026-10-14). Prefixed `[saves]`
+    // to match `[loader]`; DEV only, same as the rest of this facility.
+    console.log(`[saves] ${event} ` + JSON.stringify({
+      seq: traceSequence, ...fields, busy,
+      prompt: nativePrompt ? { active: nativePrompt.active, recovering: nativePrompt.recovering } : null,
+      hostFocus: host.focused, hostActive: host.activeElement,
+      gameFocus: game.focused ?? null, gameActive: game.activeElement ?? null,
+    }));
   } catch { /* Diagnostics must never interfere with a save operation. */ }
 }
 function traceMessage(event: string, data: any, rejection?: string) {
@@ -184,8 +205,16 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBr
       nativePrompt.open();
       trace('chooser_accepted');
       return true;
-    } catch (e) { trace('chooser_refused'); reportTransfer('error', (e as Error).message); return false; }
+    } catch (e) {
+      // Record WHY. Every refusal above throws a distinct message, and without
+      // it a refused import is indistinguishable from one that never arrived.
+      trace('chooser_refused', { reason: (e as Error).message });
+      reportTransfer('error', (e as Error).message); return false;
+    }
   };
+  // Structured read-out of the trace ring for a driver that wants the full
+  // record rather than scraped console lines: window.allbyteSaveTrace().
+  if (import.meta.env.DEV) (window as any).allbyteSaveTrace = () => traceEntries.slice();
   if (import.meta.env.DEV) (window as any).__saves_test = {
     store: saves, getCurrent: () => saves.current, getSyncStatus: () => saves.syncStatus,
     getMaxSaveSlots: () => saves.maxSaveSlots, getProtocolVersion: () => saves.protocolVersion,
@@ -218,7 +247,7 @@ export function teardownSaveBridge() {
   delete (window as any).allbyteRequestExit;
   delete (window as any).allbyteRequestExport;
   delete (window as any).allbyteRequestImport;
-  if (import.meta.env.DEV) delete (window as any).__saves_test;
+  if (import.meta.env.DEV) { delete (window as any).__saves_test; delete (window as any).allbyteSaveTrace; }
 }
 function handleGameMessage(e: MessageEvent) {
   const data = e.data;

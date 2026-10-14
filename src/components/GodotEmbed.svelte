@@ -3,6 +3,7 @@
   import { subscribeToFile } from "../lib/testEvents";
   import { initSaveBridge, teardownSaveBridge, isNativeFilePromptActive, isNativeFilePromptRecovery, traceSaveVisibility } from "../lib/saves.svelte.ts";
   import { installGameVisibility } from "../lib/native-file-prompt";
+  import { isLocalDebugDrivingSession, localDrivingParams } from "../lib/local-driving";
   import { initDevSession, teardownDevSession } from "../lib/devSession";
   import { auth } from "../lib/auth.svelte.ts";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
@@ -191,8 +192,9 @@
 
   interface Props {
     fixture?: string;
+    localDebugSession?: boolean;
   }
-  let { fixture }: Props = $props();
+  let { fixture, localDebugSession = false }: Props = $props();
 
   let loading = $state(true);
   let error = $state("");
@@ -417,6 +419,13 @@
   }
 
   function resolveGameUrl(): string {
+    // The debug artifact is a local-only surface for Rowan's two watched lanes.
+    // Keep ordinary local sessions and every production route on the public
+    // artifact. Explicit version/scenario links retain their existing routing.
+    if (localDebugSession || (typeof window !== "undefined" && isLocalDebugDrivingSession(
+      window.location.search, window.location.hostname, import.meta.env.DEV,
+    ))) return "/godot/debug/index.html";
+
     const selected = getVersionSelection();
     if (selected) return selected;
     // Installed PWA → the clean public (non-debug) build (owner: "pwa only
@@ -480,12 +489,9 @@
 
   /** The iframe src: the resolved build plus the admin-only debug passthrough. */
   function gameSrc(base: string): string {
-    let copilot = "";
-    if (import.meta.env.DEV && typeof window !== "undefined" &&
-        /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
-      const id = new URLSearchParams(window.location.search).get("copilot");
-      if (id && /^\d{1,9}$/.test(id)) copilot = `&copilot=${id}`;
-    }
+    const copilot = typeof window === "undefined" ? "" : localDrivingParams(
+      window.location.search, window.location.hostname, import.meta.env.DEV,
+    );
     return `${base}?t=${Date.now()}${debugParam()}${copilot}`;
   }
   let gameUrl = $state<string | null>(resolveGameUrlOrHold());
@@ -1189,7 +1195,10 @@
 
     if (!import.meta.env.DEV) return;
 
-    sseUnsub = subscribeToFile("godot/reload", doReload);
+    const reloadEvent = gameUrl?.startsWith("/godot/debug/")
+      ? "godot/reload/debug"
+      : "godot/reload";
+    sseUnsub = subscribeToFile(reloadEvent, doReload);
 
     const onMessage = (ev: MessageEvent) => {
       if (!iframeEl || ev.source !== iframeEl.contentWindow) return;
@@ -1897,7 +1906,20 @@
   }
 
   $effect(() => {
-    if (!(allowed && loading && useWorkerLoader && loadCanvasEl && !loadWorker && !workerFailed)) return;
+    // Read every dependency BEFORE the guard. `&&` short-circuits, so a guard
+    // written inline stops evaluating at the first false value and $effect
+    // never subscribes to the rest — most importantly `loadCanvasEl`, which
+    // starts undefined and is assigned by bind:this. If `allowed` was false on
+    // the first run, the canvas binding alone would then never re-trigger this
+    // effect and the worker was never created at all — leaving a loader that
+    // nothing can ever dismiss (see the reveal watchdog below).
+    const canStart = allowed;
+    const isLoading = loading;
+    const wantWorker = useWorkerLoader;
+    const canvasEl = loadCanvasEl;
+    const haveWorker = !!loadWorker;
+    const failed = workerFailed;
+    if (!(canStart && isLoading && wantWorker && canvasEl && !haveWorker && !failed)) return;
     try {
       const worker = new LoadScreenWorker();
       worker.onmessage = (ev) => {
@@ -2239,6 +2261,55 @@
       if (onCard >= CARD_MS) advanceCard(); // a full 3s on this card → rotate
     }, 200);
     return () => clearInterval(id);
+  });
+
+  // --- Backstops: the loader must never outlive a ready game ---------------
+  // Both of these exist because the worker path is a single point of failure.
+  // When the worker owns the reveal, BOTH DOM reveal paths early-return on
+  // `useWorkerLoader && !workerFailed` — so if the worker never starts, never
+  // receives `scene`, or never finishes its victory beat, `loading` stays true
+  // forever and the overlay covers a fully interactive Title, eating all input.
+  // Observed 2026-10-14 in a driven embed (overlay frozen at "100% · entering
+  // Nesis" with the game running underneath), but nothing about it is specific
+  // to that lane — any player whose worker dies gets the same dead page.
+
+  // 1. The worker never came up. Hand the load back to the DOM loader, which
+  //    has its own working reveal. 4s is far outside a healthy start (~350ms,
+  //    measured from hydration) and this only arms while no worker exists.
+  $effect(() => {
+    const canStart = allowed;
+    const isLoading = loading;
+    const wantWorker = useWorkerLoader;
+    const haveWorker = !!loadWorker;
+    const failed = workerFailed;
+    if (!(canStart && isLoading && wantWorker && !haveWorker && !failed)) return;
+    const id = setTimeout(() => {
+      if (loadWorker || workerFailed || !loading) return;
+      console.warn(
+        `[loader] ${Math.round(performance.now())}ms  worker never started — falling back to the DOM loader`,
+      );
+      workerFailed = true; // re-enables the DOM card rotation + reveal
+    }, 4000);
+    return () => clearTimeout(id);
+  });
+
+  // 2. The game is ready but something still holds the overlay. `sceneReady`
+  //    means the Title is interactive, so covering it is never correct. The
+  //    healthy worker reveal lands ~2.8s after `scene` (poison strike +
+  //    victory), so 8s cuts nothing short on a good load and bounds a bad one.
+  $effect(() => {
+    const ready = sceneReady;
+    const isLoading = loading;
+    if (!(ready && isLoading)) return;
+    const id = setTimeout(() => {
+      if (!loading) return;
+      console.warn(
+        `[loader] ${Math.round(performance.now())}ms  reveal watchdog — game ready but loader still up; forcing reveal ` +
+          `(worker=${loadWorker ? "alive" : "none"}, workerFailed=${workerFailed}, studioDone=${studioDone})`,
+      );
+      loading = false;
+    }, 8000);
+    return () => clearTimeout(id);
   });
 
   function pollLoadStatus() {

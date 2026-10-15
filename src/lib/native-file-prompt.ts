@@ -44,6 +44,7 @@ export class NativeFilePrompt {
   // native-exit classification through return until the next real interaction.
   recovering = false;
   private doc: Document;
+  private win: Window;
   private onEvent: (event: PromptEvent) => void;
   private onFile: (file: File) => void;
   private onSettled: () => void;
@@ -57,6 +58,7 @@ export class NativeFilePrompt {
     onFile: (file: File) => void,
     onSettled: () => void = () => {}) {
     this.doc = doc;
+    this.win = win;
     this.automated = !!(win.navigator as { webdriver?: boolean } | undefined)?.webdriver;
     this.onEvent = onEvent;
     this.onFile = onFile;
@@ -113,6 +115,11 @@ export class NativeFilePrompt {
     const input = this.doc.createElement('input');
     input.type = 'file';
     input.accept = 'application/json,.json';
+    // A stable handle for a driver feeding this input directly, so it never has
+    // to guess with input[type=file]:last. Exactly one exists at a time: open()
+    // throws while a prompt is active, and finish() removes it.
+    input.id = 'allbyte-import-input';
+    input.dataset.allbyteFilePrompt = 'import';
     input.style.position = 'absolute';
     input.style.left = '-9999px';
     this.input = input;
@@ -138,7 +145,17 @@ export class NativeFilePrompt {
     try {
       this.doc.body.appendChild(input);
       this.onEvent({ promptId: this.promptId, kind: 'import', phase: 'opening', outcome: 'pending' });
-      if (typeof input.showPicker === 'function') input.showPicker();
+      // A driver can opt out of the OS picker entirely and feed this input
+      // directly (Playwright set_input_files), which is what a driven lane
+      // wants: the picker is not our code, and a chooser opened from a
+      // KEYBOARD gesture inside the game iframe is not interceptable — Chrome
+      // opens a real modal OS dialog that the driver never sees and cannot
+      // dismiss, so every attempt leaves one stacked on the desktop (measured
+      // 2026-10-14). Pointer-opened choosers are still catchable, so the
+      // default is unchanged and expect_file_chooser suites keep working.
+      const directFeed = this.automated && (this.win as { __allbyteDirectFileFeed?: boolean }).__allbyteDirectFileFeed === true;
+      if (directFeed) { /* armed and attached; the driver supplies the file */ }
+      else if (typeof input.showPicker === 'function') input.showPicker();
       else input.click();
     } catch (error) {
       this.finish('error');

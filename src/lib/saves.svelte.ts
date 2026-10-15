@@ -174,7 +174,7 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBr
   }
   window.addEventListener('message', handleGameMessage);
   nativePrompt = new NativeFilePrompt(window, document, handleNativePrompt,
-    file => { trace('file_selected', { bytes: file.size }); void uploadSavesFile(file); }, handleNativeSettled);
+    file => { trace('file_selected', { bytes: file.size, name: file.name }); void uploadSavesFile(file); }, handleNativeSettled);
   let removeFrameInteractions: (() => void) | undefined;
   const watchFrame = () => {
     removeFrameInteractions?.();
@@ -186,7 +186,7 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBr
     // never reaches ready, so an old OS callback cannot target the new frame.
     nativePrompt?.destroy();
     nativePrompt = new NativeFilePrompt(window, document, handleNativePrompt,
-      file => { trace('file_selected', { bytes: file.size }); void uploadSavesFile(file); }, handleNativeSettled);
+      file => { trace('file_selected', { bytes: file.size, name: file.name }); void uploadSavesFile(file); }, handleNativeSettled);
     watchFrame();
   };
   watchFrame();
@@ -276,7 +276,7 @@ function handleGameMessage(e: MessageEvent) {
       if (sessionId && sessionId !== data.sessionId) {
         nativePrompt?.destroy();
         nativePrompt = new NativeFilePrompt(window, document, handleNativePrompt,
-          file => { trace('file_selected', { bytes: file.size }); void uploadSavesFile(file); }, handleNativeSettled);
+          file => { trace('file_selected', { bytes: file.size, name: file.name }); void uploadSavesFile(file); }, handleNativeSettled);
         try { if (iframeRef.contentWindow) nativePrompt.watchInteractions(iframeRef.contentWindow); } catch {}
       }
       requests.cancel(); generation++; sessionId = data.sessionId; busy = false;

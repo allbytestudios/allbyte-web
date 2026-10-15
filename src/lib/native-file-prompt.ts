@@ -39,6 +39,9 @@ export class NativeFilePrompt {
   // A driver intercepts the file chooser, so the "page input means the OS
   // dialog closed" assumption in watchInteractions() is false here.
   private automated = false;
+  // Whether THIS prompt was opened in direct-feed mode. Latched at open() so a
+  // flag cleared mid-prompt cannot change how its result is classified.
+  private directFeed = false;
   active = false;
   // A queued fullscreenchange may arrive after change/cancel/focus. Keep the
   // native-exit classification through return until the next real interaction.
@@ -71,6 +74,20 @@ export class NativeFilePrompt {
     this.listen(win, 'focus', () => this.checkReturn());
     this.listen(win, 'pageshow', () => this.checkReturn());
     this.watchInteractions(win);
+  }
+
+  /**
+   * A driver feeds the input directly instead of opening the OS picker. The
+   * window flag is the simple form, but it lives on `window` and a reload wipes
+   * it — after which the prompt silently falls back to a real modal OS dialog
+   * the driver can neither see nor dismiss. The URL param survives reloads, so
+   * a lane can set it once and stay in direct-feed mode (Arc 2026-10-15).
+   */
+  private isDirectFeed() {
+    if (!this.automated) return false;
+    if ((this.win as { __allbyteDirectFileFeed?: boolean }).__allbyteDirectFileFeed === true) return true;
+    try { return new URLSearchParams(this.win.location.search).get('filefeed') === 'direct'; }
+    catch { return false; }
   }
 
   private listen(target: EventTarget, type: string, handler: EventListener) {
@@ -135,7 +152,17 @@ export class NativeFilePrompt {
       this.finish(file ? 'selected' : 'cancelled');
       if (file) this.onFile(file);
     };
-    const cancelled = () => { if (this.input === input) this.finish('cancelled'); };
+    const cancelled = () => {
+      if (this.input !== input) return;
+      // A file can be on the input before Chrome reports the cancel — a driver
+      // feeding it directly, or a dialog that resolved either way. The file is
+      // authoritative; never throw one away for a cancel that raced it.
+      if (input.files?.length) { chosen(); return; }
+      // In direct-feed mode no dialog was ever opened, so a cancel here cannot
+      // mean the user dismissed one. The change event is the only real outcome.
+      if (this.directFeed) return;
+      this.finish('cancelled');
+    };
     input.addEventListener('change', chosen);
     input.addEventListener('cancel', cancelled);
     this.removeInputListeners = () => {
@@ -153,8 +180,8 @@ export class NativeFilePrompt {
       // dismiss, so every attempt leaves one stacked on the desktop (measured
       // 2026-10-14). Pointer-opened choosers are still catchable, so the
       // default is unchanged and expect_file_chooser suites keep working.
-      const directFeed = this.automated && (this.win as { __allbyteDirectFileFeed?: boolean }).__allbyteDirectFileFeed === true;
-      if (directFeed) { /* armed and attached; the driver supplies the file */ }
+      this.directFeed = this.isDirectFeed();
+      if (this.directFeed) { /* armed and attached; the driver supplies the file */ }
       else if (typeof input.showPicker === 'function') input.showPicker();
       else input.click();
     } catch (error) {

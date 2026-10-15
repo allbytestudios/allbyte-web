@@ -63,7 +63,7 @@ function trace(event: string, fields: Record<string, unknown> = {}) {
       siteBuild: String((window as any).__SITE_BUILD ?? 'unknown'),
       iframePath: iframeRef ? new URL(iframeRef.src, window.location.href).pathname : null };
     traceEntries.push({ sequence: ++traceSequence, time: Date.now(), event,
-      instanceId: traceInstance, sessionId, requestId: unknownImportId || null,
+      instanceId: traceInstance, sessionId, pendingImportId: unknownImportId || null,
       ...nativePrompt?.diagnosticState, busy, stateMsgs: traceStateMessages, ...fields, host, game });
     if (traceEntries.length > 256) traceEntries.shift();
     // Mirror every event to the console as ONE greppable line. The ring above
@@ -215,6 +215,21 @@ export function initSaveBridge(iframe: HTMLIFrameElement | null, options: SaveBr
   // Structured read-out of the trace ring for a driver that wants the full
   // record rather than scraped console lines: window.allbyteSaveTrace().
   if (import.meta.env.DEV) (window as any).allbyteSaveTrace = () => traceEntries.slice();
+  // An import whose acknowledgment never resolved leaves unknownImportId set,
+  // and every later attempt then refuses with "A save transfer is already
+  // pending." Until now the only way out was reloading the lane, which also
+  // wipes the window-flag direct-feed opt-in. This clears just the stuck state.
+  if (import.meta.env.DEV) (window as any).allbyteResetSaveTransfer = () => {
+    const cleared = { pendingImportId: unknownImportId || null, busy, promptActive: nativePrompt?.active ?? false };
+    unknownImportId = ''; unknownImportAccount = ''; busy = false;
+    nativePrompt?.destroy();
+    nativePrompt = new NativeFilePrompt(window, document, handleNativePrompt,
+      file => { trace('file_selected', { bytes: file.size, name: file.name }); void uploadSavesFile(file); }, handleNativeSettled);
+    try { if (iframeRef?.contentWindow) nativePrompt.watchInteractions(iframeRef.contentWindow); } catch { /* cross-origin */ }
+    saves.errorMessage = null;
+    trace('transfer_reset', cleared);
+    return cleared;
+  };
   if (import.meta.env.DEV) (window as any).__saves_test = {
     store: saves, getCurrent: () => saves.current, getSyncStatus: () => saves.syncStatus,
     getMaxSaveSlots: () => saves.maxSaveSlots, getProtocolVersion: () => saves.protocolVersion,
@@ -247,7 +262,7 @@ export function teardownSaveBridge() {
   delete (window as any).allbyteRequestExit;
   delete (window as any).allbyteRequestExport;
   delete (window as any).allbyteRequestImport;
-  if (import.meta.env.DEV) { delete (window as any).__saves_test; delete (window as any).allbyteSaveTrace; }
+  if (import.meta.env.DEV) { delete (window as any).__saves_test; delete (window as any).allbyteSaveTrace; delete (window as any).allbyteResetSaveTransfer; }
 }
 function handleGameMessage(e: MessageEvent) {
   const data = e.data;

@@ -9,6 +9,7 @@
     fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat,
     fetchUserAnalytics, fetchBudgetStatus, fetchSiteTraffic, claimOwnerIp, fetchPlayFunnel,
   } from "../lib/testDataSource";
+  import { fetchTraffic, type Traffic } from "../lib/traffic";
   import { fetchBeadsIssues } from "../lib/beadsSource";
   import { epicsOnly, isOpen, isClosed } from "../lib/beadsTypes";
   import { milestonesOrdered, milestoneIdFromLabels } from "../lib/milestones";
@@ -187,6 +188,14 @@
     return m;
   });
   let siteTraffic = $state<SiteTraffic | null>(null);
+  let trafficAgg = $state<Traffic | null>(null);
+  // Server-observed plays per day, from the CDN logs: one per sessionised
+  // request for the game pack. The gold playtime line beside it comes from the
+  // in-page beacon, which privacy browsers block outright — a two-hour playtest
+  // on Oct 15 left no beacon trace at all. Neither series contains the other
+  // (the beacon also sees returning players the CDN never re-serves), so they
+  // are plotted as two lines rather than reconciled into one number.
+  let serverPlaysByDate = $derived(new Map<string, number>(trafficAgg?.game_daily ?? []));
   let claimIpResult = $state<ClaimOwnerIpResult | null>(null);
   let claimIpBusy = $state(false);
   let nowTs = $state<number>(Date.now());
@@ -231,16 +240,18 @@
   async function loadAnalytics() {
     // Order matters: this is positional destructuring, so a new fetch inserted
     // mid-array silently reassigns everything after it.
-    const [ua, bs, pf, st] = await Promise.all([
+    const [ua, bs, pf, st, ta] = await Promise.all([
       fetchUserAnalytics().catch(() => null),
       fetchBudgetStatus().catch(() => null),
       fetchPlayFunnel().catch(() => null),
       fetchSiteTraffic().catch(() => null),
+      fetchTraffic(auth.authToken ?? "").catch(() => null),
     ]);
     userAnalytics = ua;
     budgetStatus = bs;
     playFunnel = pf;
     siteTraffic = st;
+    trafficAgg = ta;
   }
 
   let analyticsTimer: ReturnType<typeof setInterval> | null = null;
@@ -589,6 +600,9 @@
     {@const play = traffic.map(d => playByDate.get(d.date) ?? { mins: 0, players: 0 })}
     {@const playMax = Math.max(...play.map(p => p.mins), 1)}
     {@const playAny = withPlay && play.some(p => p.mins > 0 || p.players > 0)}
+    {@const serverPlays = traffic.map(d => serverPlaysByDate.get(d.date) ?? 0)}
+    {@const serverMax = Math.max(...serverPlays, 1)}
+    {@const serverAny = serverPlays.some(n => n > 0)}
     {@const play7d = play.slice(-7).reduce((a, p) => a + p.mins, 0)}
     {@const players7d = play.slice(-7).reduce((a, p) => a + p.players, 0)}
     <div class="users-chart-section">
@@ -676,6 +690,36 @@
               <text x="656" y={120 - frac * 100 + 3} fill="var(--gilt)" font-size="9" text-anchor="start" opacity="0.8">{Math.round(playMax * frac)}m</text>
             {/each}
           {/if}
+          <!-- Server-observed plays: the same question asked of the CDN logs
+               instead of the beacon. Deliberately NOT nested inside playAny —
+               the days worth looking at are exactly the ones where the beacon
+               recorded nothing and the server still served a game. Dashed, and
+               on its own scale, because these are play counts and the gold line
+               is minutes; a shared axis would imply a unit they do not share. -->
+          {#if serverAny}
+            <polyline
+              fill="none"
+              stroke="#5eead4"
+              stroke-width="2"
+              stroke-dasharray="4 3"
+              points={serverPlays.map((n, i) => {
+                const x = 50 + i * (600 / (traffic.length - 1 || 1));
+                return `${x},${120 - (n / serverMax) * 100}`;
+              }).join(" ")}
+            />
+            {#each serverPlays as n, i}
+              {@const x = 50 + i * (600 / (traffic.length - 1 || 1))}
+              {@const y = 120 - (n / serverMax) * 100}
+              {#if n > 0}
+                <circle cx={x} cy={y} r="2.5" fill="#5eead4">
+                  <title>{traffic[i].date}: {n} server-observed play{n === 1 ? "" : "s"} (CDN logs){(playByDate.get(traffic[i].date)?.players ?? 0) === 0 ? " — beacon recorded none" : ""}</title>
+                </circle>
+                {#if chartShowPerPointDetails(traffic.length)}
+                  <text x={x} y={y - 6} fill="#5eead4" font-size="9" text-anchor="middle">{n}</text>
+                {/if}
+              {/if}
+            {/each}
+          {/if}
         </svg>
         <div class="users-chart-legend">
           {#if isolated}
@@ -687,6 +731,9 @@
           {/if}
           {#if playAny}
             <span class="legend-item"><span class="legend-dot" style="background: var(--gilt)"></span> Playtime (min, right axis) · dot = players that day</span>
+          {/if}
+          {#if serverAny}
+            <span class="legend-item"><span class="legend-dot" style="background: #5eead4"></span> Plays seen by the CDN (own scale) — counts players the beacon misses</span>
           {/if}
         </div>
       </div>

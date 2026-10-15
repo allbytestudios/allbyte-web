@@ -36,6 +36,9 @@ export class NativeFilePrompt {
   private reportedReturn = false;
   private removeInputListeners: (() => void) | null = null;
   private cleanups: (() => void)[] = [];
+  // A driver intercepts the file chooser, so the "page input means the OS
+  // dialog closed" assumption in watchInteractions() is false here.
+  private automated = false;
   active = false;
   // A queued fullscreenchange may arrive after change/cancel/focus. Keep the
   // native-exit classification through return until the next real interaction.
@@ -54,6 +57,7 @@ export class NativeFilePrompt {
     onFile: (file: File) => void,
     onSettled: () => void = () => {}) {
     this.doc = doc;
+    this.automated = !!(win.navigator as { webdriver?: boolean } | undefined)?.webdriver;
     this.onEvent = onEvent;
     this.onFile = onFile;
     this.onSettled = onSettled;
@@ -83,7 +87,20 @@ export class NativeFilePrompt {
       if (!event.isTrusted || (event as KeyboardEvent).repeat || this.doc.visibilityState !== 'visible') return;
       // Real page input establishes that the OS chooser no longer owns input.
       // Retiring its input prevents any delayed old callback starting an import.
-      if (this.active) this.finish('returned');
+      //
+      // The premise is "a modal OS dialog blocks page input, so page input
+      // proves the dialog is gone". That holds for a person. It does NOT hold
+      // under automation: a driver intercepts the chooser, so no dialog ever
+      // opens and the page keeps receiving trusted input while the pick is
+      // still in flight. Retiring there dropped the file in silence — the
+      // chooser resolved onto a detached input, `change` fired with nothing
+      // listening, and no import ever started. One keypress between opening
+      // the chooser and delivering the file was enough (Arc 2026-10-14,
+      // keyboard-driven lane). Nothing here changes for a real user.
+      //
+      // The files check is a second belt that helps everyone: once a pick has
+      // landed, let `change` resolve it rather than racing it to the exit.
+      if (this.active && !this.automated && !this.input?.files?.length) this.finish('returned');
       this.recovering = false;
     };
     const pointer = this.listen(target, 'pointerdown', interact);

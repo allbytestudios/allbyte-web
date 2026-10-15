@@ -2,6 +2,7 @@
   import { auth } from "../lib/auth.svelte.ts";
   import { isAdmin } from "../lib/tier";
   import { onMount } from "svelte";
+  import { fetchTraffic, type Traffic } from "../lib/traffic";
 
   // ReadEndpoint output of the play-analytics stack (allbyte-studio-play-analytics,
   // us-east-1). Admin-gated server-side: verifies the JWT email claim.
@@ -77,6 +78,8 @@
     await load();
   });
 
+  let traffic = $state<Traffic | null>(null);
+
   async function load() {
     loading = true;
     error = null;
@@ -87,6 +90,14 @@
       });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       data = (await res.json()) as Funnel;
+      // Second, independent measurement of the same thing, from the CDN logs.
+      // Deliberately non-fatal: it is a cross-check, and losing it must never
+      // take down the page that carries the primary numbers.
+      try {
+        traffic = await fetchTraffic(auth.authToken ?? "");
+      } catch {
+        traffic = null;
+      }
     } catch (err: any) {
       error = err?.message ?? String(err);
     } finally {
@@ -250,7 +261,18 @@
   // is sessions/day, not unique returning players — the "when did traffic come"
   // signal to line up against marketing drops.
   let daily = $derived(data?.daily ?? []);
-  let maxDaily = $derived(daily.reduce((m, d) => Math.max(m, d.sessions), 0));
+  // Server-observed plays per day, keyed for lookup against the beacon series.
+  let serverByDay = $derived(new Map<string, number>(traffic?.game_daily ?? []));
+  // The tick must stay inside the track, so the scale has to cover BOTH series.
+  let maxDaily = $derived(
+    daily.reduce((m, d) => Math.max(m, d.sessions, serverByDay.get(d.date) ?? 0), 0),
+  );
+  // Totals over the days the beacon series covers, so the two are compared on
+  // the same window even though the traffic job keeps its own retention.
+  let beaconTotal = $derived(daily.reduce((n, d) => n + d.sessions, 0));
+  let serverTotal = $derived(
+    daily.reduce((n, d) => n + (serverByDay.get(d.date) ?? 0), 0),
+  );
 
   // Reporting period. The table is TTL-bounded, so these are NOT lifetime
   // totals — stating the window stops the numbers being read as all-time.
@@ -360,18 +382,39 @@
 
     <!-- Sessions per day — temporal signal for "when did players show up" -->
     <section class="daily">
-      <h3>Sessions per day <span class="sub">(UTC · dark = booted · anonymous, so sessions not unique players)</span></h3>
+      <h3>
+        Sessions per day
+        <span class="sub">(UTC · dark = booted · anonymous, so sessions not unique players)</span>
+      </h3>
+      {#if serverByDay.size > 0}
+        <p class="cross-check">
+          <span class="key-beacon"></span> beacon <strong>{beaconTotal}</strong>
+          <span class="key-server"></span> server-observed <strong>{serverTotal}</strong>
+          <span class="cross-note">
+            — two independent counts of the same thing. The beacon misses players
+            whose browser blocks it; the server misses returning players served
+            from the cache. Neither contains the other, so the real figure is
+            higher than both.
+          </span>
+        </p>
+      {/if}
       {#if daily.length === 0}
         <p class="muted">No dated sessions yet — appears as new play sessions come in.</p>
       {:else}
         <div class="daily-chart">
           {#each daily as d (d.date)}
-            <div class="day-col" title="{d.date}: {d.sessions} arrived, {d.booted} booted{d.past != null ? `, ${d.past} played` : ''}{d.bots ? ` (+${d.bots} automation/bot excluded)` : ''}">
+            <div class="day-col" title="{d.date}: {d.sessions} arrived, {d.booted} booted{d.past != null ? `, ${d.past} played` : ''}{d.bots ? ` (+${d.bots} automation/bot excluded)` : ''}{serverByDay.has(d.date) ? ` — server-observed: ${serverByDay.get(d.date)}` : ''}">
               <span class="day-n">{d.sessions}</span>
               <div class="day-bar-track">
                 <div class="day-bar" style="height:{maxDaily ? Math.max(3, Math.round((d.sessions / maxDaily) * 100)) : 0}%">
                   <div class="day-bar-booted" style="height:{d.sessions ? Math.round((d.booted / d.sessions) * 100) : 0}%"></div>
                 </div>
+                {#if serverByDay.has(d.date)}
+                  <span
+                    class="day-server"
+                    style="bottom:{maxDaily ? Math.min(100, Math.round(((serverByDay.get(d.date) ?? 0) / maxDaily) * 100)) : 0}%"
+                  ></span>
+                {/if}
               </div>
               <span class="day-lbl">{dayLabel(d.date)}</span>
             </div>
@@ -628,7 +671,38 @@
   .day-n { font-size: 0.68rem; color: var(--ink-soft); }
   /* Fixed bar-area height (was flex:1 tied to the container's fixed height) so the
      chart sizes to its content and never overflows vertically. */
-  .day-bar-track { height: 110px; width: 60%; display: flex; align-items: flex-end; }
+  .day-bar-track { position: relative; height: 110px; width: 60%; display: flex; align-items: flex-end; }
+  /* Server-observed plays for the same day. A rule rather than a second bar:
+     the two series measure overlapping-but-different populations, so stacking
+     or grouping them would imply an arithmetic relationship that is not real. */
+  .day-server {
+    position: absolute;
+    left: -3px;
+    right: -3px;
+    height: 0;
+    border-top: 2px solid #5eead4;
+    pointer-events: none;
+  }
+  .cross-check {
+    margin: 0 0 0.6rem;
+    font-size: 0.74rem;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .cross-check strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .cross-note { flex: 1 1 100%; opacity: 0.75; }
+  .key-beacon, .key-server {
+    display: inline-block;
+    width: 12px;
+    height: 2px;
+    vertical-align: middle;
+    margin-right: 0.1rem;
+  }
+  .key-beacon { background: var(--crimson); }
+  .key-server { background: #5eead4; }
   .day-bar {
     position: relative;
     width: 100%;

@@ -47,6 +47,15 @@ export interface TrafficMeta {
 }
 export interface Traffic {
   meta: TrafficMeta;
+  /**
+   * Plays per UTC day as the CDN saw them: one entry per sessionised request for
+   * the game's main pack. This is the measurement the play beacon cannot make —
+   * a privacy browser blocks the beacon but still has to ask the CDN for the
+   * pack. It is NOT a superset: a returning player served by the service worker
+   * never re-requests the pack, so the beacon sees them and this does not.
+   * Shown alongside the beacon series rather than replacing it.
+   */
+  game_daily?: [string, number][];
   top_pages: [string, number, string][];
   section_totals: [string, number][];
   entry_sources: [string, number][];

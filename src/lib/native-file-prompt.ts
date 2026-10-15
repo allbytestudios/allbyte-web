@@ -52,8 +52,15 @@ export class NativeFilePrompt {
   private onFile: (file: File) => void;
   private onSettled: () => void;
   get diagnosticState() {
+    // `directFeed` is on every entry deliberately. Whether the driver's opt-in
+    // was actually in effect at open() is the single question two rounds of
+    // "the ack says cancelled" turned on, and it was being inferred from
+    // downstream symptoms instead of read. `automated` rides along because
+    // directFeed is false without it, so a surprising false is explained in
+    // place rather than needing another run to narrow down.
     return { promptId: this.promptId, active: this.active, recovering: this.recovering,
-      inputPresent: this.input !== null, returned: this.reportedReturn, departed: this.departed };
+      inputPresent: this.input !== null, returned: this.reportedReturn, departed: this.departed,
+      automated: this.automated, directFeed: this.directFeed };
   }
 
   constructor(win: Window, doc: Document,

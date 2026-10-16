@@ -57,6 +57,15 @@ from playwright.sync_api import sync_playwright
 BASE = Path(__file__).parent
 REPORTS_DIR = BASE / "reports"
 
+def qa_marked(url: str) -> str:
+    """Tag our own traffic so the CDN-log analytics can exclude it as a FACT
+    rather than by guessing at IP ranges. The play beacon already self-excludes
+    via navigator.webdriver; the server side had no equivalent, so after every
+    deploy the QA matrix's own boots were being counted as player sessions
+    (measured 2026-10-15: 12 of 28). See game_daily in traffic-analytics."""
+    return f"{url}{'&' if '?' in url else '?'}qa=1"
+
+
 # Reuse Quinn's proven, hook-driven game driver (tests/e2e/game_driver.py) for
 # the NEW GAME + MOVEMENT stages — no keyboard, so a real input failure can't be
 # confused with a Playwright keyboard quirk. Verified across all 3 engines.
@@ -187,7 +196,7 @@ def _goto_retry(page, url: str, attempts: int = NAV_ATTEMPTS) -> bool:
     invalidation — freshly-hashed bundles can 503 for a few seconds."""
     for _ in range(attempts):
         try:
-            resp = page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+            resp = page.goto(qa_marked(url), wait_until="domcontentloaded", timeout=30_000)
             if resp is None or resp.status < 500:
                 return True
         except Exception:

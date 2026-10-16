@@ -61,6 +61,15 @@ except ImportError:
     sys.exit(1)
 
 URL = os.environ.get("SMOKE_URL", "https://allbyte.studio/play/")
+
+def qa_marked(url: str) -> str:
+    """Tag our own traffic so the CDN-log analytics can exclude it as a FACT
+    rather than by guessing at IP ranges. The play beacon already self-excludes
+    via navigator.webdriver; the server side had no equivalent, so after every
+    deploy the QA matrix's own boots were being counted as player sessions
+    (measured 2026-10-15: 12 of 28). See game_daily in traffic-analytics."""
+    return f"{url}{'&' if '?' in url else '?'}qa=1"
+
 BOOT_TIMEOUT_S = 45  # generous; first-load with cold cache is slow
 READY_POLL_S = 1
 
@@ -207,7 +216,7 @@ def check_channel_boot(url: str, label: str = "channel", cookies: list | None = 
         page = context.new_page()
         print(f"[smoke] {label}: {url}")
         try:
-            page.goto(url, wait_until="domcontentloaded", timeout=20_000)
+            page.goto(qa_marked(url), wait_until="domcontentloaded", timeout=20_000)
         except Exception as e:
             print(f"[smoke] FAIL — {label} navigation failed: {e}")
             browser.close()
@@ -355,7 +364,7 @@ def check_boot() -> int:
 
         print(f"[smoke] {URL}")
         try:
-            page.goto(URL, wait_until="domcontentloaded", timeout=20_000)
+            page.goto(qa_marked(URL), wait_until="domcontentloaded", timeout=20_000)
         except Exception as e:
             print(f"[smoke] FAIL — page navigation failed: {e}")
             return 1

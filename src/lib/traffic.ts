@@ -56,6 +56,16 @@ export interface Traffic {
    * Shown alongside the beacon series rather than replacing it.
    */
   game_daily?: [string, number][];
+  /**
+   * Minutes per UTC day, measured as the span between a session's first and
+   * last request. A LOWER BOUND: the CDN only hears from a client when the page
+   * or game asks for something, so quiet play inside one scene is invisible.
+   * The beacon's played_s is the precise figure — this one's value is that it
+   * still exists for players whose browser blocks the beacon.
+   */
+  game_minutes_daily?: [string, number][];
+  /** Longest sessions as [day, minutes], no addresses. Aggregate only. */
+  game_sessions?: [string, number][];
   top_pages: [string, number, string][];
   section_totals: [string, number][];
   entry_sources: [string, number][];

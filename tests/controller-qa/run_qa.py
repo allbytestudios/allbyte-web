@@ -444,7 +444,9 @@ async def run(args: argparse.Namespace) -> int:
             # never reaches networkidle because the Godot runtime keeps
             # streaming PCK and asset data — relying on networkidle would
             # hang indefinitely.
-            await page.goto(target_url, wait_until="domcontentloaded", timeout=30000)
+            await page.goto(
+                f"{target_url}{'&' if '?' in target_url else '?'}qa=1",  # exclude our own runs from CDN play counts
+                wait_until="domcontentloaded", timeout=30000)
         except Exception as e:
             print(f"ERROR: failed to load {target_url}: {e}", file=sys.stderr)
             await browser.close()

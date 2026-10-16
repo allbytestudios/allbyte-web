@@ -49,7 +49,7 @@
       string,
       { sessions: number; booted: number; moved: number; past: number; medianDur: number }
     >;
-    daily?: { date: string; sessions: number; booted: number; past?: number; bots?: number }[];
+    daily?: { date: string; sessions: number; booted: number; past?: number; bots?: number; played_s?: number; played_sessions?: number }[];
     medianDurationSec: number;
     /** Median duration among sessions that got past the title screen. */
     medianPlayedDurationSec?: number;
@@ -269,6 +269,32 @@
   );
   // Totals over the days the beacon series covers, so the two are compared on
   // the same window even though the traffic job keeps its own retention.
+  // PLAYTIME, the question underneath all of this: how long was it played?
+  // Two independent answers, neither complete on its own. The beacon is precise
+  // and knows depth but is blocked outright by privacy browsers; the CDN span
+  // sees everyone but is a lower bound and knows nothing about what happened
+  // in-game. Shown side by side because the gap between them IS information.
+  let serverMinsByDay = $derived(new Map<string, number>(traffic?.game_minutes_daily ?? []));
+  let longestSessions = $derived(traffic?.game_sessions ?? []);
+  let beaconMinsByDay = $derived(
+    new Map<string, number>(daily.map((d) => [d.date, Math.round((d.played_s ?? 0) / 60)])),
+  );
+  let playDays = $derived(
+    [...new Set([...daily.map((d) => d.date), ...serverMinsByDay.keys()])].sort(),
+  );
+  let maxPlayMins = $derived(
+    playDays.reduce(
+      (m, d) => Math.max(m, beaconMinsByDay.get(d) ?? 0, serverMinsByDay.get(d) ?? 0),
+      0,
+    ),
+  );
+  let beaconMinsTotal = $derived(playDays.reduce((n, d) => n + (beaconMinsByDay.get(d) ?? 0), 0));
+  let serverMinsTotal = $derived(playDays.reduce((n, d) => n + (serverMinsByDay.get(d) ?? 0), 0));
+  function hm(mins: number): string {
+    if (!mins) return "0m";
+    return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+  }
+
   let beaconTotal = $derived(daily.reduce((n, d) => n + d.sessions, 0));
   let serverTotal = $derived(
     daily.reduce((n, d) => n + (serverByDay.get(d.date) ?? 0), 0),
@@ -381,6 +407,57 @@
     {/if}
 
     <!-- Sessions per day — temporal signal for "when did players show up" -->
+    <section class="daily playtime">
+      <h3>
+        How long the game was played
+        <span class="sub">(UTC · two independent measurements, neither complete alone)</span>
+      </h3>
+      <div class="playtime-totals">
+        <div class="pt-stat">
+          <span class="pt-n">{hm(beaconMinsTotal)}</span>
+          <span class="pt-l"><span class="key-beacon"></span> beacon · precise, knows depth</span>
+        </div>
+        <div class="pt-stat">
+          <span class="pt-n">{hm(serverMinsTotal)}</span>
+          <span class="pt-l"><span class="key-server"></span> CDN span · lower bound, sees blocked browsers</span>
+        </div>
+        {#if longestSessions.length > 0}
+          <div class="pt-stat pt-longest">
+            <span class="pt-n">{hm(longestSessions[0][1])}</span>
+            <span class="pt-l">longest single session ({longestSessions[0][0].slice(5)})</span>
+          </div>
+        {/if}
+      </div>
+      {#if maxPlayMins === 0}
+        <p class="muted">No playtime recorded in this window yet.</p>
+      {:else}
+        <div class="daily-chart">
+          {#each playDays as day (day)}
+            {@const bm = beaconMinsByDay.get(day) ?? 0}
+            {@const sm = serverMinsByDay.get(day) ?? 0}
+            <div class="day-col" title="{day}: beacon {hm(bm)} · CDN span {hm(sm)}{bm === 0 && sm > 0 ? ' — beacon recorded none' : ''}">
+              <span class="day-n">{bm || sm ? hm(Math.max(bm, sm)) : ""}</span>
+              <div class="day-bar-track">
+                <div class="day-bar" style="height:{Math.round((bm / maxPlayMins) * 100)}%"></div>
+                {#if sm > 0}
+                  <span class="day-server" style="bottom:{Math.min(100, Math.round((sm / maxPlayMins) * 100))}%"></span>
+                {/if}
+              </div>
+              <span class="day-lbl">{dayLabel(day)}</span>
+            </div>
+          {/each}
+        </div>
+        {#if longestSessions.length > 1}
+          <p class="pt-sessions">
+            Longest sessions:
+            {#each longestSessions.slice(0, 6) as [day, mins], i}
+              <span class="pt-chip">{hm(mins)}<span class="pt-chip-day">{day.slice(5)}</span></span>{i < Math.min(5, longestSessions.length - 1) ? "" : ""}
+            {/each}
+          </p>
+        {/if}
+      {/if}
+    </section>
+
     <section class="daily">
       <h3>
         Sessions per day
@@ -683,6 +760,34 @@
     border-top: 2px solid #5eead4;
     pointer-events: none;
   }
+  .playtime { margin-top: 1.2rem; }
+  .playtime-totals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.4rem;
+    margin: 0.2rem 0 0.9rem;
+  }
+  .pt-stat { display: flex; flex-direction: column; gap: 0.15rem; }
+  .pt-n { font-size: 1.5rem; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .pt-l { font-size: 0.72rem; color: var(--ink-soft); }
+  .pt-longest .pt-n { color: var(--ink-soft); }
+  .pt-sessions {
+    margin: 0.7rem 0 0;
+    font-size: 0.74rem;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .pt-chip {
+    border: 1px solid var(--hairline, rgba(255,255,255,0.14));
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .pt-chip-day { color: var(--ink-soft); margin-left: 0.3rem; font-size: 0.68rem; }
   .cross-check {
     margin: 0 0 0.6rem;
     font-size: 0.74rem;

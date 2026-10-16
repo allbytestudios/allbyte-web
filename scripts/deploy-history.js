@@ -97,8 +97,19 @@ function resolveGameSha(version) {
   if (shaCache.has(bare)) return shaCache.get(bare);
   // --all: a release can be cut from a branch that is not an ancestor of the
   // current HEAD, and the default walk would never see its bump commit.
+  //
+  // NO CLOSING QUOTE in the search string, deliberately. The game writes a build
+  // suffix — WEB_VERSION = "0.8.2835-b470" — while the deployed version this
+  // resolves from is the bare "0.8.2835". Matching with the closing quote found
+  // nothing, so the release was silently skipped and What's New sat a build
+  // behind prod (2026-10-16). Prefix-matching accepts both forms.
+  //
+  // The theoretical cost is a prefix collision (0.8.2835 also matching a
+  // hypothetical 0.8.28351). Build numbers are sequential and five digits away
+  // from that, and the alternative — requiring the game to drop its build
+  // suffix — would be this tool dictating the game's version format.
   const sha = gameGit([
-    "log", "--all", `-SWEB_VERSION = "${bare}"`, "--format=%H", "-n1", "--", GAME_VERSION_FILE,
+    "log", "--all", `-SWEB_VERSION = "${bare}`, "--format=%H", "-n1", "--", GAME_VERSION_FILE,
   ]).split(/\r?\n/)[0] || null;
   shaCache.set(bare, sha);
   return sha;

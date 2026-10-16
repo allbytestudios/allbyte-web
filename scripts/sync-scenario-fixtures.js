@@ -19,7 +19,7 @@
  * Row shape expected in quinn_spine.json (Arc's contract):
  *   { "scenarios": [ { "section", "label", "fixtureId", "packs": "Laria,Combat", "persona"?, "note"? } ] }
  */
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { homedir } from "os";
@@ -85,8 +85,26 @@ function findSave(id) {
 }
 
 mkdirSync(OUT_FIX_DIR, { recursive: true });
+
+// THE REGISTRY IS THE SOURCE OF TRUTH (Arc, 2026-10-16, open item #9).
+// Loaded before the rows because the spine is now a pure OVERLAY over it: a
+// curated row may only FEATURE a node the registry already defines, never
+// introduce one. Anything else is drift between two sources, and the point of
+// one shared tree is that there is nowhere for that to hide.
+const TREE_MANIFEST = join(FIXTURES_DIR, "tree", "save_tree_manifest.json");
+let registry = null;
+if (existsSync(TREE_MANIFEST)) {
+  try { registry = JSON.parse(readFileSync(TREE_MANIFEST, "utf8")); }
+  catch (e) { log(`save_tree_manifest.json unreadable (${e.message}) — tree not mirrored.`); }
+} else {
+  log("no tree/save_tree_manifest.json in the fixture library — shared tree not mirrored.");
+}
+const registryNodes = registry && Array.isArray(registry.nodes) ? registry.nodes : [];
+const registryIds = new Set(registryNodes.map((n) => n && n.id).filter(Boolean));
+
 const out = [];
 const sections = [];
+const drift = [];
 let copied = 0;
 let missing = 0;
 
@@ -119,6 +137,13 @@ for (const r of rows) {
     // then fail to load, which is worse than not rendering.
     log(`⚠ '${fixtureId}' has no packs — omitting (would render but not load).`);
     missing++;
+    continue;
+  }
+  // Overlay rule: silently copying a save the registry does not define is how
+  // the webapp ends up serving state nobody promoted and nobody can trace back.
+  if (registryIds.size > 0 && !registryIds.has(fixtureId)) {
+    drift.push(fixtureId);
+    log(`✗ DRIFT: curated row '${fixtureId}' is not a node in save_tree_manifest.json — omitted.`);
     continue;
   }
   const src = findSave(fixtureId);
@@ -154,4 +179,100 @@ for (const r of rows) {
 
 const data = { version: 1, generated_at: new Date().toISOString(), sections, scenarios: out };
 writeFileSync(OUT_DATA, JSON.stringify(data, null, 2) + "\n");
-log(`wrote ${out.length} scenario(s) → src/data/scenarios.json; copied ${copied}, ${missing} missing.`);
+
+// ONE SHARED SAVE TREE (owner 2026-10-16, via Rowan's clarification).
+//
+// The canonical registry is the game repo's tree/save_tree_manifest.json —
+// jointly maintained by Quinn AND Wren, with real parent links, so it is a
+// TREE of playtest states rather than a flat pile of files. Everything the
+// webapp serves is a GENERATED MIRROR of that registry.
+//
+// What this deliberately does NOT do: build its own list by scanning the
+// directory. An independently-maintained webapp copy is a second source of
+// truth, and the first time it disagreed with the registry — a renamed node, a
+// retired branch — nobody would know which was right. Scanning also silently
+// promotes scratch state: `captured/` and `frontier/` are staging, and the
+// promotion boundary is the thing that keeps the launcher pointed at curated
+// saves.
+//
+// Curation stays separate from availability: the spine above decides which rows
+// are FEATURED in the launcher UI; the registry decides what EXISTS and can be
+// loaded by id. Either lane can jump to any node in the tree without anyone
+// having published a row for it.
+const treeNodes = [];
+let treeCopied = 0;
+let treeMissing = 0;
+{
+  for (const n of registryNodes) {
+    const id = n && n.id;
+    if (!id || !SAFE.test(id)) { log(`tree node skipped — unsafe/missing id: ${JSON.stringify(n && n.id)}`); continue; }
+    const rel = n.save_file;
+    const src = rel ? join(FIXTURES_DIR, rel) : null;
+    if (!src || !existsSync(src)) {
+      // Registry validity does not prove the fixture is actually there.
+      treeMissing++;
+      log(`⚠ tree node '${id}' references a missing save (${rel}) — omitted from the mirror.`);
+      continue;
+    }
+    try {
+      writeFileSync(join(OUT_FIX_DIR, `${id}.json`), readFileSync(src));
+      treeCopied++;
+      treeNodes.push({
+        id,
+        label: n.label || id,
+        parent: n.parent ?? null,
+        difficulty: n.difficulty || undefined,
+        scene: n.scene || undefined,
+        packs: Array.isArray(n.packs) ? n.packs : undefined,
+      });
+    } catch (e) {
+      treeMissing++;
+      log(`could not mirror tree node '${id}': ${e.message}`);
+    }
+  }
+}
+
+// PRUNE. A mirror that only ever adds is not a mirror: it accumulates renamed
+// and retired nodes, and then reports them as available. Keep exactly what the
+// registry and the curated rows reference.
+const keep = new Set([
+  ...treeNodes.map((n) => `${n.id}.json`),
+  ...out.map((r) => `${r.fixtureId}.json`),
+  "save-tree.json",
+]);
+let pruned = 0;
+for (const name of readdirSync(OUT_FIX_DIR)) {
+  if (!name.endsWith(".json") || keep.has(name)) continue;
+  try { unlinkSync(join(OUT_FIX_DIR, name)); pruned++; } catch { /* best-effort */ }
+}
+
+// The tree itself, so a lane or the console can show the branches and jump to
+// any node — not just the handful someone curated into a row.
+writeFileSync(
+  join(OUT_FIX_DIR, "save-tree.json"),
+  JSON.stringify(
+    {
+      version: 1,
+      generated_at: data.generated_at,
+      source: "ChroniclesOfNesis/WebTests/fixtures/saves/tree/save_tree_manifest.json",
+      nodes: treeNodes,
+    },
+    null,
+    2,
+  ) + "\n",
+);
+
+log(`wrote ${out.length} curated scenario(s) → src/data/scenarios.json; copied ${copied}, ${missing} missing.`);
+log(`shared save tree: ${treeCopied} node(s) mirrored${treeMissing ? `, ${treeMissing} missing` : ""}; ${pruned} stale file(s) pruned.`);
+
+// Drift fails the command — but only AFTER the registry mirror is written. The
+// shared tree is the source of truth and must stay correct even when the
+// overlay that decorates it is wrong.
+if (drift.length) {
+  log("");
+  log(`✗ ${drift.length} curated row(s) reference saves that are NOT registry nodes:`);
+  for (const id of drift) log(`    ${id}`);
+  log("  Fix at the source: promote them into tree/save_tree_manifest.json, or drop them from the spine.");
+  log("  The shared tree above mirrored correctly; only the overlay is wrong.");
+  process.exit(1);
+}

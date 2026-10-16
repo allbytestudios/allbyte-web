@@ -1,0 +1,557 @@
+{
+  "version": 1,
+  "generated_at": "2026-10-16T16:51:33.639Z",
+  "source": "ChroniclesOfNesis/WebTests/fixtures/saves/tree/save_tree_manifest.json",
+  "nodes": [
+    {
+      "id": "hard_root",
+      "label": "Hard — New Game (Elias' House)",
+      "parent": null,
+      "difficulty": "hard",
+      "scene": "EliasHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_root_looted",
+      "label": "Hard — Elias' House (maximal start, chest looted)",
+      "parent": "hard_root",
+      "difficulty": "hard",
+      "scene": "EliasHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_shop_maximal",
+      "label": "Hard — General Store (maximal: Leather Boots + Mugwort)",
+      "parent": "hard_root_looted",
+      "difficulty": "hard",
+      "scene": "GeneralStore",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_town_maximal_items",
+      "label": "Hard — Mayor's House Upstairs (maximal, stocked items)",
+      "parent": "hard_shop_maximal",
+      "difficulty": "hard",
+      "scene": "MayorsHouseUpstairs",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_town",
+      "label": "Hard — Main Square (pauper branch)",
+      "parent": "hard_root",
+      "difficulty": "hard",
+      "scene": "MainSquare",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_windmill1",
+      "label": "Hard — Windmill 1 (pauper spine)",
+      "parent": "hard_town",
+      "difficulty": "hard",
+      "scene": "Windmill1",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_intro",
+      "label": "Medium · Intro done (New Game start)",
+      "parent": null,
+      "difficulty": "medium",
+      "scene": "EliasHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_ev1_churchsquare",
+      "label": "Medium · After Event 1 (ChurchSquare)",
+      "parent": "med_intro",
+      "difficulty": "medium",
+      "scene": "ChurchSquare",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_ev2_windmill1",
+      "label": "Medium · After Event 2 (Windmill1)",
+      "parent": "med_ev1_churchsquare",
+      "difficulty": "medium",
+      "scene": "Windmill1",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_ev3_windmill1_2f",
+      "label": "Medium · After Event 3 (Windmill1 2F)",
+      "parent": "med_ev2_windmill1",
+      "difficulty": "medium",
+      "scene": "Windmill1SecondFloor",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_ev8_mayors",
+      "label": "Medium · After Event 8 (Mayor's House)",
+      "parent": "med_ev3_windmill1_2f",
+      "difficulty": "medium",
+      "scene": "MayorsHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_ev10_churchsquare",
+      "label": "Medium · After Event 10 (ChurchSquare)",
+      "parent": "med_ev8_mayors",
+      "difficulty": "medium",
+      "scene": "ChurchSquare",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_ev11_mayors",
+      "label": "Medium · After Event 11 (Mayor's House)",
+      "parent": "med_ev10_churchsquare",
+      "difficulty": "medium",
+      "scene": "MayorsHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_ev12_eliashouse",
+      "label": "Medium · After Event 12 (Elias' House)",
+      "parent": "med_ev11_mayors",
+      "difficulty": "medium",
+      "scene": "EliasHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_before_dungeon",
+      "label": "Medium · BEFORE DUNGEON (full-prep)",
+      "parent": "med_ev12_eliashouse",
+      "difficulty": "medium",
+      "scene": "Windmill1Basement",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_before_dungeon_lowprep",
+      "label": "Medium · BEFORE DUNGEON (low-prep)",
+      "parent": "med_ev12_eliashouse",
+      "difficulty": "medium",
+      "scene": "Windmill1Basement",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_pauper",
+      "label": "Medium · BEFORE BOSS · underprepared (L1 naked)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_leveled",
+      "label": "Medium · BEFORE BOSS · leveled+skilled (L5)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_before_churchsquare_fight",
+      "label": "Hard · BEFORE ChurchSquare forced fight (L1)",
+      "parent": "hard_windmill1",
+      "difficulty": "hard",
+      "scene": "ChurchSquare",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_before_dungeon",
+      "label": "Hard · BEFORE DUNGEON (L2, skip town)",
+      "parent": "hard_before_churchsquare_fight",
+      "difficulty": "hard",
+      "scene": "MayorsHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_boss_pauper",
+      "label": "Hard · BEFORE BOSS · underprepared (L1 naked)",
+      "parent": "hard_before_dungeon",
+      "difficulty": "hard",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_boss_max",
+      "label": "Hard · BEFORE BOSS · leveled+skilled (L5)",
+      "parent": "hard_before_dungeon",
+      "difficulty": "hard",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_root",
+      "label": "Easy · Intro done (New Game start)",
+      "parent": null,
+      "difficulty": "easy",
+      "scene": "EliasHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_ev1_churchsquare",
+      "label": "Easy — After Event 1 (Church Square)",
+      "parent": "easy_root",
+      "difficulty": "easy",
+      "scene": "ChurchSquare",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_ev2_windmill1",
+      "label": "Easy — After Event 2 (Windmill 1)",
+      "parent": "easy_ev1_churchsquare",
+      "difficulty": "easy",
+      "scene": "Windmill1",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_ev3_windmill1_2f",
+      "label": "Easy — After Event 3 (Windmill 1, 2nd Floor)",
+      "parent": "easy_ev2_windmill1",
+      "difficulty": "easy",
+      "scene": "Windmill1SecondFloor",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_ev8_mayors",
+      "label": "Easy — Mayor's House (post-intake)",
+      "parent": "easy_ev3_windmill1_2f",
+      "difficulty": "easy",
+      "scene": "MayorsHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_ev12_eliashouse",
+      "label": "Easy — Elias' House (rest beat)",
+      "parent": "easy_ev8_mayors",
+      "difficulty": "easy",
+      "scene": "EliasHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_before_dungeon",
+      "label": "Easy — Before Dungeon (Windmill 1 Basement)",
+      "parent": "easy_ev12_eliashouse",
+      "difficulty": "easy",
+      "scene": "Windmill1Basement",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_grind_start",
+      "label": "Easy — Grind Start (Waterway 1)",
+      "parent": "easy_before_dungeon",
+      "difficulty": "easy",
+      "scene": "Waterway1",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_before_churchsquare_fight",
+      "label": "Easy · BEFORE ChurchSquare forced fight (L1)",
+      "parent": "easy_root",
+      "difficulty": "easy",
+      "scene": "ChurchSquare",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_boss_pauper",
+      "label": "Easy · BEFORE BOSS · underprepared (L1 naked)",
+      "parent": "easy_before_churchsquare_fight",
+      "difficulty": "easy",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_boss_max",
+      "label": "Easy · BEFORE BOSS · leveled+skilled (L5)",
+      "parent": "easy_before_churchsquare_fight",
+      "difficulty": "easy",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "easy_boss_sidebuild",
+      "label": "Easy · BEFORE BOSS · Save A: side-branch build (L5, equipped, no Smite)",
+      "parent": "easy_before_churchsquare_fight",
+      "difficulty": "easy",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_sidebuild",
+      "label": "Medium · BEFORE BOSS · Save A: side-branch build (L5, equipped, no Smite)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "hard_boss_sidebuild",
+      "label": "Hard · BEFORE BOSS · Save A: side-branch build (L5, equipped, no Smite)",
+      "parent": "hard_before_dungeon",
+      "difficulty": "hard",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_grind_start",
+      "label": "Medium · Grind Start — Waterway1 (L1, equipped)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "Waterway1",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_ready_outlast",
+      "label": "Medium · BEFORE BOSS · boss-ready (L5, tuned build, outlast path)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_ready_smite",
+      "label": "Medium · BEFORE BOSS · boss-ready + Smite (L5, DEBUG-assisted, burst path)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_ready_a_allstr",
+      "label": "Medium · BEFORE BOSS · boss-ready A (outlast, non-Smite), JP all-Strength (L5, real-provenance same-roll)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_ready_a_even",
+      "label": "Medium · BEFORE BOSS · boss-ready A (outlast, non-Smite), JP even-split (L5, real-provenance same-roll)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_ready_b_allstr",
+      "label": "Medium · BEFORE BOSS · boss-ready B (burst, Smite), JP all-Strength (L5, real-provenance same-roll)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_ready_b_even",
+      "label": "Medium · BEFORE BOSS · boss-ready B (burst, Smite), JP even-split (L5, real-provenance same-roll)",
+      "parent": "med_before_dungeon",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_defeated",
+      "label": "Medium · AFTER BOSS · Mother Slime defeated (cond 13)",
+      "parent": "med_boss_ready_outlast",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_end_ep1",
+      "label": "Medium · END EPISODE 1 (cond 14, Mayor's House)",
+      "parent": "med_boss_at_mayor",
+      "difficulty": "medium",
+      "scene": "MayorsHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "med_boss_at_mayor",
+      "label": "Medium · AFTER BOSS · at Mayor (cond 13, pre-Event-15 — QB-068 test entry)",
+      "parent": "med_boss_defeated",
+      "difficulty": "medium",
+      "scene": "MayorsHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "boss_str_smite",
+      "label": "Medium · BEFORE BOSS · L5 STR + Smite (ACCUMULATOR-VALID, grind-authored)",
+      "parent": null,
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "boss_even_smite",
+      "label": "Medium · BEFORE BOSS · L5 EVEN + Smite (LEGAL, autoplay_build_save @ SluiceGate)",
+      "parent": null,
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "boss_str_cure",
+      "label": "Medium · BEFORE BOSS · L5 STR + Cure (LEGAL, autoplay_build_save @ SluiceGate)",
+      "parent": null,
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "boss_even_cure",
+      "label": "Medium · BEFORE BOSS · L5 EVEN + Cure (LEGAL, autoplay_build_save @ SluiceGate)",
+      "parent": null,
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "boss_str_L3",
+      "label": "Very-Hard · BEFORE BOSS · L3 STR + Counter (under-leveled, autoplay_build_save @ SluiceGate)",
+      "parent": null,
+      "difficulty": "very-hard",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "boss_str_L4",
+      "label": "Hard · BEFORE BOSS · L4 STR + Counter (under-leveled, autoplay_build_save @ SluiceGate)",
+      "parent": null,
+      "difficulty": "hard",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "l2_clean_unspent",
+      "label": "L2 clean (3 unspent SP) — spend-test branch-off",
+      "parent": "cond_09_after_event_11",
+      "difficulty": "medium",
+      "scene": "Waterway1",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "grind_L2_v2806",
+      "label": "L2 grind capture (v0.8.2806) — played forward from 10-Mugwort grindbase",
+      "parent": "cond_11_mugwort_grindbase",
+      "difficulty": "medium",
+      "scene": "Waterway3",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "grind_L2_v2809",
+      "label": "L2 grind capture (v0.8.2809) — played forward on the full-stack-fixed combat-nav build",
+      "parent": "cond_11_mugwort_grindbase",
+      "difficulty": "medium",
+      "scene": "Waterway3",
+      "packs": [
+        "Laria"
+      ]
+    }
+  ]
+}

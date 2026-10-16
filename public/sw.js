@@ -109,6 +109,15 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (!url.pathname.startsWith("/godot/")) return;
 
+  // QA dev-sha builds are NEVER cached. /godot/dev/<sha>/ is immutable at the
+  // origin, but immutability is an ORIGIN property and this worker sits in
+  // front of it: a QA run that pinned one sha could be served another sha's
+  // bytes from cache, and — worse — dev bytes would land under CACHE_NAME,
+  // which is keyed on the LIVE build version, and then be served to a real
+  // player on the next prod load. Always go to network here; the path already
+  // changes per build, so there is nothing for a cache to win.
+  if (url.pathname.startsWith("/godot/dev/")) return;
+
   // Cache-first ONLY for what's safe to pin: self-versioned URLs (`?v=` —
   // a version bump changes the URL and evicts naturally) and the huge
   // immutable per-build artifacts (.wasm/.pck). Everything else under

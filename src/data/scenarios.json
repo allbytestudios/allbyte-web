@@ -1,21 +1,10 @@
 {
   "version": 1,
-  "generated_at": "2026-09-09T00:51:59.031Z",
+  "generated_at": "2026-10-16T16:51:33.639Z",
   "sections": [
-    "Waterway 1",
     "Sluice Gate"
   ],
   "scenarios": [
-    {
-      "id": "scn-waterway1",
-      "section": "Waterway 1",
-      "label": "Waterway 1 — dungeon entry (cond 11, first encounter)",
-      "fixtureId": "cond_11_waterway1_entry",
-      "packs": [
-        "Laria",
-        "Combat"
-      ]
-    },
     {
       "id": "save-boss-str-smite",
       "section": "Sluice Gate",
@@ -51,16 +40,6 @@
       "section": "Sluice Gate",
       "label": "Boss-ready L5 · Cure (no Smite) · even-stat (HP17)",
       "fixtureId": "boss_even_cure",
-      "packs": [
-        "Laria",
-        "Combat"
-      ]
-    },
-    {
-      "id": "save-pre-waterway",
-      "section": "Waterway 1",
-      "label": "Pre-waterway entry · L1, story-XP unspent · Longsword+Item Relic equipped, 4 Mugwort",
-      "fixtureId": "pre_waterway",
       "packs": [
         "Laria",
         "Combat"

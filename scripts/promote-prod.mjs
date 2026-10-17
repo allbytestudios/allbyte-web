@@ -139,7 +139,21 @@ async function activePlayers() {
       const t = Date.parse(`${date}T${time}Z`);
       if (!Number.isFinite(t) || t < cutoff) continue;
       if (DATACENTER_RE.test(ip) || BOT_UA_RE.test(ua) || query.includes("qa=1")) continue;
-      if (uri.includes("/godot/") || uri.replace(/\/$/, "") === "/play") {
+      // What this gate protects against is bytes changing UNDER someone who
+      // has them — so the signal is an actual game download (.pck/.wasm), not
+      // a page view. Opening /play and leaving is not a session: nothing has
+      // been fetched, so a promote costs that visitor nothing, and blocking on
+      // it means the gate fires on drive-bys and gets overridden by reflex.
+      // Measured 2026-10-16: a single /play hit with zero asset requests held
+      // up a fix for a bad teleport bug.
+      //
+      // The acknowledged blind spot: someone who finished downloading and is
+      // now simply playing makes no further requests and is invisible here.
+      // The previous rule did not catch them either, so this loses nothing —
+      // and the honest fix for that is the immutable per-session path (v2),
+      // not a louder guess.
+      const isGameDownload = uri.includes("/godot/") && /\.(pck|wasm)$/i.test(uri);
+      if (isGameDownload) {
         const cur = play.get(ip) || { n: 0, last: 0 };
         play.set(ip, { n: cur.n + 1, last: Math.max(cur.last, t) });
       }
@@ -252,6 +266,17 @@ step("sw.js stamp", true, `v${bare(sw)} == deployed`);
 const CHANGELOG = "src/data/changelog.json";
 const expectedLatest = `v${bare(after.version)}`;
 try {
+  // Sync BEFORE regenerating, not after. finalize-demo commits the release
+  // stamp and its own changelog refresh while this script is running, so by
+  // now the local branch is usually behind — and a push from here would be
+  // rejected with the pre-push hook's output as the only clue, which is
+  // exactly how this step failed on 2026-10-16.
+  //
+  // Rebasing first also avoids the conflict: with the local changelog still
+  // untouched there is nothing for the incoming commit to collide with. Had we
+  // regenerated first, both sides would carry a different generated file.
+  sh(`git fetch origin --quiet`);
+  sh(`git rebase origin/main --autostash`);
   const clBefore = existsSync(CHANGELOG) ? readFileSync(CHANGELOG, "utf8") : "";
   sh(`npm run changelog`);
   const clAfter = existsSync(CHANGELOG) ? readFileSync(CHANGELOG, "utf8") : "";

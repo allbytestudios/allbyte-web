@@ -134,11 +134,21 @@ async function activePlayers() {
       const p = line.split("\t");
       if (p.length < 11) continue;
       const [date, time] = [p[0], p[1]];
-      const ip = p[4], uri = p[7], ua = p[10], query = p[11] || "";
+      const ip = p[4], uri = p[7], referer = p[9] || "", ua = p[10], query = p[11] || "";
       if (uri.startsWith("/test/") || uri.startsWith("/admin/")) consoleIps.add(ip);
       const t = Date.parse(`${date}T${time}Z`);
       if (!Number.isFinite(t) || t < cutoff) continue;
-      if (DATACENTER_RE.test(ip) || BOT_UA_RE.test(ua) || query.includes("qa=1")) continue;
+      // ?qa=1 is how our harnesses self-identify, but only the PAGE request
+      // carries it in the query. Every sub-resource the page then pulls — the
+      // .wasm and .pck this gate actually counts — carries it in the REFERER
+      // instead. Checking the query alone therefore misses the exact requests
+      // that trip the gate, which is how the QA matrix kept reading as a player.
+      if (
+        DATACENTER_RE.test(ip) ||
+        BOT_UA_RE.test(ua) ||
+        query.includes("qa=1") ||
+        referer.includes("qa=1")
+      ) continue;
       // What this gate protects against is bytes changing UNDER someone who
       // has them — so the signal is an actual game download (.pck/.wasm), not
       // a page view. Opening /play and leaving is not a session: nothing has

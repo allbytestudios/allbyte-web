@@ -20,8 +20,12 @@
 export const DATACENTER_RE = new RegExp(
   "^(" +
     [
-      // Azure / GitHub-hosted runners (our own Deploy QA matrix)
-      "13\\.", "20\\.", "40\\.", "52\\.", "4\\.1[0-9][0-9]\\.", "48\\.", "51\\.",
+      // Azure / GitHub-hosted runners (our own Deploy QA matrix).
+      // Azure holds 4.128.0.0/9 — i.e. 4.128 through 4.255. The original
+      // "4.1xx" entry stopped at 4.199, so the macOS-WebKit leg of our own QA
+      // matrix (seen at 4.246.135.65, 2026-10-17) read as a stranger
+      // mid-download and blocked a promote the owner had just authorised.
+      "13\\.", "20\\.", "40\\.", "52\\.", "4\\.1[0-9][0-9]\\.", "4\\.2[0-5][0-9]\\.", "48\\.", "51\\.",
       "65\\.5[0-2]\\.", "68\\.21[0-9]\\.", "135\\.", "20\\.1[5-9][0-9]\\.",
       "172\\.1[6-9]", "172\\.2[0-9]", "104\\.20", "74\\.23",
       // AWS (our own prod smoke, exporters)

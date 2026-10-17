@@ -102,6 +102,16 @@
     if (typeof window === "undefined") return false;
     const q = new URLSearchParams(window.location.search);
     if (q.has("scenario")) return true;
+    // ?build=<sha> pins an unpromoted dev artifact, which is self-versioned
+    // by definition: its version is whatever that build reported, never the
+    // game-version.json stamp this webapp expects. Without this the freshness
+    // self-heal below reads the mismatch as a stale cache and reloads forever
+    // — the exact "loads then reloads" loop the comment above warns about.
+    // Observed 2026-10-17 bringing up the QA lane: engine starts, watchdog
+    // nukes it mid-boot, repeat. It escaped the earlier verification because
+    // that test aborted the heavy .wasm/.pck fetches, so the build never got
+    // far enough to report a version and this check never ran.
+    if (q.has("build")) return true;
     const id = q.get("v") || q.get("channel");
     return !!id && SELF_VERSIONED.has(id);
   }

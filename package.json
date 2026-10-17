@@ -18,6 +18,7 @@
     "changelog": "node scripts/deploy-history.js",
     "promote": "node scripts/promote.js",
     "promote:prod": "node scripts/promote-prod.mjs",
+    "publish:dev": "node scripts/publish-dev-build.js",
     "finalize": "node scripts/finalize-web-deploy.js",
     "finalize:channel": "node scripts/finalize-channel.js",
     "usage": "node scripts/claude-usage.js",

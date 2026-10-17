@@ -54,6 +54,20 @@ function isAdminNow(): boolean {
 }
 
 function isExcludedClient(): boolean {
+  // ?build=<sha> loads an unpromoted dev artifact through the wrapper, so the
+  // session is a test by definition — nobody reaches a 40-char sha by accident.
+  // Checked FIRST, and without touching storage, because the two markers below
+  // both fail here on purpose: save isolation sends the owner to a private
+  // window, where he is neither logged in (no admin tier) nor device-tagged
+  // (OWNER_KEY cannot persist). Without this, testing a dev build on a phone
+  // would enter the funnel as a fresh anonymous player — manufacturing exactly
+  // the phantom sessions that took a week to explain away in October.
+  try {
+    const sha = new URLSearchParams(window.location.search).get("build");
+    if (sha && /^[0-9a-f]{40}$/.test(sha)) return true;
+  } catch {
+    /* unparseable URL — fall through to the normal markers */
+  }
   try {
     if (new URLSearchParams(window.location.search).get("owner") === "1") {
       try {

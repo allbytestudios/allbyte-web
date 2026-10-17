@@ -3,6 +3,7 @@
   import { subscribeToFile } from "../lib/testEvents";
   import { initSaveBridge, teardownSaveBridge, isNativeFilePromptActive, isNativeFilePromptRecovery, traceSaveVisibility } from "../lib/saves.svelte.ts";
   import { installGameVisibility } from "../lib/native-file-prompt";
+  import { isLocalDebugDrivingSession, localDrivingParams } from "../lib/local-driving";
   import { initDevSession, teardownDevSession } from "../lib/devSession";
   import { auth } from "../lib/auth.svelte.ts";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
@@ -191,8 +192,9 @@
 
   interface Props {
     fixture?: string;
+    localDebugSession?: boolean;
   }
-  let { fixture }: Props = $props();
+  let { fixture, localDebugSession = false }: Props = $props();
 
   let loading = $state(true);
   let error = $state("");
@@ -416,7 +418,49 @@
     return v.path;
   }
 
+  // --- ?build=<sha> — play an unpromoted dev build INSIDE the wrapper ---------
+  //
+  // The mobile on-screen controller, the loading screen and the tap-to-fullscreen
+  // helper all live out here in the webapp, not in the Godot artifact. So the
+  // bare /godot/dev/<sha>/index.html link — fine on a desktop with a keyboard —
+  // is unplayable on a phone: no touch controls exist in the export. This param
+  // is what lets the owner test an unpromoted build the way a player would hold
+  // it (owner, 2026-10-16, via Arc).
+  //
+  // SECURITY: the sha is the entire gate, so it is validated as exactly 40 hex
+  // characters and used only as one path segment under /godot/dev/. Anything
+  // else returns null and falls through to the public build. Interpolating this
+  // param unchecked would hand any caller control of the iframe's origin — a
+  // ?build=//evil.example/x would load a hostile page into a cross-origin-
+  // isolated frame that is already wired to the save-sync postMessage bridge.
+  // A regex that merely *rejects* bad input is weaker than one that accepts only
+  // a fixed shape, which is why this is an allowlist, not a denylist.
+  //
+  // Deliberately NOT auth-gated: these artifacts sit at public URLs already (an
+  // unlisted sha is the obscurity, not a secret), the owner asked to keep plain
+  // play login-free, and requiring auth would mean holding the mount until
+  // /auth/me lands — the exact stall that makes gated deep-links swap builds
+  // mid-boot. Nothing links here; you need the full 40-char sha to arrive.
+  function devBuildSelection(): string | null {
+    if (typeof window === "undefined") return null;
+    const sha = new URLSearchParams(window.location.search).get("build");
+    if (!sha || !/^[0-9a-f]{40}$/.test(sha)) return null;
+    return `/godot/dev/${sha}/index.html`;
+  }
+
   function resolveGameUrl(): string {
+    // The debug artifact is a local-only surface for Rowan's two watched lanes.
+    // Keep ordinary local sessions and every production route on the public
+    // artifact. Explicit version/scenario links retain their existing routing.
+    if (localDebugSession || (typeof window !== "undefined" && isLocalDebugDrivingSession(
+      window.location.search, window.location.hostname, import.meta.env.DEV,
+    ))) return "/godot/debug/index.html";
+
+    // Before the channel table: ?build= names one exact artifact, which is more
+    // specific than any channel id and must not be overridden by one.
+    const devBuild = devBuildSelection();
+    if (devBuild) return devBuild;
+
     const selected = getVersionSelection();
     if (selected) return selected;
     // Installed PWA → the clean public (non-debug) build (owner: "pwa only
@@ -480,12 +524,9 @@
 
   /** The iframe src: the resolved build plus the admin-only debug passthrough. */
   function gameSrc(base: string): string {
-    let copilot = "";
-    if (import.meta.env.DEV && typeof window !== "undefined" &&
-        /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
-      const id = new URLSearchParams(window.location.search).get("copilot");
-      if (id && /^\d{1,9}$/.test(id)) copilot = `&copilot=${id}`;
-    }
+    const copilot = typeof window === "undefined" ? "" : localDrivingParams(
+      window.location.search, window.location.hostname, import.meta.env.DEV,
+    );
     return `${base}?t=${Date.now()}${debugParam()}${copilot}`;
   }
   let gameUrl = $state<string | null>(resolveGameUrlOrHold());
@@ -1189,7 +1230,10 @@
 
     if (!import.meta.env.DEV) return;
 
-    sseUnsub = subscribeToFile("godot/reload", doReload);
+    const reloadEvent = gameUrl?.startsWith("/godot/debug/")
+      ? "godot/reload/debug"
+      : "godot/reload";
+    sseUnsub = subscribeToFile(reloadEvent, doReload);
 
     const onMessage = (ev: MessageEvent) => {
       if (!iframeEl || ev.source !== iframeEl.contentWindow) return;

@@ -189,3 +189,49 @@ export function evaluate(rec, artifactSha256, gate = GATE, now = Date.now()) {
     waived,
   };
 }
+
+// --- CLI ---------------------------------------------------------------------
+// `node attestation.mjs <record.json> [...]` — validate records without wiring
+// anything up. This exists so the producer can self-check BEFORE handing a
+// record over: round-tripping validation through the consumer is how the two
+// halves drift between runs, which is the failure this whole module was written
+// to prevent. Pass --sha <hex> to also evaluate against the gate.
+if (process.argv[1] && process.argv[1].endsWith("attestation.mjs")) {
+  const { readFileSync } = await import("node:fs");
+  const argv = process.argv.slice(2);
+  const shaAt = argv.indexOf("--sha");
+  const sha = shaAt === -1 ? null : argv[shaAt + 1];
+  const files = argv.filter((a, i) => !a.startsWith("--") && i !== shaAt + 1);
+
+  if (files.length === 0) {
+    console.log("usage: node attestation.mjs <record.json> [...] [--sha <artifact_sha256>]");
+    console.log(`schema_version ${SCHEMA_VERSION} · suite "${GATE.requiredSuiteId}" v>=${GATE.minSuiteVersion} · ${GATE.mustChecks.length} MUST checks`);
+    process.exit(2);
+  }
+
+  let bad = 0;
+  for (const f of files) {
+    let rec;
+    try { rec = JSON.parse(readFileSync(f, "utf8")); }
+    catch (e) { console.error(`✗ ${f}: unreadable/!JSON — ${e.message}`); bad++; continue; }
+
+    const shape = validate(rec);
+    if (!shape.ok) {
+      console.error(`✗ ${f}: MALFORMED`);
+      for (const e of shape.errors) console.error(`    ${e}`);
+      bad++;
+      continue;
+    }
+    if (!sha) { console.log(`✓ ${f}: well-formed (pass --sha to evaluate the gate)`); continue; }
+
+    const v = evaluate(rec, sha);
+    if (v.ok) {
+      console.log(`✓ ${f}: WOULD AUTHORISE — ${v.detail}`);
+      for (const w of v.waived) console.log(`    waived: ${w.check_id} — ${w.signoff}`);
+    } else {
+      console.error(`✗ ${f}: REFUSED ${v.reason} — ${v.detail}`);
+      bad++;
+    }
+  }
+  process.exit(bad ? 1 : 0);
+}

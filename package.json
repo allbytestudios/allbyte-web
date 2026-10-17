@@ -43,7 +43,8 @@
     "sync:walkthrough-edits": "node scripts/sync-walkthrough-edits.js",
     "check:manual": "node scripts/check-manual-drift.js",
     "sync:manual": "node scripts/sync-manual.js",
-    "test:attest": "node --test tests/attestation.test.mjs"
+    "test:attest": "node --test tests/attestation.test.mjs",
+    "sync:gate": "node scripts/sync-gate-to-mount.js"
   },
   "repository": {
     "type": "git",

@@ -152,7 +152,18 @@ async function activePlayers() {
       // The previous rule did not catch them either, so this loses nothing —
       // and the honest fix for that is the immutable per-session path (v2),
       // not a louder guess.
-      const isGameDownload = uri.includes("/godot/") && /\.(pck|wasm)$/i.test(uri);
+      //
+      // /godot/dev/<sha>/ is excluded for the same reason, not as a loophole:
+      // those paths are IMMUTABLE, so promoting prod cannot swap bytes under
+      // anyone on one. They are also, by construction, test sessions — you need
+      // a 40-char sha to reach them. Without this the gate blocks on its own QA:
+      // the owner testing a dev build on his phone (a mobile IP, not on any
+      // owner list) reads as a stranger mid-download, so approving a build would
+      // be exactly what prevents shipping it.
+      const isGameDownload =
+        uri.includes("/godot/") &&
+        !uri.includes("/godot/dev/") &&
+        /\.(pck|wasm)$/i.test(uri);
       if (isGameDownload) {
         const cur = play.get(ip) || { n: 0, last: 0 };
         play.set(ip, { n: cur.n + 1, last: Math.max(cur.last, t) });

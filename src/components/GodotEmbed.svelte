@@ -3,7 +3,6 @@
   import { subscribeToFile } from "../lib/testEvents";
   import { initSaveBridge, teardownSaveBridge, isNativeFilePromptActive, isNativeFilePromptRecovery, traceSaveVisibility } from "../lib/saves.svelte.ts";
   import { installGameVisibility } from "../lib/native-file-prompt";
-  import { isLocalDebugDrivingSession, localDrivingParams } from "../lib/local-driving";
   import { initDevSession, teardownDevSession } from "../lib/devSession";
   import { auth } from "../lib/auth.svelte.ts";
   import { isAdmin, isTierAtLeast } from "../lib/tier";
@@ -192,9 +191,8 @@
 
   interface Props {
     fixture?: string;
-    localDebugSession?: boolean;
   }
-  let { fixture, localDebugSession = false }: Props = $props();
+  let { fixture }: Props = $props();
 
   let loading = $state(true);
   let error = $state("");
@@ -449,13 +447,6 @@
   }
 
   function resolveGameUrl(): string {
-    // The debug artifact is a local-only surface for Rowan's two watched lanes.
-    // Keep ordinary local sessions and every production route on the public
-    // artifact. Explicit version/scenario links retain their existing routing.
-    if (localDebugSession || (typeof window !== "undefined" && isLocalDebugDrivingSession(
-      window.location.search, window.location.hostname, import.meta.env.DEV,
-    ))) return "/godot/debug/index.html";
-
     // Before the channel table: ?build= names one exact artifact, which is more
     // specific than any channel id and must not be overridden by one.
     const devBuild = devBuildSelection();
@@ -524,9 +515,12 @@
 
   /** The iframe src: the resolved build plus the admin-only debug passthrough. */
   function gameSrc(base: string): string {
-    const copilot = typeof window === "undefined" ? "" : localDrivingParams(
-      window.location.search, window.location.hostname, import.meta.env.DEV,
-    );
+    let copilot = "";
+    if (import.meta.env.DEV && typeof window !== "undefined" &&
+        /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
+      const id = new URLSearchParams(window.location.search).get("copilot");
+      if (id && /^\d{1,9}$/.test(id)) copilot = `&copilot=${id}`;
+    }
     return `${base}?t=${Date.now()}${debugParam()}${copilot}`;
   }
   let gameUrl = $state<string | null>(resolveGameUrlOrHold());
@@ -1230,10 +1224,7 @@
 
     if (!import.meta.env.DEV) return;
 
-    const reloadEvent = gameUrl?.startsWith("/godot/debug/")
-      ? "godot/reload/debug"
-      : "godot/reload";
-    sseUnsub = subscribeToFile(reloadEvent, doReload);
+    sseUnsub = subscribeToFile("godot/reload", doReload);
 
     const onMessage = (ev: MessageEvent) => {
       if (!iframeEl || ev.source !== iframeEl.contentWindow) return;

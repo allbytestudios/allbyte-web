@@ -17,7 +17,7 @@
     "deploy:tree": "node scripts/deploy-tree.js",
     "changelog": "node scripts/deploy-history.js",
     "promote": "node scripts/promote.js",
-    "promote:prod": "node scripts/promote-prod.mjs",
+    "promote:prod": "node scripts/promote-artifact.mjs",
     "publish:dev": "node scripts/publish-dev-build.js",
     "finalize": "node scripts/finalize-web-deploy.js",
     "finalize:channel": "node scripts/finalize-channel.js",
@@ -44,7 +44,10 @@
     "check:manual": "node scripts/check-manual-drift.js",
     "sync:manual": "node scripts/sync-manual.js",
     "test:attest": "node --test tests/attestation.test.mjs",
-    "sync:gate": "node scripts/sync-gate-to-mount.js"
+    "sync:gate": "node scripts/sync-gate-to-mount.js",
+    "promote:prod:rebuild": "node scripts/promote-prod.mjs",
+    "queue:watch": "node scripts/trigger-queue.mjs",
+    "queue:once": "node scripts/trigger-queue.mjs --once"
   },
   "repository": {
     "type": "git",

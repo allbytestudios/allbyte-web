@@ -53,6 +53,7 @@ const argv = process.argv.slice(2);
 const has = (f) => argv.includes(`--${f}`);
 const val = (f) => { const i = argv.indexOf(`--${f}`); return i === -1 ? null : argv[i + 1] ?? null; };
 const DRY = has("dry-run");
+const SKIP_FINISH = has("skip-finish");
 const JSON_ONLY = has("json");
 
 const started = new Date().toISOString();
@@ -94,9 +95,28 @@ function policyFor(key) {
 }
 
 // --- 1. resolve the source artifact and its sealed identity -----------------
-const buildSha = val("build");
+// Promotion is addressed by ARTIFACT, not by commit. --build <git-sha> stays as
+// a convenience for a human who has the sha to hand, but the canonical input is
+// the digest, because one git sha can produce many different artifacts — 
+// 8f906e20 produced three distinct pcks in a single afternoon. The publisher
+// writes an index object so the digest resolves back to its prefix.
+const wantArtifact = val("artifact");
+let buildSha = val("build");
+
+if (wantArtifact) {
+  if (!/^[0-9a-f]{64}$/.test(wantArtifact)) {
+    finish("E_ARGS", "--artifact must be a 64-hex artifact_sha256 (the publisher's canonical digest)");
+  }
+  try {
+    const idx = JSON.parse(aws(["s3", "cp", `s3://${BUCKET}/godot/dev/by-artifact/${wantArtifact}.json`, "-"]));
+    buildSha = idx.git_sha;
+    log(`resolved artifact ${wantArtifact.slice(0, 12)}… -> ${idx.prefix} (${idx.version})`);
+  } catch {
+    finish("E_UNKNOWN_ARTIFACT", `no published artifact with digest ${wantArtifact.slice(0, 16)}… — nothing was ever sealed with those bytes, so there is nothing to promote`);
+  }
+}
 if (!buildSha || !/^[0-9a-f]{40}$/.test(buildSha)) {
-  finish("E_ARGS", "need --build <40-hex git sha> naming a published dev artifact");
+  finish("E_ARGS", "need --artifact <64-hex artifact_sha256> (preferred) or --build <40-hex git sha>");
 }
 const srcPrefix = `godot/dev/${buildSha}/`;
 
@@ -109,6 +129,9 @@ try {
 const artifactSha256 = receipt.artifact_sha256;
 if (!artifactSha256) {
   finish("E_NO_DIGEST", "the sealed receipt predates artifact_sha256 — republish this build before promoting it (the gate has nothing to key on)");
+}
+if (wantArtifact && artifactSha256 !== wantArtifact) {
+  finish("E_INDEX_STALE", `the artifact index points at ${srcPrefix} but that prefix's SEAL holds digest ${artifactSha256.slice(0, 16)}…, not ${wantArtifact.slice(0, 16)}… — the index is stale and must not be trusted over the seal`);
 }
 log(`source   ${srcPrefix}`);
 log(`version  ${receipt.version}`);
@@ -232,7 +255,44 @@ if (mismatches.length) {
   });
 }
 
+// --- 6. finish the ship ------------------------------------------------------
+// Copying bytes is not shipping. The service worker keys its cache on the
+// COMMITTED game-version.json, so a promote that stops here leaves returning
+// players on a stale cache — the hang this project has already shipped once.
+// --skip-finish exists for testing against a scratch prefix, where none of this
+// applies and running it would stamp prod metadata for a build that is not live.
+const steps = [];
+function runStep(name, cmd) {
+  if (SKIP_FINISH) { steps.push({ name, ok: null, detail: "skipped (--skip-finish)" }); return; }
+  try {
+    execFileSync("cmd", ["/c", cmd], { cwd: join(__dirname, ".."), encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    steps.push({ name, ok: true });
+    log(`  ok   ${name}`);
+  } catch (e) {
+    const detail = String((e && e.stderr) || (e && e.message) || "").trim().split("\n").slice(-2).join(" | ");
+    steps.push({ name, ok: false, detail });
+    log(`  FAIL ${name}: ${detail}`);
+  }
+}
+// sw.js stamp first: everything after it is a check, and checking before the
+// stamp lands would verify the previous release.
+runStep("finalize (sw.js stamp)", "gh workflow run finalize-demo.yml --ref main");
+runStep("changelog", "git fetch origin --quiet && git rebase origin/main --autostash && npm run changelog");
+runStep("verify:deploy", "npm run verify:deploy -- --skip-stamp");
+runStep("smoke:prod", "npm run smoke:prod");
+
+const failed = steps.filter((x) => x.ok === false);
+if (failed.length) {
+  // The BYTES are live and verified at this point — this is not a rollback
+  // situation, it is an incomplete ship, and saying so precisely matters: a
+  // reader who thinks the copy failed will do the wrong thing.
+  finish("E_FINISH", `bytes are LIVE and verified, but ${failed.length} finish step(s) failed — the release is INCOMPLETE, not broken: ${failed.map((f) => `${f.name} (${f.detail})`).join(" | ")}`, {
+    artifact_sha256: artifactSha256, version: receipt.version, objects: copied, steps,
+  });
+}
+
 finish("OK", `promoted ${receipt.version} (artifact ${artifactSha256.slice(0, 12)}…) — ${copied} objects copied and verified`, {
+  steps,
   artifact_sha256: artifactSha256,
   version: receipt.version,
   source: `s3://${BUCKET}/${srcPrefix}`,

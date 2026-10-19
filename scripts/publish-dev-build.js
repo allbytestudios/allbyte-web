@@ -399,4 +399,25 @@ try {
   finish("E_RECEIPT", `uploaded, but the completion marker failed to write — treat this sha as INCOMPLETE: ${e.message}`, { ...ctx, ...receipt });
 }
 
+// --- 9. artifact index -------------------------------------------------------
+// promote takes an artifact_sha256 — the bytes — not a git sha. But the S3 path
+// is keyed by git sha, so without this there is no way to go from "the digest
+// QA attested" back to "where those bytes live", and promote would be forced to
+// accept a git sha instead. That would reintroduce the exact weakness this
+// pipeline exists to remove: one git sha can produce many different artifacts
+// (8f906e20 produced THREE distinct pcks on 2026-10-17).
+//
+// Written AFTER the seal, deliberately: the index may only ever point at bytes
+// that are already sealed and verified. Not fatal if it fails — promote can
+// still be driven by --build <git-sha> — so this warns rather than aborting a
+// publish that otherwise succeeded.
+try {
+  const idx = join(RECEIPT_DIR, `.${artifactSha256}.idx.json`);
+  writeFileSync(idx, JSON.stringify({ artifact_sha256: artifactSha256, git_sha: sha, version, prefix, sealed_at: new Date().toISOString() }, null, 2) + "\n");
+  sh(`aws s3 cp "${idx}" "s3://${BUCKET}/godot/dev/by-artifact/${artifactSha256}.json" --content-type application/json --cache-control "no-cache" --only-show-errors`);
+  log(`indexed artifact ${artifactSha256.slice(0, 12)}… -> ${prefix}`);
+} catch (e) {
+  log(`WARNING: artifact index not written (${e.message}) — promote by --build <git-sha> still works`);
+}
+
 finish("OK", `published ${version} (sha ${sha.slice(0, 8)}) — ${files.length} files, ${(bytes / 1e6).toFixed(1)} MB`, receipt);

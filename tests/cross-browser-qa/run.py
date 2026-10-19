@@ -246,8 +246,19 @@ def _is_slow(engine_name: str) -> bool:
     engine: firefox is slower everywhere, and the Linux CI runners have no GPU
     (chromium runs on swiftshader on top of that), so every wait is longer there
     than on macOS or a dev box. Single definition so the budgets can't drift
-    apart between the embed check and the gameplay stages."""
-    return engine_name == "firefox" or os.environ.get("RUNNER_OS") == "Linux"
+    apart between the embed check and the gameplay stages.
+
+    The line is CI-vs-dev-box, not Linux-vs-macOS. It used to be the latter, on
+    the reasoning that the Linux runners have no GPU — true, but it left macOS
+    on the fast budget, and GitHub's macOS runners are heavily contended. macOS
+    chromium duly failed `stuck_in_intro` at 150s on 2026-10-19 having passed
+    the run before: a flaky GATING engine, which is worse than a slow one,
+    because it fails a release check at random and emails about it."""
+    return (
+        engine_name == "firefox"
+        or os.environ.get("RUNNER_OS") == "Linux"
+        or bool(os.environ.get("CI"))
+    )
 
 
 def _play_embed(context, play_url: str, out_dir: Path, engine_name: str, boot_timeout_s: int) -> dict:

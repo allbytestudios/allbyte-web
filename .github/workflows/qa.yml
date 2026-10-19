@@ -131,12 +131,33 @@ jobs:
       # engine still reported the job green. That hid new_game/movement failing
       # across every engine and both OSes for days (2026-09-08 onward) and made
       # "Deploy QA: success" worthless. Upload first, then fail honestly.
+      # Firefox is ADVISORY and always has been — the gate is Chromium + WebKit
+      # across both OSes, and the aggregate job already ignores Firefox. But this
+      # step did not, so an advisory engine still failed its matrix job, which
+      # flipped the whole run to "failure" and emailed on every single deploy.
+      # Sixteen of the last fifty runs were red for a result nothing gates on,
+      # which trains everyone to delete the notification unread — and then a real
+      # Chromium failure arrives in the same envelope and goes unread too.
       - name: Fail the job if the harness failed
-        if: steps.harness.outcome == 'failure'
+        if: steps.harness.outcome == 'failure' && matrix.engine != 'firefox'
         run: |
           echo "cross-browser harness reported failure for ${{ matrix.os }}/${{ matrix.engine }}"
           echo "report uploaded to test-snapshot/qa-runs/${{ needs.preflight.outputs.run_id }}/"
           exit 1
+
+      # Advisory engines still SAY so, loudly, in the run summary and as an
+      # annotation. Silence would be the other failure mode: the 2026-09-08
+      # regression hid for days behind a job that reported green.
+      - name: Record advisory failure (Firefox)
+        if: steps.harness.outcome == 'failure' && matrix.engine == 'firefox'
+        run: |
+          echo "::warning title=Firefox advisory failure::${{ matrix.os }}/firefox failed. Firefox is not a release gate; Chromium and WebKit are. Report: test-snapshot/qa-runs/${{ needs.preflight.outputs.run_id }}/"
+          {
+            echo "### ⚠ Firefox advisory failure — ${{ matrix.os }}"
+            echo ""
+            echo "Firefox is **not** a release gate; Chromium and WebKit are. This run is still green."
+            echo "Report: \`test-snapshot/qa-runs/${{ needs.preflight.outputs.run_id }}/\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   controllers:
     needs: preflight

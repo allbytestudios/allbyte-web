@@ -12,7 +12,10 @@
 // Transport: navigator.sendBeacon with a text/plain body — a CORS "simple"
 // request, so no preflight and it survives the tab closing (for the final
 // "end" event). If WRITE_URL is unset the whole module is a silent no-op, so
-// it's safe to ship before the backend stack is deployed.
+// it's safe to ship before the backend stack is deployed. It goes to a
+// FIRST-PARTY path where that works, falling back to the cross-origin endpoint
+// — see SAME_ORIGIN_URL for why, and the transport block in initPlayAnalytics
+// for how that choice is made exactly once per session.
 
 // WriteEndpoint output of the play-analytics CloudFormation stack
 // (allbyte-studio-play-analytics, us-east-1). Empty string = disabled (no-op).
@@ -20,6 +23,52 @@ import { auth } from "./auth.svelte";
 
 // WriteEndpoint output (see below)
 const WRITE_URL = "https://pdtoj70foi.execute-api.us-east-1.amazonaws.com/play";
+
+// FIRST-PARTY ingress for the same beacon, proxied to WRITE_URL by CloudFront.
+//
+// WHY: privacy browsers block CROSS-ORIGIN requests that look like analytics —
+// Brave with shields up, uBlock-style extensions — and execute-api.amazonaws.com
+// is exactly that shape. The game itself is unaffected, because its assets are
+// first-party on this domain, so a blocked session plays perfectly and reports
+// nothing. One real itch.io arrival produced full telemetry in September (three
+// sessions, 25.6 / 18.6 / 47.9 min, as far as Waterway1-10) and then sessions
+// with ZERO beacons in October while CloudFront logged the whole download.
+//
+// It compounds: the game assets are `immutable, max-age=1yr`, so a RETURNING
+// player makes no server requests at all while playing. With the beacon blocked
+// there is no instrument left — not even a crude one in the access logs.
+//
+// The path deliberately avoids every word the blocklists match on ("analytics",
+// "beacon", "telemetry", "track", "collect", "pixel", "event") and sits under
+// /api/ with the rest of the site's dynamic surface.
+//
+// This path only exists once CloudFront has a behaviour for it: /api/play/* →
+// the play-analytics HTTP API, caching DISABLED, POST allowed, URI rewritten to
+// the API's `POST /play` route. Until then the request hits the S3 origin on a
+// GET/HEAD-only behaviour and every session falls back to WRITE_URL — which is
+// simply today's behaviour, so this is safe to ship ahead of the infra change.
+const SAME_ORIGIN_URL = "/api/play/depth";
+
+// The write Lambda's success code, and the ONLY status we accept as proof that
+// the first-party path reached it.
+//
+// DO NOT relax this to `response.ok`. The distribution maps 403 and 404 to
+// `200 /index.html` (so deep links survive a refresh), which is distribution-
+// WIDE and has no per-behaviour override. Measured 2026-10-19, before any
+// behaviour existed: POST https://allbyte.studio/api/play/depth answers 200
+// with 92KB of homepage. A 2xx is therefore not evidence of anything; the write
+// Lambda's 204 is. Were this `r.ok`, the probe would latch the first-party path
+// on a distribution that has no such route and throw the funnel away entirely —
+// a far worse failure than the blocking this change exists to fix.
+//
+// If the backend ever stops returning 204, every session quietly falls back to
+// the cross-origin URL — no regression, just no improvement — so update this.
+const WRITE_OK_STATUS = 204;
+// Longest we hold beacons waiting for the probe to settle (see openAndProbe).
+const PROBE_MS = 2500;
+// Hard cap on the hold queue. A probe settles in one round trip; this only ever
+// matters if it hangs, and a session cannot emit this many stages in 2.5s.
+const QUEUE_MAX = 64;
 
 // Only record real prod sessions — keeps localhost/dev noise out of the funnel.
 const PROD_HOST = "allbyte.studio";
@@ -388,12 +437,111 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
 
   const elapsed = () => Math.round((Date.now() - startTs) / 1000);
 
-  function send(ev: Ev, scene: string, extra?: Record<string, unknown>): void {
+  // --- Transport: first-party first, cross-origin as the fallback ----------
+  //
+  // "Send to A, and if that fails send to B" is a trap with sendBeacon. Its
+  // boolean means QUEUED-or-not, never DELIVERED: a request a shield is about
+  // to drop still queues (true) and then vanishes on the wire with nothing
+  // observable. Retrying on anything short of an outright `false` would
+  // therefore duplicate every beacon of every ORDINARY session — the common
+  // case — in order to rescue the blocked one.
+  //
+  // So the endpoint is chosen ONCE per session, from a request whose outcome we
+  // can actually read, and then never revisited:
+  //   - the arrival beacon goes out with fetch() instead of sendBeacon. Same
+  //     payload, same endpoint it would have used anyway, so it is not an extra
+  //     request — just one we can see the status of.
+  //   - a 204 proves the first-party path reaches the write Lambda → latch it.
+  //   - a rejection or any other status proves that beacon did NOT land → latch
+  //     the cross-origin URL and re-send that one payload there.
+  //   - anything emitted while the probe is in flight waits in `queued` and is
+  //     flushed, in order, down whichever endpoint wins.
+  //
+  // After the latch every beacon is sent exactly once, by sendBeacon, to one
+  // endpoint. No payload is ever addressed to both.
+  let endpoint: string | null = null; // null = probe still in flight
+  let probeSettled = false;
+  let probeTimer: ReturnType<typeof setTimeout> | null = null;
+  const queued: string[] = [];
+
+  function payload(ev: Ev, scene: string, extra?: Record<string, unknown>): string {
+    return JSON.stringify({ sid, ev, scene, dur: elapsed(), ref, dev, ...extra });
+  }
+
+  function post(url: string, body: string): void {
     try {
-      const body = JSON.stringify({ sid, ev, scene, dur: elapsed(), ref, dev, ...extra });
-      navigator.sendBeacon(WRITE_URL, new Blob([body], { type: "text/plain" }));
+      navigator.sendBeacon(url, new Blob([body], { type: "text/plain" }));
     } catch {
       /* best-effort; never break the page */
+    }
+  }
+
+  function latch(url: string): void {
+    endpoint = url;
+    while (queued.length) post(url, queued.shift() as string);
+  }
+
+  // Give up on the probe WITHOUT re-sending the arrival beacon. An in-flight
+  // request may already have been processed server-side, so a re-send here
+  // could be the one thing this design exists to prevent. One missing `open`
+  // row costs that session's `meta`/`ctx`; a duplicated one would be a beacon
+  // recorded twice. The session itself still counts — the first `scene` beacon
+  // proves it reached the page just as well as `open` does.
+  function abandonProbe(): void {
+    if (probeSettled) return;
+    probeSettled = true;
+    if (probeTimer) {
+      clearTimeout(probeTimer);
+      probeTimer = null;
+    }
+    latch(WRITE_URL);
+  }
+
+  function send(ev: Ev, scene: string, extra?: Record<string, unknown>): void {
+    try {
+      const body = payload(ev, scene, extra);
+      if (endpoint) post(endpoint, body);
+      else if (queued.length < QUEUE_MAX) queued.push(body);
+    } catch {
+      /* best-effort; never break the page */
+    }
+  }
+
+  // Arrival beacon + endpoint probe, in one request. See the block above.
+  function openAndProbe(body: string): void {
+    const decide = (landed: boolean) => {
+      if (probeSettled) return;
+      probeSettled = true;
+      if (probeTimer) {
+        clearTimeout(probeTimer);
+        probeTimer = null;
+      }
+      // Not landed is a FACT here (fetch rejected, or answered with something
+      // other than the write Lambda's 204), which is what makes re-sending it
+      // to the other endpoint safe.
+      if (!landed) post(WRITE_URL, body);
+      latch(landed ? SAME_ORIGIN_URL : WRITE_URL);
+    };
+    probeTimer = setTimeout(abandonProbe, PROBE_MS);
+    try {
+      fetch(SAME_ORIGIN_URL, {
+        method: "POST",
+        // text/plain keeps the request CORS-simple, so the body is byte-identical
+        // whichever endpoint it ends up at and the fallback needs no preflight.
+        headers: { "Content-Type": "text/plain" },
+        body,
+        // keepalive is what sendBeacon is built on: the request outlives the
+        // document, so an instant bounce still reports. Older Firefox ignores
+        // the flag, which only costs us the arrival of a sub-second session.
+        keepalive: true,
+        // Nothing here is authenticated, and the funnel is anonymous by design.
+        credentials: "omit",
+        cache: "no-store",
+      })
+        .then((r) => decide(r.status === WRITE_OK_STATUS))
+        .catch(() => decide(false));
+    } catch {
+      decide(false);
     }
   }
 
@@ -427,7 +575,7 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
   // Arrival — counts /play loads even if the engine never boots (boot-rate).
   // `meta` + `ctx` ride the open beacon only: they're per-session constants,
   // so repeating them on every stage would be pure payload.
-  send("open", "", { meta: sessionMeta(), ctx: launchContext() });
+  openAndProbe(payload("open", "", { meta: sessionMeta(), ctx: launchContext() }));
   startup("play_page_open");
 
   // Anything marked before we were ready to record (the boot shell paints
@@ -504,6 +652,11 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
       poller = null;
     }
     send("end", lastScene);
+    // Leaving with the probe still in flight: the hold queue has nowhere to go
+    // and the page is about to be gone, so commit it to the endpoint we know
+    // works. The arrival beacon is not in that queue — it IS the probe — so
+    // nothing can go out twice, and this is exactly what shipped before.
+    abandonProbe();
   }
 
   // pagehide is the reliable "leaving" signal (covers tab close, navigation,
@@ -516,6 +669,10 @@ export function initPlayAnalytics(stateGetter: () => PlayState | null): () => vo
 
   return () => {
     if (poller) clearInterval(poller);
+    // A ClientRouter navigation off /play/ is a SOFT one — no pagehide, so
+    // end() never runs. Commit any held beacons before this closure's state is
+    // orphaned, or a probe that was still in flight would silently eat them.
+    abandonProbe();
     emitStartup = null;
     window.removeEventListener("pagehide", end);
     document.removeEventListener("visibilitychange", onHidden);

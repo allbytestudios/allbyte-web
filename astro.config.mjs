@@ -9,6 +9,7 @@ import chokidar from "chokidar";
 import remarkDirective from "remark-directive";
 import remarkWalkthroughDirectives from "./scripts/remark-walkthrough-directives.mjs";
 import { isNoIndexPath } from "./src/lib/seo.mjs";
+import { deployTrigger } from "./scripts/lib/deploy-endpoint.mjs";
 
 // Draft devlog URLs, derived from frontmatter at BUILD time.
 //
@@ -1427,7 +1428,7 @@ export default defineConfig({
       // BaseLayout so it can be read without devtools.
       __SITE_BUILD__: JSON.stringify(SITE_BUILD),
     },
-    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), relicVignetteOverrideWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork(), manualSnapshotPreview()],
+    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), relicVignetteOverrideWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork(), manualSnapshotPreview(), deployTrigger()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

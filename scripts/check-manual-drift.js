@@ -86,6 +86,11 @@ const normProse = (s) =>
     .replace(/&#39;|&rsquo;|’/g, "'")
     .replace(/&amp;/g, "&")
     .replace(/&nbsp;/g, " ")
+    // Any other entity becomes a space, not its letters. &mdash; was surviving
+    // as the literal text "mdash", so every em-dash in the rendered layer read
+    // as a word the markdown lacked — a permanent false positive on prose that
+    // was in fact identical.
+    .replace(/&[a-zA-Z]+;|&#\d+;/g, " ")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, " ") // markdown images
     .replace(/<[^>]+>/g, " ")
     .replace(/[*`_#>|]/g, " ") // markdown markers
@@ -100,8 +105,16 @@ const normProse = (s) =>
 // already has its own dedicated check above. Comparing it produced 30+ false
 // positives and a checker nobody would trust.
 const splitSentences = (t) =>
-  normProse(t)
+  // Split on REAL punctuation first, then normalise each piece. normProse strips
+  // every non-alphanumeric character, so normalising first left nothing to split
+  // on: the whole section came back as ONE "sentence", any single word differing
+  // anywhere failed the entire blob, and the report always pointed at the
+  // section's opening words because that is simply where the truncation starts.
+  // Three sections sat permanently red that way, which is how a guard stops
+  // being read.
+  t
     .split(/(?<=[.:!?])\s+/)
+    .map(normProse)
     // Fragments this short are labels and list stubs — too noisy to compare.
     .filter((s) => s.split(" ").length >= 6);
 

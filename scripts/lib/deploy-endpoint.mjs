@@ -144,7 +144,7 @@ export function deployTrigger() {
   return {
     name: "allbyte-deploy-trigger",
     configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
+      const handle = async (req, res, next) => {
         const url = new URL(req.url || "/", "http://localhost");
         const path = url.pathname.replace(/\/+$/, "") || "/";
         if (!path.startsWith("/api/deploy")) return next();
@@ -252,7 +252,20 @@ export function deployTrigger() {
           },
         });
         return send(res, 202, { ...job, poll: `/api/deploy/job/${jobId}` });
-      });
+      };
+
+      // PREPENDED, not appended. astro.config sets `trailingSlash: "always"`,
+      // and Astro installs a slash guard in its own post-configuration hook —
+      // so an appended middleware never sees POST /api/deploy/promote at all
+      // (measured: the slash-less form 404s before reaching the handler, while
+      // the slashed form arrives fine). An API that silently 404s unless you
+      // remember a trailing slash is a footgun for whoever is debugging at the
+      // wrong hour, so we run ahead of the guard and accept both.
+      //
+      // Returning a function from configureServer is how Vite lets a plugin
+      // install middleware AFTER the internal stack exists, which is the only
+      // point where unshifting means anything.
+      return () => server.middlewares.stack.unshift({ route: "", handle });
     },
   };
 }

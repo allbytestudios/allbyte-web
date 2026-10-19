@@ -2,7 +2,14 @@
 /**
  * sync-manual.js — ingest the Instruction Booklet into the site.
  *
- * Quinn owns the manual content (manual/*.md) + a render script that produces a
+ * OWNERSHIP CHANGED 2026-10-19 (owner): APP owns the booklet; Quinn informs it.
+ * public/manual/index.html is the source of truth. Her export is frozen at
+ * 2026-07-26 and has diverged badly (controls 11% similar to live, battle 3%),
+ * so this is no longer a refresh path — it is a historical ingest kept for its
+ * asset extraction. The guard below is what stops it reverting months of work,
+ * and --force is almost certainly the wrong answer.
+ *
+ * Previously: Quinn owned the manual content (manual/*.md) + a render script that produces a
  * self-contained `manual_preview.html` (fonts/paper/sprites/icons embedded as
  * data-URIs). Replicating her render + asset extraction (sprite frames, the
  * venom-slime hue-shift, InputIcons, the HUD shot) in App would be a large,
@@ -94,7 +101,11 @@ if (existsSync(OUT_FILE) && !FORCE) {
         "  If the export really is the newer of the two:",
         "    npm run sync:manual -- --force",
         "",
-        "  Otherwise port Quinn's changes into public/manual/index.html by hand.",
+          "  OWNERSHIP CHANGED 2026-10-19: App owns the booklet; Quinn INFORMS it.",
+          "  public/manual/index.html is the source of truth now, not her export,",
+          "  which was last rendered 2026-07-26 and is 3-11% similar to the live",
+          "  page. --force would not refresh the manual, it would revert it by",
+          "  months. Port anything she reports into the live page by hand instead.",
         "  Remember it holds the booklet TWICE — the rendered .prose HTML that",
         "  readers see, and the manual-bodies JSON the inline editor reads. Both",
         "  must move together, and a grep of the whole file will match the JSON",

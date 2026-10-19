@@ -26,6 +26,8 @@ import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { appendFileSync, mkdirSync } from "node:fs";
+import { homedir } from "node:os";
 import { verifyTrigger, TRIGGER_IDENTITY_FILE } from "./trigger-auth.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -44,6 +46,37 @@ const MAX_BODY = 16 * 1024;
  * of what actually published; this is only progress reporting.
  */
 const jobs = new Map();
+
+/**
+ * AUDIT LOG — every trigger that reaches this endpoint, decided or refused.
+ *
+ * The owner's point when this layer went in: "ensure logs exist to troubleshoot
+ * at each handoff as we're adding complexity and layers." This is the handoff
+ * that had none — the file queue wrote a result file per request, but the HTTP
+ * path kept everything in memory, so a refused trigger left no trace at all and
+ * "Arc says he triggered it, nothing happened" would have been unanswerable.
+ *
+ * Append-only JSONL on the shared mount, so Arc can read back what the host
+ * decided about his own request without asking. REFUSALS ARE LOGGED TOO, and
+ * that is the point: a successful deploy is self-evident from the receipt, a
+ * rejected one is the thing nobody can otherwise see. Never records the
+ * signature or any secret — identity and verdict only.
+ */
+const AUDIT_DIR =
+  process.env.DEPLOY_AUDIT_DIR ||
+  join(homedir(), "Desktop", "GameDev", "AutoplayRuntime", "deploy-audit");
+
+function audit(entry) {
+  try {
+    mkdirSync(AUDIT_DIR, { recursive: true });
+    const day = new Date().toISOString().slice(0, 10);
+    appendFileSync(join(AUDIT_DIR, `${day}.jsonl`),
+      JSON.stringify({ at: new Date().toISOString(), ...entry }) + "\n");
+  } catch {
+    // Never let logging break a deploy. A lost audit line is bad; a promote
+    // that fails because the disk is full is worse.
+  }
+}
 
 /** request_id -> result, so a retry after a timeout cannot run a promote twice. */
 const seen = new Map();
@@ -144,6 +177,8 @@ export function deployTrigger() {
         // intent never reaches dispatch and the refusal is about auth alone.
         const trig = verifyTrigger(reqObj);
         if (!trig.ok) {
+          audit({ event: "refused", stage: "auth", path, reason: trig.reason,
+                  claimed_identity: reqObj.signed_by || null, request_id: reqObj.request_id || null });
           return send(res, 401, {
             ok: false, reason: trig.reason, message: trig.detail,
             identity_file: trig.reason === "E_NO_IDENTITY_CONFIGURED" ? TRIGGER_IDENTITY_FILE : undefined,
@@ -157,9 +192,14 @@ export function deployTrigger() {
         }
         // Idempotent: the answer already given IS the answer. A client that
         // timed out and retried must not cause a second promote.
-        if (seen.has(id)) return send(res, 200, { ...seen.get(id), replayed: true });
+        if (seen.has(id)) {
+          audit({ event: "replayed", path, request_id: id, triggered_by: trig.who });
+          return send(res, 200, { ...seen.get(id), replayed: true });
+        }
 
         const attribution = { triggered_by: trig.who, signature_verified: true, issued_at: reqObj.issued_at, request_id: id };
+        audit({ event: "accepted", path, request_id: id, triggered_by: trig.who,
+                artifact_sha256: reqObj.artifact_sha256 || null, dry_run: reqObj.dry_run === true });
 
         if (path === "/api/deploy/promote") {
           // Promotion is addressed by BYTES. A git sha is refused: one commit
@@ -176,6 +216,12 @@ export function deployTrigger() {
           return runScript(args, {
             onDone: (out) => {
               const payload = { ...attribution, action: "promote", ...out };
+              // The verdict is the line someone will come looking for: it says
+              // whether the GATE allowed this, which is the question that
+              // matters after the fact.
+              audit({ event: "promote_result", request_id: id, triggered_by: trig.who,
+                      artifact_sha256: reqObj.artifact_sha256, ok: out.ok, reason: out.reason,
+                      message: String(out.message || "").slice(0, 300) });
               seen.set(id, payload);
               send(res, out.ok ? 200 : 409, payload);
             },
@@ -196,6 +242,11 @@ export function deployTrigger() {
         runScript(args, {
           onDone: (out) => {
             const done = { ...job, state: "done", finished_at: new Date().toISOString(), ...out };
+            audit({ event: "publish_result", request_id: id, job_id: jobId, triggered_by: trig.who,
+                    ok: out.ok, reason: out.reason,
+                    artifact_sha256: out.result?.artifact_sha256 || null,
+                    url: out.result?.url || null,
+                    message: String(out.message || "").slice(0, 300) });
             jobs.set(jobId, done);
             seen.set(id, done);
           },

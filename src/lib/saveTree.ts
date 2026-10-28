@@ -12,7 +12,7 @@
  */
 
 import data from "../data/save-tree.json";
-import { DEBUG_CHANNEL_ID, currentDebugToken } from "./gameVersions";
+import { DEBUG_CHANNEL_ID, currentDebugValue } from "./gameVersions";
 import spine from "../data/story-spine.json";
 
 export interface SaveTreeBuild {
@@ -131,10 +131,12 @@ export function jumpUrl(n: SaveTreeNode): string {
   p.set("channel", DEBUG_CHANNEL_ID);
   p.set("scenario", `tree-${n.id}`);
   if (n.packs?.length) p.set("packs", n.packs.join(","));
-  // Same as the scenario launcher: one build, so the token is what unlocks the
-  // hooks this jump needs. Forward the owner's ?debug or the jump no-ops.
-  const token = currentDebugToken();
-  if (token) p.set("debug", token);
+  // Same as the scenario launcher: one build, so `debug` is what unlocks the
+  // hooks this jump needs. Forward the owner's existing value verbatim, or the
+  // jump boots dormant and no-ops at the gate. (Presence-based — any non-empty
+  // value authorizes; there is no token comparison.)
+  const debug = currentDebugValue();
+  if (debug) p.set("debug", debug);
   return `/play/?${p.toString()}`;
 }
 

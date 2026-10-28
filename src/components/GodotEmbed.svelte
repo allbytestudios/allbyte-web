@@ -18,7 +18,15 @@
   import { MANUAL_CARDS, EPISODE_1_SPRITES, SPRITE_DISPLAY, SPRITE_LORE } from "../lib/manualCards.ts";
   import EmailSignup from "./EmailSignup.svelte";
   import { SIGNUP_ENABLED, alreadySignedUp } from "../lib/emailSignup";
-  import { versionById, isUnlocked, DEBUG_CHANNEL_ID } from "../lib/gameVersions";
+  import {
+    versionById,
+    isUnlocked,
+    DEBUG_CHANNEL_ID,
+    DEBUG_ENABLE_VALUE,
+    effectiveDebug,
+    clearDebugAuthorization,
+    hasDebugCookie,
+  } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
@@ -494,33 +502,114 @@
   // (the loader is already up) and let the effect below mount the right build
   // exactly once. Normal loads still mount immediately — they resolve the same
   // build before and after auth, so nothing is gained by waiting.
+  //
+  // `debug` and `build` JOINED THIS LIST on 2026-10-27, and that reverses an
+  // earlier call worth spelling out. ?build= was deliberately left un-gated
+  // ("requiring auth would mean holding the mount until /auth/me lands"), which
+  // was right while debug only toggled dev chrome. It is wrong now that debug
+  // decides CONTENT SCOPE: resolveGameUrl() returns the same path before and
+  // after auth for these two, so the re-resolve effect below hits its
+  // `next === gameUrl` early return, the src is never recomputed, and
+  // debugParam() — which cannot run until auth is ready — never reaches the
+  // iframe. Development would silently boot WITHOUT Episode Two, which is the
+  // one thing Development exists to show. Holding costs one auth round trip;
+  // not holding costs the wrong scope with no second chance, because the game
+  // reads the gate once at boot.
   function hasGatedDeepLink(): boolean {
     if (typeof window === "undefined") return false;
     const q = new URLSearchParams(window.location.search);
-    return !!(q.get("v") || q.get("channel") || q.get("scenario"));
+    return !!(
+      q.get("v") ||
+      q.get("channel") ||
+      q.get("scenario") ||
+      q.get("debug") ||
+      q.get("build")
+    );
   }
   /** resolveGameUrl(), but yields null while a gated deep-link waits on auth. */
   function resolveGameUrlOrHold(): string | null {
     return hasGatedDeepLink() && !auth.authReady ? null : resolveGameUrl();
   }
 
-  // --- ?debug passthrough (single-build debug gate) --------------------------
-  // Two independent layers, and neither half knows the other's:
-  //   site  gates on IDENTITY  — admin, verified server-side by /auth/me
-  //   game  gates on the TOKEN — checked against a constant in its own build
-  // The token is NEVER stored in this repo (it is public); it arrives in the
-  // owner's URL and is forwarded verbatim for admins, or dropped for everyone
-  // else. So a non-admin who finds the URL has the param stripped before it
-  // reaches the game, and anyone hitting /godot/ directly still needs the token.
+  // --- debug = CONTENT SCOPE (single build, three effective selections) ------
   //
-  // Gated on auth.authReady for the same reason the ?v=/?channel= deep-links are:
-  // a pre-auth read sees a null user, forwards nothing, and the game boots
-  // dormant — with no second chance, since we never swap builds mid-session.
+  // Owner canon 2026-10-27 (Arc, CON_CLAUDE_APP_WEBSITE_DEBUG_GATED_SELECTOR):
+  // `debug` no longer unlocks only dev chrome — it decides whether this session
+  // can reach Episode Two / the Overworld at all, because the game's
+  // GlobalWorld.allows_episode_two() just returns its `_debug_authorized`.
+  //
+  // THREE EFFECTIVE SELECTIONS, one artifact:
+  //   Production          public artifact, NO debug  → credits, Overworld
+  //                       unreachable, Overworld.pck never requested
+  //   Production + debug  the SAME public artifact + debug → Overworld reachable
+  //   Development         pinned ?build=<sha> artifact, ALWAYS debug
+  //
+  // Artifact choice and debug are deliberately INDEPENDENT: production+debug
+  // must load the identical file ordinary production does. There is no
+  // ?progress param, no second export and no autoplay requirement.
+  //
+  // Two independent layers still, and neither half knows the other's:
+  //   site  gates on IDENTITY — admin, verified server-side by /auth/me
+  //   game  gates on PRESENCE — any non-empty `debug` query or cookie, read
+  //                             ONCE at boot. The old shared-constant token
+  //                             comparison is retired; `debug=0` ENABLES.
+  //
+  // Still gated on auth.authReady for the same reason ?v=/?channel= deep-links
+  // are: a pre-auth read sees a null user, forwards nothing, and the game boots
+  // in the wrong scope — with no second chance, since the gate is boot-once.
+  // That access policy is unchanged here; this change did not relax it.
+
+  /**
+   * Which artifact is selected, for the purpose of its debug DEFAULT.
+   * A pinned ?build=<sha> is a development artifact, so it defaults like dev.
+   */
+  function currentSelectionId(): string | null {
+    if (typeof window === "undefined") return null;
+    if (devBuildSelection()) return "dev";
+    const q = new URLSearchParams(window.location.search);
+    return q.get("v") || q.get("channel");
+  }
+
+  /** Effective debug = this build's default, with any URL override applied. */
+  function debugEnabled(): boolean {
+    if (typeof window === "undefined") return false;
+    return effectiveDebug(currentSelectionId());
+  }
+
   function debugParam(): string {
     if (typeof window === "undefined" || !auth.authReady) return "";
     if (!isAdmin(auth.currentUser)) return "";
-    const t = new URLSearchParams(window.location.search).get("debug");
-    return t ? `&debug=${encodeURIComponent(t)}` : "";
+    if (!debugEnabled()) return "";
+    // ALWAYS the canonical enable value, never the user's raw string. The
+    // wrapper reads `?debug=0` as "off"; the game reads any non-empty value as
+    // "on". Relaying verbatim would turn a deliberate dev-without-debug request
+    // into the exact thing it asked to disable. Intent is translated here, and
+    // an OFF result is expressed by omission + cookie clearing, never a value.
+    return `&debug=${DEBUG_ENABLE_VALUE}`;
+  }
+
+  /**
+   * REVOKE debug authorization when this boot is not meant to have it.
+   *
+   * Omitting the query is NOT revocation. Authorization is presence-based, so a
+   * `debug` cookie left by an earlier debug session silently keeps Episode Two
+   * unlocked on a boot the player selected as ordinary production — and the
+   * game reads that cookie once, at boot, so there is no later correction.
+   *
+   * Keyed off the EFFECTIVE param rather than the selection, which also covers
+   * the non-admin who arrives on a debug link: they get no param, so they are
+   * ordinary production, so their stale cookie has to go too.
+   *
+   * Must run BEFORE the iframe mounts.
+   */
+  function applyDebugAuthorization(): void {
+    if (typeof window === "undefined") return;
+    if (debugParam()) return; // this boot is authorized — leave state alone
+    const had = hasDebugCookie();
+    clearDebugAuthorization();
+    if (had) {
+      console.info("[debug-gate] cleared a stale debug cookie — booting ordinary production");
+    }
   }
 
   /** The iframe src: the resolved build plus the admin-only debug passthrough. */
@@ -535,6 +624,16 @@
   }
   let gameUrl = $state<string | null>(resolveGameUrlOrHold());
 
+  /**
+   * Mount identity for the game frame: the artifact plus the effective debug.
+   * debugParam() reads auth, so this is reactive — but every selection that can
+   * change it (?v=, ?channel=, ?debug=, ?build=) is held by hasGatedDeepLink()
+   * until auth settles, so the frame mounts ONCE with its final scope rather
+   * than booting plain and re-keying into debug (which would cost a second
+   * full download).
+   */
+  const frameKey = $derived(`${gameUrl}|${debugParam()}`);
+
   // Re-resolve ONCE when auth hydrates (the /auth/me fetch resolves after
   // mount): an admin/Legend's early "public" resolution upgrades to the debug
   // build, and a tier-gated ?v=/?channel= deep-link that fell back pre-auth
@@ -545,6 +644,10 @@
       authResolved = true;
       const next = resolveGameUrl();
       if (next === gameUrl) return;
+      // This is the real mount for every held deep-link (?v=, ?channel=,
+      // ?scenario=, ?debug=, ?build=), so the revoke has to happen here too —
+      // proceedToGame() ran while gameUrl was still null and nothing mounted.
+      applyDebugAuthorization();
       // An upgrade INTO the beta channel (e.g. a ?v=beta deep-link that could
       // only unlock post-auth) must get its cookie grant before the iframe
       // fetches, same as the mount path. Denied/unavailable → stay on the
@@ -952,6 +1055,10 @@
     //     and the loading art shows through.
     const proceedToGame = () => {
       const hasScenario = new URLSearchParams(window.location.search).has("scenario");
+      // Last point before the iframe exists. The game reads its debug cookie
+      // ONCE at boot, so an ordinary-production boot has to have revoked it by
+      // now or it silently inherits Episode Two scope from an earlier session.
+      applyDebugAuthorization();
       allowed = true;
       markStartup("engine_init_start"); // iframe mounts → engine begins fetching
       // Game brings its own music — pause the persistent site player.
@@ -2894,16 +3001,28 @@
          iframe with no src loads about:blank, which would fire onLoad (and so
          runScenario) against a document that will be replaced. -->
     {#if gameUrl}
-      <iframe
-        bind:this={iframeEl}
-        src={gameSrc(gameUrl)}
-        title="The Chronicles of Nesis"
-        class="game-frame"
-        inert={!inputArmed}
-        onload={onLoad}
-        onerror={onError}
-        allow="cross-origin-isolated; fullscreen"
-      ></iframe>
+      <!-- KEYED so a change RECREATES the frame instead of mutating its src.
+           The game computes debug authorization once at boot, so a reused
+           document would keep the previous selection's content scope; a fresh
+           element guarantees a fresh boot.
+
+           Keyed on the ARTIFACT **and the effective debug**, because those are
+           the two things that change scope — same build with debug flipped is
+           a different session and must re-boot. Deliberately NOT keyed on
+           gameSrc(), which mixes in a cache-busting ?t= and would re-key (and
+           so reload the whole ~75 MB) on every render. -->
+      {#key frameKey}
+        <iframe
+          bind:this={iframeEl}
+          src={gameSrc(gameUrl)}
+          title="The Chronicles of Nesis"
+          class="game-frame"
+          inert={!inputArmed}
+          onload={onLoad}
+          onerror={onError}
+          allow="cross-origin-isolated; fullscreen"
+        ></iframe>
+      {/key}
     {/if}
     <VirtualGamepad iframe={iframeEl} />
     {#if manualPanelEnabled}

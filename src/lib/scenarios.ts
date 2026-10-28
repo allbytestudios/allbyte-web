@@ -16,7 +16,7 @@
  */
 
 import data from "../data/scenarios.json";
-import { DEBUG_CHANNEL_ID, currentDebugToken } from "./gameVersions";
+import { DEBUG_CHANNEL_ID, currentDebugValue } from "./gameVersions";
 
 export interface Scenario {
   /** stable row id */
@@ -53,10 +53,11 @@ export function launchUrl(s: Scenario, opts?: { persona?: string }): string {
   if (s.packs?.length) p.set("packs", s.packs.join(","));
   const persona = opts?.persona ?? s.persona;
   if (persona) p.set("persona", persona);
-  // One build: the hooks this jump needs are unlocked by the token, not by the
-  // channel, so carry the owner's ?debug through or the jump no-ops at the gate.
-  const token = currentDebugToken();
-  if (token) p.set("debug", token);
+  // One build: the hooks this jump needs are unlocked by `debug`, not by the
+  // channel, so carry the owner's value through or the jump no-ops at the gate.
+  // Presence-based — any non-empty value authorizes, there is no token compare.
+  const debug = currentDebugValue();
+  if (debug) p.set("debug", debug);
   return `/play/?${p.toString()}`;
 }
 

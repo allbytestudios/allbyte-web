@@ -137,7 +137,12 @@ const channel = manifest.channel;
 if (!channel || !/^[a-z0-9-]+$/.test(channel)) die(`manifest channel '${channel}' missing or not a safe slug`);
 if (RETIRED_CHANNELS.has(channel)) die(`channel '${channel}' is RETIRED — ${RETIRED_CHANNELS.get(channel)}`);
 const DESTS = channelDestMap();
-const DEST = DESTS[channel];
+// The develop lane's manifest says "develop" (that is also its channels.json
+// key), but the site's selection id is "dev". Without this alias every
+// [deploy-develop] build exported fine and then died here — from the 2026-08-17
+// develop retirement until 2026-10-27.
+const CHANNEL_TO_GV_ID = { develop: "dev" };
+const DEST = DESTS[CHANNEL_TO_GV_ID[channel] ?? channel];
 if (!DEST) die(`channel '${channel}' is not a known build in gameVersions.ts (${Object.keys(DESTS).join(", ")})`);
 const isLive = !DEV_CHANNELS.has(channel);
 if (isLive && !promote)

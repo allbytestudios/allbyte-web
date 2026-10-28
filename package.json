@@ -47,7 +47,8 @@
     "sync:gate": "node scripts/sync-gate-to-mount.js",
     "promote:prod:rebuild": "node scripts/promote-prod.mjs",
     "queue:watch": "node scripts/trigger-queue.mjs",
-    "queue:once": "node scripts/trigger-queue.mjs --once"
+    "queue:once": "node scripts/trigger-queue.mjs --once",
+    "verify:debug-gate": "python scripts/verify_debug_gate.py"
   },
   "repository": {
     "type": "git",

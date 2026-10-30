@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-08-27T02:41:26.508Z",
+  "generated_at": "2026-10-29T15:26:48.824Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -359,8 +359,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "medium",
@@ -383,8 +382,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "medium",
@@ -452,8 +450,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "hard",
@@ -477,8 +474,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "hard",
@@ -704,8 +700,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "easy",
@@ -729,8 +724,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "easy",
@@ -754,8 +748,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "easy",
@@ -781,8 +774,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "medium",
@@ -807,8 +799,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "hard",
@@ -834,8 +825,7 @@
       "scene": "Waterway1",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "medium",
@@ -859,8 +849,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "medium",
@@ -884,8 +873,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "medium",
@@ -902,6 +890,114 @@
       "seq": 46
     },
     {
+      "id": "med_boss_ready_a_allstr",
+      "difficulty": "medium",
+      "parent": "med_before_dungeon",
+      "decision": "boss-ready L5 real-provenance (leveled+skilled+JP via ledger, wallet-balance validated). Str x7+Push+Wis x4+Cleanse+Cure; 6 JP -> Strength. Pendant+Longsword+free-slot Item Relic, Mugwort 8. Same-roll 2x2 set (A/B x allstr/even) replacing the under-provisioned sluicegate_boss_ready(_smite).",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · boss-ready A (outlast, non-Smite), JP all-Strength (L5, real-provenance same-roll)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "before-boss",
+        "boss-ready",
+        "outlast",
+        "jp-allstr",
+        "same-roll",
+        "real-provenance"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 46
+    },
+    {
+      "id": "med_boss_ready_a_even",
+      "difficulty": "medium",
+      "parent": "med_before_dungeon",
+      "decision": "boss-ready L5 real-provenance (leveled+skilled+JP via ledger, wallet-balance validated). Str x7+Push+Wis x4+Cleanse+Cure; 6 JP even (Str/Con/Dex/Agi/Int/Wis +1). Pendant+Longsword+free-slot Item Relic, Mugwort 8. Same-roll 2x2 set (A/B x allstr/even) replacing the under-provisioned sluicegate_boss_ready(_smite).",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · boss-ready A (outlast, non-Smite), JP even-split (L5, real-provenance same-roll)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "before-boss",
+        "boss-ready",
+        "outlast",
+        "jp-even",
+        "same-roll",
+        "real-provenance"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 47
+    },
+    {
+      "id": "med_boss_ready_b_allstr",
+      "difficulty": "medium",
+      "parent": "med_before_dungeon",
+      "decision": "boss-ready L5 real-provenance (leveled+skilled+JP via ledger, wallet-balance validated). Str x5+Push+Wis x4+Cleanse+Cure+Smite; 6 JP -> Strength. Pendant+Longsword+free-slot Item Relic, Mugwort 8. Same-roll 2x2 set (A/B x allstr/even) replacing the under-provisioned sluicegate_boss_ready(_smite).",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · boss-ready B (burst, Smite), JP all-Strength (L5, real-provenance same-roll)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "before-boss",
+        "boss-ready",
+        "burst",
+        "jp-allstr",
+        "same-roll",
+        "real-provenance"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 48
+    },
+    {
+      "id": "med_boss_ready_b_even",
+      "difficulty": "medium",
+      "parent": "med_before_dungeon",
+      "decision": "boss-ready L5 real-provenance (leveled+skilled+JP via ledger, wallet-balance validated). Str x5+Push+Wis x4+Cleanse+Cure+Smite; 6 JP even. Pendant+Longsword+free-slot Item Relic, Mugwort 8. Same-roll 2x2 set (A/B x allstr/even) replacing the under-provisioned sluicegate_boss_ready(_smite).",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · boss-ready B (burst, Smite), JP even-split (L5, real-provenance same-roll)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "key",
+        "before-boss",
+        "boss-ready",
+        "burst",
+        "jp-even",
+        "same-roll",
+        "real-provenance"
+      ],
+      "approval": "unapproved",
+      "chapter": "laria-village",
+      "section": "into-the-waterways",
+      "seq": 49
+    },
+    {
       "id": "med_boss_defeated",
       "difficulty": "medium",
       "parent": "med_boss_ready_outlast",
@@ -911,8 +1007,7 @@
       "scene": "SluiceGate",
       "chain_legal": true,
       "packs": [
-        "Laria",
-        "Combat"
+        "Laria"
       ],
       "tags": [
         "medium",
@@ -975,6 +1070,324 @@
       "chapter": "laria-village",
       "section": "into-the-waterways",
       "seq": 65
+    },
+    {
+      "id": "boss_str_smite",
+      "difficulty": "medium",
+      "parent": null,
+      "decision": "L5 via real L1->L5 grind + earned SP per node (grind_l1_l5.js); levelHistory ledger present. VALID build for Mother difficulty verdict (replaces DEBUG med_boss_ready_smite).",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · L5 STR + Smite (ACCUMULATOR-VALID, grind-authored)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "boss-ready",
+        "smite",
+        "str-build",
+        "accumulator-valid",
+        "grind-authored"
+      ]
+    },
+    {
+      "id": "boss_even_smite",
+      "difficulty": "medium",
+      "parent": null,
+      "decision": "L5 even-stat, LEGAL build via autoplay_build_save (SP-gated Skill.learn + legal JP spend + levelHistory ledger); cond1=11, Item Relic slotted, at SluiceGate pre-boss. Regenerated 2026-09-16 (was waterway1 debug save).",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · L5 EVEN + Smite (LEGAL, autoplay_build_save @ SluiceGate)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "boss-ready",
+        "smite",
+        "even-build",
+        "accumulator-valid",
+        "legal-build"
+      ]
+    },
+    {
+      "id": "boss_str_cure",
+      "difficulty": "medium",
+      "parent": null,
+      "decision": "L5 STR + Cure, LEGAL build via autoplay_build_save; cond1=11, Item Relic in the DEFAULT relic slot (no tree id31), at SluiceGate pre-boss. Blob RE-VALIDATED + committed 2026-09-18 (fresh autoplay_build_save: skills [Cleanse, Counterattack, Cure], STR 17/WIS 9, full HP/MP 37/20, Poisona Pendant; replaces the 09-16 WIS-first blob). All build-legality checks green (Quinn).",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · L5 STR + Cure (LEGAL, autoplay_build_save @ SluiceGate)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "boss-ready",
+        "cure",
+        "str-build",
+        "accumulator-valid",
+        "legal-build"
+      ]
+    },
+    {
+      "id": "boss_even_cure",
+      "difficulty": "medium",
+      "parent": null,
+      "decision": "L5 even-stat + Cure, LEGAL build via autoplay_build_save; cond1=11, Item Relic in the DEFAULT relic slot (no tree id31), at SluiceGate pre-boss. Added 2026-09-16 (legal-fixture regen).",
+      "is_leaf": true,
+      "label": "Medium · BEFORE BOSS · L5 EVEN + Cure (LEGAL, autoplay_build_save @ SluiceGate)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "boss-ready",
+        "cure",
+        "even-build",
+        "accumulator-valid",
+        "legal-build"
+      ]
+    },
+    {
+      "id": "boss_str_L3",
+      "difficulty": "very-hard",
+      "parent": null,
+      "decision": "L3 STR(13) + Counterattack only (Smite/Cure need L5's 13 SP) — basic-attack UNDER-LEVELED build for the difficulty-curve check. LEGAL via autoplay_build_save (SP 6/6 spent, JP 2/2), cond1=11, full kit, Item Relic, SluiceGate @142,620. Added 2026-09-18 (Quinn L3/L4 difficulty fixtures).",
+      "is_leaf": true,
+      "label": "Very-Hard · BEFORE BOSS · L3 STR + Counter (under-leveled, autoplay_build_save @ SluiceGate)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "very-hard",
+        "boss-ready",
+        "counter",
+        "str-build",
+        "under-leveled",
+        "accumulator-valid",
+        "legal-build",
+        "difficulty-curve"
+      ]
+    },
+    {
+      "id": "boss_str_L4",
+      "difficulty": "hard",
+      "parent": null,
+      "decision": "L4 STR(16) + Counterattack + 7 STR nodes — basic-attack UNDER-LEVELED build for the difficulty-curve check. LEGAL via autoplay_build_save (SP 8 spent +2 unspent =10, JP 4/4), cond1=11, full kit, Item Relic, SluiceGate. Added 2026-09-18 (Quinn L3/L4 difficulty fixtures).",
+      "is_leaf": true,
+      "label": "Hard · BEFORE BOSS · L4 STR + Counter (under-leveled, autoplay_build_save @ SluiceGate)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "hard",
+        "boss-ready",
+        "counter",
+        "str-build",
+        "under-leveled",
+        "accumulator-valid",
+        "legal-build",
+        "difficulty-curve"
+      ]
+    },
+    {
+      "id": "l2_clean_unspent",
+      "difficulty": "medium",
+      "parent": "cond_09_after_event_11",
+      "decision": "",
+      "is_leaf": false,
+      "label": "L2 clean (3 unspent SP) — spend-test branch-off",
+      "scene": "Waterway1",
+      "chain_legal": false,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "L2",
+        "unspent",
+        "waterway1",
+        "spend-test-branch-off",
+        "utility"
+      ],
+      "chapter": "laria-village",
+      "section": "waterways",
+      "seq": 150,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "l2_unspent",
+      "difficulty": "medium",
+      "parent": "cond_11_waterway1_entry",
+      "decision": "[promoted by Arc 2026-10-28 from captured/ per Quinn] THE chain-legal cond-11 L2 tip: walked forward (chain_legal_root, no backdoor); Elias at EliasHouse, Glenn's Longsword only, experience 0, 3 unspent AP/JP/SP. Canonical legal cond-11 grind seed. Distinct from l2_clean_unspent (shortcut-to-node, Waterway1, full kit, dormant). Moved to tree/medium/ so the launcher serves it (captured/ is dormant/hidden). Parent + section are Arc's best-guess topology — Quinn to correct if the tree intent differs.",
+      "is_leaf": true,
+      "label": "L2 cond-11 chain-legal tip (3 unspent AP/JP/SP, walked)",
+      "scene": "EliasHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "L2",
+        "unspent",
+        "chain-legal-root",
+        "grind-tip"
+      ],
+      "chapter": "laria-village",
+      "section": "waterways"
+    },
+    {
+      "id": "cond_05_after_event_6",
+      "difficulty": "medium",
+      "parent": "med_ev3_windmill1_2f",
+      "decision": "[added by Arc 2026-10-28 per Quinn — fills the registry gap for story Event 6] After Event 6 at Windmill1, cond1=5. Registry-aware catalogue jump maps here. Parent=med_ev3_windmill1_2f (nearest existing ancestor); for a strictly linear ev3->ev6->ev8 chain, re-parent med_ev8_mayors onto this node — Quinn's call.",
+      "is_leaf": false,
+      "label": "Medium · After Event 6 (Windmill1)",
+      "scene": "Windmill1",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "flesh"
+      ]
+    },
+    {
+      "id": "cond_07_after_event_9",
+      "difficulty": "medium",
+      "parent": "med_ev8_mayors",
+      "decision": "[added by Arc 2026-10-28 per Quinn — fills the registry gap for story Event 9] After Event 9 at ChurchSquare, cond1=7. Parent=med_ev8_mayors; for a strictly linear ev8->ev9->ev10 chain, re-parent med_ev10_churchsquare onto this node — Quinn's call.",
+      "is_leaf": false,
+      "label": "Medium · After Event 9 (ChurchSquare)",
+      "scene": "ChurchSquare",
+      "chain_legal": true,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "medium",
+        "flesh"
+      ]
+    },
+    {
+      "id": "pre_waterway",
+      "difficulty": "medium",
+      "parent": "med_ev12_eliashouse",
+      "decision": "[added by Arc 2026-10-28 per Quinn — registry id matches spine fixtureId] Pre-waterway cond1=11 L1 at Waterway1. packs include Combat so the waterway load doesn't warp into a null scene. Parent=med_ev12_eliashouse (best-guess); Quinn owns topology.",
+      "is_leaf": false,
+      "label": "Pre-Waterway — cond 11, L1 (Waterway1)",
+      "scene": "Waterway1",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "waterways",
+        "pre-waterway",
+        "L1"
+      ]
+    },
+    {
+      "id": "cond_11_waterway1_entry",
+      "difficulty": "medium",
+      "parent": "pre_waterway",
+      "decision": "[added by Arc 2026-10-28 per Quinn — registry id matches spine fixtureId + catalogue jump.id] Waterway1 entry, cond1=11 L1 (the grind-start seed Quinn loads). packs include Combat. Parent=pre_waterway (best-guess chain); Quinn owns topology — l2_unspent could re-parent here for a linear entry->L2 grind chain.",
+      "is_leaf": false,
+      "label": "Waterway1 entry — cond 11, L1 (grind start)",
+      "scene": "Waterway1",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "waterways",
+        "grind-start",
+        "L1"
+      ]
+    },
+    {
+      "id": "grind_L2_v2806",
+      "difficulty": "medium",
+      "parent": "cond_11_mugwort_grindbase",
+      "decision": "",
+      "is_leaf": false,
+      "label": "L2 grind capture (v0.8.2806) — played forward from 10-Mugwort grindbase",
+      "scene": "Waterway3",
+      "chain_legal": false,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "L2",
+        "grind",
+        "waterway3",
+        "captured",
+        "played-forward"
+      ],
+      "chapter": "laria-village",
+      "section": "waterways",
+      "seq": 151,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "grind_L2_v2809",
+      "difficulty": "medium",
+      "parent": "cond_11_mugwort_grindbase",
+      "decision": "",
+      "is_leaf": false,
+      "label": "L2 grind capture (v0.8.2809) — played forward on the full-stack-fixed combat-nav build",
+      "scene": "Waterway3",
+      "chain_legal": false,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "L2",
+        "grind",
+        "waterway3",
+        "captured",
+        "played-forward"
+      ],
+      "chapter": "laria-village",
+      "section": "waterways",
+      "seq": 152,
+      "launcher_status": "dormant"
+    },
+    {
+      "id": "waterway1_grind_start_healed",
+      "difficulty": "easy",
+      "parent": "cond_11_mugwort_grindbase",
+      "decision": "",
+      "is_leaf": false,
+      "label": "Grind Start (Waterway 1) — HEALED: equipped Item Relic + 20 Mugwort",
+      "scene": "Waterway1",
+      "chain_legal": false,
+      "packs": [
+        "Laria"
+      ],
+      "tags": [
+        "grind",
+        "authored",
+        "healed",
+        "equipped-relic",
+        "mugwort",
+        "L5-grind-base"
+      ],
+      "seq": 153,
+      "launcher_status": "dormant"
     }
   ]
 }

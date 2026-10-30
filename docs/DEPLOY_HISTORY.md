@@ -17,11 +17,11 @@ git dump.
 - **Game build shipped** per deploy = the `version` field of
   `src/data/game-version.json` *at that deployed SHA*. This is the game build
   the webapp was serving at that moment.
-- **Game changes** per build = sourced from Arc's deploy manifest
-  (`tickets/deploy_manifest.ndjson`, see
-  `APP_CLAUDE_DEPLOY_HISTORY_STANDARD.md`). Until that manifest lands, the game
-  half shows the shipped version only; the per-commit game provenance is marked
-  _pending_.
+- **Game changes** per build = sourced from a deploy manifest the game repo
+  publishes (an append-only NDJSON file, one record per shipped version). That
+  repo is private, so the format is agreed between the two sides rather than
+  documented here. Until the manifest lands, the game half shows the shipped
+  version only; the per-commit game provenance is marked _pending_.
 
 Regenerate with `node scripts/deploy-history.js` (planned — pending format
 sign-off). This file is the rendered output, not hand-maintained going forward.

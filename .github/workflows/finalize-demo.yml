@@ -27,7 +27,7 @@ permissions:
   actions: write # dispatch deploy.yml — a GITHUB_TOKEN push does NOT cascade to it
 
 concurrency:
-  group: finalize-demo
+  group: production-release-writers
   cancel-in-progress: false
 
 jobs:

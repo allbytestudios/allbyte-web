@@ -1,0 +1,52 @@
+name: Production drift monitor
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+# Keep the read-only monitor independent from production writers, while ensuring
+# scheduled runs cannot overlap when a grace re-check takes longer than 10 min.
+concurrency:
+  group: production-drift-monitor
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check live deployment
+        shell: bash
+        run: |
+          set +e
+          node scripts/verify-deploy.mjs --skip-stamp --report-file drift-verification.json
+          status=$?
+          if [ "$status" -eq 0 ]; then exit 0; fi
+
+          # The finalize cycle can briefly leave the live What's New page behind
+          # the game/SW version. Give only those two related checks one cycle;
+          # page, headers, crawler, and visibility failures fail immediately.
+          if ! node scripts/check-drift-grace.mjs drift-verification.json; then
+            exit "$status"
+          fi
+
+          echo "::notice::Only game/SW or What's New version coherence is pending; retrying after one finalize cycle."
+          sleep 600
+          node scripts/verify-deploy.mjs --skip-stamp --report-file drift-verification.json
+
+      - name: Archive drift verification receipt
+        if: always() && hashFiles('drift-verification.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-verification-${{ github.run_id }}
+          path: drift-verification.json
+          if-no-files-found: error

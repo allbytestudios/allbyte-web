@@ -9,6 +9,13 @@ permissions:
   id-token: write
   contents: read
 
+# Serialize web publication with the metadata finalizer. Both change the site
+# bundle/service-worker stamp, so overlapping runs can otherwise publish stale
+# metadata after newer content.
+concurrency:
+  group: production-release-writers
+  cancel-in-progress: false
+
 env:
   AWS_REGION: us-east-1
 
@@ -102,10 +109,15 @@ jobs:
         #
         # Writes a table to the run summary, so each deploy leaves a readable
         # record. Run the same checks locally any time: npm run verify:deploy
-        run: |
-          echo "Waiting for CloudFront invalidation to propagate..."
-          sleep 15
-          node scripts/verify-deploy.mjs --sha "${{ github.sha }}"
+        run: node scripts/verify-deploy.mjs --sha "${{ github.sha }}" --report-file deploy-verification.json
+
+      - name: Archive verification receipt
+        if: always() && hashFiles('deploy-verification.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-verification-${{ github.sha }}
+          path: deploy-verification.json
+          if-no-files-found: error
 
       - name: Notify subscribers of new content
         run: |

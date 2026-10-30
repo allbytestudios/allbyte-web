@@ -5,9 +5,9 @@
  * save after New Game, each edge = a major player decision, each node = a real
  * loadable save. Quinn designs + plays the nodes, Arc commits the blobs +
  * save_tree_manifest.json; `scripts/sync-save-tree.js` mirrors the manifest to
- * `src/data/save-tree.json` and the blobs to
- * `public/scenario-fixtures/tree-<id>.json`, so "Jump here" reuses the exact
- * scenario-launcher load path (?channel=develop&scenario=tree-<id>).
+ * `src/data/save-tree.json`, and `sync:scenarios` mirrors the blobs to
+ * `public/scenario-fixtures/<id>.json`, so "Jump here" reuses the exact
+ * scenario-launcher load path (?channel=alpha-debug&scenario=<id>).
  * Contract: QA_CLAUDE_SAVE_TREE_FOR_APP.md.
  */
 
@@ -90,6 +90,16 @@ export const saveTreeData: SaveTreeData = {
   nodes: (rawTree.nodes ?? []).filter(isLauncherActive),
 };
 
+/**
+ * Look a node up in the FULL registry, dormant rows included. For consumers that
+ * name a node explicitly (Quinn's save catalogue) rather than browse the tree:
+ * dormancy hides a node from the launcher's lists, but sync:scenarios still
+ * mirrors its save, so an explicit reference can still load it.
+ */
+export function registryNode(id: string): SaveTreeNode | undefined {
+  return (rawTree.nodes ?? []).find((n) => n.id === id);
+}
+
 /** A node with its children resolved, ready for indented rendering. */
 export interface TreeEntry {
   node: SaveTreeNode;
@@ -129,7 +139,10 @@ export function treeFor(difficulty: string): TreeEntry[] {
 export function jumpUrl(n: SaveTreeNode): string {
   const p = new URLSearchParams();
   p.set("channel", DEBUG_CHANNEL_ID);
-  p.set("scenario", `tree-${n.id}`);
+  // Bare id, NOT `tree-<id>`: sync:scenarios mirrors registry nodes as
+  // /scenario-fixtures/<id>.json and prunes everything else, so the old prefix
+  // 404'd to the HTML fallback and every Jump booted without its save.
+  p.set("scenario", n.id);
   if (n.packs?.length) p.set("packs", n.packs.join(","));
   // Same as the scenario launcher: one build, so `debug` is what unlocks the
   // hooks this jump needs. Forward the owner's existing value verbatim, or the

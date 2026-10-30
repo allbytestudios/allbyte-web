@@ -123,7 +123,12 @@ let pctTarget = 0, pctDriven = false;
 // between two cells). Quantising to cells is what stops him halting halfway:
 // he walks to a cell and stands on it until the load crosses the next
 // threshold.
-let cellShown = 0;
+let cellShown = 0, cellStepT = 0;
+// Walk speed toward the load target, in cells per second. Half the scripted
+// run's pace (PZ.RUN crosses the 10-cell trail at 4 cells/s): a big percentage
+// jump used to send him lunging across several cells at once, far faster than
+// any enemy walks in the game (owner 2026-10-28).
+const WALK_CELLS_PER_S = 2;
 let sceneT0 = 0, sceneStarted = false;
 let eliasMode: "idle" | "attack" | "victory" = "idle";
 let cardsDone = 0;
@@ -901,11 +906,14 @@ function poisonScene(now: number): boolean {
       const LAST = Math.max(1, pwalk.length - 1);
       // +1e-6 so a percentage landing exactly on a boundary claims that cell.
       const cellTarget = Math.min(LAST, Math.floor(pctTarget * LAST + 1e-6));
-      // Ease the walk between cells rather than teleporting: the worker is
-      // starved to ~2fps during the WASM compile, so a jump applied on one of
-      // those rare frames would snap him across the grid.
-      cellShown += (cellTarget - cellShown) * 0.14;
-      if (Math.abs(cellTarget - cellShown) < 0.02) cellShown = cellTarget; // rest exactly on the cell
+      // Walk at a steady pace rather than easing by a fraction of the gap (which
+      // lunged on big jumps). The step is time-based, but dt is capped: the
+      // worker is starved to ~2fps during the WASM compile, and an uncapped
+      // 500ms frame would snap him a whole cell in one draw.
+      const stepDt = cellStepT ? Math.min(now - cellStepT, 100) : 0;
+      cellStepT = now;
+      const maxStep = WALK_CELLS_PER_S * stepDt / 1000, gap = cellTarget - cellShown;
+      cellShown = Math.abs(gap) <= maxStep ? cellTarget : cellShown + Math.sign(gap) * maxStep;
       prog = clamp(cellShown / LAST, 0, 1);
     } else {
       prog = clamp(dt / PZ.RUN, 0, 1);

@@ -8,12 +8,17 @@ import pytest
 
 # === Page Loading ===
 
+# Workshop IA since 2026-10-29. Tickets / Tests / Questions retired (their
+# URLs redirect to /test/), so their page-specific tests below are skipped
+# until the components are deleted next cycle.
 DEV_CONSOLE_PAGES = [
     "/test/",
-    "/test/tickets/",
-    "/test/tests/",
-    "/test/decisions/",
+    "/test/saves/",
+    "/test/audience/",
+    "/test/deploy/",
 ]
+
+RETIRED = pytest.mark.skip(reason="tab retired 2026-10-29 (workshop cleanup); URL redirects to /test/")
 
 
 @pytest.mark.parametrize("path", DEV_CONSOLE_PAGES)
@@ -39,6 +44,7 @@ def test_dev_console_nav_visible(page, base_url, path):
 
 # === Tickets Page ===
 
+@RETIRED
 def test_tickets_swim_lanes_visible(page, base_url):
     """Swim lanes render on the tickets page."""
     page.goto(f"{base_url}/test/tickets/", wait_until="networkidle")
@@ -46,6 +52,7 @@ def test_tickets_swim_lanes_visible(page, base_url):
     assert lanes.count() == 6, f"Expected 6 swim lanes, got {lanes.count()}"
 
 
+@RETIRED
 def test_tickets_swim_lane_click_filters(page, base_url):
     """Clicking a swim lane filters the ticket list."""
     page.goto(f"{base_url}/test/tickets/", wait_until="networkidle")
@@ -56,6 +63,7 @@ def test_tickets_swim_lane_click_filters(page, base_url):
     assert "lane-active" in (ready_lane.get_attribute("class") or "")
 
 
+@RETIRED
 def test_tickets_milestone_filter(page, base_url):
     """Milestone buttons filter tickets."""
     page.goto(f"{base_url}/test/tickets/", wait_until="networkidle")
@@ -66,6 +74,7 @@ def test_tickets_milestone_filter(page, base_url):
     assert "ms-active" in (first.get_attribute("class") or "")
 
 
+@RETIRED
 def test_tickets_epic_groups_visible(page, base_url):
     """Tickets are grouped by epic."""
     page.goto(f"{base_url}/test/tickets/", wait_until="networkidle")
@@ -73,6 +82,7 @@ def test_tickets_epic_groups_visible(page, base_url):
     assert epics.count() > 0, "No epic groups found"
 
 
+@RETIRED
 def test_tickets_expand_ticket(page, base_url):
     """Clicking a ticket fold expands it."""
     page.goto(f"{base_url}/test/tickets/", wait_until="networkidle")
@@ -91,6 +101,7 @@ def test_tickets_expand_ticket(page, base_url):
 
 # === Questions Page ===
 
+@RETIRED
 def test_questions_page_renders(page, base_url):
     """Questions page renders decision cards or empty state."""
     page.goto(f"{base_url}/test/decisions/", wait_until="networkidle")
@@ -122,7 +133,7 @@ def test_no_horizontal_scroll_mobile(page, base_url, path):
     assert scroll_width <= client_width + 2, f"Horizontal scroll on {path}: {scroll_width} > {client_width}"
 
 
-@pytest.mark.xfail(reason="Tests page has pre-existing mobile overflow from test tree layout")
+@RETIRED
 def test_no_horizontal_scroll_mobile_tests(page, base_url):
     """Tests page mobile overflow — known issue."""
     page.set_viewport_size(MOBILE_VIEWPORT)
@@ -141,6 +152,7 @@ def test_nav_scrollable_mobile(page, base_url, path):
     assert nav.is_visible(), f"Nav not visible on mobile {path}"
 
 
+@RETIRED
 def test_swim_lanes_wrap_mobile(page, base_url):
     """Swim lanes should wrap to 3 columns on mobile."""
     page.set_viewport_size(MOBILE_VIEWPORT)

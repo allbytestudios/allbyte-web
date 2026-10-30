@@ -1,6 +1,3095 @@
 {
-  "generatedAt": "2026-10-17T05:51:42.289Z",
+  "generatedAt": "2026-10-30T00:35:02.723Z",
   "releases": [
+    {
+      "version": "v0.8.2840",
+      "date": "2026-10-17",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION to 0.8.2841 (walk motion scales with combat speed)",
+          "sha": "c47735cb"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "scale shared walk motion with combat speed",
+          "sha": "461694e8"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "Rowan spec — combat speed-up doesn't scale unit walking",
+          "sha": "f51285c3"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION to 0.8.2840 (victory anim vnnzi + setup recovery jfnee)",
+          "sha": "a36c0158"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "retain exit victory and recover failed setup in combat",
+          "sha": "9c6abb2b"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "add Arc's proposed implementation for victory-anim + setup-retry, for owner to compare vs Rowan",
+          "sha": "3e5e1de8"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "Rowan follow-ups — (A) lost victory animation (tcc2 regression, pose plays but no visible window) + (B) setup retry/check-reset instead of exit-abort",
+          "sha": "a7a5db35"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION to 0.8.2839 (coordinated exit tcc2 + status badge n05fb)",
+          "sha": "2fa249fb"
+        },
+        {
+          "type": "fix",
+          "scope": "combat/n05fb",
+          "subject": "propagate OverworldStatusDisplay badge fix to Laria + Overworld pack copies",
+          "sha": "1d799417"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "finish camera return within the HUD outro",
+          "sha": "4230005c"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2837",
+      "date": "2026-10-16",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION to 0.8.2838 (HUD WASD action-nav fix)",
+          "sha": "f119f122"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "Rowan theories doc — exit control-handback latency (HUD-gone→control ≤0.2s) + status-bubble-during-transition + HUD WASD",
+          "sha": "7951a4d5"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION to 0.8.2837 (combat-exit teleport fix 54ng2)",
+          "sha": "c3b19d8e"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "align action navigation focus and hover highlights",
+          "sha": "e82f0ebd"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "distinct closure per transition-gate receipt — fixes combat-exit teleport (54ng2, Rowan root cause)",
+          "sha": "df6cafd7"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2835",
+      "date": "2026-10-16",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION 0.8.2836 + Rowan write-up for the combat-exit teleport (still broken after 888048e9) + HUD WASD highlight/nav",
+          "sha": "93ac5a7b"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "combat-exit keeps player at combat-end position + attack returns to idle at its natural end (prod regressions)",
+          "sha": "888048e9"
+        },
+        {
+          "type": "docs",
+          "scope": "ci",
+          "subject": "record frozen-candidate checks and integration boundaries",
+          "sha": "7d5e6c65"
+        },
+        {
+          "type": "feat",
+          "scope": "ci",
+          "subject": "build frozen production candidates with toolchain identity (xydn3)",
+          "sha": "da8c973c"
+        },
+        {
+          "type": "fix",
+          "scope": "ci",
+          "subject": "reject stale or missing required packs in build manifests (xydn3)",
+          "sha": "42f9518c"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION to 0.8.2835-b470 (FACE picker skrh5-parity fix)",
+          "sha": "93ef29c9"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "FACE picker — click confirms the keyboard pick, not the mouse (skrh5 parity)",
+          "sha": "6183b006"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2833",
+      "date": "2026-10-16",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION to 0.8.2834-b469 (skrh5 cursor arbitration)",
+          "sha": "5bb4c432"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "hand off cursor arbitration fix and native evidence",
+          "sha": "396f0733"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "retain directional focus on click and mouse jitter (skrh5)",
+          "sha": "cb0a66ee"
+        },
+        {
+          "type": "build",
+          "subject": "bump WEB_VERSION to 0.8.2833 (viewport-quadrant FACE deploy)",
+          "sha": "2fa68143"
+        },
+        {
+          "type": "feat",
+          "scope": "combat/a0lhn",
+          "subject": "FACE facing from viewport quadrant relative to Elias's cell",
+          "sha": "338fe57e"
+        },
+        {
+          "type": "build",
+          "subject": "bump WEB_VERSION for x0e5u transition-signal deploy",
+          "sha": "e8774161"
+        },
+        {
+          "type": "fix",
+          "scope": "combat/a0lhn",
+          "subject": "FACE mouse picks the correct facing + shows the cursor",
+          "sha": "f5d4de84"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "hand off signal transition gates and verification evidence",
+          "sha": "497003a7"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "gate entry and exit on owned readiness signals (x0e5u)",
+          "sha": "62c60d7a"
+        },
+        {
+          "type": "build",
+          "subject": "bump WEB_VERSION for zx7lo cursor-visibility deploy",
+          "sha": "6da6bfca"
+        },
+        {
+          "type": "fix",
+          "scope": "combat/zx7lo",
+          "subject": "show the diagonal OS cursor in MOUSE mode, hide only for keyboard/controller",
+          "sha": "6d9e8949"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2824",
+      "date": "2026-10-15",
+      "changes": [
+        {
+          "type": "build",
+          "subject": "bump WEB_VERSION to 0.8.2828 (clean unique version after merge-unwind reset the bump)",
+          "sha": "37d4af20"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "hand off mouse-only branch and native evidence",
+          "sha": "b44675c5"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "hand off mouse-only branch and native evidence",
+          "sha": "7687d3ba"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "deliver mouse hover targeting independently of zoom (xg2gj)",
+          "sha": "c4f3d970"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "hand off mouse targeting fix and verification evidence",
+          "sha": "51590cbb"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "adopt full intro lockout and reconcile scene review",
+          "sha": "71daae2c"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "review mouse targeting and plan transformed-grid fix",
+          "sha": "e29b6365"
+        },
+        {
+          "type": "docs",
+          "scope": "input",
+          "subject": "review mouse exploration retirement spec",
+          "sha": "11d52dc2"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "hand off approved HUD fix and native evidence to Arc",
+          "sha": "0aae6306"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "hand off approved HUD fix and native evidence to Arc",
+          "sha": "e7feca0e"
+        },
+        {
+          "type": "test",
+          "scope": "combat",
+          "subject": "isolate native lifecycle and bail fixtures",
+          "sha": "4ee89793"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "own human input handoffs and action completion",
+          "sha": "45f0690b"
+        },
+        {
+          "type": "fix",
+          "scope": "credits",
+          "subject": "AllByte studio splash matches the web-app loader look",
+          "sha": "4bd18253"
+        },
+        {
+          "type": "fix",
+          "scope": "saveload",
+          "subject": "new-slot id is the first FREE id, not saveGameIds.size()+1",
+          "sha": "0a4ed9ff"
+        },
+        {
+          "type": "fix",
+          "scope": "waterway10",
+          "subject": "Quick Boots chest uses forward (straight-down) sprites, not angled",
+          "sha": "08193e17"
+        },
+        {
+          "type": "docs",
+          "subject": "propose combined combat HUD safety and Church Square zoom plan",
+          "sha": "763a52e3"
+        },
+        {
+          "type": "docs",
+          "subject": "review combat HUD race analysis and implementation gates",
+          "sha": "c6929151"
+        },
+        {
+          "type": "docs",
+          "subject": "record verified local slime-frequency build 0.8.2824",
+          "sha": "ec92416a"
+        },
+        {
+          "type": "build",
+          "subject": "prepare single-artifact local 0.8.2824 export",
+          "sha": "169fbd66"
+        },
+        {
+          "type": "fix",
+          "scope": "ai",
+          "subject": "double idle slime walking chance to eighty percent",
+          "sha": "77f77cc9"
+        },
+        {
+          "type": "docs",
+          "subject": "record consolidated local build and live Quinn checks",
+          "sha": "9e242224"
+        },
+        {
+          "subject": "Add SaveLoad-menu focus/state mirror to window.gameState (QA import/export blocker)",
+          "sha": "d4f44b79"
+        },
+        {
+          "type": "docs",
+          "subject": "record combined build candidate and activation blockers",
+          "sha": "15a2aa90"
+        },
+        {
+          "type": "docs",
+          "subject": "record final event-fencing checks for Arc pickup",
+          "sha": "69b3d72a"
+        },
+        {
+          "type": "fix",
+          "subject": "fence combat diagnostics by their originating event",
+          "sha": "dfb800d3"
+        },
+        {
+          "type": "docs",
+          "subject": "define spawn profiling contract and coordinated acceptance handoff",
+          "sha": "2fdba4dc"
+        },
+        {
+          "type": "feat",
+          "subject": "capture bounded spawn stages frame gaps and combat readiness",
+          "sha": "04447ae6"
+        },
+        {
+          "type": "docs",
+          "subject": "hand off debug logger and update verification sequence",
+          "sha": "0c254055"
+        },
+        {
+          "type": "feat",
+          "subject": "log DOM input at debug boot with public-build exclusion",
+          "sha": "d4501cba"
+        },
+        {
+          "type": "docs",
+          "subject": "hand off spawn preparation and review Arc next steps",
+          "sha": "c8838a0d"
+        },
+        {
+          "type": "fix",
+          "subject": "retain enemy preparation with pack context invalidation",
+          "sha": "5b88705e"
+        },
+        {
+          "type": "fix",
+          "subject": "use Godot 4 animation speed property across character copies",
+          "sha": "aa106fdb"
+        },
+        {
+          "subject": "Investigate enemy reveal stutter and prepare Arc review plan",
+          "sha": "6a016825"
+        },
+        {
+          "subject": "Record integrated skill-tree leak fix for Arc pickup",
+          "sha": "3aa38469"
+        },
+        {
+          "subject": "Record skill-tree graph lifetime proof and Arc verification handoff",
+          "sha": "cd775701"
+        },
+        {
+          "subject": "Release retired skill-tree graphs through weak parent links",
+          "sha": "03fb936e"
+        },
+        {
+          "subject": "Double idle enemies chance to start wandering",
+          "sha": "8aabb761"
+        },
+        {
+          "subject": "Record skill-menu main-checkout integration for Arc",
+          "sha": "d612e2e6"
+        },
+        {
+          "subject": "Refresh final skill-menu evidence and replaced-unit coverage",
+          "sha": "275a402e"
+        },
+        {
+          "subject": "Rebuild cached skill view when the party unit is replaced",
+          "sha": "821887a7"
+        },
+        {
+          "subject": "Record matched skill-menu profile and Arc integration handoff",
+          "sha": "508cab96"
+        },
+        {
+          "subject": "Reduce skill-tree cells and reuse unchanged menu state",
+          "sha": "79678aef"
+        },
+        {
+          "subject": "Record verified local wandering build 0.8.2823",
+          "sha": "cc493bc1"
+        },
+        {
+          "subject": "Anchor wandering at slime landing and level-change position",
+          "sha": "3a53c775"
+        },
+        {
+          "subject": "Document measured skill-tree costs and Arc implementation review plan",
+          "sha": "35f51a57"
+        },
+        {
+          "subject": "Let wanderers idle independently and walk at half chase speed",
+          "sha": "2ebde096"
+        },
+        {
+          "type": "Title",
+          "subject": "split continueEnabled (always pressable) from hasSaves (auto-focus default)",
+          "sha": "b2cdb0c3"
+        },
+        {
+          "subject": "Cure all live overworld poison when Valerian Powder is consumed",
+          "sha": "9166a3c0"
+        },
+        {
+          "subject": "Enlarge menu status badges by 50 percent and correct poison tooltip",
+          "sha": "b10aa3ed"
+        },
+        {
+          "subject": "Use Elias level for Waterways slime roaming and hidden event spawns",
+          "sha": "4460e576"
+        },
+        {
+          "type": "TestBridge",
+          "subject": "expose live canvas-logical viewport size for coord conversion",
+          "sha": "e2abb95c"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2819",
+      "date": "2026-10-13",
+      "changes": [
+        {
+          "subject": "Tick overworld poison after four accumulated six-frame walking steps",
+          "sha": "5191a06d"
+        },
+        {
+          "type": "watched_acceptance",
+          "subject": "Title-nav safe-probe (hover, not ui_down) + --solo lane",
+          "sha": "189d9276"
+        },
+        {
+          "type": "TestBridge",
+          "subject": "expose Title menu button rects + continueEnabled/readyForSelect",
+          "sha": "13d96140"
+        },
+        {
+          "subject": "Integrate canonical normal checkpoints and hand off native watched verification",
+          "sha": "883faff9"
+        },
+        {
+          "subject": "Prepare Quinn and Wren parallel watched QA assignments",
+          "sha": "ffc28360"
+        },
+        {
+          "subject": "Review deterministic release runbook and reproduce missing manifest guard",
+          "sha": "d87c8d8a"
+        },
+        {
+          "subject": "Add canonical watched handoff acceptance and debug artifact handoff",
+          "sha": "6da69dd0"
+        },
+        {
+          "subject": "Review Dom debug serving revisions and shared reload coordination",
+          "sha": "d37e8563"
+        },
+        {
+          "subject": "Review Arc watched Autoplay and Dom local debug serving handoffs",
+          "sha": "0c036ae0"
+        },
+        {
+          "subject": "Add shared watched Autoplay client and Windows activation handoff",
+          "sha": "1c251f2d"
+        },
+        {
+          "subject": "Plan isolated watched Autoplay sessions for Quinn and Wren",
+          "sha": "6215ae17"
+        },
+        {
+          "subject": "Record verified combat-style poison badges in local build 0.8.2819",
+          "sha": "ae1f6a58"
+        },
+        {
+          "subject": "Match carried poison badges to combat style and visible head anchor",
+          "sha": "f3b4e74b"
+        },
+        {
+          "subject": "Record verified poison carryover and symbols in local build 0.8.2818",
+          "sha": "20e853a8"
+        },
+        {
+          "subject": "Carry poison before combat teardown and show status in character menus",
+          "sha": "ac4aed40"
+        },
+        {
+          "subject": "Record verified menu and combat fixes in local build 0.8.2817",
+          "sha": "b7130c85"
+        },
+        {
+          "subject": "Wrap menu vertical navigation through Elias character selection",
+          "sha": "25712d65"
+        },
+        {
+          "subject": "Fix combat overlay compile regression from poison persistence",
+          "sha": "c64a5fbe"
+        },
+        {
+          "subject": "Record verified local credits build 0.8.2816",
+          "sha": "ced7fd08"
+        },
+        {
+          "subject": "Remove absent plugin credits and document web InputHelper use",
+          "sha": "ede0d67f"
+        },
+        {
+          "type": "docs",
+          "subject": "record poison carryover local build and acceptance handoff",
+          "sha": "c3d60789"
+        },
+        {
+          "type": "feat",
+          "subject": "carry poison into overworld and tick every six walk loops",
+          "sha": "99d10208"
+        },
+        {
+          "type": "docs",
+          "subject": "prepare overworld poison feature and audit current credits",
+          "sha": "f4e67c59"
+        },
+        {
+          "type": "docs",
+          "subject": "split production save-transfer work and hand off Dom and Arc follow-ups",
+          "sha": "95272534"
+        },
+        {
+          "type": "fix",
+          "subject": "expose save transfer receipts independently of silent export UI",
+          "sha": "4416c563"
+        },
+        {
+          "type": "docs",
+          "subject": "hand off verified WebBridge repair and local export to Dom",
+          "sha": "73e9e215"
+        },
+        {
+          "type": "fix",
+          "subject": "normalize web bridge boolean results and report save receiver readiness",
+          "sha": "1d08cf8a"
+        },
+        {
+          "type": "docs",
+          "subject": "review owner-confirmed missing WebBridge registration",
+          "sha": "71893253"
+        },
+        {
+          "type": "docs",
+          "subject": "review local import trace findings and bridge readiness",
+          "sha": "495f4f23"
+        },
+        {
+          "type": "docs",
+          "subject": "diagnose absent owner save-trace publication",
+          "sha": "46bbdb9f"
+        },
+        {
+          "type": "docs",
+          "subject": "record live save-trace service activation",
+          "sha": "3217e1fa"
+        },
+        {
+          "type": "docs",
+          "subject": "review Dom parallel trace activation handoff",
+          "sha": "021c3206"
+        },
+        {
+          "type": "docs",
+          "subject": "hand off fresh local save-trace export artifacts",
+          "sha": "1a72c589"
+        },
+        {
+          "type": "docs",
+          "subject": "review local trace activation prerequisites",
+          "sha": "182d622c"
+        },
+        {
+          "subject": "Add bounded correlated save-transfer diagnostic publisher",
+          "sha": "9c45473a"
+        },
+        {
+          "type": "docs",
+          "subject": "review truthful results and classifier contract",
+          "sha": "342be693"
+        },
+        {
+          "type": "docs",
+          "subject": "review terminal focus retry and import observation gaps",
+          "sha": "dbc0fc4b"
+        },
+        {
+          "type": "docs",
+          "subject": "review Quinn autoplay strategy and QA token efficiency",
+          "sha": "690e691f"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2813 (self-healing _drag_active cursor fix + camera_drag_active probe)",
+          "sha": "db0f9d78"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-nav",
+          "subject": "stuck middle-mouse pan-drag flag can no longer kill combat-cursor WASD (+ drag_active read surface)",
+          "sha": "0d8aafe5"
+        },
+        {
+          "type": "qa",
+          "scope": "combat_engine",
+          "subject": "re-read fresh move-range before confirm — fix stale-range move_confirm_stuck (Quinn, cursor Finding #1)",
+          "sha": "b85477cf"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2812 (save-flow-state probe for Cap 1/Cap 2 menu-save/import)",
+          "sha": "583d0b22"
+        },
+        {
+          "subject": "Add SAVE-FLOW-STATE-PROBE for the menu-save/import MCP verbs (Cap 1/Cap 2)",
+          "sha": "c752ebef"
+        },
+        {
+          "type": "plan",
+          "scope": "convergence",
+          "subject": "Part-B checkpoint reload via supported import/export, not debug load_from_slot (owner canon)",
+          "sha": "806bda07"
+        },
+        {
+          "type": "docs",
+          "scope": "saves",
+          "subject": "chain-legal captures must use the in-game save MENU, not debug export (owner canon)",
+          "sha": "e23e6a9e"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2811 (A6 — focused_action_id receipt + game-truth input_context)",
+          "sha": "db0a4df3"
+        },
+        {
+          "type": "feat",
+          "scope": "combat-nav A6",
+          "subject": "handler-aligned focus in the receipt + game-truth input_context + SELECT doc-fix",
+          "sha": "d12e84bc"
+        },
+        {
+          "type": "docs",
+          "subject": "review combat driving convergence plan for Arc",
+          "sha": "1f178aef"
+        },
+        {
+          "type": "qa",
+          "scope": "combat_engine",
+          "subject": "classifier self-routes APPLIED-receipt-but-verb-failed → verb_mcp/Port high-conf (Quinn)",
+          "sha": "4b9af013"
+        },
+        {
+          "type": "qa",
+          "scope": "transition",
+          "subject": "recover a stray OPEN MENU overworld lock via user-equivalent ui_cancel (Quinn)",
+          "sha": "1c26ecb4"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2810 (move-confirm→settle race fix + move_walk_in_flight/move_settled witness)",
+          "sha": "a6a27d2d"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-nav",
+          "subject": "close the move-confirm→settle race — don't advance the turn (or re-walk) while a relocation is in flight",
+          "sha": "4ee5f3e5"
+        },
+        {
+          "type": "fixture",
+          "scope": "tree",
+          "subject": "promote grind_L2_v2809 — L2 deliverable on the full-stack-fixed combat-nav build",
+          "sha": "fef74985"
+        },
+        {
+          "type": "qa",
+          "scope": "combat_engine",
+          "subject": "bag-verify Mugwort before trusting item_not_in_inventory — fixes GameOver-with-full-bag (Quinn)",
+          "sha": "f795c9c6"
+        },
+        {
+          "type": "docs",
+          "subject": "review persistent import input block and host return ordering",
+          "sha": "06d78503"
+        },
+        {
+          "type": "fix",
+          "scope": "save-transfer",
+          "subject": "center prompt text and add black outlines",
+          "sha": "ebe50724"
+        },
+        {
+          "type": "fix",
+          "scope": "dialogue",
+          "subject": "use him for Naphtali in Mayor ambient line",
+          "sha": "4645da0e"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2809 (combat-nav game-side: targeting-guard + interaction_revision/last_input_receipt)",
+          "sha": "6206da2a"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-nav",
+          "subject": "stop end-turn preempting open targeting; add interaction revision + input receipt; consistent snapshot",
+          "sha": "57e05464"
+        },
+        {
+          "type": "chore",
+          "scope": "local",
+          "subject": "record bug batch build 0.8.2808 and owner checks",
+          "sha": "7806d9a8"
+        },
+        {
+          "type": "fix",
+          "scope": "items",
+          "subject": "mirror Irid restore range into Overworld pack",
+          "sha": "49927507"
+        },
+        {
+          "type": "fix",
+          "scope": "dialogue",
+          "subject": "repeat normal memories as separate interaction responses",
+          "sha": "d26f3453"
+        },
+        {
+          "type": "docs",
+          "subject": "critique combat navigation driver contract and observation gaps",
+          "sha": "395cdb53"
+        },
+        {
+          "type": "fix",
+          "scope": "story",
+          "subject": "resolve current Mayor event for keyboard and controller",
+          "sha": "52806cc4"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "refresh owned passive rows after relic swaps",
+          "sha": "3031981b"
+        },
+        {
+          "type": "fix",
+          "scope": "hud",
+          "subject": "fit Poison terrain label without empty-status text",
+          "sha": "1c28a646"
+        },
+        {
+          "type": "fix",
+          "scope": "items",
+          "subject": "restore 15-20 MP with Irid Liquor",
+          "sha": "ea1e3dc6"
+        },
+        {
+          "type": "fix",
+          "scope": "menu",
+          "subject": "restore Equipment return selection through loader facade",
+          "sha": "e9016924"
+        },
+        {
+          "type": "fix",
+          "scope": "save-transfer",
+          "subject": "settle import layout and recover canvas focus",
+          "sha": "c5175b49"
+        },
+        {
+          "type": "qa",
+          "scope": "game_playthrough",
+          "subject": "per-level milestone capture — one L1->L3 run yields both grind_L2 + grind_L3 (Quinn)",
+          "sha": "a854b2c6"
+        },
+        {
+          "type": "docs",
+          "scope": "save-transfer",
+          "subject": "review Dom import-return regression",
+          "sha": "115a5d07"
+        },
+        {
+          "type": "docs",
+          "scope": "skill-tree",
+          "subject": "report latency and memory improvement options",
+          "sha": "9a464725"
+        },
+        {
+          "type": "fix",
+          "scope": "expertise",
+          "subject": "limit HealthUp EP to enemy standard actions",
+          "sha": "2c57cd11"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "announce all active skills in action banner",
+          "sha": "05a79690"
+        },
+        {
+          "type": "qa",
+          "scope": "combat_engine",
+          "subject": "face_proceed — drive through a drainable end-of-turn face picker, don't STOP (Quinn)",
+          "sha": "2546ddf3"
+        },
+        {
+          "type": "qa",
+          "scope": "combat_engine",
+          "subject": "tighten _stalled_is_false_win (floor 5->3, > -> >=) — reject mostly-intact trash stalls (Quinn)",
+          "sha": "e3551fb8"
+        },
+        {
+          "type": "qa",
+          "scope": "combat_engine",
+          "subject": "classifier routes stuck-sub-mode → verb_mcp/Port (self-routing envelope)",
+          "sha": "a3da278f"
+        },
+        {
+          "type": "qa",
+          "scope": "game_playthrough",
+          "subject": "soften blunt zombie-guard — brief settle + continue on legit back-to-back wins (Quinn)",
+          "sha": "b1c69deb"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2807 (Part A.5 combat-wedge fix — generation-safe reaction lifecycle + pending snapshot field)",
+          "sha": "2a474a34"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-wedge",
+          "subject": "Part A.5 — generation-safe + exactly-once reaction lifecycle; kill cross-combat pending leak",
+          "sha": "ee2c828d"
+        },
+        {
+          "type": "qa",
+          "scope": "game_playthrough",
+          "subject": "Part A0.1 — cross-combat STOP trigger completes Part 0.4 (Quinn)",
+          "sha": "4038465c"
+        },
+        {
+          "type": "qa",
+          "scope": "combat_engine",
+          "subject": "Part A0 — enforce STOP-and-classify, stop don't spin (Quinn)",
+          "sha": "356667a1"
+        },
+        {
+          "type": "docs",
+          "scope": "review",
+          "subject": "critique combat wedge diagnosis and lifecycle reset plan",
+          "sha": "8b400741"
+        },
+        {
+          "type": "fixture",
+          "scope": "tree",
+          "subject": "promote grind_L2_v2806 — L2 grind capture, loadable via autoplay_load_node",
+          "sha": "4c15fa28"
+        },
+        {
+          "type": "qa",
+          "scope": "combat_engine",
+          "subject": "adopt sync player_actionable turn-handoff contract (Quinn)",
+          "sha": "3cb127d8"
+        },
+        {
+          "type": "fixture",
+          "scope": "grindbase",
+          "subject": "cond_11 Mugwort 5->10 — survivability for L1->L3 grind capture (owner-directed; not item tuning)",
+          "sha": "a1d2d5e1"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2806 (consolidated — counter-start feel-fix + Rowan action-banner/save-UI on :8060)",
+          "sha": "42225537"
+        },
+        {
+          "type": "fix",
+          "scope": "status",
+          "subject": "navigate left from Save to Wisdom plus",
+          "sha": "d840c9b0"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "give action banners fixed normal-button chrome",
+          "sha": "1556e318"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-reaction",
+          "subject": "restore prompt concurrent counter START — split START from JOIN (Phase 5b feel-fix)",
+          "sha": "caf0414a"
+        },
+        {
+          "type": "fix",
+          "scope": "saves",
+          "subject": "use viewport prompts and balance native chooser handoff",
+          "sha": "7d974a8d"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2805 (Phase 5b joined reaction queue merged to develop)",
+          "sha": "1c412f82"
+        },
+        {
+          "type": "refactor",
+          "scope": "combat-resolution",
+          "subject": "Phase 5b — joined enqueue/drain reaction queue (design §2.5)",
+          "sha": "9aca6daf"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2804 (Phase 4+5a combat refactor + dual-copy pack sync)",
+          "sha": "695ff900"
+        },
+        {
+          "type": "fix",
+          "scope": "packs",
+          "subject": "sync Laria Enemy.gd to bootstrap (f20a6055 post-boss-waterway retreat)",
+          "sha": "98dc2d99"
+        },
+        {
+          "type": "fix",
+          "scope": "packs",
+          "subject": "sync dual-copy scripts — pack copies were missing f20a6055 + f70f0b89",
+          "sha": "257b8f4f"
+        },
+        {
+          "type": "refactor",
+          "scope": "combat-resolution",
+          "subject": "Phase 5a — cancellable reaction interrupt (A4d; Rowan's concern)",
+          "sha": "8e9206c8"
+        },
+        {
+          "subject": "Route episode ending to credits",
+          "sha": "d1512e42"
+        },
+        {
+          "type": "docs",
+          "scope": "saves",
+          "subject": "route save-transfer UI rework to Rowan + owner product Q (App bug report)",
+          "sha": "833de456"
+        },
+        {
+          "type": "refactor",
+          "scope": "combat-resolution",
+          "subject": "Phase 4 — explicit ActionContext + reactor kill attribution (A4b/A4d)",
+          "sha": "b8f89fa2"
+        },
+        {
+          "subject": "Fix post-relic NPC placements",
+          "sha": "d3071b40"
+        },
+        {
+          "type": "fix",
+          "scope": "overworld",
+          "subject": "hide post-boss waterway spawns",
+          "sha": "f20a6055"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "prevent split spawns retaining immediate-turn head start",
+          "sha": "45f3f712"
+        },
+        {
+          "type": "feat",
+          "scope": "skill-tree",
+          "subject": "share progression locks with node overlays",
+          "sha": "f70f0b89"
+        },
+        {
+          "type": "fix",
+          "scope": "save-load",
+          "subject": "show transfer buttons in Load menu",
+          "sha": "2a0465a0"
+        },
+        {
+          "type": "docs",
+          "scope": "refactor",
+          "subject": "Arc->Rowan Phase 3 review request (turn-end owner + A4c watchdog absorption)",
+          "sha": "0d261f12"
+        },
+        {
+          "type": "refactor",
+          "scope": "combat-resolution",
+          "subject": "Phase 3 — once-only turn-end owner + absorb watchdog advance (A4c)",
+          "sha": "136d0a63"
+        },
+        {
+          "type": "fix",
+          "scope": "saves",
+          "subject": "commit browser imports durably and expose transfer results",
+          "sha": "bbd8b3d7"
+        },
+        {
+          "type": "test",
+          "scope": "combat-resolution",
+          "subject": "Phase-1.1 regression pins — authoritative result + recovery-before-await (Rowan §3/§4/§6)",
+          "sha": "b5449a46"
+        },
+        {
+          "type": "docs",
+          "subject": "plan reliable game and browser save import export",
+          "sha": "09143ce4"
+        },
+        {
+          "type": "refactor",
+          "scope": "combat-resolution",
+          "subject": "Phase 1.1 — close the three blocking zombie-race gaps (Rowan §1-§3)",
+          "sha": "dc64f816"
+        },
+        {
+          "type": "docs",
+          "scope": "refactor",
+          "subject": "review phase one lifecycle and recovery gaps",
+          "sha": "2a8cfbf2"
+        },
+        {
+          "type": "docs",
+          "scope": "refactor",
+          "subject": "Arc->Rowan progress-review + check/followup request (Phase 0 done, Phase 1 landed)",
+          "sha": "bb4e23d9"
+        },
+        {
+          "type": "fix",
+          "scope": "frontroad",
+          "subject": "StayInLaria barrier — short left step, not a right run to a fixed point",
+          "sha": "f41c48ca"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "verify local episode purchase lock build 0.8.2803",
+          "sha": "344825b2"
+        },
+        {
+          "type": "feat",
+          "scope": "skill-tree",
+          "subject": "lock purchases beyond episode one boundaries",
+          "sha": "eac26978"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "verify local relic level-up build 0.8.2802",
+          "sha": "48434a91"
+        },
+        {
+          "type": "refactor",
+          "scope": "combat-resolution",
+          "subject": "Phase 1+2 — CombatResolution lifecycle owner + ResolutionPresenter",
+          "sha": "ff9eb644"
+        },
+        {
+          "type": "feat",
+          "scope": "skills",
+          "subject": "show relic level-up feedback after EP gain",
+          "sha": "1287688d"
+        },
+        {
+          "type": "dialogue",
+          "scope": "storeroom",
+          "subject": "generalize Raeges line to owner wording",
+          "sha": "9e31c273"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "publish local Scan encounter build 0.8.2801",
+          "sha": "8edf71ba"
+        },
+        {
+          "type": "dialogue",
+          "scope": "storeroom",
+          "subject": "Mayor Raeges line — purchasable, NOT free (owner-directed)",
+          "sha": "514b6dfb"
+        },
+        {
+          "type": "feat",
+          "scope": "scan",
+          "subject": "award encounter EP once at combat start",
+          "sha": "b455cb00"
+        },
+        {
+          "type": "test",
+          "scope": "combat-phase0",
+          "subject": "resolution characterization + recovery suite",
+          "sha": "8a64acae"
+        },
+        {
+          "type": "feat",
+          "scope": "deploy",
+          "subject": "opt-in ISOLATED build mode for redeploy_web.sh",
+          "sha": "cbafe56e"
+        },
+        {
+          "type": "feat",
+          "scope": "combat-phase0",
+          "subject": "resolution-hang diagnostic + emit/reader inventory",
+          "sha": "a97ac1d2"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2799",
+      "date": "2026-10-07",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "verify local dialogue batch 0.8.2800",
+          "sha": "c3476b10"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "Phase 1(+2) implementation spec — CombatResolution + ResolutionPresenter",
+          "sha": "2dad8649"
+        },
+        {
+          "type": "feat",
+          "scope": "dialogue",
+          "subject": "add Elias childhood and village-history memories",
+          "sha": "f8f07b31"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "drop the -b449 suffix from WEB_VERSION",
+          "sha": "76b95207"
+        },
+        {
+          "type": "docs",
+          "scope": "dialogue",
+          "subject": "capture owner's post-cut dialogue follow-ups for Rowan",
+          "sha": "30110eaf"
+        },
+        {
+          "type": "docs",
+          "scope": "dialogue",
+          "subject": "catalogue current web content and selection rules",
+          "sha": "ebf72774"
+        },
+        {
+          "type": "fix",
+          "scope": "status",
+          "subject": "navigate right from Wisdom plus to Save",
+          "sha": "b23bed4b"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "plan Rev-2 amendments — fold in Rowan's plan critique",
+          "sha": "0236cb2d"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "review phased lifecycle implementation plan",
+          "sha": "a39837e4"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "lock owner decisions — full phases on eject branch, both-dead=LOSE",
+          "sha": "9add4d67"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "revised turn/action resolution DESIGN + phased plan + testing strategy",
+          "sha": "1e37dabc"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "Nix + Port independent critiques of the turn/action ordering review",
+          "sha": "5014587a"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "critique turn and action ordering proposal",
+          "sha": "4671b084"
+        },
+        {
+          "type": "docs",
+          "scope": "combat",
+          "subject": "turn/action execution-ordering design review for Rowan",
+          "sha": "0a0b5ce8"
+        },
+        {
+          "type": "quinn",
+          "scope": "strategy",
+          "subject": "post-win zombie-combat guard + batch-spend wiring + readiness equip-shape (31 tests)",
+          "sha": "9727082a"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2799 0.5 0.5 0.25 0.5 0.9 0.7.1870 0.60 0.0 0.60 0..1 0.48 0.0 0.5 0.0 0.5 0.5 0.0 0.0 0.7.1633 0.10 0.6.313 (dc2k weapon-equip menu-mode fix)",
+          "sha": "c64f4b1a"
+        },
+        {
+          "type": "fix",
+          "scope": "dc2k",
+          "subject": "EquipmentMenu weapon-equip keyboard-navigable from MOUSE-opened menu",
+          "sha": "b37ce60a"
+        },
+        {
+          "type": "test",
+          "scope": "skills",
+          "subject": "allow desktop highlight regression to finish cleanup",
+          "sha": "89648600"
+        },
+        {
+          "type": "fix",
+          "scope": "skills",
+          "subject": "preserve mouse hover during engagement cleanup",
+          "sha": "9859a6bd"
+        },
+        {
+          "type": "fix",
+          "scope": "skills",
+          "subject": "paint keyboard focus with mouse hover highlight",
+          "sha": "a445e9cd"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION to 0.8.2796 (dc2k 7th-pass TestBridge hook redeploy)",
+          "sha": "b6e68192"
+        },
+        {
+          "type": "fix",
+          "scope": "testbridge",
+          "subject": "expose EquipmentMenu mbFocusIndex + actionFocusIndex (dc2k 7th pass)",
+          "sha": "f26bf229"
+        },
+        {
+          "type": "fix",
+          "scope": "skills",
+          "subject": "resolve relic row icons from canonical skill IDs",
+          "sha": "26563363"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "award MoveUp EP after each completed cell",
+          "sha": "ad6ccfdb"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2793 (TestBridge menu-nav focus-index hook)",
+          "sha": "59cf22ad"
+        },
+        {
+          "type": "fix",
+          "scope": "testbridge",
+          "subject": "expose MenuOverlay.hoveredButtonIdx + _web_ready_done (menu-nav-verify-landed RCA)",
+          "sha": "e58d58e2"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "award HealthUp expertise once for total turn damage",
+          "sha": "a9d0448b"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "export bubble placement fix as 0.8.2791",
+          "sha": "36bb9ad5"
+        },
+        {
+          "type": "docs",
+          "scope": "agents",
+          "subject": "point AGENTS.md to the shared AGENT_WORKING_GUIDE.md + game-domain CLAUDE.md routing",
+          "sha": "8c62ebaf"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "keep status bubbles anchored through animation changes",
+          "sha": "764f8f2b"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "keep one white Scan preview and clear off-grid hover",
+          "sha": "f09338d3"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2789 (redeploy current develop to :8060 for live seam testing)",
+          "sha": "a234a1bd"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "follow input mode and restrict Scan hit previews to confirmation",
+          "sha": "e4e94b1f"
+        },
+        {
+          "type": "docs",
+          "subject": "skill-system unification + luck-bias/facing-crit design specs",
+          "sha": "13be3846"
+        },
+        {
+          "type": "chore",
+          "scope": "tree",
+          "subject": "commit untracked .uid/.import metadata + VictorySFX",
+          "sha": "84b685cb"
+        },
+        {
+          "type": "test",
+          "scope": "fixtures",
+          "subject": "commit captured save fixtures (cond_00..09 + l2 variants)",
+          "sha": "08ffc56c"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "match controller hint glyphs to detected brand",
+          "sha": "cf07a729"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "plan enemy positioning before attacks and preserve terrain routes",
+          "sha": "6b89d9dd"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "clear pending selection when item picker is cancelled",
+          "sha": "aaf8ad41"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "activate owned passives and preserve status relay beats",
+          "sha": "fbc098d6"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "consume counter relay beats after finalization",
+          "sha": "21f15c1b"
+        },
+        {
+          "type": "fix",
+          "subject": "retain cumulative skill expertise in gameplay and saves",
+          "sha": "cc76ba39"
+        },
+        {
+          "type": "fix",
+          "subject": "synchronize combat level and XP progress",
+          "sha": "7910291d"
+        },
+        {
+          "subject": "Fix HealthUp base HP modifier and combat entry handoff",
+          "sha": "687a619d"
+        },
+        {
+          "type": "fix",
+          "subject": "log combat pickup rewards beneath movement",
+          "sha": "72340169"
+        },
+        {
+          "type": "fix",
+          "subject": "retain combat action bar while confirming end-turn facing",
+          "sha": "d6b0ffc8"
+        },
+        {
+          "type": "fix",
+          "subject": "preserve combat action availability during grid confirmation",
+          "sha": "2887ac3c"
+        },
+        {
+          "type": "fix",
+          "subject": "increase Young VSlime and Slime XP rewards",
+          "sha": "30ee2e6d"
+        },
+        {
+          "type": "fix",
+          "subject": "ease Waterway5 entrance to two or three young slimes",
+          "sha": "196ccded"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2768 (menu input-guard scope fix)",
+          "sha": "06def528"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-dc2k",
+          "subject": "scope inLoadGameState input-gate to the OPEN decision, not nav inside an already-shown menu",
+          "sha": "9ab0b61c"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2767 (AutoPlay.reset enabled + MenuOverlay index reset — dc2k I2)",
+          "sha": "61e50e1a"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-dc2k",
+          "subject": "close AutoPlay enabled-leak + hoveredButtonIdx reset gaps blocking autoplay_equip",
+          "sha": "50c83b8d"
+        },
+        {
+          "type": "feat",
+          "scope": "ChroniclesOfNesis-e1nx",
+          "subject": "direct-method unlock+menu-close hook — breaks the chicken-and-egg",
+          "sha": "8729f521"
+        },
+        {
+          "type": "quinn",
+          "scope": "strategy",
+          "subject": "equip-shape parse fix + relic host dropped + transition no-progress bail + regression tests",
+          "sha": "16553a55"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2766 (relic-equip + load-node menu-cleanup probes)",
+          "sha": "4e5ff24f"
+        },
+        {
+          "type": "feat",
+          "scope": "ChroniclesOfNesis-dc2k",
+          "subject": "read-only relic-pick probes for autoplay_equip's relic drive path",
+          "sha": "a841fb02"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2765 (Load-menu slot-label fix)",
+          "sha": "f96a1f70"
+        },
+        {
+          "type": "fix",
+          "scope": "saveload",
+          "subject": "label manual saves by saved slot id, not row index",
+          "sha": "54aca95c"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2764 (Mayor interaction + combat E-key/mouse-pan gates)",
+          "sha": "cf0a5f17"
+        },
+        {
+          "type": "fix",
+          "scope": "kmf8",
+          "subject": "overlapping NPC interaction-areas no longer steal registration (silent Mayor relic dialogue)",
+          "sha": "66e09dcd"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "don't pan camera on mouse-hover cursor moves",
+          "sha": "8add3274"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "gate unit-details (E key) to SELECT/View mode only",
+          "sha": "870ae71f"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2763 (FrontRoad leave-village barrier)",
+          "sha": "3e2c8dc9"
+        },
+        {
+          "type": "fix",
+          "scope": "FrontRoad",
+          "subject": "restore 'I shouldn't leave the village' barrier on web-non-beta",
+          "sha": "0b5bbbbe"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2762 (QB-141 combat confirm handler)",
+          "sha": "a14ebe23"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "explicit ui_accept confirm handler in CombatActionOverlay (QB-141)",
+          "sha": "7f03b82d"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2761 (skill-tree + lock-state load reset)",
+          "sha": "870110cf"
+        },
+        {
+          "type": "fix",
+          "scope": "load",
+          "subject": "reset skill-tree node graph + player lock-state on load (Nix)",
+          "sha": "969991c9"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2760 (QB-137 + JP + k0mu + Eadith batch)",
+          "sha": "9bb334f2"
+        },
+        {
+          "subject": "game batch: QB-137 trigger-zone-on-load + JP curve=SP + k0mu bed-routing + Eadith cond>7 (Nix)",
+          "sha": "00061324"
+        },
+        {
+          "type": "fixtures",
+          "subject": "register l2_clean_unspent as a dormant utility node (autoplay_load_node acceptance)",
+          "sha": "9b7e9936"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2759 (event-data accuracy: Judar/lever/bed-triggerKind)",
+          "sha": "99d6e479"
+        },
+        {
+          "type": "data",
+          "scope": "events",
+          "subject": "Judar MayorsHouse placement + Event-3 lever + Event-12 bed triggerKind (Nix)",
+          "sha": "69e16599"
+        },
+        {
+          "type": "fixtures",
+          "subject": "rebuild frontier per-cond saves 0-9 from Quinn natural captures (0.8.2758)",
+          "sha": "5e055e53"
+        },
+        {
+          "type": "autoplay",
+          "subject": "scripted/cutscene-combat passive-wait fallback (Quinn)",
+          "sha": "460f103f"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2758 (AER combat button-resync fix)",
+          "sha": "973e3901"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "_sync_action_overlay_budget_now — unified AER button-resync (Nix)",
+          "sha": "972f9030"
+        },
+        {
+          "type": "doc",
+          "scope": "dialogue",
+          "subject": "full dialogue-source model — core_DialogueOptions + event-embedded (Nix)",
+          "sha": "ac07ceeb"
+        },
+        {
+          "type": "autoplay",
+          "subject": "per-cond capture trigger _maybe_capture_cond (Quinn)",
+          "sha": "6f953ac0"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "event-awareness autonomy stack + honest-scoring + spend poll-fix (Quinn)",
+          "sha": "6bda01b0"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2756",
+      "date": "2026-10-01",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2757 (Eadith/Judar dialogue — DRAFT review build)",
+          "sha": "35881683"
+        },
+        {
+          "type": "feat",
+          "scope": "dialogue",
+          "subject": "Eadith placement persistence + Judar ambient fill + scripted elders response (Nix, DRAFT lines)",
+          "sha": "19e2f9d8"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2756 (siwb reaction-HUD action-budget resync)",
+          "sha": "913371dd"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "siwb — resync action-budget on reaction HUD restore (Nix)",
+          "sha": "223ae86f"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2755 (getNextStoryObjective start-cond fix)",
+          "sha": "cfde271a"
+        },
+        {
+          "type": "fix",
+          "scope": "autoplay",
+          "subject": "getNextStoryObjective upcoming-event fallback — story_cond=-1 -> Event 1 (Nix)",
+          "sha": "116dd517"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "Tier 5 playthrough opt-in (RUN_PLAYTHROUGH=1) — local deploy stays unit-level",
+          "sha": "c601b8f2"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "bump WEB_VERSION 0.8.2754 (event-awareness hook build)",
+          "sha": "b737d4a5"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "DAL.getNextStoryObjective + TestBridge hook for event-awareness (Nix)",
+          "sha": "6cd0d30a"
+        },
+        {
+          "subject": "autoplay B3: async run_async() control loop w/ concurrent StallWatchdog (Quinn)",
+          "sha": "7954cb95"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2753 (Sync Contract Part A game-side: action_settled flag)",
+          "sha": "cddf53b5"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "game-side action_settled composite flag (Autoplay Sync Contract Part A)",
+          "sha": "ed462b76"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "B2 async driver substrate (AUTOPLAY_SYNC_CONTRACT Part B) — AsyncVerbRunner.invoke() awaits a verb in a thread executor under a per-completion_class wait_for budget (atomic3/settles5/fsm15/async45s + verb->class map + budget_ms override), returns typed VerbResult, did_not_settle on overrun (bound-all, never hangs); StallWatchdog = concurrent task that trips WHILE a verb is in-flight (the abort-mid-action the old sync loop couldnt do). Envelope-independent (consumes Part A via classify_result when it lands). 9 new pins, 48 green suite, no regressions. Quinn-authored, owner-directed commit",
+          "sha": "2f676792"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "B1 + result passthrough (AUTOPLAY_SYNC_CONTRACT §2.7) — VerbResult.result carries the action outcome (RNG hit/crit/damage + reactions/counters + deaths + status) distinct from state snapshot; driver closes the outcome loop with no post-action re-read. +2 pins (counter/deaths passthrough), 12 green. Quinn-authored, owner-directed commit",
+          "sha": "36cc73a0"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "B1 verb result classifier (AUTOPLAY_SYNC_CONTRACT Part B prep) — VerbResult dataclass + classify_result(): infers retryability class from stop_reason AND digs root input_blocked out of evidence -> state_conflict over the symptom (the v2752 bug, driver-side standalone); reads Part-A explicit class/blocked_by/completion verbatim when they land. 10 pins green incl the 2752-bug pin + forward-compat pin. Quinn-authored, owner-directed commit",
+          "sha": "7b759fea"
+        },
+        {
+          "type": "fixture",
+          "subject": "caveat cond_11_waterway3_L2_leveled — loads into auto-mounted/mid-combat (undrivable, no Mugwort, Cure not learned); state-reference only, not a clean drivable entry (Quinn 2026-09-30 heal-verify)",
+          "sha": "171470a0"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "Context Router TRANSITION split (AUTOPLAY_ARCHITECTURE §6) — bare isLocked routes to TRANSITION (wait WAIT_TICKS=3 re-observing, escalate to advance_cutscene only if it persists), not the STORY_EVENT lump; event/combat still win over a lock. New TransitionStrategy; owner invariant 'if blocked, wait, never fire an unrelated action' without regressing lock-only-advanceable vignettes/popups. Behavior-changing, 27 pins green. Quinn-authored, owner-directed commit",
+          "sha": "7142158b"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2752 (heal rework: Mugwort 15-20 luck + Cure MP-family derivation + floater rolled-not-capped, fpph)",
+          "sha": "7b745552"
+        },
+        {
+          "subject": "fpph followup: swap Cure placeholder for the SETTLED EP1 derivation",
+          "sha": "93e91075"
+        },
+        {
+          "subject": "closes ChroniclesOfNesis-fpph",
+          "sha": "3518cc20"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "ExplorationStrategy seam B #2 (AUTOPLAY_ARCHITECTURE §2/§9) — lift handle_overworld (survival-risk + sticky-retreat preempt, wander/overworld decide, tracker, dispatch) into an injectable ctx-bound Strategy. COMPLETES seam B (Story/Recovery/Exploration + combat). Zero behavior change; 3 new pins, 61 suite green, live smoke clean. Quinn-authored, owner-directed commit",
+          "sha": "d727ac0f"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "Strategy objects seam B #1 (AUTOPLAY_ARCHITECTURE §2) — lift handle_event->StoryStrategy + handle_gameover->RecoveryStrategy into injectable ctx-bound objects (base Strategy). Zero behavior change (thin delegates, dispatch untouched); 4 new pins, 58 suite green. Quinn-authored, owner-directed commit",
+          "sha": "80fb283d"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "ContextRouter seam A (AUTOPLAY_ARCHITECTURE §2) — behavior-preserving extraction of classify() into an injectable/mockable ContextRouter.route(obs)->context. Zero behavior change (same 5 context strings, dispatch untouched); 7 new router pins, 54 suite green. Quinn-authored, owner-directed commit",
+          "sha": "3622ccea"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "RetreatPolicy — walk the LeaveArea back-chain out of the dungeon (W3->W2->W1->basement) instead of pathfinding to town over an incomplete map. Fixes the session-long survive_retreat_stuck 325x wedge; Phase 1 injectable Policy (AUTOPLAY_ARCHITECTURE §3). Quinn-authored, owner-directed commit; 8 new pins + live-validated off slot 5 (W3 Mugwort1 -> out-of-dungeon, exp 1->15)",
+          "sha": "7c919f31"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2751 (combat HUD banner Log/Info/Speed/Mode slide-off at combat end, zkcu)",
+          "sha": "63f3a7b8"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-hud",
+          "subject": "banner/hint stack (Log/Info/Speed/Combat-mode) slides with HUD at combat end + first intro",
+          "sha": "c32d3a87"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2750 (controller behavior menu->Start + Nintendo A/B swap r4ih + JP/SP badge bottom-left re-land)",
+          "sha": "c53b3ac1"
+        },
+        {
+          "type": "feat",
+          "scope": "controller",
+          "subject": "behavior mapping — menu=Start, Nintendo A/B native-swap, glyph follows binding",
+          "sha": "012d5191"
+        },
+        {
+          "subject": "Reapply \"Merge JP/SP badge reposition (dk2c follow-up): top-right -> bottom-left inset on Status + Skill Tree buttons (owner 2026-09-29)\"",
+          "sha": "93c22075"
+        },
+        {
+          "type": "fixture",
+          "subject": "promote cond_11_waterway3_L2_leveled (Quinn genuine-playthrough leveled save) — L2, 3SP/1JP unspent, W3, Mugwort1 (retreat trigger), 7 Sen (buy=partial). For level-up + retreat mechanics testing; XP-accrual fix 9bxb verified live. + frontier MANIFEST entry",
+          "sha": "15d12d33"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2749 (controller-type detection + glyph swap, gf4p)",
+          "sha": "e7285203"
+        },
+        {
+          "subject": "closes ChroniclesOfNesis-gf4p",
+          "sha": "32c23d8a"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2748 (web-combat XP-accrual fix, 9bxb — leveling unblocked game-wide)",
+          "sha": "30134dad"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "route kill-XP grant through entry-captured party ref, not live combat-context lookup",
+          "sha": "3e556736"
+        },
+        {
+          "type": "doc",
+          "scope": "dialogue",
+          "subject": "§2.4 rotation opt-out flags (repeatable=shop/service, is_progression_critical=story reminder; rotation is default for flavor NPCs) + Judar coverage-vs-scripted-range mismatch (scripted cond<6 overshoots ambient cond1-4 -> cond5 dead-spot). Classify NPC before fixing rotate/no-rotate",
+          "sha": "c1609471"
+        },
+        {
+          "type": "doc",
+          "scope": "dialogue",
+          "subject": "add scene:npc-key FAST DISCRIMINATOR ('speaks in event, silent on walk-up' -> scene-name mismatch, not condition/isInEvent) + reorder bspb suspects to lead with scene-name mismatch (owner insight 2026-09-29)",
+          "sha": "70e79f68"
+        },
+        {
+          "type": "docs",
+          "subject": "canonical DIALOGUE_AND_EVENT_READING.md (Condition eval, dialogue pipeline, isInEvent gate)",
+          "sha": "dee1cd0c"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2747 (memory-profiling hook enrich: WASM heap + JS heap in _testBridge_engineMemory)",
+          "sha": "19eafa30"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2746 (ebjv full-grid confirm-mode cursor nav + out-of-range unallowed SFX)",
+          "sha": "2a95e0ae"
+        },
+        {
+          "type": "feat",
+          "scope": "memory-profiling",
+          "subject": "enrich _testBridge_engineMemory with WASM heap + JS heap (ChroniclesOfNesis-ycx8)",
+          "sha": "a744b0b8"
+        },
+        {
+          "subject": "closes ChroniclesOfNesis-ebjv",
+          "sha": "8561b127"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2745 (combat confirm-mode auto-target lowest-HP enemy, atrx)",
+          "sha": "db661f61"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2744 (mcr2 input-lock 0.2s + anim-gate, no run-in-place)",
+          "sha": "68c9c528"
+        },
+        {
+          "type": "refine",
+          "scope": "mcr2",
+          "subject": "narrow scene-entry input suppression to 0.2s + gate WASD anim mirror",
+          "sha": "dfaa634b"
+        },
+        {
+          "subject": "closes ChroniclesOfNesis-atrx",
+          "sha": "28ffb72c"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2743 (ROLLBACK v2741 kohf+badge-reposition; restore v2740 known-good movement; QB-151 re-open. debug-only deploy, public export flaked)",
+          "sha": "106482eb"
+        },
+        {
+          "subject": "Revert \"Merge spawn-placement buffer (ChroniclesOfNesis-kohf, ISOLATED re-do): synchronous pre-visible player nudge into room (20px steps, 56px enemy clearance, 80px cap) after enemy spawn + [kohf] trace — no input-lock code touched\"",
+          "sha": "68528a97"
+        },
+        {
+          "subject": "Revert \"Merge JP/SP badge reposition (dk2c follow-up): top-right -> bottom-left inset on Status + Skill Tree buttons (owner 2026-09-29)\"",
+          "sha": "f40bd242"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2741 (kohf spawn-placement + JP/SP badge bottom-left; first clean deploy after PID-lottery fix)",
+          "sha": "ec093561"
+        },
+        {
+          "type": "fix",
+          "scope": "redeploy",
+          "subject": "stop the PID-recycling kill lottery (ChroniclesOfNesis-tg8n) — verify /proc/PID/cmdline is a playthrough before SIGTERM/SIGKILL + unlink pidfiles after processing. 750 stale never-unlinked playthrough_*.pid files made every redeploy signal recycled PIDs (own export=137, Arc session=143). App root-caused",
+          "sha": "b17a6fe9"
+        },
+        {
+          "subject": "closes ChroniclesOfNesis-kohf",
+          "sha": "066197cd"
+        },
+        {
+          "type": "fix",
+          "scope": "menu",
+          "subject": "move JP/SP badge to bottom-left inset (dk2c follow-up)",
+          "sha": "60b25e49"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2740 (input-lock v3 decoupled+instrumented mcr2)",
+          "sha": "eaf5fe5a"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2739 (clean re-export — prior 2738 serve-dir carried stale 2737 PCK after a mid-deploy git checkout clobbered the bump)",
+          "sha": "9a28f7ee"
+        },
+        {
+          "subject": "closes ChroniclesOfNesis-mcr2",
+          "sha": "f1b84fdc"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "WEB_VERSION ->0.8.2738 (mcr2/kohf P0 revert live; movement restored + qf1z log-fix + badge)",
+          "sha": "67140bef"
+        },
+        {
+          "subject": "Revert \"Merge scene-entry rework v2 (kohf+mcr2): pre-visible synchronous spawn placement + input-only self-releasing suppression stamp (NEVER awaited in lock-clear path — the P0 fix)\"",
+          "sha": "948c1bf0"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "fix WEB_VERSION to 0.8.2737 (match deployed PCK) — kohf-mcr2 merge carried stale 2736-b415; restores committed==PCK invariant so App cuts fresh",
+          "sha": "6f61e8c5"
+        },
+        {
+          "type": "fix",
+          "scope": "qf1z",
+          "subject": "correct misleading console log strings (bonus_turn/opening-turn -> order-advantage first-turn) — behavior was already order-advantage; the logs read as a double and caused a false QB-149 regression report",
+          "sha": "74bebaf4"
+        },
+        {
+          "subject": "closes ChroniclesOfNesis-3n5z",
+          "sha": "6efdb89f"
+        },
+        {
+          "subject": "closes ChroniclesOfNesis-dk2c",
+          "sha": "1b5a2dbd"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump ->2736 (turn-queue QB-149 same-type + bvtg SkillTree-open opt)",
+          "sha": "040f4d1d"
+        },
+        {
+          "subject": "Re-implement scene-entry fixes (kohf+mcr2) after v2734 P0 revert",
+          "sha": "336a7432"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump ->2735 (revert v2734 scene-entry; restore scene-transition movement, QB-151 P0)",
+          "sha": "bbb69dfa"
+        },
+        {
+          "subject": "Revert \"Merge scene-entry fixes (kohf+mcr2): spawn-nudge-into-room past adjacent enemies + 0.5s post-visible input suppression\"",
+          "sha": "c5c162b4"
+        },
+        {
+          "type": "fix",
+          "scope": "skilltree",
+          "subject": "kill forced full-rebuild + cache-blind grid churn (ChroniclesOfNesis-bvtg)",
+          "sha": "e1a6eed6"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "QB-149 3rd reopen — structural round barrier in CombatTurnQueue",
+          "sha": "0ec040eb"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump ->2734 (scene-entry spawn-buffer + 0.5s input lock)",
+          "sha": "f7250a00"
+        },
+        {
+          "subject": "scene-entry v2: enemy-adjacency clearance (kohf) + fix forced-engage root cause (mcr2)",
+          "sha": "8980c4c7"
+        },
+        {
+          "subject": "scene-entry: push spawn inward (kohf) + suppress input 0.5s post-visible (mcr2)",
+          "sha": "6777214b"
+        },
+        {
+          "type": "autoplay",
+          "scope": "combat",
+          "subject": "in-combat heal threshold 0.35->0.5 (L1 survival)",
+          "sha": "7ae06a3e"
+        },
+        {
+          "type": "fix",
+          "scope": "wander",
+          "subject": "only a real LOSS marks died_here — not no_combat/stalled/desync",
+          "sha": "944ba796"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "no_combat early-return crashed the grind (missing RunResult fields)",
+          "sha": "27a14f57"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump 2731->2732 (mid-combat-spawn turn-slot fix)",
+          "sha": "f2270716"
+        },
+        {
+          "type": "autoplay",
+          "subject": "emit organic turn_order at combat start (turn-queue invariant diagnostic)",
+          "sha": "e926ba9f"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "mid-combat add_unit anchors to soonest-pending, not active-unit+interval",
+          "sha": "a442a61f"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump 2730->2731 (camera state read for walk_to)",
+          "sha": "e919b00b"
+        },
+        {
+          "type": "feat",
+          "scope": "testbridge",
+          "subject": "expose active Camera2D pos+zoom in state read (walk_to nav-agent waypoints)",
+          "sha": "46127602"
+        },
+        {
+          "type": "autoplay",
+          "scope": "levelup",
+          "subject": "single-line STR-toward-Counterattack persona",
+          "sha": "2d92ecac"
+        },
+        {
+          "type": "autoplay",
+          "scope": "wander",
+          "subject": "mark \"died here\" + go wider / try other paths before returning",
+          "sha": "db0dd920"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump 2729->2730 (turn-queue opening-double + initiative exp 0.10)",
+          "sha": "edada795"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "CombatTurnQueue opening-round double-turn + wire real initiative to turn order",
+          "sha": "eadda816"
+        },
+        {
+          "type": "autoplay",
+          "scope": "combat",
+          "subject": "heal fail-fast on no-item + grab-chest is a partial turn",
+          "sha": "1c93aff5"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump 2728->2729 (poison-cloud retune + camera HUD-sync)",
+          "sha": "4be91804"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-camera",
+          "subject": "tie post-combat glide duration to the ACTUAL HUD slide-out",
+          "sha": "e3752068"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "QB-146 poison cloud burst per-caster-type ranged roll, not flat 35",
+          "sha": "d86db32e"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump 2727->2728 (post-combat camera follow-snap fix)",
+          "sha": "50c55445"
+        },
+        {
+          "type": "ledger",
+          "subject": "QB-146 (Poison Cloud 35dmg balance, FILED) + QB-147 (impending-danger avoidance, FIXED)",
+          "sha": "a124fd05"
+        },
+        {
+          "type": "autoplay",
+          "scope": "combat",
+          "subject": "move OUT of impending damage after acting — impending_cells + all-branch relocate",
+          "sha": "ef1a7b71"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-camera",
+          "subject": "post-combat glide follows the player instead of snapping",
+          "sha": "b9922697"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump 2726->2727 (menu-leak + chest-z fix build)",
+          "sha": "a73440bb"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "chest drop z=4 so it renders above poison/hazard terrain (was hidden behind it)",
+          "sha": "3a3d22ed"
+        },
+        {
+          "type": "fix",
+          "scope": "menus",
+          "subject": "replace unsafe reparent pattern with Node.reparent() in shared party-header widget",
+          "sha": "635d5339"
+        },
+        {
+          "type": "fix",
+          "scope": "menus",
+          "subject": "stop skill-tree/BuySkillMenu popping up in wrong menu contexts",
+          "sha": "eb5f3936"
+        },
+        {
+          "type": "autoplay",
+          "subject": "wire checklist to Arc-2726 leveling verbs (learn-by-grid_index, spend-all JP)",
+          "sha": "c86efbd6"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2725",
+      "date": "2026-09-25",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump 2725->2726 (TestBridge focus fix build, 045aedef)",
+          "sha": "48da326c"
+        },
+        {
+          "type": "autoplay",
+          "subject": "unified \"entering overworld\" checklist — same code on post-combat AND post-load",
+          "sha": "32925272"
+        },
+        {
+          "type": "fix",
+          "scope": "testbridge",
+          "subject": "publish real SkillTreeMenu focus + BuySkillMenu shown",
+          "sha": "045aedef"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2722",
+      "date": "2026-09-24",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "commit WEB_VERSION bump 2722->2725 (touch-gate build)",
+          "sha": "1e11e0c9"
+        },
+        {
+          "type": "autoplay",
+          "subject": "fix 3 grind bugs from the level-1-5 shakedown (turn-sync, danger-avoid, levelup-log)",
+          "sha": "42ec2a04"
+        },
+        {
+          "type": "autoplay",
+          "subject": "stop combat_speed mount FALSE-RETRY (the turn-start dead air)",
+          "sha": "5cdf1325"
+        },
+        {
+          "type": "fix",
+          "scope": "mobile-combat",
+          "subject": "block touch-originated input during combat on touchscreen devices",
+          "sha": "4015bf21"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "QA debug toggles batch 1 — drop/drop_item/drop_sen/enemy_passive + debug_flags readback (ChroniclesOfNesis-niqo)",
+          "sha": "412e1a63"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (FF-cap uncap + mobile +/- fix)",
+          "sha": "c06d4b4f"
+        },
+        {
+          "type": "fix",
+          "scope": "ysxp",
+          "subject": "MenuOverlay self-gate stops touch-tap stealing active submenu clicks",
+          "sha": "975d460a"
+        },
+        {
+          "type": "autoplay",
+          "subject": "read reliable party level from save_summary.player.level (read_state.level reads 0)",
+          "sha": "6a588604"
+        },
+        {
+          "type": "autoplay",
+          "subject": "damage-aware heal — actual HP vs avg damage-per-combat, not level/flat %",
+          "sha": "e909f940"
+        },
+        {
+          "type": "autoplay",
+          "subject": "log combat drops + grab decision per turn (owner: ensure treasure pickup is printed in logs)",
+          "sha": "d979e94d"
+        },
+        {
+          "subject": "Combat FF speed: context-aware uncap for unattended grind (ChroniclesOfNesis-do2r)",
+          "sha": "2e8e552a"
+        },
+        {
+          "subject": "autoplay trace: capture resolution_pending on drive verbs (return-on-confirm marker)",
+          "sha": "adde67f3"
+        },
+        {
+          "type": "autoplay",
+          "subject": "gate _engage on action_completed push (return-on-CONFIRM contract, Port e2b002d)",
+          "sha": "e8b45d42"
+        },
+        {
+          "subject": "autoplay trace: capture combat_attack timing_trace + animation_speed; fix combat_state summary level",
+          "sha": "ccf155b2"
+        },
+        {
+          "type": "autoplay",
+          "subject": "wire chest pickup to the landed combat_state.drop_cells observable (QB-145)",
+          "sha": "d5503e3f"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2720",
+      "date": "2026-09-23",
+      "changes": [
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (drop_cells snapshot)",
+          "sha": "2c6fceba"
+        },
+        {
+          "type": "autoplay",
+          "subject": "turn-start miss-probe — pin push-missed (mine) vs push-never-fired (Arc)",
+          "sha": "ea22f0ab"
+        },
+        {
+          "type": "autoplay",
+          "subject": "fix trace plumbing — Game(trace=) forwards to Client + exposes self.trace",
+          "sha": "5b1e5c4a"
+        },
+        {
+          "type": "autoplay",
+          "subject": "unified UTC trace (mcp + decision + state) + per-turn turn-start telemetry",
+          "sha": "7311dc8c"
+        },
+        {
+          "type": "autoplay",
+          "subject": "gate post-combat check + checkpoint on WIN; heal at-or-below threshold",
+          "sha": "48b74a52"
+        },
+        {
+          "type": "autoplay",
+          "subject": "GameOver catch+log+reload (go again); raise heal threshold 25->50pct",
+          "sha": "731d8f9b"
+        },
+        {
+          "type": "autoplay",
+          "subject": "resume from checkpoint — game save_slot + AutoPlay depth/goal state",
+          "sha": "3aa936e9"
+        },
+        {
+          "type": "autoplay",
+          "subject": "post-combat check (heal / level-up spend / retreat); fix between-combat heal HP source",
+          "sha": "5c4200a2"
+        },
+        {
+          "type": "autoplay",
+          "subject": "dungeon confinement = DEEPER (Waterways) only; basement is the EXIT, not a depth target",
+          "sha": "ce8a6b38"
+        },
+        {
+          "type": "autoplay",
+          "subject": "confine grind/explore wander to the waterway dungeon (zone by res-path); fix non-adjacent frontier spin",
+          "sha": "0f851d9d"
+        },
+        {
+          "subject": "Quinn GamePlaythrough: wire event-driven combat->exploration handoff (owner 2026-09-24)",
+          "sha": "18294ba6"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump",
+          "sha": "d9673a07"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "empty Item menu can't cancel in combat (early-return skipped ui_cancel) + balance: Young VSlime physical_attack 3->2 (owner: felt too high)",
+          "sha": "42eceb4d"
+        },
+        {
+          "subject": "[CombatTrace] harden trace instrument: durable in-page ring buffer (ChroniclesOfNesis-rzbv)",
+          "sha": "d7b6ea55"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (CombatTrace phase=input_armed)",
+          "sha": "4054e27b"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "ChroniclesOfNesis-c1uj — add missing input_armed CombatTrace lifecycle point",
+          "sha": "83a9632f"
+        },
+        {
+          "subject": "Quinn CombatEngine: act on the armed-edge combat_turn push; drop aer-poll + tight-poll (dead-air)",
+          "sha": "fe48212d"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (CombatTrace deploy)",
+          "sha": "a7fed546"
+        },
+        {
+          "subject": "Combat lifecycle UTC trace to browser console (ChroniclesOfNesis-e9i0)",
+          "sha": "99e3107a"
+        },
+        {
+          "subject": "Quinn CombatEngine: kill turn-start dead air — short await + my_turn backstop (owner 2026-09-23)",
+          "sha": "8dd079f6"
+        },
+        {
+          "subject": "Quinn CombatEngine: event-driven turn wait via autoplay_await_event (QB-144 push stream)",
+          "sha": "b37a49d8"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION 0.8.2717 (QB-144 + event-contract emissions deployed)",
+          "sha": "b32ceeb4"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "QB-144 guaranteed combat_turn push + action/move-completed events",
+          "sha": "40ef09d2"
+        },
+        {
+          "subject": "Quinn combat: chest-pickup strategy (QB-145) — grab reachable in-combat chest",
+          "sha": "a1c3e534"
+        },
+        {
+          "subject": "Quinn CombatEngine: MISSING_NOTIFICATION harness — flag missing game→driver events (QB-144)",
+          "sha": "21479264"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2715",
+      "date": "2026-09-23",
+      "changes": [
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION 0.8.2716 (equip + QB-143 camera bundle deployed)",
+          "sha": "e4497b0c"
+        },
+        {
+          "subject": "Quinn CombatEngine: return cleanly (no_combat) when snapshot is None at run start",
+          "sha": "a934daea"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-camera",
+          "subject": "QB-143 HUD-occlusion-aware autoframe safe rect",
+          "sha": "9eb40a48"
+        },
+        {
+          "subject": "Quinn WorldProgression: fix scene-key case mismatch (visited-tracking bounce) + exit-selection log",
+          "sha": "0c4a847b"
+        },
+        {
+          "subject": "Add general `equip` event command + auto-equip Item Relic on Mayor's gift",
+          "sha": "f8c36bb5"
+        },
+        {
+          "subject": "Quinn combat: attack/skill BY NAME (combat_attack/combat_skill), not by-cell",
+          "sha": "1dba8717"
+        },
+        {
+          "subject": "Quinn CombatEngine: verified per-mount combat-speed re-set (QB-120 gap iv)",
+          "sha": "3f99e6be"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION 0.8.2715 (qb120c phase 2 deployed build)",
+          "sha": "35f07a19"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "reconcile action_entry_ready with the real confirm gate + instrument stuck-in-ATTACK-mode paths (ChroniclesOfNesis-1k5u follow-up)",
+          "sha": "3fc429d5"
+        },
+        {
+          "subject": "Quinn design doc: mark grind/explore/survive world-behaviors BUILT (§7 build status)",
+          "sha": "e94c1312"
+        },
+        {
+          "subject": "Quinn WorldProgression: explore-nav + grind wander + survive risk/retreat (owner 2026-09-23)",
+          "sha": "978f754b"
+        },
+        {
+          "subject": "Quinn CombatEngine: gate _wait_my_turn on action_entry_ready (QB-120 arm-race)",
+          "sha": "ccc84802"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION 0.8.2714 working-tree bump (matches deployed qb120b build)",
+          "sha": "b9c90ca9"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "close encounter-mount action-entry/mode-sync race (ChroniclesOfNesis-1k5u)",
+          "sha": "a5622b30"
+        },
+        {
+          "subject": "Quinn CombatEngine: retry-WHILE-gated interim for QB-120 encounter-mount race (Arc-endorsed)",
+          "sha": "403f299b"
+        },
+        {
+          "type": "Quinn",
+          "subject": "lock the goal-SET model + component naming in AUTOPLAY_PLAYTHROUGH_DESIGN.md (owner 2026-09-23)",
+          "sha": "f3d0b8a2"
+        },
+        {
+          "subject": "Quinn GamePlaythrough: prioritized GOAL-SET model (constraints + objectives + prerequisites)",
+          "sha": "378fdf16"
+        },
+        {
+          "subject": "Quinn GamePlaythrough: abstract GOAL orchestration (story→grind L5→boss→credits)",
+          "sha": "17f2d242"
+        },
+        {
+          "subject": "Quinn AutoPlay: rename to owner architecture + delete duplicate runner",
+          "sha": "59d7cfb9"
+        },
+        {
+          "type": "Quinn",
+          "subject": "refocus canvas after driver_reset (click-verb no-op workaround)",
+          "sha": "812a3851"
+        },
+        {
+          "subject": "Quinn spine_drive: never autosave a GameOver/Title scene (recovery-wedge fix)",
+          "sha": "a1e33ae0"
+        },
+        {
+          "subject": "Quinn GeneralCombat gc-0.2: gate heal on item actually held (fix phantom-Mugwort over-reach)",
+          "sha": "186f9d4e"
+        },
+        {
+          "type": "Quinn",
+          "subject": "QB-143 update — combat verbs collapsed (v2711): combat_log 11.3s→1.1s, move 16s→2.8s, use_item 24.6s→8.3s; walk_to timeout fixed (transition ~8s = real pack-mount). Round-trip pacing fully resolved.",
+          "sha": "26f260dc"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION 0.8.2713 (diag-stripped rebuild)",
+          "sha": "25fddab8"
+        },
+        {
+          "subject": "QB-141: strip temp diagnostic (root cause pinned — game event logic sound on both interact paths; residual is atomic interact-verb first-call fidelity)",
+          "sha": "edc4b354"
+        },
+        {
+          "subject": "QB-141 diag (temp): log _fire_pending_interact resolution inputs (isInEvent/isEventValid/getActiveEventFor) to pin talk-1-ambient vs talk-2-fires",
+          "sha": "6118808e"
+        },
+        {
+          "subject": "Quinn spine_drive: correct npc_talk mechanism comment — discriminator is NOT isInEvent",
+          "sha": "d50867ff"
+        },
+        {
+          "type": "feat",
+          "scope": "TestBridge",
+          "subject": "surface player-NODE lock flags for QB-141 diagnosis",
+          "sha": "f98b8430"
+        },
+        {
+          "subject": "Quinn spine_drive: npc_talk user-equivalent RETRY (event-8 isInEvent-stuck unblock)",
+          "sha": "04c5a67f"
+        },
+        {
+          "subject": "Quinn spine_drive: npc_talk advance-until-COUNTER (event-8 between-segment trap fix)",
+          "sha": "57edc605"
+        },
+        {
+          "subject": "Relic ripout Phase 2: remove gear-hosted relic-socket machinery",
+          "sha": "89f8a3c8"
+        },
+        {
+          "subject": "Relic ripout Phase 1: convert isEquipped gates to canonical unit.skills[] read",
+          "sha": "ff0d60c5"
+        }
+      ],
+      "derived": true
+    },
+    {
+      "version": "v0.8.2693",
+      "date": "2026-09-20",
+      "changes": [
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION working-tree bump (was an uncommitted deploy-artifact orphan all session)",
+          "sha": "10307ef6"
+        },
+        {
+          "type": "Quinn",
+          "subject": "QB-143 partial-fix verified on 0.8.2708+bounce — advance_dialogue 4s→233ms (~17x), save_summary/save_to_slot improved; walk_to still slow (timeout-clobber fix queued)",
+          "sha": "370e2754"
+        },
+        {
+          "subject": "Quinn spine_drive: normalize story_cond -1 sentinel (fast-field regression)",
+          "sha": "fea27d9c"
+        },
+        {
+          "type": "Quinn",
+          "subject": "file QB-143 — CON-MCP action verbs ~97-98% non-game overhead (App in-page instrumentation: 35ms ack/312ms tile vs walk_to 9-17s)",
+          "sha": "24aaf0fc"
+        },
+        {
+          "type": "docs",
+          "subject": "relic-model rip-out spec — canonical unit.skills[] invariant + audited touch-points (owner-directed)",
+          "sha": "5ef03d28"
+        },
+        {
+          "subject": "Quinn autoplay: adopt Arc's v0.8.2708 fixes — return_to_title solo + fast story_cond (with fallback)",
+          "sha": "22442da9"
+        },
+        {
+          "subject": "Quinn autoplay: cut self-inflicted pacing cost — track counter (save_summary is 2-5s) + per-scene autosave",
+          "sha": "74efd841"
+        },
+        {
+          "subject": "Quinn autoplay: QB-142 return_to_title degrades session — driver_reset workaround in spine runner",
+          "sha": "a8669ca8"
+        },
+        {
+          "subject": "Quinn autoplay: per-beat autosave + interruption recovery (owner 2026-09-22)",
+          "sha": "31ef108e"
+        },
+        {
+          "subject": "Quinn autoplay: regression pins for spine-drive reliability contracts (4 tests, no :8060)",
+          "sha": "36bd594a"
+        },
+        {
+          "type": "revert",
+          "scope": "walk-indicators",
+          "subject": "restore flat LIFT_PX height (conditional 1.2x-sprite lift read wrong in many exits) — KEEP 20% size reduction (owner 2026-09-22)",
+          "sha": "5d409859"
+        },
+        {
+          "subject": "Quinn autoplay: promote proven spine runner to committed spine_drive.py (durable reliability)",
+          "sha": "99038685"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "3 owner-reported bugs — reaction overlay leak, camera glide start pos, missing Item skill (ChroniclesOfNesis-qnnq, owner 2026-09-22 live-play)",
+          "sha": "6b21debd"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "engagement winner gets single GUARANTEED FIRST turn, not a double-turn bonus (owner 2026-09-22) — round-robin from there (E1); predicted() preview matches",
+          "sha": "7047ea3c"
+        },
+        {
+          "type": "feat",
+          "scope": "hover",
+          "subject": "overworld shows feather cursor ONLY — suppress NPC/door/interactable/red-X hover icons (owner 2026-09-22); gated to non-combat so combat sword cursor untouched; FEATHER_ONLY toggle for touch revisit",
+          "sha": "9e80f5e0"
+        },
+        {
+          "type": "feat",
+          "scope": "walk-indicators",
+          "subject": "red event-transition arrows — conditional lift (on-transition within 100px of screen bottom, else 1.2x Elias sprite height above) + 20% smaller (owner 2026-09-22)",
+          "sha": "cf3de530"
+        },
+        {
+          "type": "fix",
+          "scope": "enemy",
+          "subject": "jump-in enemies CHASE on landing regardless of distance (Waterway2 slimes) — ambush should always pursue, not gate on distanceToChase",
+          "sha": "16887331"
+        },
+        {
+          "type": "Quinn",
+          "subject": "QB-141 NPC-not-engaging forgiveness bead (owner) + retract mayor-ambient-greeting theory",
+          "sha": "2fd180bb"
+        },
+        {
+          "subject": "Combat HUD: remove Run button + widen End; Waterway1: jumpers now engage on landing",
+          "sha": "365e6cac"
+        },
+        {
+          "type": "fix",
+          "scope": "QB-140",
+          "subject": "reliable dialogue observable + current_event_id/story_cond",
+          "sha": "6cc4c21c"
+        },
+        {
+          "type": "Quinn",
+          "subject": "QB-139 RETRACTED (event 8 works — owner drove it) + QB-140 dialogue observable unreliable (screenshot-confirmed)",
+          "sha": "2e086b1a"
+        },
+        {
+          "type": "Quinn",
+          "subject": "QB-139 ROOT-CAUSED — mayor proximity greeting locks isInEvent, blocks event 8",
+          "sha": "75a6643e"
+        },
+        {
+          "type": "Quinn",
+          "subject": "QB-139 — event 8 (report slime to mayor) doesn't fire on npc_talk at cond 5 (blocks opening)",
+          "sha": "6ace3e15"
+        },
+        {
+          "subject": "Quinn autoplay: NAV FIX — disambiguate scene_target with .tscn (root cause of nav-wander)",
+          "sha": "a12f13ed"
+        },
+        {
+          "subject": "Quinn autoplay: story_cond() reads save_summary.player.cond (the REAL story counter)",
+          "sha": "a485c390"
+        },
+        {
+          "type": "feat",
+          "scope": "walk-targets",
+          "subject": "extend static unreachable flag to treasure/interactables/event_triggers — mechanism only",
+          "sha": "accb1d06"
+        },
+        {
+          "subject": "Quinn autoplay: encode AUTHORITATIVE Laria opening spine from event-conditions DB",
+          "sha": "52f7f5bb"
+        },
+        {
+          "subject": "Quinn autoplay: skip unreachable=true across NPCs + treasure (v0.8.2703 flag verified)",
+          "sha": "07c07842"
+        },
+        {
+          "type": "feat",
+          "scope": "npc",
+          "subject": "static authored `unreachable` flag on PlayerCharacter + observable",
+          "sha": "706e9e80"
+        },
+        {
+          "type": "Quinn",
+          "subject": "QB-137 VERIFIED FIXED (v0.8.2702) — mayor reachable + interact fires; +redeploy-executor infra note",
+          "sha": "93644925"
+        },
+        {
+          "type": "fix",
+          "scope": "nav",
+          "subject": "widen MayorsHouse north-wall collision so player can reach MayorRaeges (QB-137)",
+          "sha": "d8da1638"
+        },
+        {
+          "subject": "Quinn autoplay: author Laria opening spine to Windmill1 + hop-by-hop map nav + file QB-137/138",
+          "sha": "10260abe"
+        },
+        {
+          "subject": "Quinn autoplay: map MainSquare (3-scene Laria opening) + walk_to false-timeout finding",
+          "sha": "96e5c539"
+        },
+        {
+          "subject": "Quinn autoplay: author Laria opening map (EliasHouse + ChurchSquare) from live drive",
+          "sha": "78938d5e"
+        },
+        {
+          "subject": "Quinn autoplay: align consumer to live v0.8.2701 shapes (read_state visible + save_summary party)",
+          "sha": "98f3cb50"
+        },
+        {
+          "subject": "Quinn autoplay: add BSV/BDV scoring use & benefits doc",
+          "sha": "44a3e761"
+        },
+        {
+          "subject": "Treasure observable (bead ChroniclesOfNesis-vi54): window._testBridge_lastTreasure",
+          "sha": "7e791309"
+        },
+        {
+          "subject": "AutoPlay observability (1/3) + save/load control hooks (3/3)",
+          "sha": "b336d884"
+        },
+        {
+          "subject": "Quinn autoplay: add Laria progression data skeleton (authored-by-playing target)",
+          "sha": "0ab3a414"
+        },
+        {
+          "subject": "Quinn autoplay: wire overworld progression matrix (personas as boolean flags) into runner",
+          "sha": "ab909472"
+        },
+        {
+          "subject": "Quinn playthrough: increment 1 — wire combat (GeneralCombat: focus-nearest + heal-when-low)",
+          "sha": "bff35d34"
+        },
+        {
+          "type": "Quinn",
+          "subject": "point launch_quinn.sh at the repo copy (single source, drift guard)",
+          "sha": "a6d34679"
+        },
+        {
+          "type": "Quinn",
+          "subject": "import AutoPlay strategy + QA framework into the repo (file-isolated under Quinn/)",
+          "sha": "7b28a3cd"
+        },
+        {
+          "type": "docs",
+          "subject": "repo ownership + two-author coordination (Quinn's tree joins the repo)",
+          "sha": "feb98765"
+        },
+        {
+          "type": "docs",
+          "subject": "AutoPlay observability game-side contract (DRAFT for owner review)",
+          "sha": "8173a390"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "filter ItemsMenu to consumables + dedupe grid (P1 QA-blocking)",
+          "sha": "fe91326e"
+        },
+        {
+          "type": "fixtures",
+          "subject": "sync EventDirector.gd pack mirrors (Laria + Overworld) to canonical (099m)",
+          "sha": "1e10addc"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-099m",
+          "subject": "close lingering GlobalWorld.inDialogue on event/combat abort paths",
+          "sha": "c8d75c53"
+        },
+        {
+          "type": "fix",
+          "scope": "grsu",
+          "subject": "Irid Liquor shows +N MP floater in the damage queue",
+          "sha": "56722da0"
+        },
+        {
+          "type": "fixtures",
+          "subject": "promote Quinn's validated boss_even_cure (L5 even-stat + Cure) — replaces stale blob",
+          "sha": "dbdfd680"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "ChroniclesOfNesis-w94a Counterattack double-EP — event-identity dedupe guard + diagnostics",
+          "sha": "65f9def7"
+        },
+        {
+          "type": "fixtures",
+          "subject": "promote Quinn's validated boss_even_smite (L5 even-stat + Smite)",
+          "sha": "dc8abbd6"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "predicted() honors pending charge-resolve override (QB-126)",
+          "sha": "9af9fa87"
+        },
+        {
+          "type": "fixtures",
+          "subject": "add Quinn's validated boss_str_L3 + boss_str_L4 + register manifest nodes",
+          "sha": "23646dcd"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "QB-125 hard no-overlap movement invariant + combat-log flag",
+          "sha": "2f53087e"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "telegraph enemy attack range + target before enemy-turn attacks",
+          "sha": "6b4b5199"
+        },
+        {
+          "subject": "Test updates for combat batch e74045ca: QB-122 Cure heal, QB-123 EP log, add-occupancy race",
+          "sha": "7c009dcc"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "QB-123 verify Counterattack EP is +1 (no bug) + add EP to reaction log records",
+          "sha": "3d24de4a"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "QB-122 bump Cure heal base 21->50 for a real low-level full top-up",
+          "sha": "a5e59aef"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "reserve split-spawn add's cell synchronously to close move-race window",
+          "sha": "53a3f5e0"
+        },
+        {
+          "type": "fixtures",
+          "subject": "promote Quinn's validated boss_str_cure (STR build) + refresh manifest note",
+          "sha": "0001775b"
+        },
+        {
+          "type": "fix",
+          "scope": "combat-drops",
+          "subject": "enemies trample chests footprint-aware + on spawn",
+          "sha": "b61ec797"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-wlrd",
+          "subject": "poison-walk trail paints full footprint, not just leading edge",
+          "sha": "293a0c09"
+        },
+        {
+          "subject": "WEB_VERSION redeploy bump: QB-120b diag deploy",
+          "sha": "845256e0"
+        },
+        {
+          "subject": "WEB_VERSION 0.8.2691->0.8.2692: QB-120 followup + diag deploy",
+          "sha": "df5cb946"
+        },
+        {
+          "subject": "QB-120 follow-up (P0): diagnostic + last-mile action-overlay resync",
+          "sha": "96399050"
+        },
+        {
+          "subject": "WEB_VERSION redeploy bump: QB-120 deploy",
+          "sha": "7b9c5127"
+        },
+        {
+          "subject": "WEB_VERSION 0.8.2689->0.8.2690: deploy QB-120 skill-menu fix",
+          "sha": "17fd9505"
+        },
+        {
+          "subject": "QB-120 (P0): fix Skill action-menu entry unreachable — dqwp no-op gap stranded action-overlay resync",
+          "sha": "5017f013"
+        },
+        {
+          "subject": "WEB_VERSION 2688->2689: clean cache-nuked single-export redeploy (fix corrupted Combat pack from concurrent exports)",
+          "sha": "50e989cf"
+        },
+        {
+          "subject": "event_triggers scan: report TRUE collider center (offset-aware), not Area2D origin",
+          "sha": "9b54cc9f"
+        },
+        {
+          "subject": "WEB_VERSION 2687->2688: QB-118 flat-35 deploy bump",
+          "sha": "2bf4bd02"
+        },
+        {
+          "subject": "QB-118 FINAL (owner): poison_cloud burst = FLAT 35, pendant-only resist (~17 felt)",
+          "sha": "593ba07f"
+        },
+        {
+          "subject": "WEB_VERSION 2685->2686: residuals deploy bump",
+          "sha": "8e72bcf2"
+        },
+        {
+          "subject": "WEB_VERSION 0.8.2684->0.8.2685: deploy combat residuals QB-114/115/117/118/119",
+          "sha": "cddba31f"
+        },
+        {
+          "subject": "Combat bundle QB-114/115/117/118/119 (ChroniclesOfNesis-52su): Mother poison_cloud follow-up",
+          "sha": "f425f30b"
+        },
+        {
+          "type": "CI",
+          "subject": "regenerate test_index.json (1743->2013 tests, was 2.5mo stale) + spine.json",
+          "sha": "46050aeb"
+        },
+        {
+          "subject": "CI strategy: design doc + refresh test_index (2.5mo stale) + close fixtures/saves risk_map gap",
+          "sha": "948751bb"
+        },
+        {
+          "subject": "WEB_VERSION 2683->2684: redeploy bump for combat bundle deploy",
+          "sha": "074c0d00"
+        },
+        {
+          "subject": "WEB_VERSION 0.8.2682->0.8.2683: deploy combat bundle QB-113/114/115/116",
+          "sha": "6e70dda6"
+        },
+        {
+          "subject": "QB-115 (ChroniclesOfNesis-nj9y): defensively clear stale combat drops on entry",
+          "sha": "4a4bed24"
+        },
+        {
+          "subject": "QB-114 (ChroniclesOfNesis-fzn7): boss's own cell never got poison terrain",
+          "sha": "d09aa5ce"
+        },
+        {
+          "subject": "QB-116 (ChroniclesOfNesis-52su): guarantee Mother Slime's first sub-50% poison_cloud cast",
+          "sha": "56301b28"
+        },
+        {
+          "subject": "QB-113 (ChroniclesOfNesis-zv48, P0): combat kit = learned skills, not full tree",
+          "sha": "437a74d6"
+        },
+        {
+          "type": "fixtures",
+          "subject": "regen 4 legal boss saves at FULL hp/mp (QB-112)",
+          "sha": "9e114b61"
+        },
+        {
+          "subject": "save-tree manifest: register all 4 legal boss fixtures @ SluiceGate for load_node",
+          "sha": "d4ac5bd7"
+        },
+        {
+          "subject": "WEB_VERSION 2681->2682: bust host-window SW cache for the event_triggers scan (35ea4632)",
+          "sha": "0fbd2817"
+        },
+        {
+          "type": "worldSnapshot",
+          "subject": "scan event_triggers (DialogueTrigger + *Event* Area2D) for read_state",
+          "sha": "35ea4632"
+        },
+        {
+          "type": "fixtures",
+          "subject": "replace 4 illegal boss saves with LEGAL builds (autoplay_build_save)",
+          "sha": "b3453324"
+        },
+        {
+          "subject": "WEB_VERSION 2680->2681: clean redeploy from verified develop — all k75k kit-persist fixes (give-loop aliasing, PartyItems write-back, relic-slot registry, removeItem fallback) confirmed in committed tree",
+          "sha": "ba247fb7"
+        },
+        {
+          "subject": "WEB_VERSION 0.8.2679->0.8.2680: clean redeploy — ensure all k75k kit-persist fixes (give-loop/write-back/relic/diag) are in the served pack",
+          "sha": "72c329ea"
+        },
+        {
+          "subject": "k75k kit-persist follow-up: fix give-loop item aliasing + remove-key fallback + defensive write-back",
+          "sha": "91fa371d"
+        },
+        {
+          "subject": "WEB_VERSION 0.8.2679->0.8.2680: deploy k75k kit-persist fix/diag + reconcile stale Mother-HP changelog (runtime is 60/magdef0/pa4, not 90)",
+          "sha": "06d1eb9a"
+        },
+        {
+          "subject": "k75k kit-persist: relic-slot registry fix (test_slot_relic sizes _relic_slots before picker) + removeItem [k75k-remove] diag instrumentation",
+          "sha": "75340adc"
+        },
+        {
+          "subject": "WEB_VERSION 0.8.2678->0.8.2679: deploy _testLevelUpTo hook (fresh cache)",
+          "sha": "e794a33a"
+        },
+        {
+          "subject": "Add _testLevelUpTo TestBridgeDev hook — legal save-builder foundation",
+          "sha": "3567267b"
+        },
+        {
+          "subject": "WEB_VERSION 2677->2678: fresh pack for 6k51 instrumentation run",
+          "sha": "04b5ecb1"
+        },
+        {
+          "subject": "instrument save-persist path for 6k51 fresh-profile diagnosis",
+          "sha": "ddc8afe8"
+        },
+        {
+          "subject": "WEB_VERSION 2676->2677: bust cache for cp5n verify (stop freezing version)",
+          "sha": "37aad9ec"
+        },
+        {
+          "type": "fix",
+          "scope": "title",
+          "subject": "re-derive continueEnabled at fade-complete decision, not just _ready() (ChroniclesOfNesis-cp5n)",
+          "sha": "e56244d5"
+        },
+        {
+          "subject": "beads sync (pre-merge)",
+          "sha": "270c15c5"
+        },
+        {
+          "type": "fix",
+          "scope": "title",
+          "subject": "stop phantom mouse motion from reverting Continue auto-focus (ChroniclesOfNesis-cp5n)",
+          "sha": "9b33a746"
+        },
+        {
+          "type": "fix",
+          "scope": "title",
+          "subject": "Continue ui_accept none-fallback + diagnostic instrumentation + TestBridge titleReadyForSelect",
+          "sha": "b729f2d5"
+        },
+        {
+          "subject": "beads sync",
+          "sha": "221be394"
+        },
+        {
+          "type": "test",
+          "scope": "ChroniclesOfNesis-vafk",
+          "subject": "pin StatusMenu no longer stale after load (Tier-3 save-fixture)",
+          "sha": "85e75c1d"
+        },
+        {
+          "subject": "beads sync: vafk created; gnt4/2611 closed (JSONL export)",
+          "sha": "6c0bd981"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-vafk",
+          "subject": "Unit gains stats_changed so StatusMenu isn't stale after load",
+          "sha": "40955eed"
+        },
+        {
+          "subject": "relic tests verified GREEN: correct stale vh60 docstring + close gnt4/2611",
+          "sha": "a27db78f"
+        }
+      ],
+      "derived": true
+    },
     {
       "version": "v0.8.2642",
       "date": "2026-09-09",

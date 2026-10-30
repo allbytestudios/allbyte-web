@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-16T16:51:33.639Z",
+  "generated_at": "2026-10-29T15:26:49.878Z",
   "source": "ChroniclesOfNesis/WebTests/fixtures/saves/tree/save_tree_manifest.json",
   "nodes": [
     {
@@ -534,6 +534,58 @@
       ]
     },
     {
+      "id": "l2_unspent",
+      "label": "L2 cond-11 chain-legal tip (3 unspent AP/JP/SP, walked)",
+      "parent": "cond_11_waterway1_entry",
+      "difficulty": "medium",
+      "scene": "EliasHouse",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "cond_05_after_event_6",
+      "label": "Medium · After Event 6 (Windmill1)",
+      "parent": "med_ev3_windmill1_2f",
+      "difficulty": "medium",
+      "scene": "Windmill1",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "cond_07_after_event_9",
+      "label": "Medium · After Event 9 (ChurchSquare)",
+      "parent": "med_ev8_mayors",
+      "difficulty": "medium",
+      "scene": "ChurchSquare",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "pre_waterway",
+      "label": "Pre-Waterway — cond 11, L1 (Waterway1)",
+      "parent": "med_ev12_eliashouse",
+      "difficulty": "medium",
+      "scene": "Waterway1",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_11_waterway1_entry",
+      "label": "Waterway1 entry — cond 11, L1 (grind start)",
+      "parent": "pre_waterway",
+      "difficulty": "medium",
+      "scene": "Waterway1",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
       "id": "grind_L2_v2806",
       "label": "L2 grind capture (v0.8.2806) — played forward from 10-Mugwort grindbase",
       "parent": "cond_11_mugwort_grindbase",
@@ -549,6 +601,16 @@
       "parent": "cond_11_mugwort_grindbase",
       "difficulty": "medium",
       "scene": "Waterway3",
+      "packs": [
+        "Laria"
+      ]
+    },
+    {
+      "id": "waterway1_grind_start_healed",
+      "label": "Grind Start (Waterway 1) — HEALED: equipped Item Relic + 20 Mugwort",
+      "parent": "cond_11_mugwort_grindbase",
+      "difficulty": "easy",
+      "scene": "Waterway1",
       "packs": [
         "Laria"
       ]

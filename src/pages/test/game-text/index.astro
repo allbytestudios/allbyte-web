@@ -1,0 +1,21 @@
+---
+import ConsoleLayout from "../../../layouts/ConsoleLayout.astro";
+import GameTextApp from "../../../components/GameTextApp.svelte";
+---
+
+<ConsoleLayout
+  title="Game Text — Dev Console — AllByte Studios"
+  description="Every editable line of game text in its current in-game state, with propose, review and apply."
+  active="gametext"
+>
+  <main class="gt-shell">
+    <GameTextApp client:only="svelte" />
+  </main>
+</ConsoleLayout>
+
+<style>
+  .gt-shell {
+    background: var(--panel);
+    min-height: calc(100vh - 160px);
+  }
+</style>

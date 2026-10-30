@@ -19,7 +19,13 @@ export function artifactUrl(relPath: string): string {
 
 export async function fetchIndex(signal?: AbortSignal): Promise<TestIndex> {
   const res = await fetch(`${TEST_DATA_BASE}/test_index.json`, {
-    cache: "no-store",
+    // no-cache, NOT no-store: still revalidates every poll (same freshness),
+    // but sends a conditional request and takes a bodiless 304 when unchanged.
+    // no-store re-downloaded these in full every time - the beads export alone
+    // was 2.2 MB x ~1,450 polls/day = 2.8 GB/day off CloudFront (measured in
+    // the access logs 2026-10-21). CloudFront bills transfer-out on cache hits
+    // too, so fewer bytes is the only lever that reduces cost here.
+    cache: "no-cache",
     signal,
   });
   if (!res.ok) {
@@ -39,7 +45,7 @@ export async function fetchIndex(signal?: AbortSignal): Promise<TestIndex> {
  */
 export async function fetchStatus(signal?: AbortSignal): Promise<TestRunStatus | null> {
   const res = await fetch(`${TEST_DATA_BASE}/test_results/test_run_status.json`, {
-    cache: "no-store",
+    cache: "no-cache",
     signal,
   });
   if (res.status === 404) return null;
@@ -76,7 +82,7 @@ export async function fetchHeartbeat(
   // In dev the watcher isn't writing to the live middleware path, so skip.
   if (import.meta.env.DEV) return null;
   const res = await fetch(`${TEST_DATA_BASE}/heartbeat.json`, {
-    cache: "no-store",
+    cache: "no-cache",
     signal,
   });
   if (res.status === 404) return null;
@@ -92,7 +98,7 @@ import type { TicketsFile, DashboardFile, EpicsFile, FixtureManifest } from "./t
 
 export async function fetchTickets(signal?: AbortSignal): Promise<TicketsFile | null> {
   const res = await fetch(`${TEST_DATA_BASE}/tickets/tickets.json`, {
-    cache: "no-store",
+    cache: "no-cache",
     signal,
   });
   if (res.status === 404) return null;
@@ -102,7 +108,7 @@ export async function fetchTickets(signal?: AbortSignal): Promise<TicketsFile | 
 
 export async function fetchDashboard(signal?: AbortSignal): Promise<DashboardFile | null> {
   const res = await fetch(`${TEST_DATA_BASE}/tickets/dashboard.json`, {
-    cache: "no-store",
+    cache: "no-cache",
     signal,
   });
   if (res.status === 404) return null;
@@ -112,7 +118,7 @@ export async function fetchDashboard(signal?: AbortSignal): Promise<DashboardFil
 
 export async function fetchEpics(signal?: AbortSignal): Promise<EpicsFile | null> {
   const res = await fetch(`${TEST_DATA_BASE}/tickets/epics.json`, {
-    cache: "no-store",
+    cache: "no-cache",
     signal,
   });
   if (res.status === 404) return null;
@@ -122,7 +128,7 @@ export async function fetchEpics(signal?: AbortSignal): Promise<EpicsFile | null
 
 export async function fetchFixtureManifest(signal?: AbortSignal): Promise<FixtureManifest | null> {
   const res = await fetch(`${TEST_DATA_BASE}/test_fixtures/manifest.json`, {
-    cache: "no-store",
+    cache: "no-cache",
     signal,
   });
   if (res.status === 404) return null;
@@ -145,7 +151,7 @@ export async function fetchOwnerQuestions(
   signal?: AbortSignal
 ): Promise<import("./ticketTypes").OwnerQuestionsFile | null> {
   const res = await fetch(`${TEST_DATA_BASE}/tickets/owner_questions.json`, {
-    cache: "no-store",
+    cache: "no-cache",
     signal,
   });
   if (res.status === 404) return null;
@@ -184,7 +190,7 @@ export async function fetchRoadmap(
   signal?: AbortSignal
 ): Promise<TestingRoadmap | null> {
   const res = await fetch(`${TEST_DATA_BASE}/test_roadmap.json`, {
-    cache: "no-store",
+    cache: "no-cache",
     signal,
   });
   if (res.status === 404) return null;

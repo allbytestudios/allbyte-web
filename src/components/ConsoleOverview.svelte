@@ -4,7 +4,6 @@
   import type { SyncHeartbeat } from "../lib/testDataSource";
   import type { BdIssue } from "../lib/beadsTypes";
   import type { MilestoneMeta } from "../lib/milestones";
-  import { TIER_META } from "../lib/testIndex";
   import {
     fetchIndex, fetchStatus, fetchRoadmap, fetchHeartbeat,
     fetchUserAnalytics, fetchBudgetStatus, fetchSiteTraffic, claimOwnerIp, fetchPlayFunnel,
@@ -18,7 +17,6 @@
   import usageData from "../data/claude-usage.json";
   import usageHistory from "../data/claude-usage-history.json";
   import MilestoneStrip from "./MilestoneStrip.svelte";
-  import FixturePicker from "./FixturePicker.svelte";
   import { auth } from "../lib/auth.svelte.ts";
   import { isTierAtLeast } from "../lib/tier";
   import { onMount, onDestroy } from "svelte";
@@ -305,11 +303,6 @@
     sseUnsubs = [];
   });
 
-  function tierCount(tier: number): number {
-    if (!index) return 0;
-    return index.tests.filter((t) => t.tier === tier).length;
-  }
-
   // ---- Epic rollup, sourced from bd (.beads/issues.jsonl) ----
   // Console only surfaces milestone-level rollup + per-milestone epic counts.
   // Per-epic detail lists live on /test/tickets/, not here.
@@ -409,7 +402,6 @@
             {:else if ms.meta.status === "complete"}
               <span>Predates bd tracking</span>
             {/if}
-            <a class="ms-link" href="/test/tickets/">tickets ↗</a>
           </div>
         {:else}
           <div class="ms-bar ms-bar-empty"><div class="ms-bar-fill ms-bar-fill-muted" style="width: 0%"></div></div>
@@ -426,28 +418,10 @@
        Deploy QA now lives in the Deploy tab, next to the promote button it
        actually relates to. The overview keeps the at-a-glance cards only. -->
 
-  <!-- Three overview cards -->
+  <!-- Overview cards -->
   <div class="cards">
-    <!-- Tests -->
-    <a href="/test/tests/" class="card">
-      <h3 class="card-title">Tests</h3>
-      {#if index}
-        <div class="card-stat">{index.summary.total_tests}</div>
-        <div class="card-detail">
-          <span style="color: {TIER_META[1].color}">T1 {tierCount(1)}</span>
-          <span style="color: {TIER_META[2].color}">T2 {tierCount(2)}</span>
-          <span style="color: {TIER_META[3].color}">T3 {tierCount(3)}</span>
-        </div>
-        {#if index.summary.last_full_run_seconds != null}
-          <span class="card-sub">last run {Math.round(index.summary.last_full_run_seconds)}s</span>
-        {/if}
-      {:else}
-        <div class="card-stat">—</div>
-      {/if}
-    </a>
-
-    <!-- Epics -->
-    <a href="/test/tickets/" class="card">
+    <!-- Epics (the Tickets tab retired 2026-10-29; this card is now the only epic view) -->
+    <div class="card">
       <h3 class="card-title">Epics</h3>
       {#if bdIssues.length > 0}
         <div class="card-stat">{openEpicCount} <span class="stat-label">on deck</span></div>
@@ -459,7 +433,7 @@
       {:else}
         <div class="card-stat">—</div>
       {/if}
-    </a>
+    </div>
 
     {#if viewerIsAdmin}
     <!-- Budget -->
@@ -777,10 +751,8 @@
     {/if}
   {/if}
 
-  <!-- Fixture picker (Legend+ only) -->
-  {#if viewerIsLegend}
-    <FixturePicker />
-  {/if}
+  <!-- Fixture picker retired 2026-10-29: the Saves tab jumps to every
+       registry save, which supersedes picking raw fixture files here. -->
 
   <!-- Historical usage chart (Legend only). "Current Week" Messages/
        Time-Elapsed block removed 2026-06-01 per owner spec — the same

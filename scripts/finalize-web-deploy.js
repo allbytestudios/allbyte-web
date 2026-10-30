@@ -30,9 +30,10 @@
  */
 
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = join(__dirname, "..");
@@ -53,6 +54,9 @@ function run(cmd) {
 function porcelain(pathspec) {
   return run(`git status --porcelain -- "${pathspec}"`).trim();
 }
+function repoStatus() {
+  return run("git status --porcelain --untracked-files=all");
+}
 
 // --- manifest -> deployed version --------------------------------------------
 const mi = process.argv.indexOf("--manifest");
@@ -72,9 +76,7 @@ if (!version || version === "(unstamped)") {
   die("manifest has no stamped version — refusing to finalize an unversioned live build (this would corrupt the sw.js cache key).");
 }
 if (!version.startsWith("v")) version = "v" + version;
-if (!/^v\d+\.\d+\.\d+$/.test(version)) {
-  console.warn(`[finalize] ⚠ version '${version}' is not a clean vX.Y.Z — the changelog build-number rollup + ?v= cache-bust assume that shape.`);
-}
+if (!/^v\d+\.\d+\.\d+$/.test(version)) die(`version '${version}' is not a clean vX.Y.Z; refusing to stamp release metadata.`);
 // manifest.created is epoch seconds (same field channels.json uses for deployedAt).
 const buildDate = manifest.created
   ? new Date(manifest.created * 1000).toISOString()
@@ -88,15 +90,33 @@ const versionChanged = current.version !== next.version;
 console.log(`[finalize] deployed=${version}  committed=${current.version || "(none)"}  ${versionChanged ? "→ bump" : "(unchanged)"}`);
 
 if (dryRun) {
-  console.log(`[finalize] [dry-run] would write ${VERSION_REL}:\n${JSON.stringify(next, null, 2)}`);
-  console.log("[finalize] [dry-run] would regenerate changelog, then commit + push. Diff of what changed vs committed:");
-  writeFileSync(VERSION_FILE, JSON.stringify(next, null, 2) + "\n");
-  run(`node scripts/deploy-history.js --require-manifest`);
-  process.stdout.write(run(`git --no-pager diff -- ${VERSION_REL} ${CHANGELOG}`) + "\n");
-  run(`git checkout -- ${VERSION_REL} ${CHANGELOG}`); // restore working tree
-  console.log("[finalize] [dry-run] working tree restored — nothing committed or pushed.");
+  const preview = mkdtempSync(join(tmpdir(), "finalize-preview-"));
+  const previewRepo = join(preview, "repo");
+  try {
+    execSync(`git worktree add --detach "${previewRepo}" HEAD`, { cwd: REPO, stdio: "inherit" });
+    const previewVersionFile = join(previewRepo, VERSION_REL);
+    writeFileSync(previewVersionFile, JSON.stringify(next, null, 2) + "\n");
+    execSync(`git add "${VERSION_REL}"`, { cwd: previewRepo, stdio: "inherit" });
+    execSync(`git commit -q -m "preview release ${version}"`, {
+      cwd: previewRepo, stdio: "inherit",
+      env: { ...process.env, GIT_AUTHOR_NAME: "Release Preview", GIT_AUTHOR_EMAIL: "release-preview@localhost", GIT_COMMITTER_NAME: "Release Preview", GIT_COMMITTER_EMAIL: "release-preview@localhost" },
+    });
+    execSync("node scripts/deploy-history.js --require-manifest --require-current", { cwd: previewRepo, stdio: "inherit" });
+    console.log(`[finalize] [dry-run] proposed ${VERSION_REL}:\n${JSON.stringify(next, null, 2)}`);
+    const versionDiff = execSync(`git --no-pager diff HEAD^ HEAD -- "${VERSION_REL}"`, { cwd: previewRepo, encoding: "utf8" });
+    const changelogDiff = execSync(`git --no-pager diff -- "${CHANGELOG}"`, { cwd: previewRepo, encoding: "utf8" });
+    const diff = versionDiff + changelogDiff;
+    process.stdout.write(diff + "\n");
+    console.log("[finalize] [dry-run] isolated preview complete; original worktree was not modified.");
+  } finally {
+    try { execSync(`git worktree remove --force "${previewRepo}"`, { cwd: REPO, stdio: "ignore" }); } catch {}
+    rmSync(preview, { recursive: true, force: true });
+  }
   process.exit(0);
 }
+
+const dirty = repoStatus();
+if (dirty) die(`working tree has existing changes; commit/stash them before finalizing. Nothing was changed.\n${dirty}`);
 
 writeFileSync(VERSION_FILE, JSON.stringify(next, null, 2) + "\n");
 
@@ -108,9 +128,7 @@ if (porcelain(VERSION_REL)) {
 
 Auto-stamped by finalize-web-deploy.js from the deploy manifest so the sw.js
 cache key matches the shipped /godot/* assets (returning devices purge stale
-cache) and /changelog/ picks up the release.
-
-Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"`);
+cache) and /changelog/ picks up the release."`);
   releaseCommitted = true;
   console.log(`[finalize] committed release ${version}.`);
 } else {
@@ -118,7 +136,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"`);
 }
 
 // --- 3. regenerate the changelog (now sees the committed version) ------------
-run(`node scripts/deploy-history.js --require-manifest`);
+run(`node scripts/deploy-history.js --require-manifest --require-current`);
 
 let pushNeeded = releaseCommitted;
 if (porcelain(CHANGELOG)) {
@@ -127,9 +145,7 @@ if (porcelain(CHANGELOG)) {
     run(`git commit -q --amend --no-edit`); // fold changelog into the release commit
     console.log("[finalize] folded changelog.json into the release commit.");
   } else {
-    run(`git commit -q -m "changelog: refresh from deploy manifest
-
-Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"`);
+    run(`git commit -q -m "changelog: refresh from deploy manifest"`);
     pushNeeded = true;
     console.log("[finalize] committed changelog refresh.");
   }

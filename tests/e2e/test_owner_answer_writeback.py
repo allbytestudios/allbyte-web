@@ -1,6 +1,12 @@
 """E2E: click a verification button and confirm it POSTs the right payload."""
 import json
 
+import pytest
+
+# The Questions tab (/test/decisions/) retired 2026-10-29 — the owner answers via
+# chat/bus now. Delete with OwnerQuestionsApp next cycle.
+pytestmark = pytest.mark.skip(reason="Questions tab retired 2026-10-29")
+
 
 def test_verification_submit_hits_api(page, base_url):
     """Mock /api/answers to capture the payload without polluting the real ndjson."""

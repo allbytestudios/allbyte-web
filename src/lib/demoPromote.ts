@@ -28,6 +28,13 @@ export interface BuildStatus {
   phase: string;
   /** Commit CodeBuild actually resolved the ref to. Absent until source is fetched. */
   sha?: string;
+  releaseVerification?: {
+    status: "verified" | "pending";
+    gameVersion?: string | null;
+    gameSha?: string | null;
+    checks: Record<string, boolean>;
+    pending: string[];
+  };
 }
 
 export async function promoteDevelop(token: string): Promise<PromoteResult> {
@@ -52,7 +59,10 @@ export async function fetchBuildStatus(
     `${PROMOTE_BASE}/status?ids=${encodeURIComponent(ids.join(","))}`,
     { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }
   );
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`${res.status} ${res.statusText}${body ? ` — ${body}` : ""}`);
+  }
   const data = await res.json();
   return (data.builds ?? []) as BuildStatus[];
 }

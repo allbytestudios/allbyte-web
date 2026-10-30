@@ -838,6 +838,72 @@ function whHash(s) {
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
   return h.toString(36);
 }
+// Dev-only POST for the Game Text tab (bead mak7p). ONE append-only route for
+// both streams: a proposal (owner edits a line) or a review (verdict on one).
+// Lines land in tools/game_text_proposals.ndjson / game_text_reviews.ndjson;
+// Arc's apply_game_text.py reads them. Append-only on purpose — status is
+// DERIVED (from reviews + the next export's hash), never edited in place, so
+// there is no record to corrupt and the history is the audit trail.
+function gameTextWriteback() {
+  const SAFE_ID = /^[A-Za-z0-9_.:\/#|-]{1,200}$/;
+  const HASH = /^[0-9a-f]{12}$/;
+  const PEOPLE = new Set(["owner", "arc", "app", "quinn", "rowan"]);
+  const VERDICTS = new Set(["approve", "change", "reject"]);
+  return {
+    name: "allbyte-game-text-writeback",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.replace(/\/$/, "") ?? "";
+        if (req.method !== "POST" || url !== "/api/game-text") return next();
+        const MAX_BODY = 16 * 1024;
+        let body = "";
+        let tooLarge = false;
+        req.on("data", (chunk) => {
+          if (tooLarge) return;
+          body += chunk;
+          if (body.length > MAX_BODY) {
+            tooLarge = true;
+            res.statusCode = 413;
+            res.end(JSON.stringify({ error: "body too large" }));
+            req.destroy();
+          }
+        });
+        req.on("end", () => {
+          if (tooLarge) return;
+          const fail = (msg) => { res.statusCode = 400; res.end(JSON.stringify({ error: msg })); };
+          try {
+            const b = JSON.parse(body);
+            const ts = new Date().toISOString();
+            let file, rec;
+            if (b.type === "proposal") {
+              if (typeof b.text_id !== "string" || !SAFE_ID.test(b.text_id)) return fail("text_id invalid");
+              if (typeof b.base_hash !== "string" || !HASH.test(b.base_hash)) return fail("base_hash must be 12 hex");
+              if (typeof b.proposed !== "string" || !b.proposed || b.proposed.length > 4096) return fail("proposed must be 1-4096 chars");
+              if (!PEOPLE.has(b.author)) return fail("author unknown");
+              rec = {
+                proposal_id: `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+                text_id: b.text_id, base_hash: b.base_hash, proposed: b.proposed, author: b.author, ts,
+              };
+              file = "game_text_proposals.ndjson";
+            } else if (b.type === "review") {
+              if (typeof b.proposal_id !== "string" || !/^p_[a-z0-9_]{4,40}$/.test(b.proposal_id)) return fail("proposal_id invalid");
+              if (!PEOPLE.has(b.reviewer)) return fail("reviewer unknown");
+              if (!VERDICTS.has(b.verdict)) return fail("verdict must be approve|change|reject");
+              const note = typeof b.note === "string" ? b.note.slice(0, 2000) : "";
+              rec = { proposal_id: b.proposal_id, reviewer: b.reviewer, verdict: b.verdict, note, ts };
+              file = "game_text_reviews.ndjson";
+            } else return fail("type must be proposal|review");
+            appendFileSync(normalize(join(chroniclesRoot, "tools", file)), JSON.stringify(rec) + "\n");
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: true, record: rec }));
+          } catch (e) {
+            fail(`bad request: ${e.message}`);
+          }
+        });
+      });
+    },
+  };
+}
 // Dev-only POST for editing relic vignette prose (the owner-approval gate).
 // Merges a relic's edited tier lines into tools/relic_vignette_overrides.json,
 // keyed "<relic_name>|<tier>" -> {lines}. Arc's apply_relic_vignette_overrides.py
@@ -1341,6 +1407,20 @@ function marketingDistribution() {
 }
 
 export default defineConfig({
+  // Workshop cleanup (owner-approved 2026-10-29): retired console tabs keep
+  // their URLs as redirects, so old bookmarks and relayed links still land.
+  // Scenarios moved into Saves; Players + Traffic merged into Audience; the
+  // rest fall back to the console home.
+  redirects: {
+    "/test/scenarios/": "/test/saves/",
+    "/test/play-funnel/": "/test/audience/",
+    "/test/traffic/": "/test/audience/",
+    "/test/decisions/": "/test/",
+    "/test/tickets/": "/test/",
+    "/test/tests/": "/test/",
+    "/test/marketing-queue/": "/test/",
+    "/test/session/": "/test/",
+  },
   // Required for sitemap generation and absolute URLs. Kept identical to the
   // SITE constant BaseLayout uses for canonical/OG tags — if one moves, move both.
   site: "https://allbyte.studio",
@@ -1428,7 +1508,7 @@ export default defineConfig({
       // BaseLayout so it can be read without devtools.
       __SITE_BUILD__: JSON.stringify(SITE_BUILD),
     },
-    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), relicVignetteOverrideWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork(), manualSnapshotPreview(), deployTrigger()],
+    plugins: [tailwindcss(), marketingDistribution(), decisionWriteback(), ownerAnswerWriteback(), dialogueOverrideWriteback(), ambientOverrideWriteback(), relicVignetteOverrideWriteback(), gameTextWriteback(), walkthroughOverrideWriteback(), testDataEvents(), godotReload(), chroniclesProxy(), captureLocalProxy(), marketingPublish(), captionDrafter(), marketingApproveToArtwork(), manualSnapshotPreview(), deployTrigger()],
     server: {
       host: "0.0.0.0",
       allowedHosts: true,

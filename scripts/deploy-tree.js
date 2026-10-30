@@ -64,4 +64,4 @@ console.log("→ committing + pushing…");
 sh(`git add ${TREE_PATHS}`);
 sh(`git commit -m "deploy(save-tree): publish latest manifest to prod${counts}"`);
 sh("git push");
-console.log("\n✓ Pushed. Prod redeploys automatically (~1-2 min) → the save tree is live at /test/scenarios/.");
+console.log("\n✓ Pushed. Prod redeploys automatically (~1-2 min) → the save tree is live at /test/saves/.");

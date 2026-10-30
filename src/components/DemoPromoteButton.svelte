@@ -25,6 +25,10 @@
   let error = $state<string | null>(null);
   let result = $state<PromoteResult | null>(null);
   let statuses = $state<Record<string, BuildStatus>>({});
+  let verificationTimedOut = $state(false);
+  let verificationUnavailable = $state(false);
+  let statusError = $state<string | null>(null);
+  let pollStartedAt = 0;
   let poll: ReturnType<typeof setInterval> | null = null;
 
   onMount(async () => {
@@ -48,6 +52,10 @@
     error = null;
     result = null;
     statuses = {};
+    resolvedSha = undefined;
+    verificationTimedOut = false;
+    verificationUnavailable = false;
+    statusError = null;
     try {
       result = await promoteDevelop(auth.authToken ?? "");
       startPolling();
@@ -70,9 +78,11 @@
     if (poll) clearInterval(poll);
     const ids = activeIds();
     if (!ids.length) return;
+    pollStartedAt = Date.now();
     const tick = async () => {
       try {
         const s = await fetchBuildStatus(auth.authToken ?? "", ids);
+        statusError = null;
         const map: Record<string, BuildStatus> = {};
         for (const b of s) map[b.id] = b;
         statuses = map;
@@ -80,23 +90,77 @@
         // the first one that resolves, so the card can say what actually shipped
         // rather than what we asked for.
         resolvedSha = s.find((b) => b.sha)?.sha ?? resolvedSha;
-        const done = s.every((b) => b.status && b.status !== "IN_PROGRESS");
-        if (done && poll) { clearInterval(poll); poll = null; }
-      } catch { /* keep last */ }
+        const terminalBuilds = result?.builds.filter((item) => item.buildId) ?? [];
+        const oldStatusApi = terminalBuilds.length > 0 && terminalBuilds.every((item) => {
+          const status = map[item.buildId || ""];
+          return status?.status === "SUCCEEDED" && !status.releaseVerification;
+        });
+        if (oldStatusApi) {
+          verificationUnavailable = true;
+          if (poll) clearInterval(poll);
+          poll = null;
+          return;
+        }
+        const failed = result?.builds.some((item) => {
+          const status = map[item.buildId || ""]?.status;
+          return ["FAILED", "FAULT", "TIMED_OUT", "STOPPED"].includes(status || "");
+        });
+        const verified = result?.builds.length && result.builds.every((item) => {
+          const status = map[item.buildId || ""];
+          return status?.status === "SUCCEEDED" && status.releaseVerification?.status === "verified";
+        });
+        if (failed || verified) {
+          if (poll) clearInterval(poll);
+          poll = null;
+        }
+      } catch (e: any) {
+        statusError = e?.message ?? String(e);
+      }
+      if (poll && Date.now() - pollStartedAt >= 15 * 60 * 1000) {
+        verificationTimedOut = true;
+        clearInterval(poll);
+        poll = null;
+      }
     };
     tick();
-    poll = setInterval(tick, 5000);
+    poll = setInterval(tick, 15000);
   }
 
   function badge(b: { status: string; buildId?: string }): { label: string; cls: string } {
     if (b.status === "unavailable") return { label: "waiting on build project", cls: "wait" };
     if (b.status === "error") return { label: "error", cls: "err" };
     const live = b.buildId ? statuses[b.buildId]?.status : null;
-    if (live === "SUCCEEDED") return { label: "deployed ✓", cls: "ok" };
+    if (live === "SUCCEEDED" && statuses[b.buildId || ""]?.releaseVerification?.status === "verified")
+      return { label: "live + verified", cls: "ok" };
+    if (live === "SUCCEEDED") return { label: "game published; checking site", cls: "run" };
     if (live === "FAILED" || live === "FAULT" || live === "TIMED_OUT" || live === "STOPPED")
       return { label: live.toLowerCase(), cls: "err" };
     if (live === "IN_PROGRESS") return { label: "building…", cls: "run" };
     return { label: "started", cls: "run" };
+  }
+
+  function resultMessage(): string {
+    const builds = result?.builds ?? [];
+    const failed = builds.some((b) => {
+      const status = b.buildId ? statuses[b.buildId]?.status : b.status;
+      return b.status === "error" || ["FAILED", "FAULT", "TIMED_OUT", "STOPPED"].includes(status || "");
+    });
+    if (failed) return "Game build or upload failed. Open the failed build log before retrying.";
+    if (statusError) return "The release status service returned an error; details are shown below.";
+    if (builds.some((b) => b.status === "unavailable")) return "The configured game build project is unavailable; no release was started.";
+    if (builds.length && builds.every((b) => b.status === "error")) return "The release could not start. See the CodeBuild start error above.";
+    if (verificationTimedOut) return "The game build passed, but live game, service-worker, and What's New checks did not agree within 15 minutes.";
+    if (verificationUnavailable) return "The game build passed, but this status service has not been updated to report live webapp verification.";
+    if (builds.length && builds.every((b) => b.buildId && statuses[b.buildId]?.releaseVerification?.status === "verified"))
+      return "Release verified: the deployed game source, service worker, and What's New page agree.";
+    return "Game build is running or published. Waiting for live site and What's New verification.";
+  }
+
+  function clearResult() {
+    if (poll) clearInterval(poll);
+    poll = null;
+    result = null;
+    error = null;
   }
 </script>
 
@@ -118,12 +182,12 @@
       {#if !result}
         {#if !confirming}
           <button class="btn danger" onclick={() => (confirming = true)} disabled={submitting}>
-            Promote develop → Demo + Demo&nbsp;Debug
+            Promote develop → public Demo
           </button>
         {:else}
           <div class="confirm">
-            <p><b>Confirm:</b> promote develop's current commit to the <b>public Demo</b>
-              and Demo&nbsp;Debug? This ships to the live demo{#if liveVersion}, replacing
+            <p><b>Confirm:</b> promote develop's current commit to the <b>public Demo</b>?
+              This ships to the live demo{#if liveVersion}, replacing
               <code>{liveVersion}</code>{/if}.</p>
             <div class="row">
               <button class="btn danger" onclick={doPromote} disabled={submitting}>
@@ -143,16 +207,23 @@
               <li>
                 <span class="ch">{b.label}</span>
                 <span class="st {bd.cls}">{bd.label}</span>
+                {#if b.buildId && statuses[b.buildId]?.phase}<span class="phase">{statuses[b.buildId].phase}</span>{/if}
+                {#if b.buildId}
+                  <a class="build-log" href={`https://us-east-1.console.aws.amazon.com/codesuite/codebuild/projects/${encodeURIComponent(b.buildId.split(":")[0])}/build/${encodeURIComponent(b.buildId)}/?region=us-east-1`} target="_blank" rel="noreferrer">Build logs</a>
+                {/if}
                 {#if b.error}<span class="berr">{b.error}</span>{/if}
+                {#if b.buildId && statuses[b.buildId]?.releaseVerification?.pending.length}
+                  <span class="pending-detail">Waiting on: {statuses[b.buildId].releaseVerification?.pending.join(", ")}</span>
+                {/if}
               </li>
             {/each}
           </ul>
-          <p class="finalize-note">
-            ✓ Nothing to run — once the <b>Demo</b> deploys, the <b>Finalize&nbsp;Demo</b> Action
-            reconciles <code>game-version.json</code> + <code>sw.js</code> automatically
-            (within&nbsp;~10&nbsp;min). Need it instant? Run the <b>Finalize&nbsp;Demo</b> workflow.
-          </p>
-          <button class="btn" onclick={() => { result = null; error = null; }}>Done</button>
+          <p class="finalize-note">{resultMessage()}</p>
+          {#if statusError}<p class="berr">Status check error: {statusError}</p>{/if}
+          {#if verificationTimedOut || verificationUnavailable}
+            <p class="note">Run <code>npm run verify:release</code> from the web repository for a fresh browser smoke and a saved JSON report.</p>
+          {/if}
+          <button class="btn" onclick={clearResult}>Done</button>
         </div>
       {/if}
 
@@ -203,6 +274,9 @@
   .st.err { color: var(--sem-danger); background: rgba(248, 113, 113, 0.12); border-color: var(--sem-danger); }
   .st.wait { color: var(--ink-soft); background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); }
   .berr { color: var(--sem-danger); font-size: 0.74rem; }
+  .pending-detail { color: var(--sem-warn); font-size: 0.74rem; }
+  .phase { color: var(--ink-soft); font-size: 0.72rem; }
+  .build-log { color: var(--ink-soft); font-size: 0.72rem; }
   .finalize-note {
     margin: 0.7rem 0 0;
     padding: 0.55rem 0.7rem;

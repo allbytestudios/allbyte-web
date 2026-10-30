@@ -1,73 +1,32 @@
 <script lang="ts">
-  import { fetchIndex, fetchOwnerQuestions } from "../lib/testDataSource";
-  import { fetchBeadsIssues } from "../lib/beadsSource";
-  import { epicsOnly, isOpen, isClosed } from "../lib/beadsTypes";
-  import { subscribeToFile } from "../lib/testEvents";
   import { fetchBugCounts } from "../lib/bugReports";
   import { auth } from "../lib/auth.svelte";
   import { onMount, onDestroy } from "svelte";
 
   interface Props {
-    active: "roadmap" | "tickets" | "tests" | "decisions" | "marketing" | "players" | "traffic" | "scenarios" | "bugs" | "deploy" | "dialogue" | "vignettes" | "cards";
+    active: "roadmap" | "saves" | "gametext" | "deploy" | "audience" | "bugs" | "dialogue" | "vignettes" | "cards";
   }
   let { active }: Props = $props();
 
-  let testCount = $state<number | null>(null);
-  // Tickets tab (leads to /test/tickets/, which surfaces bd epics): grey = open count.
-  let epicsOpenCount = $state<number | null>(null);
-  let epicsDoneCount = $state<number | null>(null);
-  // Owner Questions: yellow=pending, grey=total
-  let questionsTotal = $state<number | null>(null);
-  let questionsPending = $state<number | null>(null);
   // Bugs: yellow=unread (untriaged), grey=total. Needs the auth token, so it only
   // populates for admins; on failure we keep the last value rather than blanking.
+  // The other badges (tests, epics, questions) left with their tabs.
   let bugUnread = $state<number | null>(null);
   let bugTotal = $state<number | null>(null);
 
   let pollTimer: ReturnType<typeof setInterval> | null = null;
 
   async function refresh() {
-    const [idx, bd, oq, bugs] = await Promise.all([
-      fetchIndex().catch(() => null),
-      fetchBeadsIssues().catch(() => []),
-      fetchOwnerQuestions().catch(() => null),
-      fetchBugCounts(auth.authToken).catch(() => null),
-    ]);
-    testCount = idx?.summary?.total_tests ?? null;
-
+    const bugs = await fetchBugCounts(auth.authToken).catch(() => null);
     if (bugs) {
       bugUnread = bugs.unread > 0 ? bugs.unread : null;
       bugTotal = bugs.total;
     }
-
-    const epics = epicsOnly(bd);
-    const open = epics.filter(isOpen).length;
-    const closed = epics.filter(isClosed).length;
-    epicsOpenCount = open > 0 ? open : null;
-    epicsDoneCount = closed > 0 ? closed : null;
-
-    if (oq && Array.isArray(oq.questions)) {
-      const pending = oq.questions.filter((q: any) => q.status === "pending").length;
-      const total = oq.questions.length;
-      questionsPending = pending > 0 ? pending : null;
-      questionsTotal = total > 0 ? total : null;
-    } else {
-      questionsPending = null;
-      questionsTotal = null;
-    }
   }
-
-  const WATCHED = [
-    "tickets/owner_questions.json",
-    ".beads/issues.jsonl",
-    "test_index.json",
-  ];
-  let unsubs: Array<() => void> = [];
 
   onMount(() => {
     refresh();
     pollTimer = setInterval(refresh, 15000);
-    unsubs = WATCHED.map((p) => subscribeToFile(p, refresh));
     // Bug counts need the auth token; re-run once auth is ready so the badge
     // appears promptly instead of waiting for the next 15s poll.
     (async () => {
@@ -82,44 +41,28 @@
 
   onDestroy(() => {
     if (pollTimer) clearInterval(pollTimer);
-    for (const u of unsubs) u();
-    unsubs = [];
   });
 </script>
 
 <nav class="test-nav">
+  <!-- Workshop IA (owner-approved 2026-10-29): Console · Saves · Deploy ·
+       Audience · Bugs · Game Text. Dialogue / Vignettes / Cards stay until each
+       kind cuts over to Game Text (dialogue first), then they go. Retired tabs redirect
+       (astro.config.mjs `redirects`). -->
   <a href="/test/" class="nav-tab" class:active={active === "roadmap"}>
     Console
   </a>
-  <a href="/test/decisions/" class="nav-tab" class:active={active === "decisions"}>
-    Questions
-    <span class="nav-count nav-yellow">{questionsPending ?? 0}</span>
-    <span class="nav-count nav-grey">{questionsTotal ?? 0}</span>
+  <a href="/test/saves/" class="nav-tab" class:active={active === "saves"}>
+    Saves
   </a>
-  <a href="/test/tickets/" class="nav-tab" class:active={active === "tickets"}>
-    Tickets
-    <span class="nav-count nav-grey">{epicsOpenCount ?? 0}</span>
-    {#if epicsDoneCount}
-      <span class="nav-count nav-green">{epicsDoneCount}</span>
-    {/if}
-  </a>
-  <a href="/test/tests/" class="nav-tab" class:active={active === "tests"}>
-    Tests
-    <span class="nav-count nav-green">0</span>
-    <span class="nav-count nav-red">0</span>
-    <span class="nav-count nav-grey">{testCount ?? 0}</span>
-  </a>
-  <a href="/test/marketing-queue/" class="nav-tab" class:active={active === "marketing"}>
-    Marketing
-  </a>
-  <a href="/test/play-funnel/" class="nav-tab" class:active={active === "players"}>
-    Players
-  </a>
-  <a href="/test/traffic/" class="nav-tab" class:active={active === "traffic"}>
-    Traffic
+  <a href="/test/game-text/" class="nav-tab" class:active={active === "gametext"}>
+    Game Text
   </a>
   <a href="/test/deploy/" class="nav-tab" class:active={active === "deploy"}>
     Deploy
+  </a>
+  <a href="/test/audience/" class="nav-tab" class:active={active === "audience"}>
+    Audience
   </a>
   <a href="/test/bug-reports/" class="nav-tab" class:active={active === "bugs"}>
     Bugs
@@ -127,12 +70,6 @@
       <span class="nav-count nav-yellow">{bugUnread}</span>
     {/if}
     <span class="nav-count nav-grey">{bugTotal ?? 0}</span>
-  </a>
-  <a href="/test/scenarios/" class="nav-tab" class:active={active === "scenarios"}>
-    Scenarios
-  </a>
-  <a href="/test/session/" class="nav-tab" class:active={active === "session"}>
-    Live session
   </a>
   <a href="/test/dialogue/" class="nav-tab" class:active={active === "dialogue"}>
     Dialogue

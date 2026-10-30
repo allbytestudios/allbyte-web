@@ -41,6 +41,7 @@ const has = (name) => args.includes(`--${name}`);
 
 const BASE = flag("base", "https://allbyte.studio").replace(/\/$/, "");
 const TIMEOUT_MS = 20000;
+const REPORT_FILE = flag("report-file");
 
 /** Pages a player actually uses. A smoke list, not an inventory — keep it short. */
 const PLAYER_PAGES = [
@@ -67,10 +68,10 @@ function record(name, ok, detail) {
 }
 
 /** Cache-busted fetch: CloudFront sits in front of everything here. */
-async function get(path, asText = true) {
+async function get(path, asText = true, timeoutMs = TIMEOUT_MS) {
   const res = await fetch(`${BASE}${path}`, {
     headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     redirect: "follow",
   });
   return { res, body: asText ? await res.text() : null };
@@ -97,12 +98,23 @@ async function checkDeployLanded() {
       return record("deploy landed", true, "skipped (no git)");
     }
   }
-  const { body } = await get("/");
-  const m = /name="site-build" content="([^"]+)"/.exec(body || "");
-  if (!m) return record("deploy landed", false, "no site-build meta tag on /");
-  const liveSha = m[1].split(/[^0-9a-f]/i)[0];
-  const ok = liveSha.length > 4 && expected.startsWith(liveSha.slice(0, 7));
-  record("deploy landed", ok, ok ? `live ${liveSha}` : `live ${liveSha}, expected ${expected.slice(0, 8)}`);
+  let liveSha = null;
+  const deadline = Date.now() + 120000;
+  let attempt = 0;
+  while (Date.now() < deadline) {
+    attempt++;
+    try {
+      const remaining = Math.max(1, deadline - Date.now());
+      const { body } = await get(`/?deploy-check=${Date.now()}`, true, Math.min(10000, remaining));
+      liveSha = /name="site-build" content="([^"]+)"/.exec(body || "")?.[1]?.split(/[^0-9a-f]/i)[0] ?? null;
+      if (liveSha?.length > 4 && expected.startsWith(liveSha.slice(0, 7))) {
+        return record("deploy landed", true, `live ${liveSha} (attempt ${attempt})`);
+      }
+    } catch { /* bounded retry below */ }
+    const remaining = deadline - Date.now();
+    if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(5000, remaining)));
+  }
+  record("deploy landed", false, liveSha ? `live ${liveSha}, expected ${expected.slice(0, 8)} after 120s` : "no site-build meta tag after 120s");
 }
 
 // 2. Version coherence — the most expensive thing a deploy can get wrong. sw.js
@@ -155,6 +167,18 @@ async function checkVersions() {
       : `MISMATCH sw.js=${bare(swV)} deployed=${bare(deployed)} — returning players will hang`,
   );
 
+  // /changelog/ is generated from the deploy manifest. Check the actual page
+  // players see, not just the source JSON, and require it to name the live game.
+  try {
+    const { body } = await get("/changelog/");
+    const latest = /class="release-version"[^>]*>\s*([^<]+)/.exec(body || "")?.[1]?.trim();
+    const expectedLatest = `v${bare(deployed)}`;
+    record("What's New matches live game", latest === expectedLatest,
+      latest === expectedLatest ? latest : `page=${latest || "missing"}, live=${expectedLatest}`);
+  } catch (e) {
+    record("What's New matches live game", false, e.message);
+  }
+
   if (committed && bare(committed) !== bare(deployed)) {
     console.log(
       `  [note] committed game-version.json is ${bare(committed)}, deployed is ${bare(deployed)} — ` +
@@ -188,7 +212,7 @@ async function checkPages() {
 // CloudFront function, separate from the wrapper's policy — they have drifted
 // apart before.)
 async function checkIsolationHeaders() {
-  for (const path of ["/play/", "/godot/index.html"]) {
+  for (const path of ["/play/", "/godot/public/index.html"]) {
     try {
       const { res } = await get(path, false);
       const coop = res.headers.get("cross-origin-opener-policy");
@@ -305,6 +329,18 @@ async function main() {
     } catch {
       /* summary is nice-to-have; never fail a run over it */
     }
+  }
+
+  if (REPORT_FILE) {
+    const { writeFileSync } = await import("node:fs");
+    writeFileSync(REPORT_FILE, JSON.stringify({
+      base: BASE,
+      checkedAt: new Date().toISOString(),
+      status: failed.length ? "failed" : "passed",
+      passed: results.length - failed.length,
+      failed: failed.length,
+      checks: results,
+    }, null, 2) + "\n");
   }
 
   process.exit(failed.length ? 1 : 0);

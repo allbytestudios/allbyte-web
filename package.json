@@ -13,6 +13,7 @@
     "sync:marketing": "node scripts/sync-marketing-posts.mjs",
     "sync:scenarios": "node scripts/sync-scenario-fixtures.js",
     "sync:tree": "node scripts/sync-save-tree.js",
+    "sync:catalogue": "node scripts/sync-save-catalogue.js",
     "sync:dialogue": "node scripts/sync-dialogue.js",
     "deploy:tree": "node scripts/deploy-tree.js",
     "changelog": "node scripts/deploy-history.js",

@@ -1,0 +1,227 @@
+{
+  "title": "Episode One — Save Catalogue",
+  "as_of": null,
+  "synced_at": "2026-10-29T15:26:50.925Z",
+  "covered": 14,
+  "savable_total": 18,
+  "target_level": 4,
+  "frontier": {},
+  "nodes": [
+    {
+      "cond": 0,
+      "level": 1,
+      "note": "intro complete — EliasHouse",
+      "status": "covered",
+      "jump": {
+        "id": "med_intro",
+        "source": "frontier",
+        "scene": "EliasHouse",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 1,
+      "level": 1,
+      "note": "ChurchSquare / Naphtali",
+      "status": "covered",
+      "jump": {
+        "id": "med_ev1_churchsquare",
+        "source": "frontier",
+        "scene": "ChurchSquare",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 2,
+      "level": 1,
+      "note": "Windmill1 entered",
+      "status": "covered",
+      "jump": {
+        "id": "med_ev2_windmill1",
+        "source": "frontier",
+        "scene": "Windmill1",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 3,
+      "level": 1,
+      "note": "Windmill1 2F gears",
+      "status": "covered",
+      "jump": {
+        "id": "med_ev3_windmill1_2f",
+        "source": "frontier",
+        "scene": "Windmill1SecondFloor",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 4,
+      "level": 1,
+      "note": "between-events — SAVE DISABLED (not capturable; owner 2026-10-28)",
+      "status": "skip"
+    },
+    {
+      "cond": 5,
+      "level": 1,
+      "note": "Windmill basement slime",
+      "status": "covered",
+      "jump": {
+        "id": "cond_05_after_event_6",
+        "source": "frontier",
+        "scene": "Windmill1",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 6,
+      "level": 1,
+      "note": "MayorsHouse (after slime)",
+      "status": "covered",
+      "jump": {
+        "id": "med_ev8_mayors",
+        "source": "frontier",
+        "scene": "MayorsHouse",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 7,
+      "level": 1,
+      "note": "ChurchSquare rescue",
+      "status": "covered",
+      "jump": {
+        "id": "cond_07_after_event_9",
+        "source": "frontier",
+        "scene": "ChurchSquare",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 8,
+      "level": 1,
+      "note": "ChurchSquare (slimes)",
+      "status": "covered",
+      "jump": {
+        "id": "med_ev10_churchsquare",
+        "source": "frontier",
+        "scene": "ChurchSquare",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 9,
+      "level": 1,
+      "note": "MayorsHouse (back)",
+      "status": "covered",
+      "jump": {
+        "id": "med_ev11_mayors",
+        "source": "frontier",
+        "scene": "MayorsHouse",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 10,
+      "level": 1,
+      "note": "EliasHouse (next morning)",
+      "status": "covered",
+      "jump": {
+        "id": "easy_ev12_eliashouse",
+        "source": "tree",
+        "scene": "EliasHouse",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 11,
+      "level": 1,
+      "note": "Waterways grind start — L1",
+      "status": "covered",
+      "jump": {
+        "id": "easy_before_dungeon",
+        "source": "tree",
+        "scene": "Windmill1Basement",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 11,
+      "level": 2,
+      "note": "grind L2",
+      "status": "covered",
+      "jump": {
+        "id": "l2_unspent",
+        "source": "tree",
+        "scene": "EliasHouse",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 11,
+      "level": 3,
+      "note": "grind L3",
+      "status": "gap",
+      "tier": "next"
+    },
+    {
+      "cond": 11,
+      "level": 4,
+      "note": "grind L4 (boss becomes beatable ~here)",
+      "status": "gap",
+      "tier": "next"
+    },
+    {
+      "cond": 11,
+      "level": 5,
+      "note": "grind L5 — boss-ready",
+      "status": "gap",
+      "tier": "future"
+    },
+    {
+      "cond": 12,
+      "level": 5,
+      "note": "into the boss — SluiceGate (level-gated; target L5)",
+      "status": "gap",
+      "tier": "future"
+    },
+    {
+      "cond": 13,
+      "level": 5,
+      "note": "Mother Slime defeated",
+      "status": "covered",
+      "jump": {
+        "id": "med_boss_at_mayor",
+        "source": "standalone",
+        "scene": "MayorsHouse",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 14,
+      "level": 5,
+      "note": "END EP1 — credits",
+      "status": "covered",
+      "jump": {
+        "id": "med_end_ep1",
+        "source": "standalone",
+        "scene": "MayorsHouse",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    }
+  ]
+}

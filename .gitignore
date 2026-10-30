@@ -50,6 +50,11 @@ tests/controller-qa/reports/
 # templates were moved OUT to deploy/ precisely so this blanket ignore is safe.
 infrastructure/
 
+# Agent-to-agent coordination handoffs. Internal working chatter, not reference
+# material: it cross-references the private game repo and dates fast. Kept out of
+# the public tree so docs/ stays a curated index for other developers.
+coord/
+
 # Cross-browser QA harness reports (generated per run, not source)
 tests/cross-browser-qa/reports/
 

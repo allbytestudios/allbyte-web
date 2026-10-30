@@ -1,0 +1,30 @@
+---
+import ConsoleLayout from "../../../layouts/ConsoleLayout.astro";
+import ScenarioLauncher from "../../../components/ScenarioLauncher.svelte";
+import SaveTree from "../../../components/SaveTree.svelte";
+import SaveCatalogue from "../../../components/SaveCatalogue.svelte";
+// Replaces the Scenarios tab (workshop cleanup, owner-approved 2026-10-29).
+// One jump path for all three panels: /play/?scenario=<registry id>. The
+// catalogue leads because it answers "where is autoplay, what's next"; the
+// featured rows are a curated highlight over the same registry the tree lists.
+---
+
+<ConsoleLayout
+  title="Saves — Dev Console — AllByte Studios"
+  description="Episode One save coverage, featured jump-ins, and the full save-state tree — click a save to jump into the game there."
+  active="saves"
+>
+  <main class="test-page">
+    <SaveCatalogue client:only="svelte" />
+    <ScenarioLauncher client:only="svelte" />
+    <SaveTree client:only="svelte" />
+  </main>
+</ConsoleLayout>
+
+<style>
+  .test-page {
+    background: var(--panel);
+    min-height: calc(100vh - 160px);
+    padding: 0.5rem 0 2rem;
+  }
+</style>

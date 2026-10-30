@@ -18,7 +18,13 @@ const HISTORICAL_EPICS: BdIssue[] = (historicalData.epics ?? []) as BdIssue[];
 
 export async function fetchBeadsIssues(signal?: AbortSignal): Promise<BdIssue[]> {
   const res = await fetch(`${BASE}${ISSUES_PATH}`, {
-    cache: "no-store",
+    // no-cache, NOT no-store: still revalidates every poll (same freshness),
+    // but sends a conditional request and takes a bodiless 304 when unchanged.
+    // no-store re-downloaded these in full every time - the beads export alone
+    // was 2.2 MB x ~1,450 polls/day = 2.8 GB/day off CloudFront (measured in
+    // the access logs 2026-10-21). CloudFront bills transfer-out on cache hits
+    // too, so fewer bytes is the only lever that reduces cost here.
+    cache: "no-cache",
     signal,
   });
   const live: BdIssue[] = [];

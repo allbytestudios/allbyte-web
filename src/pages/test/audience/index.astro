@@ -1,0 +1,26 @@
+---
+import ConsoleLayout from "../../../layouts/ConsoleLayout.astro";
+import PlayFunnelApp from "../../../components/PlayFunnelApp.svelte";
+import TrafficApp from "../../../components/TrafficApp.svelte";
+// Players + Traffic, merged (owner 2026-10-29): both answer "who is playing,
+// and how far do they get" — the funnel from in-game beacons, traffic from the
+// CDN logs. Admin-gated inside each panel, as before.
+---
+
+<ConsoleLayout
+  title="Audience — Dev Console — AllByte Studios"
+  description="How far browser players get (anonymous play-depth funnel) and how they reach the site (CDN traffic + navigation flow)."
+  active="audience"
+>
+  <main class="audience-shell">
+    <PlayFunnelApp client:only="svelte" />
+    <TrafficApp client:only="svelte" />
+  </main>
+</ConsoleLayout>
+
+<style>
+  .audience-shell {
+    background: var(--panel);
+    min-height: calc(100vh - 160px);
+  }
+</style>

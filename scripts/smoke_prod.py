@@ -490,6 +490,11 @@ def check_boot() -> int:
 def run_channel_smoke(channel: str, origin: str, boot_only: bool, locked_only: bool) -> int:
     paths = channel_paths()
     if channel not in paths:
+        # push-channel names a channel by its /godot/<dir>/ path (the wire key in
+        # channels.json), which can differ from the site id: "develop" deploys to
+        # the "dev" entry. Resolve by path before calling it unknown.
+        channel = next((cid for cid, p in paths.items() if p.startswith(f"/godot/{channel}/")), channel)
+    if channel not in paths:
         print(f"[smoke] unknown channel '{channel}' — known: {', '.join(paths)}")
         return 1
     url = origin.rstrip("/") + paths[channel]

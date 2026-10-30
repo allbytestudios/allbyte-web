@@ -12,6 +12,7 @@ on:
       - docker/exporter/**
       - scripts/push-channel.js
       - scripts/obfuscate-godot-export.js
+      - scripts/smoke_prod.py
       - src/lib/gameVersions.ts
       - .github/workflows/exporter-image.yml
 

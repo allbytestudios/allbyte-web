@@ -1,6 +1,875 @@
 {
-  "generatedAt": "2026-10-30T00:35:02.723Z",
+  "generatedAt": "2026-10-30T00:42:29.307Z",
   "releases": [
+    {
+      "version": "v1.0.2869",
+      "date": "2026-10-29",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "web",
+          "subject": "bump WEB_VERSION 1.0.2869 -> 1.0.2870 (combat snapshot publisher fix QB-166/QB-152)",
+          "sha": "76ff67ec"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "correlate _captured<->_combat_units by identity, not index (QB-166/QB-152)",
+          "sha": "da357ede"
+        },
+        {
+          "subject": "[deploy-develop] dev publish of 1.0.2869 as PUBLIC preset (37a3f299)",
+          "sha": "15fcf5fd"
+        },
+        {
+          "type": "ci",
+          "scope": "web",
+          "subject": "develop exports Web Alpha Public (public-tagged) — admin-gate Ep2 on hosted dev",
+          "sha": "37a3f299"
+        },
+        {
+          "subject": "[deploy-develop] retry dev publish of 1.0.2869 after push-channel develop alias (allbyte-web 056277f)",
+          "sha": "8afe3c44"
+        },
+        {
+          "subject": "[deploy-develop] dev cloud publish of 1.0.2869 (Rowan final Overworld, debug-gated Ep2)",
+          "sha": "176e5f46"
+        },
+        {
+          "type": "chore",
+          "scope": "web",
+          "subject": "bump WEB_VERSION 1.0.2868 -> 1.0.2869 (localhost redeploy w/ Rowan final Overworld + pack)",
+          "sha": "dd293651"
+        },
+        {
+          "subject": "Verify repeated enemy reveal and Laria boundaries; document session diagnosis limits",
+          "sha": "580347b9"
+        },
+        {
+          "subject": "Restrict overworld enemy reveal to the active player vision sensor",
+          "sha": "ea3a376e"
+        },
+        {
+          "subject": "Verify real location discovery glow and document approved vision review build",
+          "sha": "8c065788"
+        },
+        {
+          "subject": "Make reveal duration configurable and capture short discovery effects reliably",
+          "sha": "91b096d8"
+        },
+        {
+          "subject": "Restore location card slides and reveal audio; apply approved vision defaults",
+          "sha": "7067a991"
+        },
+        {
+          "subject": "Carry volumetric rolling ridge shader and reference review evidence",
+          "sha": "ad71fa12"
+        },
+        {
+          "subject": "Carry forming ocean swell linework and verified visual review evidence",
+          "sha": "38951ba4"
+        },
+        {
+          "subject": "Carry projected prism wave shader and record verified testbench review",
+          "sha": "f78b240b"
+        },
+        {
+          "subject": "Record verified chest discovery, restored contact and triangular ocean review",
+          "sha": "7b1f7438"
+        },
+        {
+          "subject": "Document reproduced chest and encounter issues and verify discovery dependencies",
+          "sha": "e387d3fa"
+        },
+        {
+          "subject": "Restore Overworld chest art and rearm encounters after combat; refine engraved wave contours",
+          "sha": "978d585a"
+        },
+        {
+          "subject": "Record final Overworld and map ink review evidence and restore canonical source version",
+          "sha": "e28f96d1"
+        },
+        {
+          "subject": "Use 32 atlas forest batches; remove legacy grass and add painted map shader studies",
+          "sha": "b917d91d"
+        },
+        {
+          "subject": "Batch Overworld forest by texture and narrow depth bands with independent shader motion",
+          "sha": "4f08039f"
+        },
+        {
+          "subject": "Composite soft atmosphere at half resolution and limit grass work to meadow overlay",
+          "sha": "93de2b35"
+        },
+        {
+          "subject": "Skip invisible water shading and visual-only actor scans; profile Overworld combat",
+          "sha": "7237d5ec"
+        },
+        {
+          "subject": "Verify rendered vision rotation and enemy sprites; record local review results",
+          "sha": "8187bf72"
+        },
+        {
+          "subject": "Draw vision dots without the port's missing ring image reference",
+          "sha": "aab8d362"
+        },
+        {
+          "subject": "Restore Overworld enemy and windmill textures; align rotating shader vision boundary",
+          "sha": "265fd1f1"
+        },
+        {
+          "type": "test",
+          "subject": "verify GPU decor fading and record measured Overworld cost reduction",
+          "sha": "a7dc2030"
+        },
+        {
+          "subject": "Reduce Overworld decor nodes with shader proximity fading and baked mountains; show FPS",
+          "sha": "51a9addb"
+        },
+        {
+          "type": "docs",
+          "subject": "record review branch and local Beads sync limitation",
+          "sha": "8cbbf68a"
+        },
+        {
+          "type": "test",
+          "subject": "verify debug and public progression; hand off combined Overworld review",
+          "sha": "d3c5b9f5"
+        },
+        {
+          "type": "build",
+          "subject": "label isolated Episode Two Overworld review",
+          "sha": "0416114b"
+        },
+        {
+          "subject": "Use existing boot debug authorization for Episode Two progression and prefetch",
+          "sha": "6aa5c02f"
+        },
+        {
+          "subject": "Restore the browser transport after the cold Continue fixture",
+          "sha": "dfe04fb5"
+        },
+        {
+          "subject": "Isolate cold Continue fixture from autosaves left by previous tests",
+          "sha": "a014f07d"
+        },
+        {
+          "subject": "Prefetch Overworld bytes without mounting or activating its environment",
+          "sha": "43e1c5d2"
+        },
+        {
+          "subject": "Restore approved Overworld scene and effects on isolated review branch",
+          "sha": "6069da09"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 1.0.2868 (:8060 QB-164 trigger diagnostic at CombatOverlay:3698)",
+          "sha": "182f033c"
+        },
+        {
+          "type": "diag",
+          "scope": "combat",
+          "subject": "log the raw InputEvent that fires toggle_combat_log (ChroniclesOfNesis-96jds / QB-164)",
+          "sha": "9b33c76b"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 1.0.2867 (:8060 QB-164 candidate: TestBridge combat mirror resolves live overlay)",
+          "sha": "b2294191"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "harden TestBridge's two combat_arena overlay lookups against a stale post-swap overlay (ChroniclesOfNesis-96jds / QB-164)",
+          "sha": "d47e6aa4"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 1.0.2866 (:8060: Mayor finale dialogue + qb120 combat-spam removal + stationary/punctuation; ends recut)",
+          "sha": "e97e5d82"
+        },
+        {
+          "type": "test",
+          "subject": "verify Mayor choices with current fixtures and real input; document handoff",
+          "sha": "30a11f28"
+        },
+        {
+          "type": "perf",
+          "scope": "combat",
+          "subject": "remove stale [qb120-diag] per-call prints — combat-path main-thread spam (QB-161 follow-up)",
+          "sha": "379f7290"
+        },
+        {
+          "type": "build",
+          "subject": "label isolated approved Mayor dialogue preview",
+          "sha": "62497aac"
+        },
+        {
+          "type": "feat",
+          "subject": "implement approved final Mayor family dialogue across all choices",
+          "sha": "35fc0186"
+        },
+        {
+          "type": "review",
+          "subject": "trace Mayor finale branches and propose family dialogue revision",
+          "sha": "4e434114"
+        },
+        {
+          "type": "build",
+          "subject": "label isolated Mayor finale review export",
+          "sha": "0fd6bf95"
+        },
+        {
+          "type": "fix",
+          "subject": "keep Elias stationary during the final Mayor conversation",
+          "sha": "b8330ec1"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 1.0.2865 (:8060 clean v1.0 build: skill tiers + combat debug-gate + v1.0, Overworld parked — ends the 2862 recut)",
+          "sha": "0ba94cff"
+        },
+        {
+          "type": "docs",
+          "subject": "record final validation and issue sync caveat",
+          "sha": "0ab90432"
+        },
+        {
+          "type": "docs",
+          "subject": "record final duration regression and review revision",
+          "sha": "96b5405a"
+        },
+        {
+          "type": "fix",
+          "subject": "refresh Cleanse protection duration display on each turn",
+          "sha": "a6fdb0e0"
+        },
+        {
+          "type": "docs",
+          "subject": "hand off completed skill and relic tiers to Arc",
+          "sha": "9e8f69b2"
+        },
+        {
+          "type": "test",
+          "subject": "retain UID for persistent tier contract fixture",
+          "sha": "48a381a5"
+        },
+        {
+          "type": "test",
+          "subject": "verify real tier actions and counter damage across all tiers",
+          "sha": "9b58a48c"
+        },
+        {
+          "type": "chore",
+          "scope": "develop",
+          "subject": "park ALL Overworld work off develop — restore deployable state (owner 2026-10-23)",
+          "sha": "349d553f"
+        },
+        {
+          "type": "fix",
+          "subject": "preserve normal action through free Item turn and input flow",
+          "sha": "83a02984"
+        },
+        {
+          "type": "fix",
+          "subject": "synchronize audited skill data across required pack mirror",
+          "sha": "f618350b"
+        },
+        {
+          "type": "build",
+          "subject": "label isolated skill tier review export",
+          "sha": "f2206183"
+        },
+        {
+          "type": "feat",
+          "subject": "complete audited class and relic tier capabilities",
+          "sha": "4d17927a"
+        },
+        {
+          "type": "docs",
+          "subject": "plan audited skill and relic tier completion for Arc",
+          "sha": "8fb708e1"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "gate 'Preparing combat...' entry label to debug builds only (never on public)",
+          "sha": "9ec4b6c2"
+        },
+        {
+          "type": "release",
+          "scope": "v1.0",
+          "subject": "Episode 1 released — WEB_VERSION major.minor 0.8 -> 1.0 (next build 1.0.2865; counter kept monotonic)",
+          "sha": "80283786"
+        },
+        {
+          "subject": "Design deferred Overworld pack loading for Arc review",
+          "sha": "408efe5c"
+        },
+        {
+          "subject": "Record verified local game build 0.8.2864",
+          "sha": "bd64e2e8"
+        },
+        {
+          "subject": "Keep the Overworld town spawn outside its enlarged entry marker",
+          "sha": "f76c06da"
+        },
+        {
+          "subject": "Integrate approved environment effects into the live Overworld scene",
+          "sha": "a77a362b"
+        },
+        {
+          "subject": "Save the owner approved combined shader settings",
+          "sha": "6149b941"
+        },
+        {
+          "subject": "Add wispy cloud shaping and independent shadow controls",
+          "sha": "0271cdb5"
+        },
+        {
+          "subject": "Restore clouds to the combined overworld shader study",
+          "sha": "e76a588a"
+        },
+        {
+          "subject": "Preserve approved water settings and add rooted tree wind",
+          "sha": "d4948f47"
+        },
+        {
+          "subject": "Add water effect comparisons and independent breaker controls",
+          "sha": "277c04c4"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2862 (:8060 QB-159: overworld heal applies HP — PartyHeaderPanel rebuild on party reset)",
+          "sha": "d68cda8f"
+        },
+        {
+          "subject": "Add ocean crescents, shore surf and composited environmental study",
+          "sha": "20f75594"
+        },
+        {
+          "type": "fix",
+          "scope": "party",
+          "subject": "QB-159 overworld Mugwort consumes but never heals — PartyHeaderPanel stale unit reference",
+          "sha": "e3c99c54"
+        },
+        {
+          "subject": "Save grass defaults, widen tuning bounds and vary gust speeds independently",
+          "sha": "2a6dadb4"
+        },
+        {
+          "subject": "Add independent field blade controls and gust pocket count",
+          "sha": "911d7e62"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2861 (:8060 QB-158: combat_move fast-abort + classified unreachable reasons)",
+          "sha": "996b0a81"
+        },
+        {
+          "subject": "Add gentle field blades beneath valley wind gusts",
+          "sha": "6b808967"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "QB-158 classify _testCombatMove undeliverable-target reasons + bound the walk-level hang",
+          "sha": "fbdfffca"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2860 (:8060 final combat batch: QB-152 action_entry_ready reconcile + QB-157 authoritative HP reseed live)",
+          "sha": "1fd0f28d"
+        },
+        {
+          "type": "fix",
+          "scope": "dual-copy",
+          "subject": "sync Overworld pack Bed.gd/Item.gd to canonical (QB-157 instrumentation) — unblocks deploy audit",
+          "sha": "cc0e98e7"
+        },
+        {
+          "subject": "QB-157 (ChroniclesOfNesis-mvn59) attempt 3: authoritative latest-moment HP/MP reseed at roster-build + conclusive dual-end object-identity instrumentation",
+          "sha": "9a844bd9"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "action_entry_ready reconciles against turn_queue.current(), not stale _acting_unit (QB-152 deterministic root)",
+          "sha": "2d0a7f17"
+        },
+        {
+          "subject": "Center the owner grass defaults and add independent pocket height control",
+          "sha": "ce4610fc"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2859 (:8060 QB-157 corrected: combat-init live-reseed HP/MP from current party at stage)",
+          "sha": "8ab98637"
+        },
+        {
+          "subject": "Drive persistent grass pockets with slow pressure and shifting contours",
+          "sha": "1ff71a89"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "seed unit HP/MP from a LIVE party re-read at the last possible moment (QB-157 recurred)",
+          "sha": "f47a31b4"
+        },
+        {
+          "subject": "Shape separate grass ripples around a shared wind rhythm",
+          "sha": "76c2a1cc"
+        },
+        {
+          "subject": "Smooth shading where live grass pockets overlap",
+          "sha": "1fb34319"
+        },
+        {
+          "subject": "Spawn independent growing and morphing valley grass pockets",
+          "sha": "0a8d0f86"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "add paired grass lighting and centered blade width control (4rojb)",
+          "sha": "e5ffac73"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "lock grass flow heading and center the owner tuning defaults (4rojb)",
+          "sha": "ebb1a873"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2858 (:8060 combat batch: QB-156 settle-republish + QB-157 HP write-back + QB-152-fresh stringify guard)",
+          "sha": "6a8da4ce"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "never eval a broken JSON.parse onto the polled snapshot mirror (QB-152 fresh mode)",
+          "sha": "df9c84d6"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "HP/MP write-back no longer silently skipped for a fight that actually played (QB-157)",
+          "sha": "363913c7"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "republish combat snapshot at move/push settle, not just mode/armed edges (QB-156)",
+          "sha": "beb727b4"
+        },
+        {
+          "type": "fix",
+          "scope": "shaderlab",
+          "subject": "soften grass motion and shade blades from valley paint (4rojb)",
+          "sha": "7a186915"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "adapt dense blade extrusion and rapid pocket deformation (4rojb)",
+          "sha": "58c83d96"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "grow and sway blade groups along painted hill contours (4rojb)",
+          "sha": "389c45ed"
+        },
+        {
+          "type": "fix",
+          "scope": "shaderlab",
+          "subject": "form grass pockets from fine animated strands (4rojb)",
+          "sha": "535f0a3d"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2857 (:8060 QB-155 cut: combat ItemsMenu grid-mirror republish — heal fires in multi-enemy fights)",
+          "sha": "96c999e4"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "form traveling grass pockets with fast blade flutter (4rojb)",
+          "sha": "854f9afb"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "republish ItemsMenu grid to JS on cache-hit, not just rebuild (QB-155)",
+          "sha": "1237084a"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "add valley grass blades and preserve final mist (4rojb)",
+          "sha": "f2f9e580"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "connect northern mist with independent group tuners (4rojb)",
+          "sha": "802069bb"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "select multiple valley-facing fog groups (4rojb)",
+          "sha": "da3f39a1"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2856 (:8060 combined cut: QB-151 treasure-reachability + QB-152 W3 combat-snapshot fixes live)",
+          "sha": "774d2064"
+        },
+        {
+          "type": "fix",
+          "scope": "QB-152",
+          "subject": "combat snapshot derived fields now read the reconciled active-unit node, not stale _acting_unit",
+          "sha": "85a058dd"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "roll ridge mist into valley and cycle peak reveal (4rojb)",
+          "sha": "84bccea5"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "emit irregular fog banks between peaks (4rojb)",
+          "sha": "0a7a790a"
+        },
+        {
+          "type": "fix",
+          "scope": "QB-151",
+          "subject": "computed global-reachability fallback for treasure/interactable unreachable flag",
+          "sha": "82bf01f4"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "prototype mountain-origin valley mist (4rojb)",
+          "sha": "fd0045ce"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2855-b491 (:8060 zb8bj redeploy — clearedSceneStack dungeon-exit reset live)",
+          "sha": "09445861"
+        },
+        {
+          "type": "cutover",
+          "scope": "ChroniclesOfNesis-h38b1",
+          "subject": "develop-channel CI pipeline DEFAULT-OFF in redeploy",
+          "sha": "928a1cd5"
+        },
+        {
+          "type": "feat",
+          "scope": "shaderlab",
+          "subject": "add overworld environment shader review lab (4rojb)",
+          "sha": "06565c0e"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-zb8bj",
+          "subject": "reset clearedSceneStack on dungeon-leave (town-gated)",
+          "sha": "312f559a"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2854 (:8060 ulf72 real-root redeploy: AutoPlay _tick_interact target-match)",
+          "sha": "abba5280"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-ulf72",
+          "subject": "AutoPlay._tick_interact pressed accept against WHATEVER NPC was registered, not the intended target",
+          "sha": "b7ae9d43"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2853 (:8060 ulf72 real-fix redeploy: NPC greeting once-per-scene-visit latch)",
+          "sha": "9604184b"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-ulf72",
+          "subject": "NPC greeted-latch must survive area-exit, not reset by it",
+          "sha": "6de62507"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2852 (:8060 ulf72 re-fix redeploy: NPC re-interact needs area exit)",
+          "sha": "757826bb"
+        },
+        {
+          "subject": "Quinn strategy: grind_runner recovery = full-reload after a pin (not load_node); tcfx3/ulf72 verify notes",
+          "sha": "1fa182b6"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-ulf72",
+          "subject": "NPC re-interact needs a fresh area-exit, not just a smaller radius",
+          "sha": "d658b0f1"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2851 (:8060 nix-reset redeploy: ulf72 Naphtali radius + tcfx3 lever active)",
+          "sha": "50e08621"
+        },
+        {
+          "subject": "Quinn strategy: grind_runner town-reset updates (timeout_ms tuning + door re-entry)",
+          "sha": "778ccdc1"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-tcfx3",
+          "subject": "Windmill1 lever never set active=true, so InteractableTrigger (and setCondition) never fired",
+          "sha": "e1890a3f"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-ulf72",
+          "subject": "shrink Naphtali's NPCInteractionArea radius so it clears the EliasHouse door",
+          "sha": "373dcc7b"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2850 (:8060 nix-lever redeploy: t0v6w windmill setCondition int serialization)",
+          "sha": "e38e44cf"
+        },
+        {
+          "subject": "Quinn strategy: town-reset grind_runner updates (door re-entry via interact, GameOver=stop, stale TOWN_MAP edge removed)",
+          "sha": "36c0099c"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-t0v6w",
+          "subject": "int()-cast windmill gear conditions, not raw bool",
+          "sha": "eec7805d"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump -> 0.8.2849 (:8060 nix-obs2 redeploy: DoorToWaterways observable + windmill conds)",
+          "sha": "59fa4338"
+        },
+        {
+          "subject": "Quinn strategy: grind/boss-path driver updates (health-poll + instant-resolve + condition read-back wiring)",
+          "sha": "6e999422"
+        },
+        {
+          "type": "fix",
+          "scope": "testbridge",
+          "subject": "un-blunt interactables visibility filter + expose windmill conditions",
+          "sha": "31d455f5"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump 0.8.2847 -> 0.8.2848 (:8060 azth0 redeploy stamp)",
+          "sha": "9eeb6da4"
+        },
+        {
+          "subject": "Quinn strategy: caller-side move->attack re-arm poll + retreat-restock loop + grind driver updates",
+          "sha": "d381028c"
+        },
+        {
+          "type": "fix",
+          "subject": "remove dead EliasHouse treasure nodes + harden interactable observable (ChroniclesOfNesis-azth0)",
+          "sha": "07d77ae4"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump 0.8.2846 -> 0.8.2847 (:8060 W3-fix redeploy stamp)",
+          "sha": "47935072"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "no pre-turn kill — Waterway3 ambush one-shot on full-HP L1 Elias (ChroniclesOfNesis-7yw6n)",
+          "sha": "81265a34"
+        },
+        {
+          "type": "fixture",
+          "scope": "manifest",
+          "subject": "register waterway1_grind_start_healed as a load_node node (QB-155/8osd6)",
+          "sha": "0b0f9bad"
+        },
+        {
+          "type": "fixture",
+          "scope": "QA",
+          "subject": "waterway1_grind_start_healed — equipped Item Relic + 20 Mugwort for the L5 grind (QB-155)",
+          "sha": "9170f844"
+        },
+        {
+          "type": "fix",
+          "scope": "sltu3",
+          "subject": "settle-frame parity for _testStageRealCombat staging path",
+          "sha": "fb6cd32e"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump 0.8.2845 -> 0.8.2846 (:8060 redeploy stamp)",
+          "sha": "41a82b70"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-5ajrw",
+          "subject": "restore player.isLocked + processing on aborted combat race",
+          "sha": "ec505cdf"
+        },
+        {
+          "type": "fix",
+          "scope": "pack-sync",
+          "subject": "mirror GameOver.gd resetForNewGame into the Overworld pack copy (9761x)",
+          "sha": "24655749"
+        },
+        {
+          "type": "chore",
+          "subject": "commit WEB_VERSION bump 0.8.2841-b476 -> 0.8.2845 (uncommitted export stamp blocking merges)",
+          "sha": "61827633"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-9761x",
+          "subject": "New Game unconditionally resets party/session state instead of inheriting Continue'd save",
+          "sha": "990f63cf"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-t9wmu",
+          "subject": "ungate worldSnapshot/visible observe surface from _dev_host",
+          "sha": "78d22ef8"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-pwjq6",
+          "subject": "rip out grind-mode combat opt-in — FSM never drives combat by ANY path",
+          "sha": "4404e3c8"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-8cz0i",
+          "subject": "decouple combat-autoplay from overworld-nav; FSM hands off combat to the external driver",
+          "sha": "e778cc18"
+        },
+        {
+          "type": "fix",
+          "scope": "deploy #5",
+          "subject": "scope mixed_build skew to REQUIRED packs, not all packs",
+          "sha": "49cd9404"
+        },
+        {
+          "type": "arc_deploy_trigger",
+          "subject": "POST App's gated deploy endpoint (13c3a19) with queue fallback",
+          "sha": "fce8e838"
+        },
+        {
+          "type": "fix",
+          "scope": "test-gates",
+          "subject": "resolve DEV-gate xdist crash + define LOCAL/DEV tier selections",
+          "sha": "70e59cef"
+        },
+        {
+          "type": "feat",
+          "scope": "cloud-export",
+          "subject": "FAST_DEV incremental dev-channel path (~3min vs 22min hermetic)",
+          "sha": "a9b7bb33"
+        },
+        {
+          "type": "feat",
+          "scope": "deploy",
+          "subject": "Arc-side HMAC signer for the deploy trigger queue (arc_deploy_trigger.py)",
+          "sha": "e75cfc3c"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "prod-release smoke runner (prod_smoke.py) + deps",
+          "sha": "9db8d950"
+        },
+        {
+          "type": "feat",
+          "scope": "autoplay",
+          "subject": "durable New Game->target-level hybrid recipe (new_game_to_level.py)",
+          "sha": "5b4f85b8"
+        },
+        {
+          "type": "fix",
+          "scope": "autoplay",
+          "subject": "StoryStrategy min_stuck_seconds 45->8 (paused cutscenes return fast)",
+          "sha": "57039e6b"
+        },
+        {
+          "type": "fix",
+          "scope": "autoplay",
+          "subject": "new-game gate accepts EliasHouse story_cond -1 or 0",
+          "sha": "19199b5e"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "replace entry gate BEFORE reset frees stat-block UI (ChroniclesOfNesis-d1ek9 layer 3)",
+          "sha": "9c100751"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "continuously reconcile entry-gate readiness every frame (ChroniclesOfNesis-d1ek9 follow-up)",
+          "sha": "eb66840a"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "retry viewport-camera lookup in _spawn_combat_camera (ChroniclesOfNesis-d1ek9)",
+          "sha": "f0797f78"
+        },
+        {
+          "type": "fix",
+          "scope": "testbridge",
+          "subject": "worldSnapshot rebuilds immediately on scene transition",
+          "sha": "3e9852cb"
+        },
+        {
+          "type": "feat",
+          "scope": "debug-gate",
+          "subject": "replace secret-token gate with plain ?debug param/cookie",
+          "sha": "74ebb0a0"
+        },
+        {
+          "type": "test",
+          "subject": "regression coverage for cross-slot save-identity (uojts) + ungated Title bridge (n50z9)",
+          "sha": "d1f37d03"
+        },
+        {
+          "type": "fix",
+          "scope": "save",
+          "subject": "keep imported and legacy saves addressed by storage slot",
+          "sha": "aebfeec7"
+        },
+        {
+          "type": "docs",
+          "scope": "save",
+          "subject": "analyze cross-slot import routing and safe fix",
+          "sha": "40187335"
+        },
+        {
+          "type": "fix",
+          "scope": "ci",
+          "subject": "cloud_export.sh never injected GODOT_SCRIPT_ENCRYPTION_KEY from GODOT_RELEASE_SCRIPT_KEY (ChroniclesOfNesis-n50z9 boot-fail)",
+          "sha": "ce58fd1e"
+        },
+        {
+          "subject": "Promote Title observability to always-on TestBridge (ChroniclesOfNesis-n50z9)",
+          "sha": "120eabfb"
+        }
+      ],
+      "derived": true
+    },
     {
       "version": "v0.8.2840",
       "date": "2026-10-17",

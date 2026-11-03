@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-29T15:26:49.878Z",
+  "generated_at": "2026-11-03T18:03:16.762Z",
   "source": "ChroniclesOfNesis/WebTests/fixtures/saves/tree/save_tree_manifest.json",
   "nodes": [
     {
@@ -613,6 +613,61 @@
       "scene": "Waterway1",
       "packs": [
         "Laria"
+      ]
+    },
+    {
+      "id": "cond_11_gridfill_L2",
+      "label": "Grid-fill grind: L2 (Waterway3, early descent)",
+      "parent": "cond_11_waterway1_entry",
+      "difficulty": "medium",
+      "scene": "Waterway3",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_11_gridfill_L3",
+      "label": "Grid-fill grind: L3 (Waterway2, full gear)",
+      "parent": "cond_11_gridfill_L2",
+      "difficulty": "medium",
+      "scene": "Waterway2",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_11_gridfill_L4",
+      "label": "Grid-fill grind: L4 (Waterway7, two relic slots)",
+      "parent": "cond_11_gridfill_L3",
+      "difficulty": "medium",
+      "scene": "Waterway7",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_11_sluicegate_preboss_L5",
+      "label": "Pre-boss: L5 at SluiceGate, full HP (jump here to fight Mother Slime)",
+      "parent": "cond_11_gridfill_L4",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_13_sluicegate_postboss",
+      "label": "Post-boss: Mother Slime defeated (cond 13)",
+      "parent": "cond_11_sluicegate_preboss_L5",
+      "difficulty": "medium",
+      "scene": "SluiceGate",
+      "packs": [
+        "Laria",
+        "Combat"
       ]
     }
   ]

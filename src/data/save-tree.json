@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-10-29T15:26:48.824Z",
+  "generated_at": "2026-11-03T18:03:15.647Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -1388,6 +1388,101 @@
       ],
       "seq": 153,
       "launcher_status": "dormant"
+    },
+    {
+      "id": "cond_11_gridfill_L2",
+      "difficulty": "medium",
+      "parent": "cond_11_waterway1_entry",
+      "decision": "[added by App 2026-11-03 per Arc's relay of the owner's ask: boss-content jump-points, committed to frontier/ in 03ba9bea, captured user-equivalent on v1.0.2887] Longsword + Item relic; armor not yet accrued.",
+      "is_leaf": false,
+      "label": "Grid-fill grind: L2 (Waterway3, early descent)",
+      "scene": "Waterway3",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "waterways",
+        "grind",
+        "L2"
+      ]
+    },
+    {
+      "id": "cond_11_gridfill_L3",
+      "difficulty": "medium",
+      "parent": "cond_11_gridfill_L2",
+      "decision": "[added by App 2026-11-03 per Arc's relay of the owner's ask: boss-content jump-points, committed to frontier/ in 03ba9bea, captured user-equivalent on v1.0.2887] Full gear equipped; Scan + Health relics in the bag.",
+      "is_leaf": false,
+      "label": "Grid-fill grind: L3 (Waterway2, full gear)",
+      "scene": "Waterway2",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "waterways",
+        "grind",
+        "L3"
+      ]
+    },
+    {
+      "id": "cond_11_gridfill_L4",
+      "difficulty": "medium",
+      "parent": "cond_11_gridfill_L3",
+      "decision": "[added by App 2026-11-03 per Arc's relay of the owner's ask: boss-content jump-points, committed to frontier/ in 03ba9bea, captured user-equivalent on v1.0.2887] 2nd relic slot learned; Item@0 + Scan@1.",
+      "is_leaf": false,
+      "label": "Grid-fill grind: L4 (Waterway7, two relic slots)",
+      "scene": "Waterway7",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "waterways",
+        "grind",
+        "L4"
+      ]
+    },
+    {
+      "id": "cond_11_sluicegate_preboss_L5",
+      "difficulty": "medium",
+      "parent": "cond_11_gridfill_L4",
+      "decision": "[added by App 2026-11-03 per Arc's relay of the owner's ask: boss-content jump-points, committed to frontier/ in 03ba9bea, captured user-equivalent on v1.0.2887] Full HP 54/54, full E1 loadout, before the Mother Slime trigger.",
+      "is_leaf": false,
+      "label": "Pre-boss: L5 at SluiceGate, full HP (jump here to fight Mother Slime)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "boss",
+        "pre-boss",
+        "L5"
+      ]
+    },
+    {
+      "id": "cond_13_sluicegate_postboss",
+      "difficulty": "medium",
+      "parent": "cond_11_sluicegate_preboss_L5",
+      "decision": "[added by App 2026-11-03 per Arc's relay of the owner's ask: boss-content jump-points, committed to frontier/ in 03ba9bea, captured user-equivalent on v1.0.2887] Event-14 combat won; control returned at SluiceGate.",
+      "is_leaf": true,
+      "label": "Post-boss: Mother Slime defeated (cond 13)",
+      "scene": "SluiceGate",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "boss",
+        "post-boss",
+        "L5"
+      ]
     }
   ]
 }

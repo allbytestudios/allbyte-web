@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-11-03T18:03:15.647Z",
+  "generated_at": "2026-11-04T04:44:35.992Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -1470,7 +1470,7 @@
       "difficulty": "medium",
       "parent": "cond_11_sluicegate_preboss_L5",
       "decision": "[added by App 2026-11-03 per Arc's relay of the owner's ask: boss-content jump-points, committed to frontier/ in 03ba9bea, captured user-equivalent on v1.0.2887] Event-14 combat won; control returned at SluiceGate.",
-      "is_leaf": true,
+      "is_leaf": false,
       "label": "Post-boss: Mother Slime defeated (cond 13)",
       "scene": "SluiceGate",
       "chain_legal": true,
@@ -1482,6 +1482,61 @@
         "boss",
         "post-boss",
         "L5"
+      ]
+    },
+    {
+      "id": "cond_13_mainsquare_backintown",
+      "difficulty": "medium",
+      "parent": "cond_13_sluicegate_postboss",
+      "decision": "[added by App 2026-11-03 per Arc's relay of the owner's ask: E1-end jump-points, committed to frontier/ in e4896edb, captured on v1.0.2891] Returned to MainSquare from SluiceGate with Mother Slime defeated.",
+      "is_leaf": false,
+      "label": "E1 end: back in town after the boss (cond 13)",
+      "scene": "MainSquare",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "post-boss",
+        "e1-end"
+      ]
+    },
+    {
+      "id": "cond_13_mayorshouse_atmayor",
+      "difficulty": "medium",
+      "parent": "cond_13_mainsquare_backintown",
+      "decision": "[added by App 2026-11-03 per Arc's relay of the owner's ask: E1-end jump-points, committed to frontier/ in e4896edb, captured on v1.0.2891] Inside MayorsHouse before the Mayor's E1-closing conversation.",
+      "is_leaf": false,
+      "label": "E1 end: at the Mayor's house (cond 13)",
+      "scene": "MayorsHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "post-boss",
+        "e1-end"
+      ]
+    },
+    {
+      "id": "cond_14_mayorshouse_precredits",
+      "difficulty": "medium",
+      "parent": "cond_13_mayorshouse_atmayor",
+      "decision": "[added by App 2026-11-03 per Arc's relay of the owner's ask: E1-end jump-points, committed to frontier/ in e4896edb, captured on v1.0.2891] E1 terminal. On the public build, leaving MayorsHouse rolls Credits then Title; on debug/dev (allows_episode_two) it lands in MainSquare instead.",
+      "is_leaf": true,
+      "label": "E1 end: pre-credits, leave the Mayor's house to roll credits (cond 14)",
+      "scene": "MayorsHouse",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "post-boss",
+        "e1-end",
+        "credits"
       ]
     }
   ]

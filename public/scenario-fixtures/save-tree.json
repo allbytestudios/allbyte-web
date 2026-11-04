@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-11-03T18:03:16.762Z",
+  "generated_at": "2026-11-04T04:44:37.493Z",
   "source": "ChroniclesOfNesis/WebTests/fixtures/saves/tree/save_tree_manifest.json",
   "nodes": [
     {
@@ -665,6 +665,39 @@
       "parent": "cond_11_sluicegate_preboss_L5",
       "difficulty": "medium",
       "scene": "SluiceGate",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_13_mainsquare_backintown",
+      "label": "E1 end: back in town after the boss (cond 13)",
+      "parent": "cond_13_sluicegate_postboss",
+      "difficulty": "medium",
+      "scene": "MainSquare",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_13_mayorshouse_atmayor",
+      "label": "E1 end: at the Mayor's house (cond 13)",
+      "parent": "cond_13_mainsquare_backintown",
+      "difficulty": "medium",
+      "scene": "MayorsHouse",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_14_mayorshouse_precredits",
+      "label": "E1 end: pre-credits, leave the Mayor's house to roll credits (cond 14)",
+      "parent": "cond_13_mayorshouse_atmayor",
+      "difficulty": "medium",
+      "scene": "MayorsHouse",
       "packs": [
         "Laria",
         "Combat"

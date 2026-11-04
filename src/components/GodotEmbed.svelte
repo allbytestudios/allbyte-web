@@ -620,7 +620,19 @@
       const id = new URLSearchParams(window.location.search).get("copilot");
       if (id && /^\d{1,9}$/.test(id)) copilot = `&copilot=${id}`;
     }
-    return `${base}?t=${Date.now()}${debugParam()}${copilot}`;
+    return `${base}?t=${Date.now()}${debugParam()}${e2Param()}${copilot}`;
+  }
+
+  /**
+   * `?e2=0|1` forces the game's Episode-Two content gate independently of debug
+   * (World.gd, v1.0.2892): `e2=0` lets a debug session see public behavior such
+   * as the E1 end credits. Relayed only alongside debug — a QA control, not a
+   * visitor-facing unlock.
+   */
+  function e2Param(): string {
+    if (typeof window === "undefined" || !debugParam()) return "";
+    const e2 = new URLSearchParams(window.location.search).get("e2");
+    return e2 === "0" || e2 === "1" ? `&e2=${e2}` : "";
   }
   let gameUrl = $state<string | null>(resolveGameUrlOrHold());
 

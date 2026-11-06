@@ -1,61 +1,10 @@
 {
   "version": 1,
-  "generated_at": "2026-11-06T20:46:52.671Z",
+  "generated_at": "2026-11-06T21:05:41.496Z",
   "sections": [
-    "Waterway 1",
-    "Sluice Gate"
+    "Waterway 1"
   ],
   "scenarios": [
-    {
-      "id": "scn-waterway1",
-      "section": "Waterway 1",
-      "label": "Waterway 1 — dungeon entry (cond 11, first encounter)",
-      "fixtureId": "cond_11_waterway1_entry",
-      "packs": [
-        "Laria",
-        "Combat"
-      ]
-    },
-    {
-      "id": "save-boss-str-smite",
-      "section": "Sluice Gate",
-      "label": "Boss-ready L5 · Smite · STR-focused (realistic level+spend, HP18)",
-      "fixtureId": "boss_str_smite",
-      "packs": [
-        "Laria",
-        "Combat"
-      ]
-    },
-    {
-      "id": "save-boss-even-smite",
-      "section": "Sluice Gate",
-      "label": "Boss-ready L5 · Smite · even-stat (HP17/MP11)",
-      "fixtureId": "boss_even_smite",
-      "packs": [
-        "Laria",
-        "Combat"
-      ]
-    },
-    {
-      "id": "save-boss-str-cure",
-      "section": "Sluice Gate",
-      "label": "Boss-ready L5 · Cure (no Smite) · STR-focused (HP18)",
-      "fixtureId": "boss_str_cure",
-      "packs": [
-        "Laria",
-        "Combat"
-      ]
-    },
-    {
-      "id": "save-boss-even-cure",
-      "section": "Sluice Gate",
-      "label": "Boss-ready L5 · Cure (no Smite) · even-stat (HP17)",
-      "fixtureId": "boss_even_cure",
-      "packs": [
-        "Laria",
-        "Combat"
-      ]
-    },
     {
       "id": "save-pre-waterway",
       "section": "Waterway 1",

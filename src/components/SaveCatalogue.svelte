@@ -53,6 +53,9 @@
   }
 </script>
 
+<!-- An empty catalogue renders nothing: the save tree below is the authoritative
+     list, and Quinn may publish none (2026-11-06 purge). -->
+{#if gated || cat.nodes.length > 0}
 <div class="cat">
   <h2 class="cat-title">{cat.title}</h2>
   <p class="cat-lede">
@@ -62,8 +65,6 @@
 
   {#if gated}
     <p class="cat-note">The save catalogue is <strong>admin / Legend only</strong>.</p>
-  {:else if cat.nodes.length === 0}
-    <p class="cat-note">No catalogue yet. Run <code>npm run sync:catalogue</code> once Quinn publishes it.</p>
   {:else}
     <div class="cat-summary">
       <span class="cat-big">{cat.covered}</span>
@@ -179,6 +180,7 @@
     </p>
   {/if}
 </div>
+{/if}
 
 <style>
   .cat {

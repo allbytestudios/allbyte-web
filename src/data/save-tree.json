@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-11-06T14:23:48.358Z",
+  "generated_at": "2026-11-06T20:46:51.187Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -1544,7 +1544,7 @@
       "difficulty": "medium",
       "parent": "cond_13_mainsquare_backintown",
       "decision": "[added by App 2026-11-06 per Arc's relay of the owner's ask: first Episode Two jump-point, committed to frontier/ in 8fba9467] Town -> FrontRoad -> Overworld, all 3 treasure chests (Mugwort/Amaranth/Aconite), saved at the Dwarven Ruin entrance. Elias L5, full HP, full loadout. Needs E2 content unlocked (debug session; ?e2=0 would lock it).",
-      "is_leaf": true,
+      "is_leaf": false,
       "label": "E2 start: Dwarven Ruin entrance, all Overworld treasure collected (cond 13)",
       "scene": "DwarvenRuinEntrance",
       "chain_legal": true,
@@ -1557,6 +1557,44 @@
         "e2",
         "overworld",
         "dwarven-ruin"
+      ]
+    },
+    {
+      "id": "cond_15_dwarvenruin10_post_falmri",
+      "difficulty": "medium",
+      "parent": "cond_13_dwarvenruin_entrance_all_treasure",
+      "decision": "[added by App 2026-11-06 per Arc's relay of the owner's ask: reconcile the tree with Quinn's recent E2 saves, fixture committed to frontier/ in 347ea5ad] Post-Falmri sighting inside the ruin. Needs E2 content unlocked.",
+      "is_leaf": false,
+      "label": "E2: Dwarven Ruin room 10, after first seeing Falmri (cond 15)",
+      "scene": "DwarvenRuin10",
+      "chain_legal": true,
+      "packs": [
+        "DwarvenRuin",
+        "Combat"
+      ],
+      "tags": [
+        "e2",
+        "dwarven-ruin",
+        "falmri"
+      ]
+    },
+    {
+      "id": "cond_16_dwarvenruin19_falmri_joined",
+      "difficulty": "medium",
+      "parent": "cond_15_dwarvenruin10_post_falmri",
+      "decision": "[added by App 2026-11-06 per Arc's relay of the owner's ask: reconcile the tree with Quinn's recent E2 saves, fixture committed to frontier/ in c39a5af0] Falmri recruited; two-member party. Needs E2 content unlocked.",
+      "is_leaf": true,
+      "label": "E2: Dwarven Ruin room 19, Falmri joined the party (cond 16)",
+      "scene": "DwarvenRuin19",
+      "chain_legal": true,
+      "packs": [
+        "DwarvenRuin",
+        "Combat"
+      ],
+      "tags": [
+        "e2",
+        "dwarven-ruin",
+        "falmri"
       ]
     }
   ]

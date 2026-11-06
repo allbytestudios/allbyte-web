@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-11-04T04:44:35.992Z",
+  "generated_at": "2026-11-06T14:23:48.358Z",
   "nodes": [
     {
       "id": "hard_root",
@@ -1537,6 +1537,26 @@
         "post-boss",
         "e1-end",
         "credits"
+      ]
+    },
+    {
+      "id": "cond_13_dwarvenruin_entrance_all_treasure",
+      "difficulty": "medium",
+      "parent": "cond_13_mainsquare_backintown",
+      "decision": "[added by App 2026-11-06 per Arc's relay of the owner's ask: first Episode Two jump-point, committed to frontier/ in 8fba9467] Town -> FrontRoad -> Overworld, all 3 treasure chests (Mugwort/Amaranth/Aconite), saved at the Dwarven Ruin entrance. Elias L5, full HP, full loadout. Needs E2 content unlocked (debug session; ?e2=0 would lock it).",
+      "is_leaf": true,
+      "label": "E2 start: Dwarven Ruin entrance, all Overworld treasure collected (cond 13)",
+      "scene": "DwarvenRuinEntrance",
+      "chain_legal": true,
+      "packs": [
+        "Overworld",
+        "DwarvenRuin",
+        "Combat"
+      ],
+      "tags": [
+        "e2",
+        "overworld",
+        "dwarven-ruin"
       ]
     }
   ]

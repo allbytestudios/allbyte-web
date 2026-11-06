@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-11-04T04:44:37.493Z",
+  "generated_at": "2026-11-06T14:23:49.500Z",
   "source": "ChroniclesOfNesis/WebTests/fixtures/saves/tree/save_tree_manifest.json",
   "nodes": [
     {
@@ -700,6 +700,18 @@
       "scene": "MayorsHouse",
       "packs": [
         "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_13_dwarvenruin_entrance_all_treasure",
+      "label": "E2 start: Dwarven Ruin entrance, all Overworld treasure collected (cond 13)",
+      "parent": "cond_13_mainsquare_backintown",
+      "difficulty": "medium",
+      "scene": "DwarvenRuinEntrance",
+      "packs": [
+        "Overworld",
+        "DwarvenRuin",
         "Combat"
       ]
     }

@@ -39,7 +39,10 @@
 
   // Section-level collapse, default COLLAPSED — the tree opens as a clean set of
   // beat headers. Section keys are spine-fixed, so seed from the full outline.
-  const allSectionKeys = spineOutline("all").flatMap((ch) => ch.sections.map((s) => s.key));
+  // Unplaced starts OPEN: those saves are on no beat, so a closed header hides them.
+  const allSectionKeys = spineOutline("all")
+    .flatMap((ch) => ch.sections.map((s) => s.key))
+    .filter((k) => k !== "unplaced");
   const collapsedSections = new SvelteSet<string>(allSectionKeys);
   function toggleSection(k: string) {
     if (collapsedSections.has(k)) collapsedSections.delete(k);

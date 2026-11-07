@@ -180,6 +180,11 @@ export interface OutlineChapter {
  * are kept even when empty — a spine beat with no saves yet (e.g. leaving-laria,
  * the post-boss gap) is CORRECT, not a sync failure, and renders as such.
  * Placeholder chapters (no sections) are dropped.
+ *
+ * A node whose chapter/section is missing or matches no spine section lands in
+ * a trailing "Unplaced" chapter instead of being skipped. The 2026-11-06 prune
+ * kept only nodes without those fields, and the tree went blank while the data
+ * held all 12. Unplaced keeps registry order (the chain), sorted by seq only.
  */
 export function spineOutline(difficulty: string = "all"): OutlineChapter[] {
   const pool = saveTreeData.nodes.filter(
@@ -197,15 +202,31 @@ export function spineOutline(difficulty: string = "all"): OutlineChapter[] {
     (a.seq ?? Number.MAX_SAFE_INTEGER) - (b.seq ?? Number.MAX_SAFE_INTEGER) ||
     a.label.localeCompare(b.label);
 
-  return storySpine.chapters
+  const placed = new Set<string>();
+  const chapters: OutlineChapter[] = storySpine.chapters
     .filter((ch) => !ch.placeholder && (ch.sections?.length ?? 0) > 0)
     .map((ch) => ({
       key: ch.key,
       label: ch.label,
-      sections: (ch.sections ?? []).map((sec) => ({
-        key: sec.key,
-        label: sec.label,
-        nodes: (byCS.get(`${ch.key}/${sec.key}`) ?? []).slice().sort(bySeq),
-      })),
+      sections: (ch.sections ?? []).map((sec) => {
+        placed.add(`${ch.key}/${sec.key}`);
+        return {
+          key: sec.key,
+          label: sec.label,
+          nodes: (byCS.get(`${ch.key}/${sec.key}`) ?? []).slice().sort(bySeq),
+        };
+      }),
     }));
+
+  const unplaced = pool
+    .filter((n) => !n.chapter || !n.section || !placed.has(`${n.chapter}/${n.section}`))
+    .sort((a, b) => (a.seq ?? Number.MAX_SAFE_INTEGER) - (b.seq ?? Number.MAX_SAFE_INTEGER));
+  if (unplaced.length > 0) {
+    chapters.push({
+      key: "unplaced",
+      label: "Unplaced",
+      sections: [{ key: "unplaced", label: "No story beat assigned yet", nodes: unplaced }],
+    });
+  }
+  return chapters;
 }

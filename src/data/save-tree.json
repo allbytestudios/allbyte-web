@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-11-06T21:20:16.526Z",
+  "generated_at": "2026-11-07T01:56:02.603Z",
   "nodes": [
     {
       "id": "pre_waterway",
@@ -20,7 +20,9 @@
         "waterways",
         "pre-waterway",
         "L1"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "into-the-waterways"
     },
     {
       "id": "cond_11_gridfill_L2",
@@ -39,7 +41,9 @@
         "waterways",
         "grind",
         "L2"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "into-the-waterways"
     },
     {
       "id": "cond_11_gridfill_L3",
@@ -58,7 +62,9 @@
         "waterways",
         "grind",
         "L3"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "into-the-waterways"
     },
     {
       "id": "cond_11_gridfill_L4",
@@ -77,7 +83,9 @@
         "waterways",
         "grind",
         "L4"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "into-the-waterways"
     },
     {
       "id": "cond_11_sluicegate_preboss_L5",
@@ -96,7 +104,9 @@
         "boss",
         "pre-boss",
         "L5"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "into-the-waterways"
     },
     {
       "id": "cond_13_sluicegate_postboss",
@@ -115,7 +125,9 @@
         "boss",
         "post-boss",
         "L5"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "leaving-laria"
     },
     {
       "id": "cond_13_mainsquare_backintown",
@@ -133,7 +145,9 @@
       "tags": [
         "post-boss",
         "e1-end"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "leaving-laria"
     },
     {
       "id": "cond_13_mayorshouse_atmayor",
@@ -151,7 +165,9 @@
       "tags": [
         "post-boss",
         "e1-end"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "leaving-laria"
     },
     {
       "id": "cond_14_mayorshouse_precredits",
@@ -170,7 +186,9 @@
         "post-boss",
         "e1-end",
         "credits"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "leaving-laria"
     },
     {
       "id": "cond_13_dwarvenruin_entrance_all_treasure",
@@ -190,7 +208,9 @@
         "e2",
         "overworld",
         "dwarven-ruin"
-      ]
+      ],
+      "chapter": "laria-valley",
+      "section": "the-dwarven-ruin"
     },
     {
       "id": "cond_15_dwarvenruin10_post_falmri",
@@ -209,7 +229,9 @@
         "e2",
         "dwarven-ruin",
         "falmri"
-      ]
+      ],
+      "chapter": "laria-valley",
+      "section": "the-dwarven-ruin"
     },
     {
       "id": "cond_16_dwarvenruin19_falmri_joined",
@@ -228,7 +250,31 @@
         "e2",
         "dwarven-ruin",
         "falmri"
-      ]
+      ],
+      "chapter": "laria-valley",
+      "section": "the-dwarven-ruin"
+    },
+    {
+      "id": "cond_13_waterway11_quickboots_collected",
+      "difficulty": "medium",
+      "parent": null,
+      "decision": "[Arc 2026-11-07] Quick Boots (treasure 8) collected + returned via Quinn's chain-legal WW11->WW10->WW11 round-trip on v2903 (QB-176 verified). Placed leaving-laria with the cond-13 return nodes; matches the save_catalogue 13-node set.",
+      "is_leaf": true,
+      "label": "Quick Boots collected — cond 13, L5 (Waterway11)",
+      "scene": "Waterway11",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "waterways",
+        "quick-boots",
+        "post-boss",
+        "L5"
+      ],
+      "chapter": "laria-village",
+      "section": "leaving-laria"
     }
   ]
 }

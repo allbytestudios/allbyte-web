@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-11-06T21:20:18.598Z",
+  "generated_at": "2026-11-07T01:56:03.798Z",
   "source": "ChroniclesOfNesis/WebTests/fixtures/saves/tree/save_tree_manifest.json",
   "nodes": [
     {
@@ -133,6 +133,17 @@
       "scene": "DwarvenRuin19",
       "packs": [
         "DwarvenRuin",
+        "Combat"
+      ]
+    },
+    {
+      "id": "cond_13_waterway11_quickboots_collected",
+      "label": "Quick Boots collected — cond 13, L5 (Waterway11)",
+      "parent": null,
+      "difficulty": "medium",
+      "scene": "Waterway11",
+      "packs": [
+        "Laria",
         "Combat"
       ]
     }

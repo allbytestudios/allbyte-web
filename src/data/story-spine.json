@@ -82,8 +82,9 @@
     {
       "key": "laria-valley",
       "label": "Laria Valley",
-      "placeholder": true,
-      "sections": []
+      "sections": [
+        { "key": "the-dwarven-ruin", "label": "The Dwarven Ruin", "steps": [] }
+      ]
     }
   ]
 }

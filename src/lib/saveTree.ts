@@ -176,7 +176,7 @@ export interface OutlineChapter {
 
 /**
  * Build the chapter → section → node outline, filtered by difficulty
- * ("all" = every difficulty). Nodes list by `seq` (fallback: label). Sections
+ * ("all" = every difficulty). Nodes list by `seq` (fallback: registry order). Sections
  * are kept even when empty — a spine beat with no saves yet (e.g. leaving-laria,
  * the post-boss gap) is CORRECT, not a sync failure, and renders as such.
  * Placeholder chapters (no sections) are dropped.
@@ -198,9 +198,10 @@ export function spineOutline(difficulty: string = "all"): OutlineChapter[] {
     list.push(n);
     byCS.set(k, list);
   }
+  // Unsequenced nodes keep registry order (the manifest lists the chain in
+  // play order); a label fallback scrambled it once current-set nodes dropped seq.
   const bySeq = (a: SaveTreeNode, b: SaveTreeNode) =>
-    (a.seq ?? Number.MAX_SAFE_INTEGER) - (b.seq ?? Number.MAX_SAFE_INTEGER) ||
-    a.label.localeCompare(b.label);
+    (a.seq ?? Number.MAX_SAFE_INTEGER) - (b.seq ?? Number.MAX_SAFE_INTEGER);
 
   const placed = new Set<string>();
   const chapters: OutlineChapter[] = storySpine.chapters

@@ -1,10 +1,180 @@
 {
   "title": "Episode One — Save Catalogue",
-  "as_of": "2026-11-06",
-  "synced_at": "2026-11-06T21:20:20.617Z",
-  "covered": 0,
-  "savable_total": 12,
-  "target_level": 4,
+  "as_of": "2026-11-07",
+  "synced_at": "2026-11-07T01:50:40.241Z",
+  "covered": 13,
+  "savable_total": 13,
+  "target_level": 5,
   "frontier": {},
-  "nodes": []
+  "nodes": [
+    {
+      "cond": 11,
+      "level": 1,
+      "note": "Pre-waterway entry — L1, story-XP unspent (Longsword + Item Relic, 4 Mugwort)",
+      "status": "covered",
+      "jump": {
+        "id": "pre_waterway",
+        "source": "frontier",
+        "scene": "Waterway1",
+        "chain_legal": false,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 11,
+      "level": 2,
+      "note": "Grind L2 — Waterways",
+      "status": "covered",
+      "jump": {
+        "id": "cond_11_gridfill_L2",
+        "source": "frontier",
+        "scene": "Waterway3",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 11,
+      "level": 3,
+      "note": "Grind L3 — Waterways",
+      "status": "covered",
+      "jump": {
+        "id": "cond_11_gridfill_L3",
+        "source": "frontier",
+        "scene": "Waterway2",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 11,
+      "level": 4,
+      "note": "Grind L4 — boss becomes beatable",
+      "status": "covered",
+      "jump": {
+        "id": "cond_11_gridfill_L4",
+        "source": "frontier",
+        "scene": "Waterway7",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 11,
+      "level": 5,
+      "note": "Boss-ready L5 — SluiceGate, pre Mother Slime",
+      "status": "covered",
+      "jump": {
+        "id": "cond_11_sluicegate_preboss_L5",
+        "source": "frontier",
+        "scene": "SluiceGate",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 13,
+      "level": 5,
+      "note": "Mother Slime defeated — SluiceGate post-boss",
+      "status": "covered",
+      "jump": {
+        "id": "cond_13_sluicegate_postboss",
+        "source": "frontier",
+        "scene": "SluiceGate",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 13,
+      "level": 5,
+      "note": "Post-boss — back in town (MainSquare)",
+      "status": "covered",
+      "jump": {
+        "id": "cond_13_mainsquare_backintown",
+        "source": "frontier",
+        "scene": "MainSquare",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 13,
+      "level": 5,
+      "note": "Post-boss — at Mayor (MayorsHouse)",
+      "status": "covered",
+      "jump": {
+        "id": "cond_13_mayorshouse_atmayor",
+        "source": "frontier",
+        "scene": "MayorsHouse",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 13,
+      "level": 5,
+      "note": "E2 — Dwarven Ruin entrance, Overworld treasure swept",
+      "status": "covered",
+      "jump": {
+        "id": "cond_13_dwarvenruin_entrance_all_treasure",
+        "source": "frontier",
+        "scene": "DwarvenRuinEntrance",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 13,
+      "level": 5,
+      "note": "Quick Boots collected (WW10 treasure 8) → returned to WW11",
+      "status": "covered",
+      "jump": {
+        "id": "cond_13_waterway11_quickboots_collected",
+        "source": "frontier",
+        "scene": "Waterway11",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 14,
+      "level": 5,
+      "note": "Event 15 done (cond 14) — E1 end / E2 Overworld gate opens",
+      "status": "covered",
+      "jump": {
+        "id": "cond_14_mayorshouse_precredits",
+        "source": "frontier",
+        "scene": "MayorsHouse",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 15,
+      "level": 5,
+      "note": "E2 — post-Falmri-sighting (DwarvenRuin10)",
+      "status": "covered",
+      "jump": {
+        "id": "cond_15_dwarvenruin10_post_falmri",
+        "source": "frontier",
+        "scene": "DwarvenRuin10",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    },
+    {
+      "cond": 16,
+      "level": 5,
+      "note": "E2 — Falmri JOINED party (DwarvenRuin19)",
+      "status": "covered",
+      "jump": {
+        "id": "cond_16_dwarvenruin19_falmri_joined",
+        "source": "frontier",
+        "scene": "DwarvenRuin19",
+        "chain_legal": true,
+        "story_legal": true
+      }
+    }
+  ]
 }

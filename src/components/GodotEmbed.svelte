@@ -620,7 +620,7 @@
       const id = new URLSearchParams(window.location.search).get("copilot");
       if (id && /^\d{1,9}$/.test(id)) copilot = `&copilot=${id}`;
     }
-    return `${base}?t=${Date.now()}${debugParam()}${e2Param()}${copilot}`;
+    return `${base}?t=${Date.now()}${debugParam()}${e2Param()}${perfHudParam()}${copilot}`;
   }
 
   /**
@@ -633,6 +633,16 @@
     if (typeof window === "undefined" || !debugParam()) return "";
     const e2 = new URLSearchParams(window.location.search).get("e2");
     return e2 === "0" || e2 === "1" ? `&e2=${e2}` : "";
+  }
+
+  /**
+   * `?perfhud=1` opens the game's perf HUD (draw calls, primitives, video memory,
+   * DPR, buffer size; v1.0.2905). A phone has no F3 or console, so this is how
+   * it is reached there. The game gates it on debug; relayed only alongside it.
+   */
+  function perfHudParam(): string {
+    if (typeof window === "undefined" || !debugParam()) return "";
+    return new URLSearchParams(window.location.search).get("perfhud") === "1" ? "&perfhud=1" : "";
   }
   let gameUrl = $state<string | null>(resolveGameUrlOrHold());
 

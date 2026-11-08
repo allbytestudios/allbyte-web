@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-11-07T01:56:03.798Z",
+  "generated_at": "2026-11-08T21:24:44.236Z",
   "source": "ChroniclesOfNesis/WebTests/fixtures/saves/tree/save_tree_manifest.json",
   "nodes": [
     {
@@ -92,6 +92,17 @@
       ]
     },
     {
+      "id": "cond_13_waterway11_quickboots_collected",
+      "label": "Quick Boots collected — cond 13, L5 (Waterway11)",
+      "parent": null,
+      "difficulty": "medium",
+      "scene": "Waterway11",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
       "id": "cond_14_mayorshouse_precredits",
       "label": "E1 end: pre-credits, leave the Mayor's house to roll credits (cond 14)",
       "parent": "cond_13_mayorshouse_atmayor",
@@ -137,13 +148,13 @@
       ]
     },
     {
-      "id": "cond_13_waterway11_quickboots_collected",
-      "label": "Quick Boots collected — cond 13, L5 (Waterway11)",
+      "id": "cond_13_overworld_eastwood_encounter",
+      "label": "E2 Overworld — cond 13, L5 (jump to Overworld, play into the Ruin)",
       "parent": null,
       "difficulty": "medium",
-      "scene": "Waterway11",
+      "scene": "Overworld",
       "packs": [
-        "Laria",
+        "Overworld",
         "Combat"
       ]
     }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-11-07T01:56:02.603Z",
+  "generated_at": "2026-11-08T21:24:43.423Z",
   "nodes": [
     {
       "id": "pre_waterway",
@@ -170,6 +170,28 @@
       "section": "leaving-laria"
     },
     {
+      "id": "cond_13_waterway11_quickboots_collected",
+      "difficulty": "medium",
+      "parent": null,
+      "decision": "[Arc 2026-11-07] Quick Boots (treasure 8) collected + returned via Quinn's chain-legal WW11->WW10->WW11 round-trip on v2903 (QB-176 verified). Placed leaving-laria with the cond-13 return nodes; matches the save_catalogue 13-node set.",
+      "is_leaf": true,
+      "label": "Quick Boots collected — cond 13, L5 (Waterway11)",
+      "scene": "Waterway11",
+      "chain_legal": true,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "waterways",
+        "quick-boots",
+        "post-boss",
+        "L5"
+      ],
+      "chapter": "laria-village",
+      "section": "leaving-laria"
+    },
+    {
       "id": "cond_14_mayorshouse_precredits",
       "difficulty": "medium",
       "parent": "cond_13_mayorshouse_atmayor",
@@ -255,26 +277,26 @@
       "section": "the-dwarven-ruin"
     },
     {
-      "id": "cond_13_waterway11_quickboots_collected",
+      "id": "cond_13_overworld_eastwood_encounter",
       "difficulty": "medium",
       "parent": null,
-      "decision": "[Arc 2026-11-07] Quick Boots (treasure 8) collected + returned via Quinn's chain-legal WW11->WW10->WW11 round-trip on v2903 (QB-176 verified). Placed leaving-laria with the cond-13 return nodes; matches the save_catalogue 13-node set.",
+      "decision": "[Arc 2026-11-08] Owner balance-test jump-point: solo Elias L5 on the Overworld (E2 entry), to playtest Overworld->DwarvenRuin balance on the website. NOTE: enemy balance is PRE-TUNE until Quinn/Rowan's E2 pass deploys.",
       "is_leaf": true,
-      "label": "Quick Boots collected — cond 13, L5 (Waterway11)",
-      "scene": "Waterway11",
+      "label": "E2 Overworld — cond 13, L5 (jump to Overworld, play into the Ruin)",
+      "scene": "Overworld",
       "chain_legal": true,
       "packs": [
-        "Laria",
+        "Overworld",
         "Combat"
       ],
       "tags": [
-        "waterways",
-        "quick-boots",
-        "post-boss",
-        "L5"
+        "e2",
+        "overworld",
+        "L5",
+        "balance-test"
       ],
-      "chapter": "laria-village",
-      "section": "leaving-laria"
+      "chapter": "laria-valley",
+      "section": "the-dwarven-ruin"
     }
   ]
 }

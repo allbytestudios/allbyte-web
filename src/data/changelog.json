@@ -1,6 +1,1052 @@
 {
-  "generatedAt": "2026-10-30T16:41:47.877Z",
+  "generatedAt": "2026-11-08T02:42:45.400Z",
   "releases": [
+    {
+      "version": "v1.0.2906",
+      "date": "2026-11-08",
+      "changes": [
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION to 1.0.2906 — mobile debug opener + Debug Overlays checkboxes",
+          "sha": "481e1f59"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge nix mobile debug opener + Debug Overlays checkboxes (298a077c): L1+R1 chord + top-left long-press open DebugMenu (debug-gated); Performance-overlay checkbox wired to perf HUD flag",
+          "sha": "8472dcab"
+        },
+        {
+          "type": "chore",
+          "subject": "Add mobile DebugMenu opener (gamepad L1+R1 chord + touch corner long-press) + Debug Overlays checkbox section",
+          "sha": "298a077c"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION to 1.0.2905 — debug-gated perf HUD + gameState.perf instrumentation",
+          "sha": "f3fcccd3"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge nix debug-gated perf instrumentation (97f02f5b): gameState.perf + HUD (F3/JS/URL ?perfhud=1), mobile-legible, _debug_authorized-gated",
+          "sha": "6f924edf"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(perf): add ?perfhud URL-param toggle + mobile-legible HUD styling (ChroniclesOfNesis-u11ko follow-up)",
+          "sha": "97f02f5b"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(perf): debug-gated RenderingServer metrics -> HUD + gameState.perf (ChroniclesOfNesis-u11ko)",
+          "sha": "85232e81"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(tree): order quickboots before precredits (cond13 < cond14) in Leaving Laria chain",
+          "sha": "e679aa2e"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(tree): add chapter/section placement to all nodes + add Quick Boots node (13 total)",
+          "sha": "564755af"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge port perf-analysis Phase 1 (9aa184ab): reusable perf probe (tools/perf/) + PERF_ANALYSIS_30FPS.md",
+          "sha": "109ef6a0"
+        },
+        {
+          "type": "perf",
+          "subject": "perf: Phase 1 probe + 30fps capability-tier findings (ChroniclesOfNesis-ho6wu)",
+          "sha": "9aa184ab"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION to 1.0.2904 — live_mutations 404-poll back-off redeploy",
+          "sha": "13c238c2"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(testbridgedev): idle back-off on live_mutations poll — kill the 10Hz 404 flood",
+          "sha": "8d55fa2b"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(frontier): add cond_13_waterway11_quickboots_collected — Quick Boots (treasure 8) collected + returned (QB-176 verified, v2903)",
+          "sha": "95c754b6"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION to 1.0.2903 — waterway10 .tscn parse-fix redeploy (unblocks WW10 load / Quick Boots)",
+          "sha": "a08d4769"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(waterway10): remove invalid # comment block from .tscn body",
+          "sha": "b692129d"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION to 1.0.2902 — batch deploy of skill-tree prebuild-race fix (bootstrap pack) + WW10 Quick Boots nav fix (Laria pack)",
+          "sha": "e205a156"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge nix WW10 Quick Boots nav fix (7eaff31f): union the two disconnected walkable polygons so the chest pocket is there-and-back reachable",
+          "sha": "4d6b23ec"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(waterway10): merge disconnected Quick-Boots pocket into main nav floor (QB-172/173)",
+          "sha": "7eaff31f"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge vera cold-load skill-tree regression test (fe5c08d2) — pins purchased skills show on cold-boot+load path",
+          "sha": "2724b376"
+        },
+        {
+          "type": "test",
+          "subject": "test(skilltree): regression pin for SKILLTREE-PREBUILD-RACE cold-load bug (1c091c9d)",
+          "sha": "fe5c08d2"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge nix skill-tree prebuild-race fix (1c091c9d): reentrancy guard + queue_free rebuild — cold-load (Continue/launcher) now shows purchased skills",
+          "sha": "00309d5a"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(skilltree): guard the Title-boot grid prebuild against a busy-parent race (Quinn repro)",
+          "sha": "1c091c9d"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(tree): purge 60 stale old save nodes; keep 12 current (pre_waterway anchor + 11 chain-legal)",
+          "sha": "9a96c15f"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(tree): App adds recent E2 story nodes (cond_15 post-Falmri, cond_16 Falmri-joined)",
+          "sha": "0ead64a3"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION -> 1.0.2901 (boss XP-to-all-members rule deploy)",
+          "sha": "b0ea245b"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-bossxp into develop",
+          "sha": "8ca6e88b"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): boss kill XP goes to whole party, not just killer (ChroniclesOfNesis-wa5eb)",
+          "sha": "7a3288e3"
+        },
+        {
+          "type": "test",
+          "subject": "test(multiparty): fix cond-16 fixture checkpoint ref; skip combat-gameover pending akgia staging hook",
+          "sha": "df841e07"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/vera-6fcdbf5f into develop",
+          "sha": "e07cc333"
+        },
+        {
+          "type": "test",
+          "subject": "test(multiparty): E2 Falmri-join audit + regression tests (Elias+Falmri)",
+          "sha": "459b26f0"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION bump — prod-end frontier moved to DwarvenRuin22 (credits@boss-chamber; Overworld opens cond>=14; dev open-ended)",
+          "sha": "e04a582a"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-prodend into develop",
+          "sha": "8f56ce6e"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(prod-end): PROD end-state -> enter DwarvenRuin22 (Spiting Nest); Overworld opens to prod on story cond",
+          "sha": "085cb109"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(e2): FALMRI RECRUITED — cond-16 DwarvenRuin19 party-join (v2899)",
+          "sha": "c39a5af0"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION -> 1.0.2899 (Falmri recruitment soft-lock fix x8gx5 deploy)",
+          "sha": "8d75ca47"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-x8gx5b into develop",
+          "sha": "db578140"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(dialogue): close out empty dialogue arrays instead of risking a stuck session (ChroniclesOfNesis-x8gx5)",
+          "sha": "bd42d208"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-x8gx5 into develop",
+          "sha": "2430d24a"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(falmri): Falmri never joined party after DR19 recruitment cutscene",
+          "sha": "ba393631"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(e2): cond-15 DwarvenRuin10 post-Falmri-sighting — first E2 story beat (v2898)",
+          "sha": "347ea5ad"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(tree): App appends first E2 node — dwarvenruin_entrance_all_treasure (parent backintown)",
+          "sha": "fb9f98d6"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION -> 1.0.2898 (phantom-chest read-surface filter deploy)",
+          "sha": "527130a2"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-ow-chest into develop",
+          "sha": "c41491c6"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(testbridge): classify OverwoldLocation's phantom TreasureChest out of observable chest reads",
+          "sha": "2bfbdbef"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(overworld): OVERWORLD_DISCOVERY_MODEL — discoverable entities (chest vs location) share vision-discovery+persistence, diverge on treasure:bool (owner canon 2026-11-06)",
+          "sha": "744f0761"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(e2): FIRST Episode Two jump-point — DwarvenRuin entrance, Overworld 3/4 treasure (v2897)",
+          "sha": "8fba9467"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION -> 1.0.2897 (combat-log cursor-reset fix 15mr5; Overworld+DwarvenRuin packs rebuilt)",
+          "sha": "45a4fd60"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-combatlog15mr5 into develop",
+          "sha": "5a90ba70"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): null window._lastCombatLog on fresh combat mount (ChroniclesOfNesis-15mr5)",
+          "sha": "99e38d3a"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION -> 1.0.2896 (Overworld nav-bake overlap-skip fix deploy)",
+          "sha": "f700eee0"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-navbake into develop",
+          "sha": "6dc55512"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(nav): drop redundant WALKABLE outlines that overlap the field polygon — fixes Overworld walk_to",
+          "sha": "f85d94ac"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge rowan/dwarven-ruin-port into develop — Episode Two opening (DwarvenRuin pack + Falmri party/skills + Spiting combat)",
+          "sha": "597d4054"
+        },
+        {
+          "type": "chore",
+          "subject": "Record merged local build and final emote combat and party verification",
+          "sha": "6b4af17d"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge develop into Rowan dungeon branch preserving E1 safeguards and E2 party content",
+          "sha": "71a8c6d3"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: clear inflicted statuses and their bubbles on unit death",
+          "sha": "52bfd932"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: render numeric dialogue emotes and restart their animation",
+          "sha": "ba6b612f"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(e2): reconcile brief for rowan/dwarven-ruin-port -> develop (per-file preserve list)",
+          "sha": "d1ade8d7"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(test): e2_gate cookie fallback + debug-gate the ?e2=1 unlock (v2893)",
+          "sha": "e0ca40b3"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(test): ?e2=0|1 param decouples E2 content-gate from debug capability (test prod behavior)",
+          "sha": "f25d36fe"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(tree): App appends E1-end nodes to save_tree_manifest (backintown->atmayor->precredits)",
+          "sha": "63b1b5f3"
+        },
+        {
+          "type": "chore",
+          "subject": "fixtures(e1-end): back-in-town + at-Mayor + pre-credits jump-points (byte-exact, v2891)",
+          "sha": "e4896edb"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION -> 1.0.2891 (oqo7l+6vtm7 WW10 combat root-fix deploy)",
+          "sha": "82c8f667"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-ww10stall into develop",
+          "sha": "8080f17d"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(oqo7l,6vtm7): close the charge-resolve watchdog gap + stop boxing the player into a 0-legal-move combat-start cell",
+          "sha": "19f26816"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION -> 1.0.2890 (mn34x WW2->WW1 backward-door sweep deploy)",
+          "sha": "4552b78c"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-mn34x into develop",
+          "sha": "a4d462ba"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(mn34x): WW2->WW1 backward door — class-fix of mme5l's mirrored-scale pattern",
+          "sha": "9f60d2e7"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION -> 1.0.2889 (WW10/WW11 fixes mme5l+5kxup deploy)",
+          "sha": "ac0fbf41"
+        },
+        {
+          "type": "merge",
+          "subject": "Merge sandbox/nix-61142 into develop",
+          "sha": "ddc1b8c3"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(5kxup): bounded watchdog forces enemy AI turn to end instead of wedging the queue",
+          "sha": "ea44432a"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(mme5l): WW11->WW10 door — flip mirrored negative y-scale so observable pos is walk_to-able",
+          "sha": "1914f388"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(mcp): MCP_SCENE_CONTRACT — standing requirement, all scene events OBSERVABLE + WALK_TO-ABLE; MCP never interprets artwork, owner hand-places events (owner canon 2026-11-04)",
+          "sha": "0b9b4d23"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION ->2888 — post-boss return channel->WW11 walk_to fix (3s6bt) live",
+          "sha": "2ac31058"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(game): post-boss RETURN — add walk_to-drivable ToWaterways11North channel exit (3s6bt, Nix)",
+          "sha": "a167531b"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(waterways): add north-side ToWaterways11 door — the RETURN leg's twin of the forward crossing fix",
+          "sha": "be007d6a"
+        },
+        {
+          "type": "test",
+          "subject": "test(save-tree): register 5 boss-content jump-points (App) — gridfill L2/L3/L4 -> preboss_L5 -> postboss",
+          "sha": "0d08ccd2"
+        },
+        {
+          "type": "test",
+          "subject": "test(fixtures): E1 boss content — full-HP pre-boss (byte-exact, supersedes 27/54) + post-boss (Mother defeated, cond 13)",
+          "sha": "03ba9bea"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION ->2887 — boss-victory hang fix (ug2l8/QB-170) live; E1 completable",
+          "sha": "b6a0c627"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(game): cap resolved-combat-log mirror to 300 entries — fixes boss-victory WASM hang (ug2l8, Nix)",
+          "sha": "82106eeb"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): cap the resolved-combat-log JS mirror — boss-victory main-thread wedge (P0)",
+          "sha": "fb328007"
+        },
+        {
+          "type": "test",
+          "subject": "test(fixtures): commit chain-legal PRE-BOSS fixture (L5 SluiceGate, the missing one)",
+          "sha": "f27d384b"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION ->2886 — channel->SluiceGate standard-transition fix (56oos) live; boss walk_to-reachable",
+          "sha": "ccd92ac3"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(game): make channel->SluiceGate a standard walk_to transition (relocate ToSluiceGate leave-area into reach, gate waterTotal==2) (56oos, Nix)",
+          "sha": "0df691c5"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(waterways): relocate ToSluiceGate into the walk_to-reachable band — the crossing was a nav dead zone",
+          "sha": "1dede51e"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION ->2885 — channel->SluiceGate bridge-jump gate fix (cbnp0) live; boss reachable at low-water (conds=1) boss-approach state",
+          "sha": "7102163e"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(game): fix channel->SluiceGate bridge-jump gate (inverted waterTotal==0 -> ==2) (cbnp0, Nix)",
+          "sha": "201a57f1"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(waterways): BridgeJump crossing gated to the wrong water tier — blocked the boss approach",
+          "sha": "1bb70d0c"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION ->2884 — c0f944d8 (2nd GameOver-path fix) deployed; unblocks L4->L5 grind (Title-dump on 2883) + root-fixes before boss",
+          "sha": "e09e24d7"
+        },
+        {
+          "type": "chore",
+          "subject": "Record Spiting footprint verification in local build 2898",
+          "sha": "fb711be3"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: center Spiting over its four-cell combat footprint",
+          "sha": "33823b79"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(game): 2nd spurious-GameOver path — stale SceneTemplate must not hijack current_scene (a3etv, Nix)",
+          "sha": "c0f944d8"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): guard SceneTemplate combat-lifecycle handlers against a stale BACKGROUND scene instance (combat-over settle escape #2)",
+          "sha": "5f019530"
+        },
+        {
+          "type": "test",
+          "subject": "test(fixtures): promote CLEAN full-loadout L4 (v13, v1.0.2883) — grid-fill COMPLETE",
+          "sha": "f0721bbf"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION bump — combat-over stale-signal + relic-desync fixes (er7i9/6rpbw) live; fix test_combat_game_over marker for new _on_battle_lost(overlay_id) signature",
+          "sha": "69f29619"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(game): combat-over stale-signal guard (er7i9) + relic-equip save reconcile/no-displacement (6rpbw) (Nix)",
+          "sha": "ed211eb3"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): zombie-overlay-signal guard for combat-over GameOver escape; relic save desync",
+          "sha": "69ecb80d"
+        },
+        {
+          "type": "test",
+          "subject": "test(fixtures): supersede grid-fill L2/L3 with v10 full-gear captures (v1.0.2882)",
+          "sha": "f9ce5fcf"
+        },
+        {
+          "type": "chore",
+          "subject": "Record dungeon polish build 2897 and per-Bead verification",
+          "sha": "aa459d3a"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: allow script dependencies in combat GUI pack sync",
+          "sha": "2d2bdb3a"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: center Spiter and Speaver footprints on combat cells",
+          "sha": "00452098"
+        },
+        {
+          "type": "chore",
+          "subject": "Show multiple status bubbles in a rotating two-pixel diagonal stack",
+          "sha": "f42871f2"
+        },
+        {
+          "type": "chore",
+          "subject": "Keep Spiting contact combat available in passive debug modes",
+          "sha": "bf727120"
+        },
+        {
+          "type": "chore",
+          "subject": "Fix nine hidden dungeon exit triangles and audit all 47 exits",
+          "sha": "15808dc7"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION ->bump — Igna cond4 race + Door spawn-grace (6a7jp) live for full-loadout grind",
+          "sha": "71eebd2b"
+        },
+        {
+          "type": "chore",
+          "subject": "Record party entry stacking verification in local build 2896",
+          "sha": "928ab6db"
+        },
+        {
+          "type": "chore",
+          "subject": "Stack companions beneath Elias on scene entry",
+          "sha": "c6016037"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(game): Igna cond4 one-shot-race fix + Door spawn-grace hardening (6a7jp, Nix)",
+          "sha": "65d146c2"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(nav/quest): Door spawn-grace parity + Igna pendant-read race guard",
+          "sha": "3a864876"
+        },
+        {
+          "type": "chore",
+          "subject": "Verify entrance following in local build 2893",
+          "sha": "f27b6d31"
+        },
+        {
+          "type": "chore",
+          "subject": "Smooth recruited following through entrance depth perspective",
+          "sha": "a36c6a0d"
+        },
+        {
+          "type": "test",
+          "subject": "test(fixtures): correct grid-fill loadout metadata — Item Relic only, no Move Relic (Scan Relic id14 misread), Poisona unequipped",
+          "sha": "f3dfa0e6"
+        },
+        {
+          "type": "test",
+          "subject": "test(fixtures): promote chain-legal autoplay grid-fill saves L2/L3/L4 (frontier)",
+          "sha": "a71e0fb0"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION ->2881 — wua03 snapshot residual fix (no_snapshot ~66%->~0, active_unit mismatch gone) live",
+          "sha": "37dc22df"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(combat): pre-sync _acting_unit before first turn-start publish + republish on turn_ended (wua03, Nix)",
+          "sha": "6ae41bbd"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): close snapshot-mirror read gap at turn boundaries + kill the active_unit mismatch warning",
+          "sha": "0aae62d5"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(dungeon): finalize local 2892 review evidence",
+          "sha": "86d48a68"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(sweep): preserve pinned Line Smite anchor targeting",
+          "sha": "80f0da94"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION ->2880 — dy4vk combat-snapshot per-fight re-publish (fixes no_snapshot grind stall) live",
+          "sha": "9be57e02"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(dungeon): record local party, skill and encounter verification",
+          "sha": "91703f7e"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(combat): re-publish combat snapshot per-fight + reject stale overlay (dy4vk, Nix)",
+          "sha": "89fabd0f"
+        },
+        {
+          "type": "build",
+          "subject": "build(dungeon): stamp local review version 1.0.2891",
+          "sha": "dc36159a"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): stop combat-snapshot mirror going stale after a kill-ends-combat remount",
+          "sha": "b7365160"
+        },
+        {
+          "type": "test",
+          "subject": "test(dungeon): check Spiting entry, victory and cleared-nest revisit",
+          "sha": "47269f35"
+        },
+        {
+          "type": "build",
+          "subject": "build(dungeon): reuse bootstrap audio and capture memory checkpoints",
+          "sha": "1caaa62a"
+        },
+        {
+          "type": "build",
+          "subject": "build(dungeon): include the ruin in explicit frozen candidates",
+          "sha": "376b15c9"
+        },
+        {
+          "type": "test",
+          "subject": "test(sweep): verify each target outcome including legitimate misses",
+          "sha": "ac69aab7"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(dungeon): grant Spider Silk Boots immunity and verify reward persistence",
+          "sha": "64e92292"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(menus): resolve Ability Tree character tabs from pointer input",
+          "sha": "3b4054bc"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(dungeon): restore Spiting sting and ranged acid attacks",
+          "sha": "fcc4d088"
+        },
+        {
+          "type": "test",
+          "subject": "test(sweep): exercise both party area attacks with real browser input",
+          "sha": "6703844c"
+        },
+        {
+          "type": "test",
+          "subject": "test(party): wait for the encounter sensor before walking across it",
+          "sha": "288e8906"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(elias): enable Sweep Attack arcs and all five tiers",
+          "sha": "a603032a"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(falmri): cast Earth Wall through combat terrain and targeting",
+          "sha": "1a350f4f"
+        },
+        {
+          "type": "test",
+          "subject": "test(party): give both allies a deterministic combat approach",
+          "sha": "4e5ba3c1"
+        },
+        {
+          "type": "test",
+          "subject": "test(defend): navigate the current combat menu geometry",
+          "sha": "822a1e31"
+        },
+        {
+          "type": "test",
+          "subject": "test(party): stage open ground for the post-combat follower check",
+          "sha": "79a6b268"
+        },
+        {
+          "type": "test",
+          "subject": "test(defend): decode the existing purchased-tier acknowledgement",
+          "sha": "8f0917de"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(status): keep mouse tab clicks on the character row",
+          "sha": "e1a99fa6"
+        },
+        {
+          "type": "test",
+          "subject": "test(combat): load the existing RNG dependency in status fixture",
+          "sha": "ab27dcb7"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(falmri): implement Defend mitigation duration and Action tiers",
+          "sha": "a73210ab"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(falmri): resolve Spin Attack area damage webs and purchased tiers",
+          "sha": "06c4eea3"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(falmri): execute Charge Attack through shared movement and strike paths",
+          "sha": "0b17cb05"
+        },
+        {
+          "type": "test",
+          "subject": "test(party): approach enemies within actual ally attack range",
+          "sha": "bcae82e8"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(status): dispatch horizontal input to character tab navigation",
+          "sha": "13ae7a9e"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(skills): honor boot authorization for Episode Two purchases",
+          "sha": "cfaa162f"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(party): handle KO leaders and distinct overworld skill casters",
+          "sha": "96f148e8"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(falmri): grant and persist his starting dwarven battleaxe",
+          "sha": "407ec54b"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(cursor): restore gameplay feather on mouse takeover",
+          "sha": "ff155f0d"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(menus): keep party character tabs consistent across menus",
+          "sha": "7c222e7b"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION 2878->2879 — uzqt2 combat-log persistence (post-kill read) + prior combat hardening live",
+          "sha": "7a842527"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(combat): persist combat log at resolution so post-kill read survives CombatOverlay teardown (uzqt2, Nix)",
+          "sha": "d02ba7a7"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): persist resolved combat log across kill-ends-combat teardown",
+          "sha": "aa1683c6"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(combat): resdiag budget 2.0s->5.5s — stop false 'zombie' alarm on normal 2-4.5s cosmetic chains (g1gkh, Nix)",
+          "sha": "46e1d647"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): raise resdiag false-positive budget 2.0s -> 5.5s after live repro",
+          "sha": "86c39380"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION 2877->2878 — post-fix baseline for Nix g1gkh resolution-emit stall fix",
+          "sha": "2854c0a9"
+        },
+        {
+          "type": "chore",
+          "subject": "Record Falmri party activation verification and remaining combat scope",
+          "sha": "687659c7"
+        },
+        {
+          "type": "chore",
+          "subject": "merge(combat): fix orphaned resolution emit — exit-presentation gate 120s default timeout -> explicit 3.5s bound (g1gkh, Nix)",
+          "sha": "d93e0f2b"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): bound exit-presentation gate timeout to stop resolution-emit zombie",
+          "sha": "67e81384"
+        },
+        {
+          "type": "merge",
+          "subject": "merge: verbose-combat-log for 2 more tests reading the gated eval-mirrors (Vera 89fca26c)",
+          "sha": "9d31f7a9"
+        },
+        {
+          "type": "test",
+          "subject": "test: cover the 572210c9 eval-mirror gate in danger_viz + reaction_scenarios (bkmne/k9oyy)",
+          "sha": "89fca26c"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION -> (combat_profile + per-proc eval mirrors gated; bkmne)",
+          "sha": "c319cf93"
+        },
+        {
+          "type": "merge",
+          "subject": "merge: gate 6 per-reaction-proc JavaScriptBridge.eval mirrors + add combat_profile timing (bkmne)",
+          "sha": "572210c9"
+        },
+        {
+          "type": "chore",
+          "subject": "combat: profile reaction-cascade timing + gate unconditional JS-eval calls (ChroniclesOfNesis-bkmne/k9oyy)",
+          "sha": "383a2569"
+        },
+        {
+          "type": "merge",
+          "subject": "merge: re-enable verbose combat log in 4 tests gated by _qa_verbose_combat_log (Vera 1890c7ad)",
+          "sha": "e8b0591c"
+        },
+        {
+          "type": "test",
+          "subject": "test: flip verbose combat log ON for the 4 files pinned to gated console lines (bkmne/k9oyy)",
+          "sha": "1890c7ad"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION 1.0.2874 -> 1.0.2875 (combat print-gate; grind-speed)",
+          "sha": "6ac39426"
+        },
+        {
+          "type": "merge",
+          "subject": "merge: gate combat-resolution hot-path print() behind _qa_verbose_combat_log (grind-speed; bkmne/k9oyy)",
+          "sha": "3b027416"
+        },
+        {
+          "type": "perf",
+          "subject": "perf(combat): gate hot-path print() behind _qa_verbose_combat_log (bkmne/k9oyy)",
+          "sha": "a74e5438"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(stability): §0 CORRECTION — S1 'throttle' was a measurement artifact, not a renderer/visibility throttle",
+          "sha": "767f141c"
+        },
+        {
+          "type": "chore",
+          "subject": "ChroniclesOfNesis-av15k: debug-gated always-fire rAF shim for hidden-tab combat arming",
+          "sha": "1faad4d2"
+        },
+        {
+          "type": "chore",
+          "subject": "Verify Falmri item targeting and real party menu and combat input",
+          "sha": "b91ce187"
+        },
+        {
+          "type": "chore",
+          "subject": "Transfer shared equipment between party members without duplicate bonuses",
+          "sha": "0c200a99"
+        },
+        {
+          "type": "chore",
+          "subject": "Recruit Falmri into the persistent party and character menus",
+          "sha": "3a197eda"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(stability): combat/driving stability deep-dive + prevention plan (owner deep-dive ask)",
+          "sha": "a7592615"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION 1.0.2871 -> 1.0.2872 (driver-status line sink live)",
+          "sha": "150d45a6"
+        },
+        {
+          "type": "chore",
+          "subject": "Record Falmri follower local export and verification",
+          "sha": "8d4066ad"
+        },
+        {
+          "type": "chore",
+          "subject": "Support Falmri following in Laria character layouts",
+          "sha": "9d89c81c"
+        },
+        {
+          "type": "merge",
+          "subject": "merge: debug-gated autoplay driver-status on-screen line (jacpw)",
+          "sha": "29871be8"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(combat): debug-gated on-screen AUTOPLAY DRIVER-STATUS line (ChroniclesOfNesis-jacpw)",
+          "sha": "fd1bf0c4"
+        },
+        {
+          "type": "chore",
+          "subject": "Restore persistent exploration following after Falmri recruitment",
+          "sha": "47749ef4"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(deploy): append manifest records v0.8.2840 / v1.0.2869 / v1.0.2871 (CI finalize --require-current)",
+          "sha": "8d57d417"
+        },
+        {
+          "type": "chore",
+          "subject": "Record interaction and recruitment polish local verification",
+          "sha": "4b75acba"
+        },
+        {
+          "type": "chore",
+          "subject": "Fix object facing, ruin17 exit markers and cinematic spider effects",
+          "sha": "51db571d"
+        },
+        {
+          "type": "chore",
+          "subject": "Record spider parity local build and exported regression results",
+          "sha": "fe9fb7bf"
+        },
+        {
+          "type": "chore",
+          "subject": "Restore spider web terrain and typed melee attack parity",
+          "sha": "acd96612"
+        },
+        {
+          "type": "chore",
+          "subject": "Record verified gear interactions and pipe rendering in local build",
+          "sha": "4274850f"
+        },
+        {
+          "type": "chore",
+          "subject": "Use explicit gear interactions and sort pickup artwork with room bodies",
+          "sha": "76310f38"
+        },
+        {
+          "type": "chore",
+          "subject": "Record verified pipe, side-exit, and Falmri introduction local review",
+          "sha": "35a85b77"
+        },
+        {
+          "type": "chore",
+          "subject": "Correct Falmri introduction setup and defer actor cleanup to event end",
+          "sha": "d1ddf729"
+        },
+        {
+          "type": "chore",
+          "subject": "Require pipe interaction and keep dungeon side-exit markers visible",
+          "sha": "4b00c281"
+        },
+        {
+          "type": "chore",
+          "subject": "Document verified furnace events and local enemy debug build",
+          "sha": "f4caf172"
+        },
+        {
+          "type": "chore",
+          "subject": "Route real debug-entry clicks through the existing pause-menu handler",
+          "sha": "75bcec00"
+        },
+        {
+          "type": "chore",
+          "subject": "Verify isolated furnace build with aspect-correct debug UI clicks",
+          "sha": "2e8c5d87"
+        },
+        {
+          "type": "chore",
+          "subject": "Fix furnace inventory events and add passive enemy debug modes",
+          "sha": "f2dc994a"
+        },
+        {
+          "type": "test",
+          "subject": "test: verify gear pickup persistence and document GameOver local review",
+          "sha": "f2d86cd3"
+        },
+        {
+          "type": "test",
+          "subject": "test: round-trip gear autosave through the existing fixture import API",
+          "sha": "91b2f952"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: make room7 gear reachable and include GameOver pack dependencies",
+          "sha": "00191e93"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: restore GameOver Modern Goth and CPU glow particle resources",
+          "sha": "1c998b4d"
+        },
+        {
+          "type": "docs",
+          "subject": "docs: record the owner acceptance of loading and dungeon transition fixes",
+          "sha": "d07fde52"
+        },
+        {
+          "type": "docs",
+          "subject": "docs: record autosave thumbnails and full dungeon arrival verification",
+          "sha": "3f73af6a"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: capture autosave after rendering and clear dungeon transition arrivals",
+          "sha": "9c60c0ca"
+        },
+        {
+          "type": "docs",
+          "subject": "docs: record verified local loading and arrival fixes",
+          "sha": "a6b61927"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: clear the initial ruin trigger and cover deferred scene mounting",
+          "sha": "3dce0373"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: keep zone loading spinner moving and correct arrival presentation",
+          "sha": "8f66ed5f"
+        },
+        {
+          "type": "test",
+          "subject": "test(ep2): record verified dungeon review build and story checks",
+          "sha": "bba30304"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(ep2): port Dwarven Ruin scenes and Falmri recruitment story",
+          "sha": "fd365280"
+        }
+      ]
+    },
     {
       "version": "v1.0.2871",
       "date": "2026-10-30",

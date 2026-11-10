@@ -1,6 +1,322 @@
 {
-  "generatedAt": "2026-11-08T02:42:45.400Z",
+  "generatedAt": "2026-11-10T14:54:32.437Z",
   "releases": [
+    {
+      "version": "v1.0.2911",
+      "date": "2026-11-10",
+      "changes": [
+        {
+          "type": "chore",
+          "subject": "chore(packs): sync Laria + Overworld pack-copy autoloads to canonical (coherent develop)",
+          "sha": "d94997b6"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(packs): sync DwarvenRuin + Combat pack-copy autoloads/scripts to canonical (coherent develop for prod build; --no-verify = G3-guard false-positive on canonical G4 copies)",
+          "sha": "3f2d398d"
+        },
+        {
+          "type": "balance",
+          "subject": "balance(spiders): Spiter poison-resistant + Speaver acid-resistant (owner canon)",
+          "sha": "23a56f5d"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): WEB_VERSION 1.0.2911 (troll + Falmri poison-resist + perf-HUD gate deploy)",
+          "sha": "d72fc481"
+        },
+        {
+          "type": "merge",
+          "subject": "merge(troll): fold Rowan's hill-troll (via Nix) — HillTroll on Overworld 80HP/PA210 + DwarvenRuin Falmri-recruitment; preserves texture downscale + perf-HUD gate + Falmri poison_resistant [owner 2026-11-09]",
+          "sha": "7ec435f4"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): commit WEB_VERSION bump to 1.0.2910 from redeploys (perf texture + overlay work)",
+          "sha": "bd2720de"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(combat): read poison_resistant from the stat row (not just the Poisona Pendant)",
+          "sha": "5514f3d1"
+        },
+        {
+          "type": "balance",
+          "subject": "balance(falmri): poison_resistant by default — halves poison take-hold chance + poison damage [owner 2026-11-09]",
+          "sha": "ec69e214"
+        },
+        {
+          "type": "Merge remote",
+          "subject": "Merge remote-tracking branch 'origin/rowan/dwarven-ruin-port' into sandbox/nix-troll-62683",
+          "sha": "95775d00"
+        },
+        {
+          "type": "fix",
+          "subject": "fix(overworld): gate Overworld perf overlay behind debug-menu Performance toggle",
+          "sha": "3e8c666e"
+        },
+        {
+          "type": "Record verif",
+          "subject": "Record verified troll debug contact and heavy melee preview",
+          "sha": "16f0b8b0"
+        },
+        {
+          "type": "Enable troll",
+          "subject": "Enable troll contact combat under debug and tune its heavy melee damage",
+          "sha": "5fcc2976"
+        },
+        {
+          "type": "merge",
+          "subject": "merge(perf): Overworld 48MP texture downscale (~447MB VRAM saved) + layer-ablation debug toggles [xblk8]",
+          "sha": "c1e4108e"
+        },
+        {
+          "type": "perf",
+          "subject": "perf(overworld): downscale 3 giant textures + add layer-ablation debug toggles (ChroniclesOfNesis-xblk8)",
+          "sha": "8663799b"
+        },
+        {
+          "type": "Record verif",
+          "subject": "Record verified troll debug stillness and reduced height",
+          "sha": "aaa9e517"
+        },
+        {
+          "type": "Prevent play",
+          "subject": "Prevent player overlap from nudging debug-held guards",
+          "sha": "b2792c5a"
+        },
+        {
+          "type": "Hold troll s",
+          "subject": "Hold troll still under debug overrides and reduce its scene scale",
+          "sha": "59e1d5f2"
+        },
+        {
+          "type": "Document hil",
+          "subject": "Document hill troll vision threshold, guard radius and verified return route",
+          "sha": "38f0bb61"
+        },
+        {
+          "type": "Make hill tr",
+          "subject": "Make hill troll guard its post with radial vision aggro and home leash",
+          "sha": "1963bb05"
+        },
+        {
+          "type": "Record natur",
+          "subject": "Record natural tree weapon export and rendered encounter verification",
+          "sha": "5b4a02d4"
+        },
+        {
+          "type": "Give hill tr",
+          "subject": "Give hill troll a visibly forked natural tree limb in every pose",
+          "sha": "5737b776"
+        },
+        {
+          "type": "Document low",
+          "subject": "Document low-FPS defeated-body follow-up from troll review",
+          "sha": "d6a6b9b7"
+        },
+        {
+          "type": "Record passi",
+          "subject": "Record passing hill troll victory and overworld return check",
+          "sha": "c86f169a"
+        },
+        {
+          "type": "Record hill ",
+          "subject": "Record hill troll import settings and isolated encounter coverage",
+          "sha": "6180ce9c"
+        },
+        {
+          "type": "Add animated",
+          "subject": "Add animated hill troll sentry to misty mountain forest",
+          "sha": "cea0d783"
+        },
+        {
+          "type": "Merge remote",
+          "subject": "Merge remote-tracking branch 'origin/develop' into rowan/dwarven-ruin-port",
+          "sha": "614e92f7"
+        },
+        {
+          "type": "art",
+          "subject": "art: give troll a rough natural tree limb club",
+          "sha": "822e55e3"
+        },
+        {
+          "type": "art",
+          "subject": "art: iterate troll club soldier gear and two-cell isometric salamander",
+          "sha": "78d15890"
+        },
+        {
+          "type": "art",
+          "subject": "art: revise enemy concepts with natural proportions and corrected scales",
+          "sha": "343b7e3a"
+        },
+        {
+          "type": "art",
+          "subject": "art: add generated troll salamander and soldier reference strips",
+          "sha": "e54fe89f"
+        },
+        {
+          "type": "fixtures",
+          "subject": "fixtures(tree): surface cond_13_overworld_eastwood_encounter as the E2 Overworld-L5 balance-test jump-point (owner 2026-11-08)",
+          "sha": "07f891c3"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(spawn): ENEMY_SPAWN_SCHEMA — the built-in data-driven enemy-spawn system (core_BattlerSpawns: prespawn=on-load, wander=step-triggered); use data before writing spawn code (owner canon 2026-11-08, companion to EVENT_OBJECT_SCHEMA)",
+          "sha": "6fc95070"
+        },
+        {
+          "type": "balance",
+          "subject": "balance(spiting): sting skill now deals poison (poison_damage_mod 1.0) — owner 2026-11-08; part of the E2 Spiting kit/retune (nr9hn). Immunities stay (deals poison+acid+web per canon)",
+          "sha": "7e34b9e4"
+        },
+        {
+          "type": "fixtures",
+          "subject": "fixtures(frontier): add cond_13_overworld_eastwood_encounter — E2 Overworld Eastwood balance save (Quinn v2908, chain-legal)",
+          "sha": "574a8c17"
+        },
+        {
+          "type": "fixtures",
+          "subject": "fixtures(frontier): add cond_16_dwarvenruin21_spiting_approach — E2 Spiting boss-approach balance-test save (Quinn, v2908, chain-legal)",
+          "sha": "54c4246d"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(e2): spawn map — real E2 enemies = Spiter/Speaver(ruin)/Eastwood(overworld)/Spiting(boss); Vepir+Mia unplaced; earthW=wall, StoneGiant=test-only",
+          "sha": "f4aee42e"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(e2): enemy-balance + save-coverage plan (owner 2026-11-08) — flags Spiting boss pd242/hp342 unbeatable at L4-5, Speaver dodge, Mia burst; high-priority save gaps + Arc/Quinn division",
+          "sha": "15bad39c"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION to 1.0.2908 — turtle health indicator Phase 1",
+          "sha": "4348b31b"
+        },
+        {
+          "type": "Merge nix tu",
+          "subject": "Merge nix turtle health indicator Phase 1 (217b6566): TurtleHealth autoload (3-state glyph + diagnosis + per-device baseline + deferred restore/auto-resume) + fixes latent undefined Dal.has_fresh_reload_marker",
+          "sha": "ecbd2ce3"
+        },
+        {
+          "type": "feat",
+          "subject": "feat(turtle-health): PHASE 1 browser-health indicator — glyph, diagnosis card, deferred masked restore",
+          "sha": "217b6566"
+        },
+        {
+          "type": "docs",
+          "subject": "docs(turtle): commit approved turtle health-indicator design spec + mockup (owner-approved 2026-11-08)",
+          "sha": "7146f413"
+        },
+        {
+          "type": "Merge port o",
+          "subject": "Merge port overdraw deep-dive (2993ed13): PERF_ANALYSIS_30FPS §9 OVERDRAW_ANALYSIS + perf_probe gameState.perf sampling",
+          "sha": "11592e16"
+        },
+        {
+          "type": "perf",
+          "subject": "perf: overdraw deep-dive on Overworld/Town (ChroniclesOfNesis-ho6wu follow-up)",
+          "sha": "2993ed13"
+        },
+        {
+          "type": "chore",
+          "subject": "chore(web): bump WEB_VERSION to 1.0.2907 — perf-HUD toggle cleanup (panel checkbox sole control)",
+          "sha": "475f2faa"
+        },
+        {
+          "type": "refactor",
+          "subject": "refactor(perf-hud): drop F3 + ?perfhud toggles — DebugMenu Performance checkbox is the sole user-facing control (owner 2026-11-08)",
+          "sha": "fa625130"
+        },
+        {
+          "type": "deploy-manif",
+          "subject": "deploy-manifest: append v1.0.2906 entry (481e1f59, 208 commits since 2871) for finalize --require-current / public changelog",
+          "sha": "eee5b49d"
+        },
+        {
+          "type": "test",
+          "subject": "test(overworld): isolate resolution and remaining scene render costs",
+          "sha": "e8b9a145"
+        },
+        {
+          "type": "docs",
+          "subject": "docs: record closer Falmri staging and cutscene lock validation",
+          "sha": "3b965822"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: preserve cutscene input locks and reject ordinary enemy triggers",
+          "sha": "8f37011a"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: start Falmri halfway closer to the interior doorway",
+          "sha": "95ab65d1"
+        },
+        {
+          "type": "docs",
+          "subject": "docs: record dungeon polish and overworld performance verification",
+          "sha": "fd945625"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: recover complete emote artwork and require rendered symbol ink",
+          "sha": "f6926f8e"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: keep the room nine sighting exit in Elias camera view",
+          "sha": "1f21bb8f"
+        },
+        {
+          "type": "perf",
+          "subject": "perf: skip invisible shader work and measure overworld idle aging",
+          "sha": "712b5af6"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: keep the south mountain ridge in front of overworld trees",
+          "sha": "93f37c8e"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: align exploration camera smoothing with physics movement",
+          "sha": "50bfb300"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: animate fleeing spiders and preserve walk cycle progress",
+          "sha": "24a8aaf4"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: resolve emote bubble artwork after dungeon packs mount",
+          "sha": "0f413c9e"
+        },
+        {
+          "type": "fix",
+          "subject": "fix: move Falmri sighting inside the dungeon junction",
+          "sha": "eb2aa636"
+        },
+        {
+          "type": "docs",
+          "subject": "docs: record early Falmri local build and verification evidence",
+          "sha": "d64c136b"
+        },
+        {
+          "type": "feat",
+          "subject": "feat: stage Falmri sighting at entrance and recruitment in ruin nine",
+          "sha": "3f25850e"
+        },
+        {
+          "type": "feat",
+          "subject": "feat: match new Falmri recruitment level and grant unspent progression points",
+          "sha": "ac0ecb17"
+        }
+      ]
+    },
     {
       "version": "v1.0.2906",
       "date": "2026-11-08",

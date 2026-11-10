@@ -253,13 +253,17 @@
   .builds {
     position: absolute;
     top: calc(100% + 6px);
-    right: 0;
+    /* Anchored under the whole split button, not the caret: right-anchored, a
+       200px menu hung off the left edge of a phone. */
+    left: 0;
     z-index: 20;
-    min-width: 200px;
+    min-width: max(100%, 200px);
+    max-width: calc(100vw - 2rem);
     margin: 0;
     padding: 0.3rem;
     list-style: none;
-    background: linear-gradient(rgba(245, 236, 210, 0.98), rgba(240, 229, 198, 0.98));
+    /* Opaque: the translucent gradient let the caption beneath read through. */
+    background: linear-gradient(#f5ecd2, #f0e5c6);
     border: 1px solid var(--gilt-lt, #c8a24e);
     border-radius: 3px;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
@@ -291,9 +295,19 @@
     cursor: default;
   }
   .builds .tag {
+    white-space: nowrap;
     font-size: 0.62rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--ink-soft, #6a5836);
+  }
+  /* ModernGoth at ~15px is hard to read on a phone: larger, plain serif. */
+  @media (max-width: 640px) {
+    .builds button {
+      font-family: Georgia, "Iowan Old Style", serif;
+      font-size: 1.05rem;
+      padding: 0.7rem 0.8rem;
+    }
+    .builds .tag { font-size: 0.75rem; }
   }
 </style>

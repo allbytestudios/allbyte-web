@@ -1,6 +1,32 @@
 {
-  "generatedAt": "2026-11-10T14:54:32.437Z",
+  "generatedAt": "2026-11-11T23:17:00.821Z",
   "releases": [
+    {
+      "version": "v1.0.2915",
+      "date": "2026-11-11",
+      "changes": [
+        {
+          "type": "balance",
+          "subject": "E2 enemy balance: Spiter/Speaver stats+resistances+OA+count model + kill-XP 40"
+        },
+        {
+          "type": "feat",
+          "subject": "heal economy: overworld-step MP-regen + Mugwort fixture + bed-heal"
+        },
+        {
+          "type": "merge",
+          "subject": "Rowan skill-system-unification fold: Vepir Drain + troll Crush/Sweep + follower combat"
+        },
+        {
+          "type": "feat",
+          "subject": "Rowan: dead-party portraits + Falmri combat facing + menu JP/SP badges + overnight revival"
+        },
+        {
+          "type": "fix",
+          "subject": "turtle health: absolute-FPS thresholds"
+        }
+      ]
+    },
     {
       "version": "v1.0.2911",
       "date": "2026-11-10",

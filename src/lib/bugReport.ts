@@ -46,6 +46,10 @@ export interface BugReportResult {
 export async function submitBugReport(
   input: BugReportInput,
   extraMeta: Record<string, unknown> = {},
+  // keepalive lets the request outlive the page: boot reports are sent right
+  // before a self-heal reload or from pagehide. The browser caps a keepalive
+  // body at 64KB, so callers using it must keep logs small and send no snapshot.
+  opts: { keepalive?: boolean } = {},
 ): Promise<BugReportResult> {
   if (typeof window === "undefined" || !WRITE_URL) return { ok: false, error: "disabled" };
   const text = (input?.text || "").trim();
@@ -83,7 +87,7 @@ export async function submitBugReport(
   }
 
   try {
-    const resp = await fetch(WRITE_URL, { method: "POST", headers, body });
+    const resp = await fetch(WRITE_URL, { method: "POST", headers, body, keepalive: !!opts.keepalive });
     if (!resp.ok) return { ok: false, error: `http ${resp.status}` };
     const data = await resp.json().catch(() => ({}) as any);
     return { ok: true, reportId: data.reportId };

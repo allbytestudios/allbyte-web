@@ -3,6 +3,7 @@
   import { isAdmin } from "../lib/tier";
   import { BUG_READ_URL as READ_URL } from "../lib/bugReports";
   import { onMount } from "svelte";
+  import { BOOT_REPORT_CATEGORY } from "../lib/bootReport";
 
   interface Report {
     reportId: string;
@@ -25,6 +26,21 @@
   let reports = $state<Report[]>([]);
   let generatedAt = $state<number | null>(null);
   let viewerIsAdmin = $derived(isAdmin(auth.currentUser));
+  // Automatic boot-failure reports share this feed with player-filed ones.
+  let view = $state<"all" | "player" | "boot">("all");
+  let bootCount = $derived(reports.filter((r) => r.category === BOOT_REPORT_CATEGORY).length);
+  let shown = $derived(
+    view === "all"
+      ? reports
+      : reports.filter((r) => (r.category === BOOT_REPORT_CATEGORY) === (view === "boot")),
+  );
+  // Meta already shown in the header/meta row; the rest is the boot diagnostics.
+  const SHOWN_META = new Set(["channel", "gameVersion", "scene", "viewport", "userAgent", "url", "referrer", "reportedAt"]);
+  function diagnostics(r: Report): [string, string][] {
+    return Object.entries(r.meta ?? {})
+      .filter(([k, v]) => !SHOWN_META.has(k) && v !== "" && v != null)
+      .map(([k, v]) => [k, typeof v === "string" ? v : JSON.stringify(v)]);
+  }
 
   onMount(async () => {
     let waited = 0;
@@ -108,10 +124,15 @@
         {reports.length} report{reports.length === 1 ? "" : "s"} · newest first ·
         updated {fmtDate(undefined, generatedAt ?? undefined)}
       </span>
+      <span class="views">
+        <button class="btn" class:on={view === "all"} onclick={() => (view = "all")}>All</button>
+        <button class="btn" class:on={view === "player"} onclick={() => (view = "player")}>Player</button>
+        <button class="btn" class:on={view === "boot"} onclick={() => (view = "boot")}>Boot failures ({bootCount})</button>
+      </span>
       <button class="btn" onclick={load}>Refresh</button>
     </div>
 
-    {#each reports as r (r.reportId)}
+    {#each shown as r (r.reportId)}
       <article class="rpt">
         <header class="rpt-head">
           <span class="cat">{r.category ?? "other"}</span>
@@ -140,6 +161,14 @@
           {:else if r.snapshotKey}
             <span class="muted small">snapshot on file (link expired — refresh)</span>
           {/if}
+          {#if r.category === BOOT_REPORT_CATEGORY}
+            <details class="logs" open>
+              <summary>boot diagnostics</summary>
+              <dl class="diag">
+                {#each diagnostics(r) as [k, v] (k)}<dt>{k}</dt><dd>{v}</dd>{/each}
+              </dl>
+            </details>
+          {/if}
           {#if r.recentLogs && r.recentLogs.length}
             <details class="logs">
               <summary>{r.recentLogs.length} log line{r.recentLogs.length === 1 ? "" : "s"}</summary>
@@ -162,6 +191,11 @@
     margin: 0 auto;
   }
   .muted { color: var(--ink-soft); }
+  .views { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .btn.on { background: var(--crimson); color: var(--panel); }
+  .diag { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.8rem; font: 0.75rem/1.4 ui-monospace, monospace; margin: 0.4rem 0 0; }
+  .diag dt { color: var(--ink-soft); }
+  .diag dd { margin: 0; overflow-wrap: anywhere; }
   .muted.small { font-size: 0.75rem; }
   .err { color: var(--sem-danger); }
   code { background: var(--paperblend); padding: 0 0.3rem; border-radius: 3px; }

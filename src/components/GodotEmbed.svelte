@@ -29,6 +29,7 @@
   } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
+  import { sendBootReport, consoleTail } from "../lib/bootReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
   // Inline (blob) worker — NOT `?worker` (that loads from an /_astro/*.js URL,
   // which fails under cross-origin isolation because those chunks carry no COEP
@@ -58,6 +59,16 @@
   async function hardResetAndReload(reason: string) {
     if (recoveryTriggered) return;
     recoveryTriggered = true;
+    // Report before healing. The second stall in a session (the heal already
+    // ran) is the one that matters: clearing caches didn't fix it, so it's a
+    // real boot failure on this browser, not stale assets.
+    let healed = false;
+    try {
+      healed = !!sessionStorage.getItem("ab_stale_reload");
+    } catch {
+      /* private mode — report as a first stall */
+    }
+    reportBoot(healed ? "stall_after_heal" : "stall_before_heal", reason);
     try {
       if (sessionStorage.getItem("ab_stale_reload")) return; // already tried this session
       sessionStorage.setItem("ab_stale_reload", "1");
@@ -733,6 +744,7 @@
     };
   }
   let bugReportOff: (() => void) | null = null;
+  let bootAbandonOff: (() => void) | null = null;
   let rotateOff: (() => void) | null = null;
   let creditsSignupOff: (() => void) | null = null;
   let creditsSignupOpen = $state(false);
@@ -761,6 +773,33 @@
       gameVersion: gameVer ?? null,
       tier: (auth.currentUser as any)?.tier ?? null,
     };
+  }
+  // Load state for an automatic boot report (see lib/bootReport.ts).
+  function reportBoot(reason: string, detail: string) {
+    let logs: string[] = [];
+    let gs: any = null;
+    try {
+      const w = iframeEl?.contentWindow as any;
+      logs = consoleTail(w?._consoleLogs);
+      gs = w?.gameState ?? null;
+    } catch {
+      /* iframe unreadable — the env and load state still go */
+    }
+    sendBootReport(reason, detail, logs, {
+      ...bugReportMeta(),
+      expectedVersion: EXPECTED_BUILD,
+      elapsedMs: Date.now() - loadStart,
+      sinceProgressMs: Date.now() - lastProgressAt,
+      loadPct: loadPctFloor,
+      loadStatus,
+      bytesDownloaded,
+      engineLogLines: lastEngineLogCount,
+      scene: gs?.scene ?? null,
+      packStates: gs?.packStates ?? null,
+      sceneSeen: sceneFirstSeenAt > 0,
+      titleReady: titleReadySignal,
+      visibility: document.visibilityState,
+    });
   }
   function ackGame(r: { ok: boolean; reportId?: string; error?: string }) {
     try {
@@ -1335,6 +1374,16 @@
     window.addEventListener("message", onBugReport);
     bugReportOff = () => window.removeEventListener("message", onBugReport);
 
+    // Closing the tab mid-load is a failure signal once the load has had a
+    // fair run. pagehide (not beforeunload) also fires on mobile tab discard.
+    const onPageHide = () => {
+      if (allowed && !sceneReady && Date.now() - loadStart >= BOOT_ABANDON_MS) {
+        reportBoot("abandoned_loading", `tab closed after ${Math.round((Date.now() - loadStart) / 1000)}s without a title`);
+      }
+    };
+    window.addEventListener("pagehide", onPageHide);
+    bootAbandonOff = () => window.removeEventListener("pagehide", onPageHide);
+
     // End of the Episode 1 credits -> offer the Episode 2 notify form.
     //
     // Contract agreed with Arc (game side fires it from Credits.gd via
@@ -1385,6 +1434,7 @@
     messageOff = () => window.removeEventListener("message", onMessage);
   });
   onDestroy(() => {
+    bootAbandonOff?.();
     sseUnsub?.();
     messageOff?.();
     firstInputOff?.();
@@ -1687,6 +1737,11 @@
   // it) or something incidental keeping the stall timer alive. Checked BEFORE
   // the contentWindow guard so it fires regardless of iframe state.
   const BOOT_ABSOLUTE_MS = 120000;
+  // When a boot with no title yet gets reported (report only, no heal). Under
+  // the absolute ceiling so it lands even if the player gives up there.
+  const BOOT_REPORT_SLOW_MS = 90000;
+  // A tab closed mid-load after this long is a failure report, not a bounce.
+  const BOOT_ABANDON_MS = 20000;
   let lastProgressAt = Date.now();
   // Highest console-log count seen inside the booting iframe. Growth is the
   // liveness signal the byte counter cannot provide once downloading is done.
@@ -2479,6 +2534,14 @@
 
   function pollLoadStatus() {
     loadElapsed = Math.floor((Date.now() - loadStart) / 1000);
+
+    // Report-only backstop. A wedged boot that keeps logging never trips the
+    // stall watchdog (a growing console counts as progress), and the absolute
+    // ceiling can be held off the same way, so report without waiting on
+    // either. This never reloads anything.
+    if (allowed && !sceneReady && Date.now() - loadStart > BOOT_REPORT_SLOW_MS) {
+      reportBoot("slow_no_title", `no title after ${Math.round(BOOT_REPORT_SLOW_MS / 1000)}s`);
+    }
 
     // Absolute boot backstop. This poller stops the instant a scene appears, so
     // reaching here always means "no scene yet" — if we're past the hard ceiling

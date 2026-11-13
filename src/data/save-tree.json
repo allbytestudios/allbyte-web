@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-11-13T14:44:29.785Z",
+  "generated_at": "2026-11-13T14:48:21.408Z",
   "nodes": [
     {
       "id": "pre_waterway",
@@ -316,7 +316,9 @@
         "pre-paladin",
         "event-9",
         "paladin-glitch"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria"
     },
     {
       "id": "church_pre_fight",
@@ -336,7 +338,9 @@
         "pre-fight",
         "event-10",
         "combat-grid-glitch"
-      ]
+      ],
+      "chapter": "laria-village",
+      "section": "exploring-laria"
     }
   ]
 }

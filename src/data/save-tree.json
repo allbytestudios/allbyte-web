@@ -1,7 +1,7 @@
 {
   "version": 1,
   "schema": "save-state-tree v1.1",
-  "generated_at": "2026-11-11T23:20:35.747Z",
+  "generated_at": "2026-11-13T14:44:29.785Z",
   "nodes": [
     {
       "id": "pre_waterway",
@@ -297,6 +297,46 @@
       ],
       "chapter": "laria-valley",
       "section": "the-dwarven-ruin"
+    },
+    {
+      "id": "church_pre_paladin",
+      "difficulty": "medium",
+      "parent": null,
+      "decision": "[added by Arc 2026-11-13 per Quinn] pre-paladin capture for the church-combat glitch; chain_legal:false (equip-shortcut taint, valid for event testing)",
+      "is_leaf": true,
+      "label": "Before the Paladin fight — cond 6, ChurchSquare",
+      "scene": "ChurchSquare",
+      "chain_legal": false,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "church",
+        "pre-paladin",
+        "event-9",
+        "paladin-glitch"
+      ]
+    },
+    {
+      "id": "church_pre_fight",
+      "difficulty": "medium",
+      "parent": "church_pre_paladin",
+      "decision": "[added by Arc 2026-11-13 per Quinn] fast repro jump-point for the church-combat grid/zoom glitch (t6iqo)",
+      "is_leaf": true,
+      "label": "Before the church fight — cond 7, ChurchSquare",
+      "scene": "ChurchSquare",
+      "chain_legal": false,
+      "packs": [
+        "Laria",
+        "Combat"
+      ],
+      "tags": [
+        "church",
+        "pre-fight",
+        "event-10",
+        "combat-grid-glitch"
+      ]
     }
   ]
 }

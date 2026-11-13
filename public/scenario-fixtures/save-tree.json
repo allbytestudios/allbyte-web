@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-11-11T23:20:37.554Z",
+  "generated_at": "2026-11-13T14:44:31.953Z",
   "source": "ChroniclesOfNesis/WebTests/fixtures/saves/tree/save_tree_manifest.json",
   "nodes": [
     {
@@ -155,6 +155,28 @@
       "scene": "Overworld",
       "packs": [
         "Overworld",
+        "Combat"
+      ]
+    },
+    {
+      "id": "church_pre_paladin",
+      "label": "Before the Paladin fight — cond 6, ChurchSquare",
+      "parent": null,
+      "difficulty": "medium",
+      "scene": "ChurchSquare",
+      "packs": [
+        "Laria",
+        "Combat"
+      ]
+    },
+    {
+      "id": "church_pre_fight",
+      "label": "Before the church fight — cond 7, ChurchSquare",
+      "parent": "church_pre_paladin",
+      "difficulty": "medium",
+      "scene": "ChurchSquare",
+      "packs": [
+        "Laria",
         "Combat"
       ]
     }

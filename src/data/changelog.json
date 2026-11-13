@@ -1,6 +1,40 @@
 {
-  "generatedAt": "2026-11-11T23:17:00.821Z",
+  "generatedAt": "2026-11-13T03:31:44.571Z",
   "releases": [
+    {
+      "version": "v1.0.2924",
+      "date": "2026-11-13",
+      "changes": [
+        {
+          "type": "fix",
+          "subject": "clouds parallax: position (motion_scale-0 zoom leak) + windmill z-order + raised band to mountain-peak line"
+        },
+        {
+          "type": "feat",
+          "subject": "surviving-party-leader foundation: World owns living-leader identity, promotion/demotion, data-driven party dialogue predicates (debug/E2-gated)"
+        },
+        {
+          "type": "balance",
+          "subject": "Eastwood kill-XP 3 -> 20 (above any Waterways mob)"
+        },
+        {
+          "type": "fix",
+          "subject": "leader walk-speed normalized at promoteToPlayer (Falmri == Elias)"
+        },
+        {
+          "type": "fix",
+          "subject": "Laria-exit redirect names the beat (deal-with-slime pre-boss / talk-to-Mayor post-boss)"
+        },
+        {
+          "type": "feat",
+          "subject": "Equipment vertical-navigation (ugq6j)"
+        },
+        {
+          "type": "fix",
+          "subject": "ModernGoth/ModernGoth_Sharp font UID collision"
+        }
+      ]
+    },
     {
       "version": "v1.0.2915",
       "date": "2026-11-11",

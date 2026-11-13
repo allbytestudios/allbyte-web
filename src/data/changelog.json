@@ -1,6 +1,32 @@
 {
-  "generatedAt": "2026-11-13T03:31:44.571Z",
+  "generatedAt": "2026-11-13T17:11:41.844Z",
   "releases": [
+    {
+      "version": "v1.0.2927",
+      "date": "2026-11-13",
+      "changes": [
+        {
+          "type": "fix",
+          "subject": "church combat grid in the void — restore authored ChurchSquare Grid transform (c09670ae regression) + global-transform camera bounds (t6iqo)"
+        },
+        {
+          "type": "fix",
+          "subject": "combat camera: cancel inherited leader ancestor-scale (foundation side-effect) at bind/release (Nix, kept)"
+        },
+        {
+          "type": "fix",
+          "subject": "end-of-combat freeze: serialize level-up before CombatTransition + 6s watchdog (0rnoc)"
+        },
+        {
+          "type": "feat",
+          "subject": "[AUTOSAVE] fired|skipped decision logging across World.gd copies (ks0rh)"
+        },
+        {
+          "type": "chore",
+          "subject": "pack_asset_audit --combat-artifacts gate (MD5/remap/camera-markers/skew) before deploy"
+        }
+      ]
+    },
     {
       "version": "v1.0.2924",
       "date": "2026-11-13",

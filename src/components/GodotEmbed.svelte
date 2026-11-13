@@ -29,7 +29,13 @@
   } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
-  import { sendBootReport, consoleTail, capturePageErrors } from "../lib/bootReport";
+  import {
+    sendBootReport,
+    consoleTail,
+    capturePageErrors,
+    COMPAT_REPORT_CATEGORY,
+    COMPAT_TAG,
+  } from "../lib/bootReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
   // Inline (blob) worker — NOT `?worker` (that loads from an /_astro/*.js URL,
   // which fails under cross-origin isolation because those chunks carry no COEP
@@ -827,6 +833,26 @@
         .slice(0, 380);
     } catch {
       return "";
+    }
+  }
+
+  // After a SUCCESSFUL boot, report any stored data the game had to fall back
+  // on. Checked a few seconds after the title so the autoloads that read saves
+  // and options have run. Lines are matched on the [COMPAT] tag only.
+  function reportCompatFallbacks() {
+    try {
+      const logs = ((iframeEl?.contentWindow as any)?._consoleLogs ?? []) as unknown[];
+      const hits = logs.map(String).filter((l) => l.includes(COMPAT_TAG));
+      if (!hits.length) return;
+      sendBootReport(
+        "compat_fallback",
+        `${hits.length} stored file(s) unreadable; game used defaults`,
+        hits.slice(0, 40).map((l) => l.slice(0, 300)),
+        { ...bugReportMeta(), expectedVersion: EXPECTED_BUILD, compatLines: hits.length },
+        COMPAT_REPORT_CATEGORY,
+      );
+    } catch {
+      /* iframe unreadable — nothing to report */
     }
   }
 
@@ -2788,6 +2814,7 @@
       maybeReveal(); // DOM-loader fallback path
       startKbNudge(scene);
       stopLoadPolling();
+      setTimeout(reportCompatFallbacks, 5000);
       return;
     }
 

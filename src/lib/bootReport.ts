@@ -19,6 +19,12 @@
 import { submitBugReport } from "./bugReport";
 
 export const BOOT_REPORT_CATEGORY = "boot_failure";
+// A boot that WORKED but fell back on stored data it couldn't read (an old or
+// corrupt save/options file). The game tags each fallback "[COMPAT] <file>
+// <reason>" (Nix, develop eb8f9f38); these are the backwards-compatibility
+// signals, and they never show up as a failure.
+export const COMPAT_REPORT_CATEGORY = "compat";
+export const COMPAT_TAG = "[COMPAT]";
 
 const PROD_HOST = "allbyte.studio";
 const LOG_LINES = 60;
@@ -106,6 +112,7 @@ export function sendBootReport(
   detail: string,
   logs: string[],
   meta: Record<string, unknown>,
+  category: string = BOOT_REPORT_CATEGORY,
 ): void {
   if (typeof window === "undefined") return;
   const host = window.location.hostname;
@@ -130,8 +137,8 @@ export function sendBootReport(
   }
   void submitBugReport(
     {
-      text: `[auto] boot failure: ${reason} — ${detail}`,
-      category: BOOT_REPORT_CATEGORY,
+      text: `[auto] ${category === BOOT_REPORT_CATEGORY ? "boot failure" : category}: ${reason} — ${detail}`,
+      category,
       context: { recentLogs: logs },
     },
     flat,

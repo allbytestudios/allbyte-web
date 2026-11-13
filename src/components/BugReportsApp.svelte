@@ -3,7 +3,7 @@
   import { isAdmin } from "../lib/tier";
   import { BUG_READ_URL as READ_URL } from "../lib/bugReports";
   import { onMount } from "svelte";
-  import { BOOT_REPORT_CATEGORY } from "../lib/bootReport";
+  import { BOOT_REPORT_CATEGORY, COMPAT_REPORT_CATEGORY } from "../lib/bootReport";
 
   interface Report {
     reportId: string;
@@ -27,12 +27,16 @@
   let generatedAt = $state<number | null>(null);
   let viewerIsAdmin = $derived(isAdmin(auth.currentUser));
   // Automatic boot-failure reports share this feed with player-filed ones.
-  let view = $state<"all" | "player" | "boot">("all");
+  let view = $state<"all" | "player" | "boot" | "compat">("all");
+  const AUTO = new Set([BOOT_REPORT_CATEGORY, COMPAT_REPORT_CATEGORY]);
   let bootCount = $derived(reports.filter((r) => r.category === BOOT_REPORT_CATEGORY).length);
+  let compatCount = $derived(reports.filter((r) => r.category === COMPAT_REPORT_CATEGORY).length);
   let shown = $derived(
     view === "all"
       ? reports
-      : reports.filter((r) => (r.category === BOOT_REPORT_CATEGORY) === (view === "boot")),
+      : view === "player"
+        ? reports.filter((r) => !AUTO.has(r.category ?? ""))
+        : reports.filter((r) => r.category === (view === "boot" ? BOOT_REPORT_CATEGORY : COMPAT_REPORT_CATEGORY)),
   );
   // Meta already shown in the header/meta row; the rest is the boot diagnostics.
   const SHOWN_META = new Set(["channel", "gameVersion", "scene", "viewport", "userAgent", "url", "referrer", "reportedAt"]);
@@ -128,6 +132,7 @@
         <button class="btn" class:on={view === "all"} onclick={() => (view = "all")}>All</button>
         <button class="btn" class:on={view === "player"} onclick={() => (view = "player")}>Player</button>
         <button class="btn" class:on={view === "boot"} onclick={() => (view = "boot")}>Boot failures ({bootCount})</button>
+        <button class="btn" class:on={view === "compat"} onclick={() => (view = "compat")}>Old-data fallbacks ({compatCount})</button>
       </span>
       <button class="btn" onclick={load}>Refresh</button>
     </div>
@@ -161,7 +166,7 @@
           {:else if r.snapshotKey}
             <span class="muted small">snapshot on file (link expired — refresh)</span>
           {/if}
-          {#if r.category === BOOT_REPORT_CATEGORY}
+          {#if AUTO.has(r.category ?? "")}
             <details class="logs" open>
               <summary>boot diagnostics</summary>
               <dl class="diag">

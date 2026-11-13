@@ -22,6 +22,7 @@ export const BOOT_REPORT_CATEGORY = "boot_failure";
 
 const PROD_HOST = "allbyte.studio";
 const LOG_LINES = 60;
+const HEAD_LINES = 20;
 const LOG_LINE_CHARS = 300;
 // More than one report per load is noise; more than this per tab session means
 // something is looping and the extra copies add nothing.
@@ -29,6 +30,29 @@ const SESSION_CAP = 3;
 const SESSION_KEY = "ab_boot_reports";
 
 const sentThisPage = new Set<string>();
+
+// Errors thrown by the /play/ page itself (not the game iframe, whose console
+// the game already captures). A boot can fail on the site side too, e.g. a bad
+// stored value, and those never reach window._consoleLogs.
+const pageErrors: string[] = [];
+let capturing = false;
+export function capturePageErrors(): () => void {
+  if (typeof window === "undefined" || capturing) return () => {};
+  capturing = true;
+  const push = (msg: string) => {
+    pageErrors.push(msg.slice(0, LOG_LINE_CHARS));
+    if (pageErrors.length > 10) pageErrors.shift();
+  };
+  const onError = (e: ErrorEvent) => push(`${e.message} @ ${(e.filename || "").split("/").pop()}:${e.lineno}`);
+  const onRejection = (e: PromiseRejectionEvent) => push(`unhandled rejection: ${String((e.reason as any)?.message ?? e.reason)}`);
+  window.addEventListener("error", onError);
+  window.addEventListener("unhandledrejection", onRejection);
+  return () => {
+    capturing = false;
+    window.removeEventListener("error", onError);
+    window.removeEventListener("unhandledrejection", onRejection);
+  };
+}
 
 /** Environment facts that decide whether a Godot web build can boot here. */
 export function bootEnvironment(): Record<string, unknown> {
@@ -58,10 +82,19 @@ export function bootEnvironment(): Record<string, unknown> {
   return env;
 }
 
-/** Last lines of the game's console, trimmed to fit a keepalive request. */
+/**
+ * The game's console, trimmed to fit a keepalive request: the first few lines
+ * as well as the tail. A failure's earliest message is usually the cause, and
+ * a wedged engine can repeat errors until that line falls out of a tail-only
+ * window (2026-11-13: the owner saw a JSON error that no report carried).
+ */
 export function consoleTail(logs: unknown): string[] {
   if (!Array.isArray(logs)) return [];
-  return logs.slice(-LOG_LINES).map((l) => String(l).slice(0, LOG_LINE_CHARS));
+  const clip = (l: unknown) => String(l).slice(0, LOG_LINE_CHARS);
+  if (logs.length <= LOG_LINES) return logs.map(clip);
+  const head = logs.slice(0, HEAD_LINES).map(clip);
+  const tail = logs.slice(-(LOG_LINES - HEAD_LINES)).map(clip);
+  return [...head, `… ${logs.length - LOG_LINES} lines omitted …`, ...tail];
 }
 
 /**
@@ -91,7 +124,8 @@ export function sendBootReport(
   // floats (deviceMemory 0.5, a fractional pixel ratio), which would drop the
   // whole report.
   const flat: Record<string, string> = {};
-  for (const [k, v] of Object.entries({ bootReason: reason, ...bootEnvironment(), ...meta })) {
+  const all = { bootReason: reason, ...bootEnvironment(), ...meta, pageErrors: pageErrors.join(" | ") };
+  for (const [k, v] of Object.entries(all)) {
     flat[k] = v == null ? "" : typeof v === "string" ? v : JSON.stringify(v);
   }
   void submitBugReport(

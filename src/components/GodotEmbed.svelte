@@ -29,7 +29,7 @@
   } from "../lib/gameVersions";
   import { ensureBetaCookies, isBetaPath, stopBetaRefresh } from "../lib/betaGate";
   import { submitBugReport, type BugReportContext } from "../lib/bugReport";
-  import { sendBootReport, consoleTail } from "../lib/bootReport";
+  import { sendBootReport, consoleTail, capturePageErrors } from "../lib/bootReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
   // Inline (blob) worker — NOT `?worker` (that loads from an /_astro/*.js URL,
   // which fails under cross-origin isolation because those chunks carry no COEP
@@ -88,7 +88,36 @@
     } catch {
       /* ignore */
     }
+    // Clearing Cache Storage leaves the browser's HTTP cache, and the engine
+    // assets sit there `immutable` for a year. Script can't clear that cache,
+    // but a `cache: "reload"` fetch replaces the stored entry, so re-pull every
+    // engine file this boot read. The reload then gets the fresh copies from
+    // that cache, not a second download. This is the part of a manual "clear
+    // cache" the heal was missing (owner's Firefox, 2026-11-13).
+    await refreshEngineAssets();
     location.reload();
+  }
+
+  async function refreshEngineAssets() {
+    let urls: string[] = [];
+    try {
+      const w = iframeEl?.contentWindow as any;
+      const entries = (w?.performance?.getEntriesByType?.("resource") ?? []) as PerformanceResourceTiming[];
+      urls = [...new Set(entries.map((e) => e.name))].filter((u) => {
+        try {
+          const x = new URL(u);
+          return x.origin === location.origin && x.pathname.startsWith("/godot/") && !x.pathname.startsWith("/godot/dev/");
+        } catch {
+          return false;
+        }
+      });
+    } catch {
+      /* iframe unreadable — reload without the refresh */
+    }
+    if (!urls.length) return;
+    const all = Promise.all(urls.map((u) => fetch(u, { cache: "reload" }).then((r) => r.arrayBuffer()).catch(() => null)));
+    // Bounded: a slow connection shouldn't hold the recovery hostage.
+    await Promise.race([all, new Promise((res) => setTimeout(res, 45000))]);
   }
 
   // Builds whose version legitimately differs from game-version.json (self-
@@ -206,6 +235,12 @@
     "out of bounds memory access",
     "memory access out of bounds",
     "Aborted(",
+    // Wrong script-encryption key: the wasm and the pck it is reading came from
+    // different builds (or the key shim never ran). Every encrypted autoload
+    // fails and the engine wedges before a scene, so heal at once instead of
+    // waiting out the 45s stall watchdog. Seen on the owner's Firefox
+    // 2026-11-13: only a manual cookie + cache clear recovered it.
+    "decryption key is invalid",
   ];
   function scanForEngineCrash(logs: unknown) {
     if (recoveryTriggered || !Array.isArray(logs) || isNonDefaultBuild()) return;
@@ -774,6 +809,27 @@
       tier: (auth.currentUser as any)?.tier ?? null,
     };
   }
+  // Where each engine file came from on this boot: "cache" (transferSize 0
+  // with a body) or bytes off the network. A wrong-key or mismatched-pair
+  // failure is a cached file from another build, and this names which one.
+  function assetProvenance(): string {
+    try {
+      const w = iframeEl?.contentWindow as any;
+      const entries = (w?.performance?.getEntriesByType?.("resource") ?? []) as PerformanceResourceTiming[];
+      return entries
+        .filter((e) => e.name.includes("/godot/"))
+        .map((e) => {
+          const name = e.name.slice(e.name.indexOf("/godot/") + 7);
+          const src = e.transferSize === 0 && e.encodedBodySize > 0 ? "cache" : `${e.transferSize}B`;
+          return `${name}=${src}/${e.encodedBodySize}`;
+        })
+        .join(" ")
+        .slice(0, 380);
+    } catch {
+      return "";
+    }
+  }
+
   // Load state for an automatic boot report (see lib/bootReport.ts).
   function reportBoot(reason: string, detail: string) {
     let logs: string[] = [];
@@ -794,6 +850,7 @@
       loadStatus,
       bytesDownloaded,
       engineLogLines: lastEngineLogCount,
+      assets: assetProvenance(),
       scene: gs?.scene ?? null,
       packStates: gs?.packStates ?? null,
       sceneSeen: sceneFirstSeenAt > 0,
@@ -1382,7 +1439,11 @@
       }
     };
     window.addEventListener("pagehide", onPageHide);
-    bootAbandonOff = () => window.removeEventListener("pagehide", onPageHide);
+    const pageErrorsOff = capturePageErrors();
+    bootAbandonOff = () => {
+      window.removeEventListener("pagehide", onPageHide);
+      pageErrorsOff();
+    };
 
     // End of the Episode 1 credits -> offer the Episode 2 notify form.
     //

@@ -1,6 +1,116 @@
 {
-  "generatedAt": "2026-11-13T17:11:41.844Z",
+  "generatedAt": "2026-11-14T14:49:11.344Z",
   "releases": [
+    {
+      "version": "v1.0.2930",
+      "date": "2026-11-14",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "v1.0.2927 manifest line for fix-forward re-promote (church-combat fix; gitSha 1402eb75, prev v2924)",
+          "sha": "15d7946b"
+        },
+        {
+          "type": "chore",
+          "subject": "import prop-free Waterways backgrounds and separate scenery textures",
+          "sha": "add0a926"
+        },
+        {
+          "type": "chore",
+          "subject": "expand Dwarven Ruin library and propose sixteen-room extension",
+          "sha": "e3e5fb88"
+        },
+        {
+          "type": "fix",
+          "scope": "BuySkillMenu",
+          "subject": "mouse hover retargets focus so click confirms hovered button",
+          "sha": "563df9cc"
+        },
+        {
+          "type": "fix",
+          "scope": "nix",
+          "subject": "skill-tree mouse-purchase fix — hover retargets focus so click fires Learn not Cancel",
+          "sha": "4e74246f"
+        },
+        {
+          "type": "fix",
+          "scope": "speed",
+          "subject": "disable out-of-combat speed-up; add off-by-default combat speed-up option",
+          "sha": "66d8bdbc"
+        },
+        {
+          "type": "chore",
+          "scope": "nix",
+          "subject": "speed-up combat-only + off-by-default toggle (ysd7a)",
+          "sha": "cfaab1a7"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (skill-tree mouse-purchase + speed-up combat-only on :8060)",
+          "sha": "5da2af61"
+        },
+        {
+          "type": "fix",
+          "scope": "shop",
+          "subject": "block player movement while in the general store (add inShop to the movement gate)",
+          "sha": "de110060"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (store-walk inShop gate on :8060; batch: speed-up+skill-tree+inShop)",
+          "sha": "ac165ebd"
+        },
+        {
+          "type": "fix",
+          "subject": "MayorsHouseUpstairs chest wedge near top wall",
+          "sha": "a8fb8ab4"
+        },
+        {
+          "type": "fix",
+          "subject": "MayorsHouseUpstairs chest-wedge fix (StaticBody2D scale cancel + nudge into room) [a8fb8ab4]",
+          "sha": "cbc25eea"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump v1.0.2930 (MayorsHouseUpstairs chest-wedge fix on :8060)",
+          "sha": "12641683"
+        },
+        {
+          "type": "chore",
+          "subject": "untrack accidentally-committed .worktrees/ gitlinks; ignore .worktrees/",
+          "sha": "0297d884"
+        },
+        {
+          "type": "test",
+          "scope": "skilltree",
+          "subject": "pin mouse-hover-then-click Learn purchase (fix 563df9cc)",
+          "sha": "c43b89c1"
+        },
+        {
+          "type": "fix",
+          "subject": "skill-tree mouse-hover-Learn purchase regression test (2 tests, Vera) [c43b89c1]",
+          "sha": "fb86195a"
+        },
+        {
+          "type": "test",
+          "scope": "combat",
+          "subject": "real-mouse Combat Speed-up toggle gates in-combat fast-forward",
+          "sha": "f103b979"
+        },
+        {
+          "type": "test",
+          "subject": "combat speed-up ON/OFF real-mouse Playwright tests (Vera) [f103b979]",
+          "sha": "75537f67"
+        },
+        {
+          "type": "test",
+          "scope": "combat-speed",
+          "subject": "adapt speed-control tests to the F-cycle gate + 2.0 setter cap",
+          "sha": "da30d93c"
+        }
+      ]
+    },
     {
       "version": "v1.0.2927",
       "date": "2026-11-13",

@@ -3,7 +3,13 @@
   import { isAdmin } from "../lib/tier";
   import { BUG_READ_URL as READ_URL } from "../lib/bugReports";
   import { onMount } from "svelte";
-  import { BOOT_REPORT_CATEGORY, COMPAT_REPORT_CATEGORY } from "../lib/bootReport";
+  import {
+    BOOT_REPORT_CATEGORY,
+    COMPAT_REPORT_CATEGORY,
+    isAutoReport,
+    isTestBrowserUA,
+    compatSummary,
+  } from "../lib/bootReport";
 
   interface Report {
     reportId: string;
@@ -26,18 +32,30 @@
   let reports = $state<Report[]>([]);
   let generatedAt = $state<number | null>(null);
   let viewerIsAdmin = $derived(isAdmin(auth.currentUser));
-  // Automatic boot-failure reports share this feed with player-filed ones.
-  let view = $state<"all" | "player" | "boot" | "compat">("all");
-  const AUTO = new Set([BOOT_REPORT_CATEGORY, COMPAT_REPORT_CATEGORY]);
-  let bootCount = $derived(reports.filter((r) => r.category === BOOT_REPORT_CATEGORY).length);
-  let compatCount = $derived(reports.filter((r) => r.category === COMPAT_REPORT_CATEGORY).length);
+  // Automatic reports (filed by /play/ itself) share this feed with the ones
+  // players type in, so the two are counted and listed separately. Reports
+  // from our own test browsers are left out entirely; older ones predate the
+  // send-side filter in lib/bootReport.ts.
+  let view = $state<"player" | "auto" | "boot" | "compat">("player");
+  let testBotCount = $derived(reports.filter((r) => isTestBrowserUA(r.meta?.userAgent)).length);
+  let real = $derived(reports.filter((r) => !isTestBrowserUA(r.meta?.userAgent)));
+  let player = $derived(real.filter((r) => !isAutoReport(r.category)));
+  let auto = $derived(real.filter((r) => isAutoReport(r.category)));
+  let bootCount = $derived(auto.filter((r) => r.category === BOOT_REPORT_CATEGORY).length);
+  let compatCount = $derived(auto.filter((r) => r.category === COMPAT_REPORT_CATEGORY).length);
   let shown = $derived(
-    view === "all"
-      ? reports
-      : view === "player"
-        ? reports.filter((r) => !AUTO.has(r.category ?? ""))
-        : reports.filter((r) => r.category === (view === "boot" ? BOOT_REPORT_CATEGORY : COMPAT_REPORT_CATEGORY)),
+    view === "player"
+      ? player
+      : view === "auto"
+        ? auto
+        : auto.filter((r) => r.category === (view === "boot" ? BOOT_REPORT_CATEGORY : COMPAT_REPORT_CATEGORY)),
   );
+  // Compat reports filed before 2026-11-15 said "N stored file(s) unreadable"
+  // even when every line was a successful conversion, so re-read the logs.
+  function reportText(r: Report): string {
+    if (r.category !== COMPAT_REPORT_CATEGORY || !r.recentLogs?.length) return r.text;
+    return `[auto] compat: ${compatSummary(r.recentLogs)}`;
+  }
   // Meta already shown in the header/meta row; the rest is the boot diagnostics.
   const SHOWN_META = new Set(["channel", "gameVersion", "scene", "viewport", "userAgent", "url", "referrer", "reportedAt"]);
   function diagnostics(r: Report): [string, string][] {
@@ -124,19 +142,22 @@
     <button class="btn" onclick={load}>Refresh</button>
   {:else}
     <div class="head">
-      <span class="muted">
-        {reports.length} report{reports.length === 1 ? "" : "s"} · newest first ·
-        updated {fmtDate(undefined, generatedAt ?? undefined)}
-      </span>
+      <div class="totals">
+        <span><b>{player.length}</b> player report{player.length === 1 ? "" : "s"}</span>
+        <span><b>{auto.length}</b> automatic ({bootCount} failed load{bootCount === 1 ? "" : "s"} · {compatCount} old-data)</span>
+        {#if testBotCount}<span class="muted">{testBotCount} from test browsers, hidden</span>{/if}
+        <span class="muted">updated {fmtDate(undefined, generatedAt ?? undefined)}</span>
+      </div>
       <span class="views">
-        <button class="btn" class:on={view === "all"} onclick={() => (view = "all")}>All</button>
-        <button class="btn" class:on={view === "player"} onclick={() => (view = "player")}>Player</button>
-        <button class="btn" class:on={view === "boot"} onclick={() => (view = "boot")}>Boot failures ({bootCount})</button>
-        <button class="btn" class:on={view === "compat"} onclick={() => (view = "compat")}>Old-data fallbacks ({compatCount})</button>
+        <button class="btn" class:on={view === "player"} onclick={() => (view = "player")}>Player ({player.length})</button>
+        <button class="btn" class:on={view === "auto"} onclick={() => (view = "auto")}>Automatic ({auto.length})</button>
+        <button class="btn" class:on={view === "boot"} onclick={() => (view = "boot")}>Failed loads ({bootCount})</button>
+        <button class="btn" class:on={view === "compat"} onclick={() => (view = "compat")}>Old data ({compatCount})</button>
       </span>
       <button class="btn" onclick={load}>Refresh</button>
     </div>
 
+    {#if shown.length === 0}<p class="muted">Nothing in this view.</p>{/if}
     {#each shown as r (r.reportId)}
       <article class="rpt">
         <header class="rpt-head">
@@ -151,7 +172,7 @@
           {/if}
         </header>
 
-        <p class="rpt-text">{r.text}</p>
+        <p class="rpt-text">{reportText(r)}</p>
 
         <div class="rpt-meta">
           {#if r.meta?.scene}<span>scene <b>{r.meta.scene}</b></span>{/if}
@@ -166,7 +187,7 @@
           {:else if r.snapshotKey}
             <span class="muted small">snapshot on file (link expired — refresh)</span>
           {/if}
-          {#if AUTO.has(r.category ?? "")}
+          {#if isAutoReport(r.category)}
             <details class="logs" open>
               <summary>boot diagnostics</summary>
               <dl class="diag">
@@ -197,6 +218,7 @@
   }
   .muted { color: var(--ink-soft); }
   .views { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .totals { display: flex; gap: 0.25rem 1rem; flex-wrap: wrap; align-items: baseline; }
   .btn.on { background: var(--crimson); color: var(--panel); }
   .diag { display: grid; grid-template-columns: max-content 1fr; gap: 0.15rem 0.8rem; font: 0.75rem/1.4 ui-monospace, monospace; margin: 0.4rem 0 0; }
   .diag dt { color: var(--ink-soft); }

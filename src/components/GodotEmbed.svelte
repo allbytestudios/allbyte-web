@@ -35,6 +35,8 @@
     capturePageErrors,
     COMPAT_REPORT_CATEGORY,
     COMPAT_TAG,
+    summarizeCompat,
+    compatSummary,
   } from "../lib/bootReport";
   import BugReportOverlay from "./BugReportOverlay.svelte";
   // Inline (blob) worker — NOT `?worker` (that loads from an /_astro/*.js URL,
@@ -842,13 +844,20 @@
   function reportCompatFallbacks() {
     try {
       const logs = ((iframeEl?.contentWindow as any)?._consoleLogs ?? []) as unknown[];
-      const hits = logs.map(String).filter((l) => l.includes(COMPAT_TAG));
+      const hits = [...new Set(logs.map(String).filter((l) => l.includes(COMPAT_TAG)))];
       if (!hits.length) return;
+      const { converted, unreadable } = summarizeCompat(hits);
       sendBootReport(
-        "compat_fallback",
-        `${hits.length} stored file(s) unreadable; game used defaults`,
+        // Conversions kept the data; only unreadable files are a fallback.
+        unreadable.length ? "compat_fallback" : "compat_converted",
+        compatSummary(hits),
         hits.slice(0, 40).map((l) => l.slice(0, 300)),
-        { ...bugReportMeta(), expectedVersion: EXPECTED_BUILD, compatLines: hits.length },
+        {
+          ...bugReportMeta(),
+          expectedVersion: EXPECTED_BUILD,
+          compatConverted: converted.length,
+          compatUnreadable: unreadable.length,
+        },
         COMPAT_REPORT_CATEGORY,
       );
     } catch {

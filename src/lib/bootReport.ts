@@ -26,6 +26,49 @@ export const BOOT_REPORT_CATEGORY = "boot_failure";
 export const COMPAT_REPORT_CATEGORY = "compat";
 export const COMPAT_TAG = "[COMPAT]";
 
+/** Categories filed by the page itself, as opposed to a player. */
+export const AUTO_REPORT_CATEGORIES = new Set([BOOT_REPORT_CATEGORY, COMPAT_REPORT_CATEGORY]);
+export function isAutoReport(category: string | undefined): boolean {
+  return AUTO_REPORT_CATEGORIES.has(category ?? "");
+}
+
+/**
+ * Our own test browsers: the CI QA matrix tags its UA "AllByteQA", and headless
+ * or driven browsers (Playwright, smoke runs) say so in the UA or navigator.
+ * Their failures are harness noise (2026-11-13: 18 of 23 boot reports were CI
+ * Firefox, 14 on runners with no WebGL2 at all), so they never file reports.
+ */
+export function isTestBrowserUA(ua: string | undefined): boolean {
+  return /AllByteQA|HeadlessChrome/.test(ua ?? "");
+}
+
+/**
+ * Read the game's "[COMPAT] <file> — <what happened>" lines. "migrated ..."
+ * means an old-format file was converted and KEPT; anything else means the
+ * file couldn't be used and the game fell back to defaults. The game can log
+ * the same file several times per boot, so files are counted once.
+ */
+export function summarizeCompat(lines: string[]): { converted: string[]; unreadable: string[] } {
+  const converted = new Set<string>();
+  const unreadable = new Set<string>();
+  for (const line of lines) {
+    const m = String(line).match(/\[COMPAT\]\s*(\S+)\s*[—-]\s*(.*)/);
+    if (!m) continue;
+    (/^migrated\s/i.test(m[2]) ? converted : unreadable).add(m[1]);
+  }
+  for (const f of unreadable) converted.delete(f);
+  return { converted: [...converted], unreadable: [...unreadable] };
+}
+
+/** One-line summary of a compat report, e.g. "4 saves converted from an old format". */
+export function compatSummary(lines: string[]): string {
+  const { converted, unreadable } = summarizeCompat(lines);
+  const parts: string[] = [];
+  if (unreadable.length) parts.push(`${unreadable.length} stored file(s) unreadable; game used defaults (${unreadable.join(", ")})`);
+  if (converted.length) parts.push(`${converted.length} save(s) converted from an old format (${converted.join(", ")})`);
+  return parts.join("; ") || "old-data notice";
+}
+
 const PROD_HOST = "allbyte.studio";
 const LOG_LINES = 60;
 const HEAD_LINES = 20;
@@ -117,6 +160,7 @@ export function sendBootReport(
   if (typeof window === "undefined") return;
   const host = window.location.hostname;
   if (host !== PROD_HOST && host !== `www.${PROD_HOST}`) return;
+  if (isTestBrowserUA(navigator.userAgent) || navigator.webdriver) return;
   if (sentThisPage.has(reason)) return;
   sentThisPage.add(reason);
   try {

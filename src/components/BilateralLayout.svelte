@@ -301,7 +301,7 @@
     <!-- Mobile: stacked groups (Heart/Assets first) -->
     <div class="mobile-panel heart-bg" style="position: relative;">
       <img src="/Flourish.png" alt="" class="flourish flourish-left" />
-      <h2 class="panel-title heart-title">Art<br/><span class="panel-sub">(made without AI)</span></h2>
+      <h2 class="panel-title heart-title">Art<br/><span class="panel-sub">(original art)</span></h2>
       <img src="/Flourish.png" alt="" class="flourish flourish-right" />
       <div class="mobile-links">
         <div class="card-wrapper">
@@ -355,7 +355,7 @@
       </div>
       <div class="cell heart-bg title-cell heart-title-cell">
         <img src="/Flourish.png" alt="" class="flourish flourish-left" />
-        <h2 class="panel-title heart-title">Art<br/><span class="panel-sub">(made without AI)</span></h2>
+        <h2 class="panel-title heart-title">Art<br/><span class="panel-sub">(original art)</span></h2>
         <img src="/Flourish.png" alt="" class="flourish flourish-right" />
       </div>
 

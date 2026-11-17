@@ -12,7 +12,7 @@ The web portal isn't just a marketing page — it's a live window into the game.
 
 ## Asset Sync
 
-Game assets (music, sprites, fonts, backgrounds) are **not committed to git**. All art is handcrafted and I don't want it easily ripped from a public repo. Instead, assets are synced locally from the Godot project and pushed directly to S3.
+Game assets (music, sprites, fonts, backgrounds) are **not committed to git**. The art is original to the game and I don't want it easily ripped from a public repo. Instead, assets are synced locally from the Godot project and pushed directly to S3.
 
 The workflow is three steps:
 

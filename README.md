@@ -8,8 +8,8 @@ download, no install.
 **Live:** [allbyte.studio](https://allbyte.studio) · **Play it now:** [allbyte.studio/play](https://allbyte.studio/play/)
 
 The studio works to a "High‑Tech Artisan" principle: **AI‑assisted engineering**
-(code, infrastructure, QA, automation) paired with **100 % handcrafted** art,
-music, and typography. AI never touches the art, the music, or the typeface.
+(code, infrastructure, QA, automation) paired with original art (pre-rendered
+backgrounds and pixel-art sprites), music, and typography.
 
 That division is how the studio is *built*, not how the site is *laid out*. An
 earlier landing page staged it literally — a vertical split‑screen, "The Engine"

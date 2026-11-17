@@ -19,6 +19,7 @@ const MAX_RECENT = 20;
 const UPLOAD_DELAY_MS = 2000;
 const RETRY_DELAY_MS = 30000;
 const MAX_CONFLICT_RETRIES = 3;
+const MAX_SLOT_ID = 13;
 
 export type HandleError = "not_found" | "invalid" | "rate_limited" | "network" | "unavailable";
 type Saves = Record<string, string>;
@@ -172,10 +173,11 @@ export class HandleSession {
 
   // ------------------------------------------------------------ uploads
 
-  /** A slot was written under `handle` (autosave = slot 0, quicksave = 13). */
+  /** A slot was written under `handle`. Real player slots only: 0 autosave, 1-12 manual,
+   *  13 quicksave (Arc, 2026-11-17). The scenario scratch slot 99 never uploads. */
   slotChanged(handle: unknown, slotId: unknown, data: unknown) {
     if (typeof handle !== "string" || !HANDLE_SHAPE.test(handle)) return; // device save: stays local
-    if (!Number.isInteger(slotId) || (slotId as number) < 0 || (slotId as number) > 99 || typeof data !== "string") return;
+    if (!Number.isInteger(slotId) || (slotId as number) < 0 || (slotId as number) > MAX_SLOT_ID || typeof data !== "string") return;
     const pending = this.pending();
     (pending[handle] ??= {})[`slot_${slotId}`] = data;
     this.deps.storage.setItem(PENDING_KEY, JSON.stringify(pending));

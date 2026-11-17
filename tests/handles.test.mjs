@@ -163,7 +163,7 @@ test('device saves (handle null) never upload', async () => {
 test('autosave 0 and quicksave 13 are accepted; junk slot ids are not', () => {
   const t = session();
   t.s.slotChanged(A, 0, 'a'); t.s.slotChanged(A, 13, 'q');
-  t.s.slotChanged(A, 100, 'x'); t.s.slotChanged(A, 1.5, 'x'); t.s.slotChanged(A, 2, 7);
+  t.s.slotChanged(A, 14, 'x'); t.s.slotChanged(A, 99, 'scratch'); t.s.slotChanged(A, 1.5, 'x'); t.s.slotChanged(A, 2, 7);
   assert.deepEqual(JSON.parse(t.storage.getItem('ab_handle_pending')), { [A]: { slot_0: 'a', slot_13: 'q' } });
 });
 

@@ -34,6 +34,7 @@
     "test:a11y": "pytest tests/e2e/test_accessibility.py -v",
     "test:e2e": "pytest tests/e2e/ -v",
     "test:saves": "node --test tests/save-transfer.test.mjs",
+    "test:handles": "node --test tests/handles.test.mjs",
     "smoke:prod": "python scripts/smoke_prod.py",
     "verify:deploy": "node scripts/verify-deploy.mjs",
     "qa:controllers": "python tests/controller-qa/run_qa.py",

@@ -1,6 +1,7 @@
 ﻿import { auth } from './auth.svelte.ts';
 import { MAX_TRANSFER_BYTES, parseBackup, parseSnapshot, SaveRequests, type Snapshot } from './save-transfer';
 import { NativeFilePrompt, restoreGameFocus, type PromptEvent } from './native-file-prompt';
+import { HandleSession } from './handles';
 export interface SavesSnapshot extends Snapshot {}
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'unsynced';
 class SaveStore {
@@ -27,6 +28,9 @@ let busy = false;
 let unknownImportId = '';
 let unknownImportAccount = '';
 let stopTraceListeners: (() => void) | null = null;
+// Username saves (lib/handles.ts). Only for game builds that declare
+// saveCapabilities.handles; older builds never see the messages.
+let handleSession: HandleSession | null = null;
 let traceSequence = 0;
 let traceInputs = 0;
 let traceStateMessages = 0;
@@ -251,6 +255,8 @@ export function teardownSaveBridge() {
   removeFrameLoadListener?.();
   removeFrameLoadListener = null;
   generation++; mutation++; requests.cancel();
+  // Unsent uploads stay queued in localStorage and go on the next start.
+  handleSession = null;
   iframeRef = null; exitCallback = null; sessionId = ''; busy = false;
   unknownImportId = '';
   saves.gameReady = false; saves.protocolVersion = null; saves.maxSaveSlots = null;
@@ -273,7 +279,8 @@ function handleGameMessage(e: MessageEvent) {
     // Do not copy untrusted payload identifiers into diagnostics.
     trace('message_rejected', { rejection: e.source !== iframeRef.contentWindow ? 'source' : 'origin' }); return;
   }
-  const saveMessage = ['allbyte:all-saves', 'allbyte:load-complete', 'allbyte:load-pending', 'allbyte:save-changed'].includes(data.type);
+  const saveMessage = ['allbyte:all-saves', 'allbyte:load-complete', 'allbyte:load-pending', 'allbyte:save-changed',
+    'allbyte:handle-select', 'allbyte:handle-create', 'allbyte:handle-clear'].includes(data.type);
   if (saveMessage && (!sessionId || data.sessionId !== sessionId || data.protocolVersion !== 2)) {
     traceMessage('message_rejected', data, 'session_or_protocol'); return;
   }
@@ -300,6 +307,11 @@ function handleGameMessage(e: MessageEvent) {
       saves.saveCapabilities = data.saveCapabilities ?? {};
       saves.current = { saves: {}, options: '', keymapping: '' };
       broadcastSyncStatus(); broadcastAccount();
+      handleSession = data.saveCapabilities?.handles === true ? new HandleSession({
+        fetch: (...args) => fetch(...args), storage: localStorage, post: postToGame,
+        token: () => auth.authToken, setTimer: (fn, ms) => setTimeout(fn, ms), clearTimer: id => clearTimeout(id as number),
+      }) : null;
+      void handleSession?.start();
       {
         const c = context();
         void freshSnapshot().then(snapshot => { if (valid(c)) saves.current = snapshot; })
@@ -307,7 +319,12 @@ function handleGameMessage(e: MessageEvent) {
       }
       return;
     }
+    case 'allbyte:handle-select': handleSession?.select(String(data.requestId ?? ''), data.handle); return;
+    case 'allbyte:handle-create': handleSession?.create(String(data.requestId ?? '')); return;
+    case 'allbyte:handle-clear': handleSession?.clear(String(data.requestId ?? '')); return;
     case 'allbyte:save-changed': {
+      // A write under a username uploads to the server (autosave is slot 0).
+      if (typeof data.handle === 'string') handleSession?.slotChanged(data.handle, data.slotId, data.data);
       if (!Number.isInteger(data.slotId) || data.slotId < 1 || data.slotId > (saves.maxSaveSlots ?? 12) || typeof data.data !== 'string') return;
       mutation++; saves.current.saves[`slot_${data.slotId}`] = data.data;
       return;

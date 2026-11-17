@@ -127,6 +127,9 @@ with sync_playwright() as p:
             raise
         check("game emits an AUTOSAVE (slot 0) carrying the username", changed.get("handle") == handle, changed)
         slot = "slot_0"
+        # Slot 99 is the scenario loader's scratch slot: it must never leave the game.
+        emitted = page1.evaluate("() => (window.__fromGame||[]).filter(m => m.type==='allbyte:save-changed').map(m => m.slotId)")
+        check("scenario scratch slot 99 is never reported", 99 not in emitted, emitted)
 
         server = None
         t0 = time.time()

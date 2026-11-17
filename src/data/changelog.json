@@ -1,6 +1,142 @@
 {
-  "generatedAt": "2026-11-14T14:49:11.344Z",
+  "generatedAt": "2026-11-17T15:24:51.326Z",
   "releases": [
+    {
+      "version": "v1.0.2934",
+      "date": "2026-11-17",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "v1.0.2930 manifest line for prod promote (gitSha da30d93c, prev v1.0.2927)",
+          "sha": "f2dabcc7"
+        },
+        {
+          "type": "fix",
+          "scope": "StatusMenu",
+          "subject": "wire mouse_entered on Save/Clear buttons (ChroniclesOfNesis-1wl3i)",
+          "sha": "6f75b37a"
+        },
+        {
+          "type": "chore",
+          "subject": "StatusMenu Save/Clear mouse-hover wiring — mouse-click now activates Save (1wl3i) [6f75b37a]",
+          "sha": "683e5bfa"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump v1.0.2931 (StatusMenu Save/Clear mouse-click fix on :8060)",
+          "sha": "2fb0bfa8"
+        },
+        {
+          "type": "test",
+          "scope": "StatusMenu",
+          "subject": "pin Save button real-mouse regression (ChroniclesOfNesis-1wl3i)",
+          "sha": "9b875d22"
+        },
+        {
+          "type": "fix",
+          "subject": "StatusMenu Save real-mouse-click purchase regression test (Vera) [9b875d22]",
+          "sha": "01922c5d"
+        },
+        {
+          "type": "feat",
+          "subject": "add firecave starter rooms, prop and connected concept map",
+          "sha": "55964d18"
+        },
+        {
+          "type": "fix",
+          "scope": "SkillsMenu",
+          "subject": "wire mouse_entered on Cast button + relic slot cells (ChroniclesOfNesis-8qwb3)",
+          "sha": "239f26da"
+        },
+        {
+          "type": "chore",
+          "subject": "SkillsMenu Cast + relic-slot mouse-hover wiring (menu-audit sweep, 8qwb3) [239f26da]",
+          "sha": "67975c7d"
+        },
+        {
+          "type": "fix",
+          "scope": "save",
+          "subject": "persist migrated schemaVersion back to storage on load (not in-memory only)",
+          "sha": "7edabbb5"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump v1.0.2932 (SkillsMenu Cast/relic mouse-hover + save-migrate-persist on :8060)",
+          "sha": "60805bea"
+        },
+        {
+          "type": "test",
+          "scope": "SkillsMenu",
+          "subject": "real-mouse Cast + relic-slot hover regression (ChroniclesOfNesis-8qwb3)",
+          "sha": "963da732"
+        },
+        {
+          "type": "fix",
+          "subject": "SkillsMenu Cast mouse-hover regression test (PASS) + relic-slot test (xfail: needs relicSlotRects probe) [963da732]",
+          "sha": "30b02e3f"
+        },
+        {
+          "type": "chore",
+          "subject": "expand firecave into twenty-four connected room concepts",
+          "sha": "0c0b1a2a"
+        },
+        {
+          "type": "fix",
+          "scope": "menu",
+          "subject": "quit-confirm dialog takes MenuStack ownership so WASD accept targets Yes/No",
+          "sha": "202ead42"
+        },
+        {
+          "type": "chore",
+          "subject": "quit-confirm dialog takes MenuStack ownership — WASD accept routes to Yes/No not stale Quit (hiron) [202ead42]",
+          "sha": "b3e87c84"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump v1.0.2933 (quit-confirm WASD routing fix on :8060)",
+          "sha": "347cefb2"
+        },
+        {
+          "type": "test",
+          "scope": "menu",
+          "subject": "pin quit-confirm MenuStack-ownership WASD routing (fix 202ead42, ChroniclesOfNesis-hiron)",
+          "sha": "b036ef43"
+        },
+        {
+          "type": "fix",
+          "subject": "quit-confirm MenuStack-ownership WASD-routing regression test (PASS) [b036ef43]",
+          "sha": "5277a4ab"
+        },
+        {
+          "type": "feat",
+          "subject": "add walkability masks and Godot combat-grid previews for firecave",
+          "sha": "f7c32bb0"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "earth_wall lays perpendicular to cast direction, not hardcoded vertical",
+          "sha": "768030b4"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump v1.0.2934 (earth_wall perpendicular fix, full pack rebuild on :8060)",
+          "sha": "ec68564c"
+        },
+        {
+          "type": "test",
+          "scope": "combat",
+          "subject": "pin earth_wall cast-direction perpendicularity (Tier 2)",
+          "sha": "f984ea34"
+        },
+        {
+          "type": "fix",
+          "subject": "earth_wall perpendicular-to-cast AOE regression test (Tier2, 12/12 PASS) [f984ea34]",
+          "sha": "e38e9148"
+        }
+      ]
+    },
     {
       "version": "v1.0.2930",
       "date": "2026-11-14",

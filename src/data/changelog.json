@@ -1,6 +1,29 @@
 {
-  "generatedAt": "2026-11-20T04:18:39.796Z",
+  "generatedAt": "2026-11-20T04:59:26.987Z",
   "releases": [
+    {
+      "version": "v1.0.2971",
+      "date": "2026-11-20",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "v1.0.2970 manifest line for prod/alpha promote (gitSha 11b900f5, prev v1.0.2934)",
+          "sha": "034030a4"
+        },
+        {
+          "type": "fix",
+          "scope": "mayorshouse",
+          "subject": "reshape upstairs collision polygon (owner walk-bug fix)",
+          "sha": "ad6acde1"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2971 (MayorsHouse treasure-chest collision walk fix)",
+          "sha": "db1ce13f"
+        }
+      ]
+    },
     {
       "version": "v1.0.2970",
       "date": "2026-11-20",

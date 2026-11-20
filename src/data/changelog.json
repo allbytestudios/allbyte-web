@@ -1,6 +1,1023 @@
 {
-  "generatedAt": "2026-11-17T15:24:51.326Z",
+  "generatedAt": "2026-11-20T04:18:39.796Z",
   "releases": [
+    {
+      "version": "v1.0.2970",
+      "date": "2026-11-20",
+      "changes": [
+        {
+          "type": "feat",
+          "subject": "Add Spirit Salts store item and deliberate field/combat party revival",
+          "sha": "de3e5275"
+        },
+        {
+          "type": "chore",
+          "subject": "Outline later Web relic memory options for owner plot selection",
+          "sha": "db08f469"
+        },
+        {
+          "type": "chore",
+          "subject": "Refresh revival status and target portraits after restoring HP",
+          "sha": "27909b31"
+        },
+        {
+          "type": "chore",
+          "subject": "Verify Spirit Salts through real purchase, combat revival and world return",
+          "sha": "366f8bc6"
+        },
+        {
+          "type": "feat",
+          "subject": "Add opt-in party-relative initiative weighting for fast enemies",
+          "sha": "d916d95b"
+        },
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "v1.0.2934 manifest line for prod promote (gitSha e38e9148, prev v1.0.2930)",
+          "sha": "11342f70"
+        },
+        {
+          "type": "feat",
+          "scope": "dungeon",
+          "subject": "add editable FireDragonCaves rooms and native combat cells",
+          "sha": "386ff9ae"
+        },
+        {
+          "type": "fix",
+          "scope": "export",
+          "subject": "recognize shared dependencies for fresh dungeon checkouts",
+          "sha": "06a2c7f6"
+        },
+        {
+          "type": "chore",
+          "subject": "Rowan dwarven-ruin-port — Spirit Salts item + field/combat party revival + opt-in fast-enemy initiative (q5fic/jqzao) [d916d95b]",
+          "sha": "9dc45b39"
+        },
+        {
+          "type": "fix",
+          "scope": "dual-copy",
+          "subject": "sync Overworld SceneTemplate to canonical after Rowan revival merge (KO-members-stay-on-grid for Spirit Salts)",
+          "sha": "52875892"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2935 (Rowan dwarven-ruin-port live on :8060) + fix EnemyDestination/EnemyEntrance walrus->explicit types across pack copies",
+          "sha": "7c848c15"
+        },
+        {
+          "type": "test",
+          "scope": "spec",
+          "subject": "land waterways/dwarven walkability spec (cells/masks/layouts/validation JSON) — spec-only, no heavy imagery",
+          "sha": "7ef71a3d"
+        },
+        {
+          "type": "chore",
+          "scope": "lfs",
+          "subject": "track-forward git-LFS for heavy art imagery (owner 2026-11-16)",
+          "sha": "ef1817b7"
+        },
+        {
+          "type": "fix",
+          "scope": "firecave",
+          "subject": "populate CombatGrid.cells for 01_AshThroat + 02_EmberBasins",
+          "sha": "af2a5f2d"
+        },
+        {
+          "type": "test",
+          "subject": "firecave pilot — populate CombatGrid.cells for rooms 01/02 from spec (pipeline PoC) [af2a5f2d]",
+          "sha": "1dc7c52e"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "acid is a physical modifier not a DoT; acid overworld decay; victory pose for all survivors",
+          "sha": "b679e90d"
+        },
+        {
+          "type": "chore",
+          "subject": "acid=physical-mod (not DoT) + overworld decay + victory pose for all survivors (mbe37/91581/j1xv5)",
+          "sha": "8a0b1a98"
+        },
+        {
+          "type": "fix",
+          "scope": "dungeon",
+          "subject": "populate FireDragonCave 03-24 CombatGrid.cells + LINEAR bg filter for DR/FireCave pan crawl",
+          "sha": "615513a4"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "active unit death mid-turn (OA/counter kill) no longer wedges turn queue (pbfrx)",
+          "sha": "e530c6ba"
+        },
+        {
+          "type": "chore",
+          "subject": "dungeon LINEAR texture-filter (48 bg sprites, pan smoothness) + firecave 03-24 CombatGrid.cells (wfs58/h38yl)",
+          "sha": "d239565c"
+        },
+        {
+          "type": "feat",
+          "scope": "combat",
+          "subject": "Earth Wall permanent-through-combat + destructible via HP (f9gmc)",
+          "sha": "d043a678"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "gate item skill on the canonical per-unit relic check (s5phn, bsfd)",
+          "sha": "ca2569e6"
+        },
+        {
+          "type": "fix",
+          "scope": "menus",
+          "subject": "remove 'Defender' class label from Falmri's character panels (k803i)",
+          "sha": "7f90269d"
+        },
+        {
+          "type": "chore",
+          "subject": "combat batch — reaction-death turn-advance (pbfrx) + Earth Wall permanent+destructible (f9gmc) + item-skill relic-gating (s5phn/bsfd) + Falmri Defender text removed (k803i)",
+          "sha": "3f0db65b"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION v1.0.2936 (QA-pass batch on :8060 — acid/victory/wedge/earthwall/item-gating/Defender + dungeon filter + firecave grids)",
+          "sha": "e56a48f2"
+        },
+        {
+          "type": "chore",
+          "scope": "owner 2026-11-16",
+          "subject": "acid incoming x1.5->x1.25 (outgoing x0.75 kept); earth-wall HP 10/30/100/500 per tier; remove Elias 'Paladin' class label",
+          "sha": "c18a83ba"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (acid 1.25 / earth-wall HP 10-30-100-500 / Paladin label removed on :8060)",
+          "sha": "0b9a1e1e"
+        },
+        {
+          "type": "feat",
+          "scope": "soldiers",
+          "subject": "add four low-gore dying and dead pose pairs",
+          "sha": "ccf42e3a"
+        },
+        {
+          "type": "docs",
+          "scope": "art",
+          "subject": "show hero death references at exact native multiples",
+          "sha": "131759bd"
+        },
+        {
+          "type": "feat",
+          "scope": "effectlab",
+          "subject": "reusable asset-agnostic effect/shader debug scene",
+          "sha": "aa95e487"
+        },
+        {
+          "type": "fix",
+          "scope": "effectlab",
+          "subject": "visible mote orbit + correct shader-param defaults; add generated import/uid sidecars",
+          "sha": "efeb430a"
+        },
+        {
+          "type": "fix",
+          "subject": "reusable in-engine EffectLab debug scene (asset-agnostic shader/particle lab, pyramid pilot) [efeb430a]",
+          "sha": "81b7d419"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump (EffectLab debug scene on :8060)",
+          "sha": "0cd748b2"
+        },
+        {
+          "type": "feat",
+          "scope": "dragon",
+          "subject": "add three elder red dragon choices and approved soldier handoff",
+          "sha": "948134ed"
+        },
+        {
+          "type": "feat",
+          "scope": "debug",
+          "subject": "add Effect Lab entry to DebugMenu Test Scenes (next to Combat Shader Bench) — reach EffectLab from the debug menu",
+          "sha": "51149334"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump (Effect Lab debug-menu entry on :8060)",
+          "sha": "89b61df7"
+        },
+        {
+          "type": "chore",
+          "scope": "dragon",
+          "subject": "fit Crown-horn Elder to rectangular ground footprints",
+          "sha": "8b3fb493"
+        },
+        {
+          "type": "docs",
+          "scope": "art",
+          "subject": "keep footprint captions clear of the longer ground plane",
+          "sha": "26fec372"
+        },
+        {
+          "type": "fix",
+          "scope": "effectlab",
+          "subject": "MOUSE_MODE_VISIBLE in _ready (cursor was hidden, UI unclickable) + Copy-settings button to clipboard/console (round-trip tuning to Arc)",
+          "sha": "00c4d292"
+        },
+        {
+          "type": "fix",
+          "subject": "Dwarven Everward -> Eidurn Stone (owner 2026-11-16) in EffectLab title + DebugMenu comment",
+          "sha": "fa55b421"
+        },
+        {
+          "type": "refactor",
+          "subject": "WEB_VERSION bump (EffectLab mouse-visible + Copy-settings button + Eidurn Stone rename on :8060)",
+          "sha": "f17a9f88"
+        },
+        {
+          "type": "feat",
+          "scope": "soldiers",
+          "subject": "add extensive low-gore burn variants for four casualty poses",
+          "sha": "6c31f266"
+        },
+        {
+          "type": "feat",
+          "scope": "caves",
+          "subject": "add dragon chamber with narrow column barrier and occlusion layer",
+          "sha": "bbd73f10"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "widen column cracks to match the NPC reference body",
+          "sha": "4a53ab4a"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "contain the dragon behind one growing dry-wall fracture",
+          "sha": "c3a6d75d"
+        },
+        {
+          "type": "feat",
+          "scope": "DwarvenRuin16",
+          "subject": "Eidurn Stone rest-point — discovery event + sleep mechanic",
+          "sha": "902d1f10"
+        },
+        {
+          "type": "chore",
+          "subject": "Eidurn Stone rest-point in DwarvenRuin16 — once-only discovery cutscene + bed-reuse sleep/full-HP-MP + approved pyramid effect (2atym) [902d1f10]",
+          "sha": "7438abe3"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (Eidurn Stone in DwarvenRuin16 on :8060)",
+          "sha": "df1e41de"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "widen dragon glimpse among natural columns and fractures",
+          "sha": "fcd7a0de"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "extend dragon chamber for a delayed reveal and two exits",
+          "sha": "9c26c67c"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "bound Step-1 relay-drain with a hard-cap escape (ph3n7)",
+          "sha": "9babbb58"
+        },
+        {
+          "type": "chore",
+          "subject": "end-of-combat freeze safety net — bound 0rnoc Step-1 relay-drain with 6s hard-cap escape (ph3n7)",
+          "sha": "d1ace9f0"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (level-up-freeze Step-1 hard-cap safety net on :8060, ph3n7)",
+          "sha": "3896ebf7"
+        },
+        {
+          "type": "chore",
+          "scope": "frontier",
+          "subject": "promote Quinn's DR21 pre-boss save (v2944, all-reachable-DR-traversed, pre-DR22-boss)",
+          "sha": "61dc24fd"
+        },
+        {
+          "type": "fix",
+          "scope": "dungeon-discovery",
+          "subject": "register Dwarven Ruin scenes in DUNGEON_SCENES",
+          "sha": "59b012eb"
+        },
+        {
+          "type": "chore",
+          "subject": "register 24 DwarvenRuin scenes in DUNGEON_SCENES so discoveredDungeonScenes records DR rooms (u960z) [59b012eb]",
+          "sha": "3b3debcb"
+        },
+        {
+          "type": "chore",
+          "subject": "Falmri joins at parity with Elias: JP/SP = Elias's SPENT totals, same level (ChroniclesOfNesis-4xxfx)",
+          "sha": "8de21411"
+        },
+        {
+          "type": "chore",
+          "subject": "autoplay-mcp char-targeting: read-only probes for SkillTreeMenu/SkillsMenu/StatusMenu selected-character",
+          "sha": "4297c622"
+        },
+        {
+          "type": "chore",
+          "subject": "Falmri recruits at parity — JP/SP = Elias-spent at Elias-level (4xxfx); gear-compat + SP-tree kit confirmed already present [8de21411]",
+          "sha": "6e64fe8d"
+        },
+        {
+          "type": "chore",
+          "subject": "autoplay-mcp char-targeting: EquipmentMenu probe gains selectedCharacter + characterButtons rects",
+          "sha": "3e1fdfe5"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump v1.0.2945 (Falmri parity-recruit + DUNGEON_SCENES on :8060) + WebPartyStub walrus->explicit across copies",
+          "sha": "1c86e3c0"
+        },
+        {
+          "type": "chore",
+          "subject": "autoplay-mcp char-targeting: skilltree_state.py / equipment_state.py gain optional unit param",
+          "sha": "05a9ca5d"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION v1.0.2946 (Port char-targeting probes live) + sync 18 stale pack Autoload/GUI mirrors to canonical",
+          "sha": "f54c06db"
+        },
+        {
+          "type": "fix",
+          "subject": "autoplay-mcp char-targeting: SkillTree probe gains characterButtons rects (Quinn live-validation fix)",
+          "sha": "058098af"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2947 (SkillTreeMenu characterButtons probe live — enables MCP learn_skill char-switch, Quinn validation fix)",
+          "sha": "33e9094a"
+        },
+        {
+          "type": "chore",
+          "subject": "promote all-scenes-discovered pre-boss BUILT-PARTY staging save (v2947)",
+          "sha": "88098c0c"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "broaden chamber with natural column bars and party scale view",
+          "sha": "abddbacc"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "expand width and rear space behind sparser dragon columns",
+          "sha": "37e3f639"
+        },
+        {
+          "type": "feat",
+          "scope": "caves",
+          "subject": "extend upper cavern and add denser barrier with side lava pool",
+          "sha": "1be08c31"
+        },
+        {
+          "type": "chore",
+          "subject": "promote REAL-DRIVE post-join built-party save at DR9 (v2947)",
+          "sha": "2c6b6f0b"
+        },
+        {
+          "type": "feat",
+          "scope": "saves",
+          "subject": "game-side username server-saves (BUILD GO contract)",
+          "sha": "ee5d53d6"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "restore one floor level and feed lava through natural columns",
+          "sha": "34afdc12"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge sandbox/nix-usersaves into develop",
+          "sha": "484c27e3"
+        },
+        {
+          "type": "fix",
+          "scope": "saves",
+          "subject": "sync 7 SaveLoadMenu.gd pack mirrors to canonical (username header) — merge ee5d53d6 missed them",
+          "sha": "e8eebb52"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "block dragon with interlocking formations and low crawl gaps",
+          "sha": "fb004440"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION v1.0.2948 (username server-saves game half live on :8060 — Nix ee5d53d6 + SaveLoadMenu mirror sync)",
+          "sha": "2a1e4839"
+        },
+        {
+          "type": "fix",
+          "scope": "saves",
+          "subject": "only emit save-changed for real player slots (0/1-12/13) — exclude debug scratch slot 99 from server upload (App integration finding)",
+          "sha": "ee18ba65"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "widen dragon chamber and vary lower entrance silhouettes",
+          "sha": "8799a69a"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (slot-99 emit guard live on :8060)",
+          "sha": "dc0a912b"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "move left entrance toward barrier and open column bases",
+          "sha": "3bc2203b"
+        },
+        {
+          "type": "feat",
+          "scope": "saves",
+          "subject": "username dropdown never forgets names seen on this device",
+          "sha": "4d6ddade"
+        },
+        {
+          "type": "chore",
+          "scope": "caves",
+          "subject": "naturalize right entrance and vary stone textures",
+          "sha": "6458113e"
+        },
+        {
+          "type": "fix",
+          "scope": "controls",
+          "subject": "mouse-Back no longer opens rebind popup; WASD focus highlights Back/Reset",
+          "sha": "7c82fff7"
+        },
+        {
+          "type": "feat",
+          "scope": "caves",
+          "subject": "add final dragon chamber with native floor grid",
+          "sha": "ce5d67b4"
+        },
+        {
+          "type": "chore",
+          "subject": "reverse omnidirectional interact; reuse chest proximity+facing gate (ChroniclesOfNesis-o9z8o)",
+          "sha": "6373e739"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge sandbox/nix-bedfacing: bed facing+proximity interact gate (owner 2026-11-17)",
+          "sha": "ac182120"
+        },
+        {
+          "type": "test",
+          "scope": "menu-nav",
+          "subject": "WASD-highlight + mouse-click-activation suite across all menus",
+          "sha": "eed0ef07"
+        },
+        {
+          "type": "test",
+          "subject": "Merge sandbox/vera-menunav: mouse+WASD menu-nav highlight/click test suite (owner 2026-11-17)",
+          "sha": "1b03468b"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2950 (bed facing/proximity gate + username never-forget dropdown + Controls nav fixes + menu-nav test suite live on :8060)",
+          "sha": "2dd4f3d6"
+        },
+        {
+          "type": "docs",
+          "scope": "menu",
+          "subject": "osf0 test strategy — one engaged-control contract to confirm mouse+WASD",
+          "sha": "5f52448c"
+        },
+        {
+          "type": "feat",
+          "scope": "menu",
+          "subject": "osf0 keystone — universal engaged-control contract + uniform nav test helper",
+          "sha": "2ad7f94d"
+        },
+        {
+          "type": "feat",
+          "scope": "menu",
+          "subject": "make ControlsMenu probe-addressable (keystone proof green)",
+          "sha": "21faba8c"
+        },
+        {
+          "type": "fix",
+          "scope": "saves",
+          "subject": "username panel — drop Device saves, compact one-row panel, symmetric margins",
+          "sha": "021e9bc8"
+        },
+        {
+          "type": "feat",
+          "subject": "WEB_VERSION v1.0.2952 (menu-nav keystone + ControlsMenu probe-addressable)",
+          "sha": "da8e517d"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION v1.0.2953 (username panel: no Device saves, compact symmetric one-row panel)",
+          "sha": "f7fe0e6a"
+        },
+        {
+          "type": "fix",
+          "scope": "editor",
+          "subject": "hide duplicate grid preview while painting native cells",
+          "sha": "8ac2e89f"
+        },
+        {
+          "type": "fix",
+          "subject": "unify header into ONE dark-recessed panel + fix blank ▼ combo",
+          "sha": "e9e2c5be"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge sandbox/nix-loadpanel: unified Load Game panel + username combo (owner 2026-11-18)",
+          "sha": "36484a48"
+        },
+        {
+          "type": "chore",
+          "subject": "Make dungeon grids editable and stage modular generated scenery",
+          "sha": "82746478"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION v1.0.2954 (unified Load Game panel + username combo live on :8060)",
+          "sha": "6418fa88"
+        },
+        {
+          "type": "fix",
+          "subject": "Fix pack_asset_audit.py: stop comparing compiled .gdc bytes across zone packs",
+          "sha": "f8a40c02"
+        },
+        {
+          "type": "fix",
+          "subject": "Merge sandbox/port-combatskew: fix combat-artifact audit false-positive (compare source, not non-deterministic .gdc)",
+          "sha": "629763b9"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2955 (combat-audit gate fixed — clean deploy, no bypass)",
+          "sha": "9977bc25"
+        },
+        {
+          "type": "chore",
+          "subject": "Unbake Waterway thresholds and remove Waterway10 bridge",
+          "sha": "cb55b1a4"
+        },
+        {
+          "type": "fix",
+          "subject": "Fix editor-breaking ext_resource type mismatches: FontFile -> FontVariation",
+          "sha": "1df697d0"
+        },
+        {
+          "type": "fix",
+          "subject": "Merge sandbox/nix-editfix: fix font type mismatch (FontFile->FontVariation) + relic placeholder (owner editor errors 2026-11-18)",
+          "sha": "03a1de47"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2956 (waterways art overhaul + font type-mismatch fix live on :8060)",
+          "sha": "2195c527"
+        },
+        {
+          "type": "fix",
+          "scope": "laria-pack",
+          "subject": "add missing Movement_Relic.png — Relic.tscn broken dependency",
+          "sha": "3c823dab"
+        },
+        {
+          "type": "fix",
+          "scope": "laria-pack",
+          "subject": "add missing TooseOrnament font chain — PlayerCharacter.tscn broken dependency",
+          "sha": "003dad19"
+        },
+        {
+          "type": "docs",
+          "scope": "pack",
+          "subject": "holistic shared-asset strategy — small/current/Godot-viewable zone packs",
+          "sha": "cc9df7c3"
+        },
+        {
+          "type": "chore",
+          "subject": "SaveLoadMenu username panel: one-row combo + Generate carries device saves",
+          "sha": "46af9e05"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge sandbox/nix-usercombo: one-row unified username combo + Generate-carries-device-saves (owner 2026-11-18)",
+          "sha": "d438c0f4"
+        },
+        {
+          "type": "fix",
+          "scope": "waterways",
+          "subject": "Laria waterways overhaul — tested + post-playtest fixes (owner)",
+          "sha": "70432fa3"
+        },
+        {
+          "type": "feat",
+          "subject": "Add Firecaves monster approval concepts and scale review",
+          "sha": "b911f185"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2957 (username one-row combo + carry-saves + latest waterways fixes live)",
+          "sha": "ed408b0b"
+        },
+        {
+          "type": "fix",
+          "subject": "push spawn clear of overlapping LeaveArea doors (owner bug 2026-11-18)",
+          "sha": "6b4398fd"
+        },
+        {
+          "type": "fix",
+          "subject": "Merge sandbox/nix-spawnpush: push spawn clear of LeaveAreas (fix waterway scene-loop; owner 2026-11-18)",
+          "sha": "5163d288"
+        },
+        {
+          "type": "fix",
+          "scope": "bake",
+          "subject": "never-baked enemy skips with warning instead of crashing the deploy",
+          "sha": "ce4e658c"
+        },
+        {
+          "type": "fix",
+          "subject": "Revert \"Merge sandbox/nix-spawnpush: push spawn clear of LeaveAreas (fix waterway scene-loop; owner 2026-11-18)\"",
+          "sha": "6f7896e3"
+        },
+        {
+          "type": "docs",
+          "scope": "web-export",
+          "subject": "gotcha #68 — class_name base change breaks zone-pack class resolution (headless parse blind to it)",
+          "sha": "87ab1050"
+        },
+        {
+          "type": "feat",
+          "scope": "firecaves",
+          "subject": "stage approved Episode 3 review on isolated branch",
+          "sha": "c565ad07"
+        },
+        {
+          "type": "fix",
+          "scope": "waterways",
+          "subject": "spawn-clear 3 door-overlap coords after owner moved doors (scene-loop)",
+          "sha": "6f277002"
+        },
+        {
+          "type": "fix",
+          "scope": "firecaves",
+          "subject": "repair preview loading and add gentler creature concepts",
+          "sha": "dcc5ea2e"
+        },
+        {
+          "type": "test",
+          "scope": "firecaves",
+          "subject": "verify retreat rules and record preview version",
+          "sha": "b314fad3"
+        },
+        {
+          "type": "feat",
+          "scope": "saves",
+          "subject": "hide username row on Save/Load panels (owner 2026-11-18 — 'overly complicated, bring back later')",
+          "sha": "3b131bd4"
+        },
+        {
+          "type": "chore",
+          "scope": "firecaves",
+          "subject": "refine lean male Pyreheart and feral lesser Sootskulk",
+          "sha": "7af6afa1"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2959 (waterway spawn-loop revert+data fix + username row hidden live)",
+          "sha": "95a54550"
+        },
+        {
+          "type": "fix",
+          "scope": "render",
+          "subject": "pixel-snap 2D transforms — dungeon background pans choppy (owner 2026-11-18)",
+          "sha": "77b2c981"
+        },
+        {
+          "type": "fix",
+          "subject": "Fix waterway door spawn-loop: replace point-vs-shape grace test with world-space AABB overlap",
+          "sha": "b1dac0d6"
+        },
+        {
+          "type": "fix",
+          "subject": "Merge sandbox/nix-gracefix: spawn-grace world-AABB footprint test (fix waterway multi-door loop; owner 2026-11-18)",
+          "sha": "d0d11504"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2960 (spawn-grace world-AABB fix + pixel-snap live)",
+          "sha": "5c39ceea"
+        },
+        {
+          "type": "chore",
+          "scope": "firecaves",
+          "subject": "bake approved spirit and compact Sootskulk animations",
+          "sha": "8ef233c6"
+        },
+        {
+          "type": "chore",
+          "scope": "firecaves",
+          "subject": "record isolated review build 1.0.2960",
+          "sha": "5992595f"
+        },
+        {
+          "type": "fix",
+          "scope": "firecaves",
+          "subject": "restore first exit and hide exploration grid",
+          "sha": "af8386af"
+        },
+        {
+          "type": "fix",
+          "scope": "waterways",
+          "subject": "recompute all spawn points center-biased + clear of doors (owner 2026-11-18)",
+          "sha": "a34c2860"
+        },
+        {
+          "type": "fix",
+          "scope": "firecaves",
+          "subject": "keep Deepgates above cave backgrounds",
+          "sha": "14d4d1b5"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION v1.0.2961 (waterway spawns recomputed center-biased + clear)",
+          "sha": "9cafc94a"
+        },
+        {
+          "type": "chore",
+          "scope": "firecaves",
+          "subject": "record isolated review build 1.0.2962",
+          "sha": "93096fec"
+        },
+        {
+          "type": "fix",
+          "scope": "waterways",
+          "subject": "re-sync spawns vs current doors + bump clearance 28->36px",
+          "sha": "5a17989e"
+        },
+        {
+          "type": "feat",
+          "subject": "Add adjustable catch basin water and fish spout shader with EffectLab preview",
+          "sha": "99646910"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION v1.0.2962 (waterway5 + all waterway spawns re-synced, 36px clearance)",
+          "sha": "c44fe871"
+        },
+        {
+          "type": "chore",
+          "subject": "Use visible radio choices for shader preview controls and record local build",
+          "sha": "c0629016"
+        },
+        {
+          "type": "chore",
+          "subject": "Verify catch basin preview link and record local review build 2964",
+          "sha": "2b1df611"
+        },
+        {
+          "type": "fix",
+          "scope": "combat",
+          "subject": "resume idle animation when a stun expires (bug z4e0x)",
+          "sha": "7b64a130"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2963 (stun-expiry idle-resume fix live)",
+          "sha": "d55a2d89"
+        },
+        {
+          "type": "chore",
+          "subject": "Set broken Deepgate paving flush with the cave floor",
+          "sha": "e12d13e5"
+        },
+        {
+          "type": "chore",
+          "subject": "Retain flush Deepgate art master and exact imagegen edit prompt",
+          "sha": "2b903024"
+        },
+        {
+          "type": "chore",
+          "subject": "Record isolated ground-flush Deepgate review build 2965",
+          "sha": "e05daf0b"
+        },
+        {
+          "type": "chore",
+          "subject": "Drive waterway catch basins from windmill conditions at speed 0.80",
+          "sha": "6f232198"
+        },
+        {
+          "type": "chore",
+          "subject": "Record local basin windmill integration build 2966",
+          "sha": "d8282a75"
+        },
+        {
+          "type": "fix",
+          "scope": "waterways",
+          "subject": "owner door-placement + stone-door-threshold fixes (final)",
+          "sha": "148ceb68"
+        },
+        {
+          "type": "fix",
+          "scope": "waterways",
+          "subject": "owner door-placement + stone-door-threshold fixes (final, latest)",
+          "sha": "0cb131c8"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge develop into rowan/firecaves-episode3",
+          "sha": "0d917d8a"
+        },
+        {
+          "type": "chore",
+          "subject": "Record isolated verification build for develop merge",
+          "sha": "d26350f5"
+        },
+        {
+          "type": "chore",
+          "scope": "dwarvenruin",
+          "subject": "owner grid edits + Godot-4 format=4 resave (23 scenes)",
+          "sha": "59578afc"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge rowan/firecaves-episode3 into develop (firecaves/combat consolidation)",
+          "sha": "44888af6"
+        },
+        {
+          "type": "chore",
+          "scope": "render",
+          "subject": "drop project-wide 2d pixel-snap — caused art 'shaking' on pan",
+          "sha": "8ac9f7d4"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION v1.0.2966 (merge consolidation + snap-off live on :8060)",
+          "sha": "22a4db42"
+        },
+        {
+          "type": "fix",
+          "scope": "render",
+          "subject": "linear texture_filter on waterway scenery layers (panning judder, lever A)",
+          "sha": "ee665811"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump (lever A linear-filter panning fix live)",
+          "sha": "fbdfdab8"
+        },
+        {
+          "type": "chore",
+          "subject": "depth-asset y-sort + see-through occlusion (waterway11 toy) — for Rowan review",
+          "sha": "ae52bc9c"
+        },
+        {
+          "type": "fix",
+          "scope": "turtle",
+          "subject": "disable TurtleHealth indicator via kill switch (bead pvmxd)",
+          "sha": "b9a40890"
+        },
+        {
+          "type": "chore",
+          "scope": "depth-occlusion",
+          "subject": "accept Rowan's review + resolved contract — GREEN LIGHT",
+          "sha": "d9f9e0ec"
+        },
+        {
+          "type": "fix",
+          "scope": "menu-nav",
+          "subject": "wire StatusMenu +/- and OptionsMenu checkbox rows into the WASD engaged-highlight contract",
+          "sha": "d4c08cfd"
+        },
+        {
+          "type": "chore",
+          "scope": "menu-nav",
+          "subject": "WASD engaged-highlight for StatusMenu +/- + OptionsMenu checkboxes; one-line Combat Speed-Up label (beads i8mef, ymhgj)",
+          "sha": "36725c6b"
+        },
+        {
+          "type": "feat",
+          "scope": "waterway11",
+          "subject": "establish reversible opaque basin depth sorting",
+          "sha": "7413ed7e"
+        },
+        {
+          "type": "test",
+          "scope": "waterway11",
+          "subject": "verify opaque depth checkpoint in exported combat",
+          "sha": "af4e161c"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (turtle-off + menu-nav highlight batch live)",
+          "sha": "0ee394a8"
+        },
+        {
+          "type": "feat",
+          "scope": "waterway11",
+          "subject": "fade basin for obscured targets and hovered cells",
+          "sha": "4c7f147f"
+        },
+        {
+          "type": "fix",
+          "scope": "options",
+          "subject": "WASD nav lands Combat Speed-Up between Fullscreen and Controls (bead ymhgj)",
+          "sha": "b89938d3"
+        },
+        {
+          "type": "test",
+          "scope": "waterway11",
+          "subject": "validate desktop hover fade and record local build",
+          "sha": "5a316c86"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump (Combat Speed-Up nav-order fix live)",
+          "sha": "3dbe2b1c"
+        },
+        {
+          "type": "feat",
+          "scope": "waterway11",
+          "subject": "retain occlusion reveals through turns and attack text hold",
+          "sha": "1a54c501"
+        },
+        {
+          "type": "fix",
+          "scope": "waterway11",
+          "subject": "clear completed abilities without damage text",
+          "sha": "5a095e51"
+        },
+        {
+          "type": "fix",
+          "scope": "waterway11",
+          "subject": "preserve pending text across cancelled overlapping attacks",
+          "sha": "1a9e2808"
+        },
+        {
+          "type": "chore",
+          "scope": "waterway11",
+          "subject": "record verified action-reveal preview build",
+          "sha": "c85ef657"
+        },
+        {
+          "type": "feat",
+          "scope": "scenery",
+          "subject": "share Y-sort and action occlusion across combat scenes",
+          "sha": "e28a0b96"
+        },
+        {
+          "type": "fix",
+          "scope": "scenery",
+          "subject": "keep atlas region bounds independent",
+          "sha": "0b46c970"
+        },
+        {
+          "type": "test",
+          "scope": "scenery",
+          "subject": "stage dungeon actors on painted grid cells",
+          "sha": "71b63c9f"
+        },
+        {
+          "type": "chore",
+          "scope": "scenery",
+          "subject": "record verified isolated preview 2973",
+          "sha": "a47150cb"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge rowan/waterway11-depth-occlusion into develop (transparent-asset depth/occlusion)",
+          "sha": "a3112d05"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION v1.0.2970 (depth-occlusion fold live, all zone packs rebuilt)",
+          "sha": "29d79d35"
+        },
+        {
+          "type": "test",
+          "subject": "[deploy-develop] prod: Rowan depth-occlusion fold + menu-nav/turtle/nav-order batch (v2970) — gate green, more testers",
+          "sha": "11b900f5"
+        }
+      ]
+    },
     {
       "version": "v1.0.2934",
       "date": "2026-11-17",

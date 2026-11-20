@@ -14,10 +14,15 @@ FROM node:22-bookworm-slim
 
 # --- OS deps (Godot headless + build tooling) ---------------------------------
 # python3 + git are required by cloud_export.sh (build_manifest.py / audit scripts,
-# and the git short-sha stamp).
+# and the git short-sha stamp). git-lfs because new art under packs_src is LFS-tracked
+# (game repo, 2026-11-16): CodeBuild's GITHUB clone leaves 132-byte pointers, Godot
+# can't import them, and v1.0.2971 shipped Laria.pck with no textures for them.
+# cloud_export.sh runs `git lfs pull` and fails the build on any leftover pointer.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl unzip git python3 python3-pip python-is-python3 fontconfig libfontconfig1 \
-    && rm -rf /var/lib/apt/lists/*
+      ca-certificates curl unzip git git-lfs python3 python3-pip python-is-python3 fontconfig libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && git lfs install --system \
+    && git lfs version
 
 # --- AWS CLI v2 (push-channel.js shells out to `aws`) --------------------------
 RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \

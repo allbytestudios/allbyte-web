@@ -1,6 +1,29 @@
 {
-  "generatedAt": "2026-11-20T04:59:26.987Z",
+  "generatedAt": "2026-11-20T16:12:36.628Z",
   "releases": [
+    {
+      "version": "v1.0.2972",
+      "date": "2026-11-20",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "v1.0.2971 manifest line (gitSha db1ce13f, prev v1.0.2970) — MayorsHouse walk fix follow-up promote",
+          "sha": "c16eb202"
+        },
+        {
+          "type": "fix",
+          "scope": "ci",
+          "subject": "wire FireDragonCaves export + git-lfs pull + fail-on-pointer gate in cloud_export (prod v2971 regression)",
+          "sha": "6ac3c439"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2972 (CI fix re-cut — LFS art + FireDragonCaves now build on prod)",
+          "sha": "e9b48ab0"
+        }
+      ]
+    },
     {
       "version": "v1.0.2971",
       "date": "2026-11-20",

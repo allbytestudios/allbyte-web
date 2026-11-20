@@ -18,8 +18,10 @@ FROM node:22-bookworm-slim
 # (game repo, 2026-11-16): CodeBuild's GITHUB clone leaves 132-byte pointers, Godot
 # can't import them, and v1.0.2971 shipped Laria.pck with no textures for them.
 # cloud_export.sh runs `git lfs pull` and fails the build on any leftover pointer.
+# libatomic1: playwright >=1.65's bundled node links it; slim bookworm lacks it.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl unzip git git-lfs python3 python3-pip python-is-python3 fontconfig libfontconfig1 \
+      libatomic1 \
     && rm -rf /var/lib/apt/lists/* \
     && git lfs install --system \
     && git lfs version

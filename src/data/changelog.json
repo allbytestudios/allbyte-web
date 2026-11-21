@@ -1,6 +1,182 @@
 {
-  "generatedAt": "2026-11-20T16:12:36.628Z",
+  "generatedAt": "2026-11-21T16:52:03.847Z",
   "releases": [
+    {
+      "version": "v1.0.2981",
+      "date": "2026-11-21",
+      "changes": [
+        {
+          "type": "chore",
+          "scope": "deploy",
+          "subject": "v1.0.2972 manifest line (gitSha e9b48ab0, prev v1.0.2971)",
+          "sha": "eccc6201"
+        },
+        {
+          "type": "fix",
+          "scope": "ci",
+          "subject": "zone-coverage gate + post-export pck-content audit (beads xxdik, jj417)",
+          "sha": "050f1b77"
+        },
+        {
+          "type": "chore",
+          "scope": "waterway10",
+          "subject": "crop upper doorway crowns above the room",
+          "sha": "88b2e6f7"
+        },
+        {
+          "type": "fix",
+          "scope": "ci",
+          "subject": "derive LFS-gate globs from .gitattributes, share zone-coverage list, de-footgun deploy_develop.sh",
+          "sha": "d16ba2bc"
+        },
+        {
+          "type": "chore",
+          "scope": "waterway10",
+          "subject": "record tall doorway preview 2974",
+          "sha": "89b3175f"
+        },
+        {
+          "type": "chore",
+          "scope": "ci",
+          "subject": "LFS-gate globs from .gitattributes + shared zone list + de-footgun deploy_develop (beads enynh, nyodh, fwgok)",
+          "sha": "a8dbba5a"
+        },
+        {
+          "type": "chore",
+          "subject": "Refine dungeon doorway headroom with moderate natural proportions",
+          "sha": "4e6e1d92"
+        },
+        {
+          "type": "chore",
+          "subject": "Record local 2975 headroom review and imported textures",
+          "sha": "db20f5ba"
+        },
+        {
+          "type": "fix",
+          "subject": "Merge rowan/waterway11-depth-occlusion (waterway10 doorway-headroom art fix)",
+          "sha": "dc42a0d8"
+        },
+        {
+          "type": "docs",
+          "subject": "Rowan handoff — back to :8060 / current-develop workflow (retire long-lived branch)",
+          "sha": "99708d3b"
+        },
+        {
+          "type": "chore",
+          "subject": "WEB_VERSION bump (Rowan headroom art pass + consolidated develop live on :8060)",
+          "sha": "cab80413"
+        },
+        {
+          "type": "fix",
+          "scope": "waterways",
+          "subject": "P0 — waterway5/6 unconditional eject via ToWaterways4",
+          "sha": "97846676"
+        },
+        {
+          "type": "fix",
+          "subject": "Merge nix waterway5-loop P0 fix (bead estje): widen spawn-grace 1->2 physics frames",
+          "sha": "37550e63"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION v1.0.2974 (waterway5-loop P0 fix live — grace 1->2 frames + all 5 SceneTemplate copies synced)",
+          "sha": "3495ac6e"
+        },
+        {
+          "type": "fix",
+          "subject": "sync-gate LeaveArea transition-arming on scene-ready (replace frame-grace, owner-requested robust fix)",
+          "sha": "f20a50ad"
+        },
+        {
+          "type": "chore",
+          "subject": "lock STRICT settle + owner principle (player never starts on a trigger; events for forced control)",
+          "sha": "6b418e74"
+        },
+        {
+          "type": "chore",
+          "subject": "Sync-gate LeaveArea/Door transition-arming on scene-ready (replaces waterway5-loop frame-grace)",
+          "sha": "04cbcaf2"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge nix sync-gated transition-arming (bead estje): replace frame-grace with scene-ready barrier gate",
+          "sha": "352c8384"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump (sync-gated transition-arming fix live on :8060 — frame-grace removed)",
+          "sha": "596447bd"
+        },
+        {
+          "type": "fix",
+          "scope": "scene-barrier",
+          "subject": "read transitions_armed off owner, not current_scene (waterway5 eject recurrence)",
+          "sha": "8228d83d"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump (scene-barrier owner-read fix live)",
+          "sha": "ac7d8a8b"
+        },
+        {
+          "type": "fix",
+          "scope": "waterway5",
+          "subject": "move authored Player position off ToWaterways4 trigger (root cause)",
+          "sha": "39dd54ae"
+        },
+        {
+          "type": "fix",
+          "subject": "WEB_VERSION bump (waterway5 authored-position root fix live)",
+          "sha": "74b531d3"
+        },
+        {
+          "type": "docs",
+          "subject": "document the authored-position limitation + barrier's known gap (waterway5-loop)",
+          "sha": "9c47f7bd"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-2rkfo",
+          "subject": "static audit + fix authored/spawn Player-position overlaps with trigger EntryShapes; wire deploy gate",
+          "sha": "6bd80539"
+        },
+        {
+          "type": "chore",
+          "subject": "waterway2: local ShaderMaterial for cracked catch-basin (Rowan basin water-level feature, partial)",
+          "sha": "29ca52ae"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge sandbox/nix-authpos2rkfo into develop",
+          "sha": "0060739c"
+        },
+        {
+          "type": "chore",
+          "subject": "bump WEB_VERSION to 1.0.2980 (waterway5 teleport fix / 2rkfo deploy)",
+          "sha": "b70c7842"
+        },
+        {
+          "type": "docs",
+          "subject": "nav-walking analysis — agent_radius sampled from live perspective-scale at bake makes door clearance spawn-dependent (QB-178/nqa9b)",
+          "sha": "d2d14aed"
+        },
+        {
+          "type": "fix",
+          "subject": "QB-178 nav fix lever #1: freeze agent_radius on originalScale + lever #4 nav diagnostics",
+          "sha": "7b2ccec7"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge sandbox/nix-navradius into develop",
+          "sha": "df90d44b"
+        },
+        {
+          "type": "chore",
+          "subject": "bump WEB_VERSION to 1.0.2981 (agent_radius freeze + nav diagnostics)",
+          "sha": "f1c42ee8"
+        }
+      ]
+    },
     {
       "version": "v1.0.2972",
       "date": "2026-11-20",

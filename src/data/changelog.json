@@ -1,6 +1,33 @@
 {
-  "generatedAt": "2026-11-21T16:52:03.847Z",
+  "generatedAt": "2026-11-21T18:13:21.672Z",
   "releases": [
+    {
+      "version": "v1.0.2982",
+      "date": "2026-11-21",
+      "changes": [
+        {
+          "type": "fix",
+          "subject": "manifest line for v1.0.2981 (prod/alpha push — teleport fix 2rkfo + basin shader + agent_radius freeze)",
+          "sha": "519b21c8"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-gr5zv",
+          "subject": "arm transitions_armed after executeEvent()'s normal completion (ChurchSquare->MainSquare stall root cause)",
+          "sha": "b2629574"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge sandbox/nix-churchsq-nav into develop",
+          "sha": "01d6ba44"
+        },
+        {
+          "type": "chore",
+          "subject": "bump WEB_VERSION to 1.0.2982 (transitions_armed never-armed-after-event fix — playability gate GREEN)",
+          "sha": "3c2a5b17"
+        }
+      ]
+    },
     {
       "version": "v1.0.2981",
       "date": "2026-11-21",

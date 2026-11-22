@@ -1,6 +1,89 @@
 {
-  "generatedAt": "2026-11-22T01:16:14.722Z",
+  "generatedAt": "2026-11-22T06:57:30.367Z",
   "releases": [
+    {
+      "version": "v1.0.2990",
+      "date": "2026-11-22",
+      "changes": [
+        {
+          "type": "fix",
+          "subject": "manifest line for v1.0.2983 (tiny-Elias/promoteToPlayer scale fix)",
+          "sha": "6d869a04"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-e83fz",
+          "subject": "gate promoteToPlayer's perspective reset on the DESTINATION scene, not inherited state (tiny-Elias recurred on v2983)",
+          "sha": "4da946af"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge sandbox/nix-tinyelias into develop",
+          "sha": "0ccdba88"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-e83fz",
+          "subject": "Door-chain tiny-Elias — leader==anchor skips promoteToPlayer entirely",
+          "sha": "dd9be238"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge nix/waterway-door-tiny-elias into develop",
+          "sha": "c81a7ee7"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-e83fz",
+          "subject": "universal tiny-Elias reset in iniatializeScene (4th attempt) + diagnostic logging",
+          "sha": "1119f2c6"
+        },
+        {
+          "type": "fix",
+          "subject": "Merge nix/tinyelias-universalfix into develop",
+          "sha": "592d59e7"
+        },
+        {
+          "type": "chore",
+          "scope": "ChroniclesOfNesis-e83fz",
+          "subject": "instance-ID ground-truth log for tiny-Elias (5th round)",
+          "sha": "547c55a1"
+        },
+        {
+          "type": "chore",
+          "scope": "ChroniclesOfNesis-e83fz",
+          "subject": "mirror instance-ID diag to Laria + Overworld pack copies",
+          "sha": "4d02dac2"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge nix/e83fz-instance-id-diag into develop",
+          "sha": "2977f49e"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-e83fz",
+          "subject": "tiny-Elias 6th attempt — stamp DESTINATION FILE's authored scale, not the carried body's stale originalScale",
+          "sha": "6ff8081d"
+        },
+        {
+          "type": "fix",
+          "subject": "Merge nix/e83fz-authored-scale-fix into develop",
+          "sha": "93474477"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-e83fz",
+          "subject": "THE ACTUAL tiny-Elias root cause — strip 2rkfo inline '#' comments from .tscn property lines",
+          "sha": "a97dd9fa"
+        },
+        {
+          "type": "chore",
+          "subject": "bump WEB_VERSION to 1.0.2990 (tiny-Elias REAL fix — .tscn inline-comment strip)",
+          "sha": "2e5f63ad"
+        }
+      ]
+    },
     {
       "version": "v1.0.2983",
       "date": "2026-11-22",

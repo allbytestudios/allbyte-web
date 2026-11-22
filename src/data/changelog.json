@@ -1,6 +1,33 @@
 {
-  "generatedAt": "2026-11-21T18:13:21.672Z",
+  "generatedAt": "2026-11-22T01:16:14.722Z",
   "releases": [
+    {
+      "version": "v1.0.2983",
+      "date": "2026-11-22",
+      "changes": [
+        {
+          "type": "fix",
+          "subject": "manifest line for v1.0.2982 (prod hotfix — transitions_armed door soft-lock fix)",
+          "sha": "bf460f53"
+        },
+        {
+          "type": "fix",
+          "scope": "ChroniclesOfNesis-e83fz",
+          "subject": "reset scale on leader promotion into non-perspective scenes (tiny-Elias in waterway1/waterwayChannel)",
+          "sha": "50f11e45"
+        },
+        {
+          "type": "chore",
+          "subject": "Merge sandbox/nix-eliasscale into develop",
+          "sha": "d15bbe5b"
+        },
+        {
+          "type": "chore",
+          "subject": "bump WEB_VERSION to 1.0.2983 (tiny-Elias fix: promoteToPlayer scale reset in non-perspective scenes)",
+          "sha": "346110c0"
+        }
+      ]
+    },
     {
       "version": "v1.0.2982",
       "date": "2026-11-21",

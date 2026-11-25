@@ -78,6 +78,7 @@ export const MANUAL_CARDS: ManualCard[] = [
       ["Physical", "Physical"],
       ["Poison", "Magical"],
       ["Radiant", "Magical"],
+      ["Acid", "Magical"],
     ],
   },
   {
@@ -87,8 +88,8 @@ export const MANUAL_CARDS: ManualCard[] = [
     rows: [
       ["Poisoned", "Small damage every turn. Less likely to land hits, more likely to be hit."],
       ["Blinded", "Much less likely to land hits, much more likely to be hit."],
-      // Arc, 2026-11-24: a physical in/out modifier, no DoT (Unit.gd). No number on
-      // purpose: shipped is ±20%, the owner's canonical figure is still open.
+      // Arc, 2026-11-24: a physical in/out modifier, no DoT (DamageResolver). Canon
+      // is ±25%; the card describes it without the number.
       ["Acid Covered", "Takes more physical damage and deals less. Cured by Barbados Extract or Cleanse."],
     ],
   },

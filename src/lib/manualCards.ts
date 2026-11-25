@@ -13,8 +13,9 @@
 //    the same rule is how the two drift apart. Table cards take the FIRST TWO
 //    COLUMNS of the manual's table and stop.
 // 3. EPISODE ONE ONLY. The manual marks later content with ◈. A player here
-//    cannot meet Acid, Ice, Fire or Necrotic, so teaching them their statuses
-//    spends the one moment we have on things that will not happen.
+//    cannot meet Ice, Fire or Necrotic, so teaching them their statuses spends
+//    the one moment we have on things that will not happen. (Acid IS Episode One
+//    since the Dwarven Ruin's Speaver applies it, 2026-11-24.)
 // 4. THESE DOCUMENT THE DESIGN, NOT THE DEPLOYED BUILD (owner, 2026-09-08).
 //    A card describing behaviour that has not shipped yet is CORRECT; the game
 //    catches up. The trap runs the other way — seeing the game do something a
@@ -60,10 +61,6 @@ export const MANUAL_CARDS: ManualCard[] = [
     lines: ["Break its charge and it loses the next turn too — but you must stand in reach of everything else. Scan shows the damage needed."],
   },
   {
-    title: "Crits are on your side",
-    lines: ["Your crit chance beats most enemies'. Even fights swing your way."],
-  },
-  {
     title: "Use your favourite skills",
     lines: ["Skills grow with use. Lean on one and it becomes far stronger over a run."],
   },
@@ -90,22 +87,26 @@ export const MANUAL_CARDS: ManualCard[] = [
     rows: [
       ["Poisoned", "Small damage every turn. Less likely to land hits, more likely to be hit."],
       ["Blinded", "Much less likely to land hits, much more likely to be hit."],
+      // Arc, 2026-11-24: a physical in/out modifier, no DoT (Unit.gd). No number on
+      // purpose: shipped is ±20%, the owner's canonical figure is still open.
+      ["Acid Covered", "Takes more physical damage and deals less. Cured by Barbados Extract or Cleanse."],
     ],
   },
   {
-    title: "The ground fights too",
+    // Owner wording, 2026-11-24.
+    title: "Action Economy",
+    lines: ["Each turn has one move and one action. You can move either before or after your action, but not both."],
+  },
+  {
+    // Manual: "Danger Cells & Charging Attacks". Rows only — the canvas
+    // renderer draws rows OR lines, never both.
+    title: "Danger cells",
     rows: [
-      ["Poison", "a chance to poison you each step"],
-      ["Web", "cannot move, but can still attack"],
+      ["Charging", "The threatened cells are marked on the battlefield."],
+      ["Reactions", "During movement, markings show where an enemy reaction could strike you."],
+      ["Potential", "A pulsing red outline. Something could hit you here."],
+      ["Impending", "A red aura filling the cell. Damage will land here."],
     ],
-  },
-  {
-    title: "Your turn",
-    lines: ["One move and one action, in either order. You cannot split the move around the action."],
-  },
-  {
-    title: "Where you fight",
-    lines: ["No random encounters. The ground you were standing on becomes the grid."],
   },
 ];
 
